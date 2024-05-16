@@ -1,0 +1,38 @@
+-- Function: f_get_komisi(date, character varying, character varying, character varying)
+
+-- DROP FUNCTION f_get_komisi(date, character varying, character varying, character varying);
+
+CREATE OR REPLACE FUNCTION f_get_komisi(p_tgl date, p_no_item character varying, p_satindo character varying, p_jns character varying)
+  RETURNS numeric AS
+$BODY$ 
+--
+DECLARE hasil  numeric;  
+DECLARE vTglBerlakuCurr DATE;
+DECLARE vStatusClose  VARCHAR(1);
+--
+BEGIN 
+
+	SELECT MAX(t07.tgl_berlaku) INTO vTglBerlakuCurr
+	FROM t07itemsatindo t07 
+	WHERE t07.tgl_berlaku <= p_tgl 	AND
+	      t07.no_item = p_no_item;
+	--
+	SELECT 	CASE WHEN p_jns = 'KOMISI' THEN
+			CASE WHEN p_satindo = 'SAT' THEN t07.sat_amount_komisi ELSE t07.idmr_amount_komisi END
+		ELSE
+			CASE WHEN p_satindo = 'SAT' THEN t07.sat_amount_bns ELSE t07.idmr_amount_bns END
+		END INTO hasil
+	FROM t07itemsatindo t07 
+	WHERE t07.tgl_berlaku = vTglBerlakuCurr AND
+	      t07.no_item = p_no_item;
+	--
+	IF hasil IS NULL THEN 
+		hasil := 0;
+	END IF;
+	--
+	RETURN hasil;
+--
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;

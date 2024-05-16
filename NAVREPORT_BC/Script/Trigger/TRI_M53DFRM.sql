@@ -1,0 +1,71 @@
+DROP TRIGGER IF EXISTS ti_m53dfrm ON m53dfrm CASCADE  ; 
+DROP TRIGGER IF EXISTS td_m53dfrm ON m53dfrm CASCADE  ; 
+DROP FUNCTION IF EXISTS  fta_m53dfrm()CASCADE; 
+
+
+CREATE OR REPLACE FUNCTION fta_m53dfrm()
+  RETURNS trigger AS
+$$
+    BEGIN
+	IF (TG_OP = 'INSERT') THEN
+		UPDATE M52HFRM M52U
+		SET Recs=COALESCE(M53.DTL,0)
+		FROM 
+		(
+		SELECT M52.KdJfrm,M52.NomFormat,COUNT(M53.KdJfrm) AS DTL
+		FROM M52HFRM M52
+		LEFT JOIN M53DFRM M53
+		ON M53.KdJfrm=M52.KdJfrm AND M53.NomFormat=M52.NomFormat
+		WHERE NEW.KdJfrm=M52.KdJfrm AND
+		      NEW.NomFormat=M52.NomFormat	
+		GROUP BY M52.KdJfrm,M52.NomFormat		
+		) M53
+		--
+		WHERE M53.KdJfrm=M52U.KdJfrm AND M53.NomFormat=M52U.NomFormat; 
+
+		IF NOT FOUND THEN RETURN NULL; END IF;
+
+		RETURN NEW;		      
+	END IF; 
+
+	IF (TG_OP = 'DELETE') THEN
+		UPDATE M52HFRM M52U
+		SET Recs=COALESCE(M53.DTL,0)
+		FROM 
+		(
+		SELECT M52.KdJfrm,M52.NomFormat,COUNT(M53.KdJfrm) AS DTL
+		FROM M52HFRM M52
+		LEFT JOIN M53DFRM M53
+		ON M53.KdJfrm=M52.KdJfrm AND M53.NomFormat=M52.NomFormat
+		WHERE OLD.KdJfrm=M52.KdJfrm AND
+		      OLD.NomFormat=M52.NomFormat	
+		GROUP BY M52.KdJfrm,M52.NomFormat		
+		) M53
+		--
+		WHERE M53.KdJfrm=M52U.KdJfrm AND M53.NomFormat=M52U.NomFormat; 
+		      
+		IF NOT FOUND THEN RETURN NULL; END IF;
+
+		RETURN OLD;		      
+	END IF; 	
+    END;	
+$$  LANGUAGE plpgsql ;
+
+/******
+TRIGGER 
+*******/
+
+CREATE TRIGGER ti_m53dfrm
+  AFTER INSERT
+  ON m53dfrm
+  FOR EACH ROW
+  EXECUTE PROCEDURE fta_m53dfrm();
+------
+
+CREATE TRIGGER td_m53dfrm
+  AFTER DELETE
+  ON m53dfrm
+  FOR EACH ROW
+  EXECUTE PROCEDURE fta_m53dfrm();
+    
+

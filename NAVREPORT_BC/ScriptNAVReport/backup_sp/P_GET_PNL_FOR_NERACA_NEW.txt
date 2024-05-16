@@ -1,0 +1,158 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_GET_PNL_FOR_NERACA_NEW]    Script Date: 07-02-2023 4:38:41 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER PROCEDURE [dbo].[P_GET_PNL_FOR_NERACA_NEW] 
+	@ProsesId  nvarchar(100) ,   
+	@YearPeriode int,    
+	@MonthPeriode int,   
+	@Cabang  nvarchar(15) ,
+	@Pembagi  DECIMAL(15,2),
+	@UserId nvarchar(15) ,
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	IF @Action = 'CETAK'
+	BEGIN
+		DECLARE @CurrentYear int =  DATEPART(YEAR,GETDATE());
+		DECLARE @YearPeriodeMaxCanGet int = @CurrentYear - 2;
+		--
+		IF @YearPeriodeMaxCanGet >= @YearPeriode 
+			BEGIN
+				IF @YearPeriode >= 2017
+					SET @YearPeriodeMaxCanGet = @YearPeriode - 1
+				ELSE
+					SET @YearPeriodeMaxCanGet = 2015;
+			END;
+		--
+		DECLARE @cntYear INT = 2016;	
+		--
+		WHILE @cntYear <= @YearPeriodeMaxCanGet
+		BEGIN
+			DECLARE @AdaData int =  ISNULL((
+											SELECT COUNT(TAHUN)
+											FROM [dbo].[T13_SALES_COGS_PNL]
+											WHERE TAHUN = @cntYear
+										),0);
+			-- 
+			--Jika belum ada data maka Masukan Data ke Tabel T13_SALES_COGS_PNL
+			--Dengan Mengambil data dari NAV
+			IF @AdaData = 0
+				BEGIN
+					DECLARE @TglFrom DATETIME = CAST('01/01/'+CONVERT(NVARCHAR(4),@cntYear) AS DATETIME);
+					DECLARE @TglUpto DATETIME = CAST('01/01/'+CONVERT(NVARCHAR(4),(@cntYear+1)) AS DATETIME) - 1;
+					--
+					IF @cntYear < 2022  
+					BEGIN
+						EXEC [P_INSERT_T13_PNL_FOR_NERACA_2021] @cntYear, @TglFrom, @TglUpto, @UserId
+					END;
+					--
+					IF @cntYear >= 2022  
+					BEGIN
+						EXEC [P_INSERT_T13_PNL_FOR_NERACA_2022] @cntYear, @TglFrom, @TglUpto, @UserId
+					END;
+					--
+				END;
+			-- Pindahkan ke Tabel TEMP09_SALES_COGS_PNL
+			INSERT INTO [dbo].[TEMP09_SALES_COGS_PNL]
+						([TAHUN]
+						,[COMPANY]
+						,[JENIS_AMOUNT]
+						,[AMOUNT]
+						,[PROSES_ID])
+			SELECT	XX.TAHUN
+					,XX.COMPANY
+					,XX.JENIS_AMOUNT
+					,XX.AMOUNT
+					,@ProsesId AS PROSES_ID
+			FROM	(
+						SELECT	X.TAHUN	
+								,X.COMPANY
+								,X.JENIS_AMOUNT
+								,SUM(X.AMOUNT) AS AMOUNT
+						FROM	(
+									SELECT TAHUN	
+											,COMPANY
+											,ITEM_CAT
+											,TITLE
+											,GRP AS JENIS_AMOUNT
+											,ROUND(SUM(AMOUNT) / @Pembagi ,0) AS AMOUNT
+									FROM [dbo].[T13_SALES_COGS_PNL]
+									WHERE TAHUN = @cntYear AND 
+											(BRANCHES = @Cabang OR @Cabang = 'ALL')
+									GROUP BY TAHUN, COMPANY, ITEM_CAT, GRP, TITLE
+								) X
+						GROUP BY X.TAHUN	
+								,X.COMPANY
+								,X.JENIS_AMOUNT
+						UNION ALL
+						SELECT TAHUN	
+								,COMPANY
+								,'Hutang Intercoy' AS JENIS_AMOUNT
+								,ROUND(SUM(AMOUNT) / @Pembagi ,0) AS AMOUNT
+						FROM [dbo].[T13_SALES_COGS_PNL]
+						WHERE	TAHUN = @cntYear AND
+								(BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+								GRP = 'Koreksi Intercoy COGS' AND
+								TITLE = '(-/+) Others Management Adjustment'	
+						GROUP BY TAHUN, COMPANY
+					) XX ;
+			--
+			SET @cntYear = @cntYear + 1;
+		END;
+		--
+		-- Sisa Ambil data Satu Tahun dari NAV langsung
+		DECLARE @cntYearRemaining INT = @YearPeriodeMaxCanGet + 1;	
+		--
+		WHILE @cntYearRemaining < @YearPeriode
+		BEGIN
+			DECLARE @TglFromRemaining DATETIME = CAST('01/01/'+CONVERT(NVARCHAR(4),@cntYearRemaining) AS DATETIME);
+			DECLARE @TglUptoRemaining DATETIME = CAST('01/01/'+CONVERT(NVARCHAR(4),(@cntYearRemaining+1)) AS DATETIME) - 1;
+			--
+			IF @cntYearRemaining < 2022  
+			BEGIN
+				EXEC [P_INSERT_TEMP09_PNL_FOR_NERACA_2021] @ProsesId, @cntYearRemaining, @TglFromRemaining, @TglUptoRemaining, @Cabang, @Pembagi
+			END;
+			--
+			IF @cntYearRemaining >= 2022  
+			BEGIN
+				EXEC [P_INSERT_TEMP09_PNL_FOR_NERACA_2022] @ProsesId, @cntYearRemaining, @TglFromRemaining, @TglUptoRemaining, @Cabang, @Pembagi
+			END;
+			--
+			SET @cntYearRemaining = @cntYearRemaining + 1;
+		END;
+		--
+		-- Masukan data untuk Tahun Periode parameter dari NAV langsung
+		DECLARE @TglFromPeriodParam DATETIME = CAST('01/01/'+CONVERT(NVARCHAR(4),@YearPeriode) AS DATETIME);
+		DECLARE @TglUptoPeriodParam DATETIME = DATEADD(MONTH, 1 , CAST(CONVERT(NVARCHAR(2),@MonthPeriode)+'/01/'+CONVERT(NVARCHAR(4),@YearPeriode) AS DATETIME)) - 1;
+		--
+		IF @YearPeriode < 2022  
+		BEGIN
+			EXEC [P_INSERT_TEMP09_PNL_FOR_NERACA_2021] @ProsesId, @YearPeriode, @TglFromPeriodParam, @TglUptoPeriodParam, @Cabang, @Pembagi
+		END;
+		--
+		IF @YearPeriode >= 2022  
+		BEGIN
+			EXEC [P_INSERT_TEMP09_PNL_FOR_NERACA_2022] @ProsesId, @YearPeriode, @TglFromPeriodParam, @TglUptoPeriodParam, @Cabang, @Pembagi
+		END;
+		--
+		--INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'INPUT DATA PNL UNTUK NERACA BERHASIL', GETDATE());
+		RETURN  ;
+	END;
+	--
+	--
+	IF @Action = 'DELETE' 
+	BEGIN
+		DELETE FROM [dbo].[TEMP09_SALES_COGS_PNL]
+		WHERE [PROSES_ID] = @ProsesId;
+		--
+		--INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'DELETE DATA PNL UNTUK NERACA BERHASIL', GETDATE());
+		RETURN  ;
+	END;
+END;
+
+

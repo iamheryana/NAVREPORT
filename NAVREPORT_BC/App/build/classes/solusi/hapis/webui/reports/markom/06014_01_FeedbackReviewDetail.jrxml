@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06014_01_FeedbackReviewDetail" language="groovy" pageWidth="2375" pageHeight="590" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2375" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.6105100000000898"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="T05Id" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="RegisteredEmail" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="QstId" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Sesi" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	ROW_NUMBER() OVER (PARTITION BY XXX.ANSWER ORDER BY XXX.ANSWER,XXX.STATUS_CONFIRM,XXX.ACS_AREA ) AS NO_URUT
+		, XXX.STATUS_CONFIRM
+		, XXX.WAKTU_ISI
+		, XXX.NAMA_LENGKAP
+		, XXX.EMAIL
+		, XXX.JABATAN
+		, XXX.KOTA
+		, XXX.ACS_AREA
+		, XXX.NAMA_PERUSAHAAN
+		, XXX.NO_HP
+		, XXX.GOPAY_NO
+		, XXX.FOKUS_INDUSTRI
+		, XXX.INVITED_BY
+		, XXX.ANSWER
+FROM	(
+SELECT	CASE WHEN T08.REGISTERED_ON_ATTANDEE = 1 THEN 'Confirmed' ELSE 'To be Confirmed' END STATUS_CONFIRM
+		, T08.WAKTU_ISI
+		, T08.FIRST_NAME + ' ' + T08.LAST_NAME AS NAMA_LENGKAP
+		, T08.EMAIL
+		, T08.JABATAN
+		, T06.[STATE_PROVINCE] AS KOTA
+		,  ISNULL(T10.AREA, 'UNDEFINED') AS ACS_AREA
+		, T08.NAMA_PERUSAHAAN
+		, CASE WHEN SUBSTRING(ISNULL(T06.PHONE, '0'),1,1) IN ('-','''','0','+','6') THEN ISNULL(T06.PHONE, '') ELSE '0'+T06.PHONE END AS NO_HP
+		, CASE WHEN SUBSTRING(ISNULL(T08.GOPAY_NO, '0'),1,1) IN ('-','''','0','+','6') THEN ISNULL(T08.GOPAY_NO, '') ELSE '0'+T08.GOPAY_NO END AS GOPAY_NO
+		, T08.FOKUS_INDUSTRI
+		, T08.INVITED_BY
+		, T09.ANSWER
+FROM [dbo].[T07_FEEDBACK_QST] T07
+INNER JOIN [dbo].[T09_FEEDBACK_ANS] T09 ON T09.T07_ID = T07.T07_ID
+INNER JOIN [dbo].[T08_FEEDBACK_PERSON] T08 ON T08.T08_ID = T09.T08_ID
+LEFT JOIN [dbo].[T06_WEBINAR_ATTENDEE] T06 ON T06.T05_ID = T08.T05_ID AND T06.EMAIL_CORPORATE = T08.EMAIL
+LEFT JOIN [dbo].[T10_AREA_MAPPING] T10 ON T10.KOTA = T06.[STATE_PROVINCE]
+INNER JOIN [dbo].[T05_WEBINAR_EVENT] T05 ON T05.T05_ID = T07.T05_ID
+WHERE	T07.T05_ID = $P{T05Id}
+		AND T07.T07_ID = $P{QstId}
+		AND (T08.REGISTERED_ON_ATTANDEE = $P{RegisteredEmail} OR $P{RegisteredEmail}=8)
+UNION ALL
+SELECT	'Confirmed' AS STATUS_CONFIRM
+		, T11.WAKTU_ISI
+		, T11.NAMA_LENGKAP
+		, T11.EMAIL
+		, T06.JOB_TITLE AS JABATAN
+		, T06.STATE_PROVINCE AS KOTA
+		,  ISNULL(T10.AREA, 'UNDEFINED') AS ACS_AREA
+		, T06.ORGANIZATION AS NAMA_PERUSAHAAN
+		, CASE WHEN SUBSTRING(ISNULL(T06.PHONE, '0'),1,1) IN ('-','''','0','+','6') THEN ISNULL(T06.PHONE, '') ELSE '0'+T06.PHONE END AS NO_HP
+		, CASE WHEN SUBSTRING(ISNULL(T06.NOMOR_GOPAY_OVO, '0'),1,1) IN ('-','''','0','+','6') THEN ISNULL(T06.NOMOR_GOPAY_OVO, '') ELSE '0'+T06.NOMOR_GOPAY_OVO END AS GOPAY_NO
+		, T06.INDUSTRY AS FOKUS_INDUSTRI
+		, '' AS INVITED_BY
+		,	CASE	WHEN QST.QST = 1 THEN T11.ANS_01
+					WHEN QST.QST = 2 THEN T11.ANS_02
+					WHEN QST.QST = 3 THEN T11.ANS_03
+					WHEN QST.QST = 4 THEN T11.ANS_04
+					WHEN QST.QST = 5 THEN T11.ANS_05
+					WHEN QST.QST = 6 THEN T11.ANS_06
+					WHEN QST.QST = 7 THEN T11.ANS_07
+					WHEN QST.QST = 8 THEN T11.ANS_08
+					WHEN QST.QST = 9 THEN T11.ANS_09
+					WHEN QST.QST = 10 THEN T11.ANS_10
+					WHEN QST.QST = 11 THEN T11.ANS_11
+					WHEN QST.QST = 12 THEN T11.ANS_12
+					WHEN QST.QST = 13 THEN T11.ANS_13
+					WHEN QST.QST = 14 THEN T11.ANS_14
+					WHEN QST.QST = 15 THEN T11.ANS_15
+					ELSE NULL END AS ANSWER
+FROM [dbo].[T11_WEBINAR_POLLING] T11
+INNER JOIN	(
+				SELECT $P{QstId} AS QST
+			) QST ON 1=1
+INNER JOIN [dbo].[T05_WEBINAR_EVENT] T05 ON T05.T05_ID = T11.T05_ID
+LEFT JOIN [dbo].[T06_WEBINAR_ATTENDEE] T06 ON T06.T05_ID = T11.T05_ID AND T06.EMAIL = T11.EMAIL
+LEFT JOIN [dbo].[T10_AREA_MAPPING] T10 ON T10.KOTA = T06.[STATE_PROVINCE]
+WHERE	T11.SESI = $P{Sesi}
+		AND T05.T05_ID = $P{T05Id}
+		AND ($P{RegisteredEmail}=1 OR $P{RegisteredEmail}=8)
+		) XXX]]>
+	</queryString>
+	<field name="NO_URUT" class="java.lang.Long"/>
+	<field name="STATUS_CONFIRM" class="java.lang.String"/>
+	<field name="WAKTU_ISI" class="java.sql.Timestamp"/>
+	<field name="NAMA_LENGKAP" class="java.lang.String"/>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="JABATAN" class="java.lang.String"/>
+	<field name="KOTA" class="java.lang.String"/>
+	<field name="ACS_AREA" class="java.lang.String"/>
+	<field name="NAMA_PERUSAHAAN" class="java.lang.String"/>
+	<field name="NO_HP" class="java.lang.String"/>
+	<field name="GOPAY_NO" class="java.lang.String"/>
+	<field name="FOKUS_INDUSTRI" class="java.lang.String"/>
+	<field name="INVITED_BY" class="java.lang.String"/>
+	<field name="ANSWER" class="java.lang.String"/>
+	<sortField name="ANSWER"/>
+	<sortField name="STATUS_CONFIRM"/>
+	<sortField name="ACS_AREA"/>
+	<sortField name="NO_URUT"/>
+	<group name="Answer">
+		<groupExpression><![CDATA[$F{ANSWER}]]></groupExpression>
+		<groupHeader>
+			<band height="42">
+				<staticText>
+					<reportElement x="25" y="28" width="100" height="14" uuid="58c40cbd-3d7a-4055-a313-09f113c374c6"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Status]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="125" y="28" width="100" height="14" uuid="e8c98bb8-3ee0-40ba-b075-aa0f3160b9fb"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Time]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="28" width="300" height="14" uuid="85b3e76d-a2ec-46d0-ace6-2d3b05b0ef2b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Full Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="525" y="28" width="250" height="14" uuid="9003886a-80e6-4ccd-a171-f332ccb0559b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Job Title]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="775" y="28" width="250" height="14" uuid="75696828-d344-48a6-ae10-5c45757e043c"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Company Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1025" y="28" width="200" height="14" uuid="4fdda756-8cb6-4e9e-a038-cf2c321603aa"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Email Address]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1225" y="28" width="150" height="14" uuid="6c7a810d-7111-43e4-bf74-7bdf4a3915e2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[WhatsApp No]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1375" y="28" width="150" height="14" uuid="b30425cd-7100-4369-aa0d-759194169141"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Gopay No]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1525" y="28" width="250" height="14" uuid="1e6170af-7814-4b9a-a7de-9c64ca39338e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Fokus Industri]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1775" y="28" width="200" height="14" uuid="089b8c1a-8dfe-4a4f-b528-91d536d086db"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Invited By (ACS Sales Name)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1975" y="28" width="250" height="14" uuid="da2eb8c0-fb2c-47f9-a601-ffb1230a2239"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[City]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="2225" y="28" width="150" height="14" uuid="dcfd0c66-1b45-44eb-a050-68ab72c4299e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Area]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="0" y="0" width="525" height="14" uuid="b9eccd83-f029-41c8-9502-d71144b5b81e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ANSWER}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="25" y="14" width="100" height="14" uuid="70b37bdd-5f3d-411c-8268-36a14fcc89c9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="25" height="14" uuid="9c97fdf7-9eb4-40dd-9a94-c380483f255e"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="25" height="14" uuid="52dcadc1-88b7-403c-8878-4b09685c5f49"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<staticText>
+					<reportElement x="25" y="0" width="100" height="14" uuid="d0f116f2-72e0-433e-880b-c68c74f14bb4"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="14" width="100" height="14" uuid="393cadb1-7013-428c-be3a-efa17450a071"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="7d383acc-6992-4abc-9c00-215bfd38de37"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="25" height="14" uuid="784d941d-8fb3-4ce9-9c87-d824d1713f41"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<detail>
+		<band height="14">
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy HH:mm:ss" isBlankWhenNull="true">
+				<reportElement x="125" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="ad6e1ee3-2334-4081-9635-9d8613b1c264"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{WAKTU_ISI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="775" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="7a57aadc-ea06-4199-9b6b-5a733c6c3935"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PERUSAHAAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="38e2146c-cc1d-41dc-8cce-eab5d05ec7dc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JABATAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1025" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="d6624bee-f90f-409f-ad09-87975a0fc4b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1225" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="5a3032fd-0f59-487f-8632-e52cd3994ad6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_HP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1525" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="c36bbccb-6db5-4dec-abba-8425dba92027"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{FOKUS_INDUSTRI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1375" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="d7c30ad8-503f-4882-9dfd-f220e83b53ab"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{GOPAY_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="776b0c70-ee26-4fee-835d-8e46db15ae16"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_LENGKAP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1775" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="803d6911-ce65-4a05-8739-fb4896416266"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INVITED_BY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1975" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="26f51db0-bd49-49a6-af6e-ed5fda8f8147"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KOTA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="2225" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="9874eb95-2fe8-4a62-8d24-fa6749d0e2a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACS_AREA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="25" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="396e25f6-e9c0-4e0d-a752-36d41fb9a692"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{STATUS_CONFIRM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="25" height="14" isPrintWhenDetailOverflows="true" uuid="9834fa5c-4201-4b47-9c30-6d305e2bd9fc"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_URUT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="14"/>
+	</noData>
+</jasperReport>

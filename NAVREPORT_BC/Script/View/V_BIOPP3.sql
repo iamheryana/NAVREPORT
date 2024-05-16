@@ -1,0 +1,21 @@
+CREATE VIEW V_BIOPP3 AS
+SELECT
+M15.NIP,M15.Nama,M15.NamaKecil,M15.Status,M15.JnsKlmn,M15.AnakTtgg,
+M15.TglLahir,M15.TempatLahir,M15.Tingkatan,
+M15.KdArea,M01.Keterangan KetArea,M15.KdCaba,M08.NmCaba KetCaba,
+M15.KdUUsa,M02.Keterangan KetUUsa,M15.KdUKer,M17.Keterangan KetUker,
+M15.KdGlng,M12.Keterangan KetGlng,M15.KdKJab,M06.Keterangan KetKJab,
+M15.KdJaba,M04.Keterangan KetJaba,M15.KdKlas,M10.Keterangan KetKlas,
+S07.Tanggal,S07.SkJnsD,S07.SkJrsn,S07.SkLmbD,S07.SkLksD,S07.BulanTrng,
+S07.HariTrng,S07.Hasil,S07.Nilai,M15.TglMasuk,M15.Tglkeluar
+FROM M15PEGA M15
+
+JOIN M01AREA M01 ON M15.KdArea=M01.Kode
+JOIN M08HCAB M08 ON M15.KdCaba=M08.KdCaba
+JOIN M02UUSA M02 ON M15.KdUUsa=M02.Kode
+JOIN M17UKER M17 ON M15.KdUKer=M17.KdUker
+JOIN M12HGOL M12 ON M15.KdGlng=M12.Kode
+JOIN M04HJAB M04 ON M15.KdJaba=M04.Kode
+JOIN M06HKJB M06 ON M15.KdKJab=M06.Kode
+JOIN M10KLAS M10 ON M15.KdKlas=M10.Kode
+JOIN S07TRNG S07 ON M15.NIP=S07.NIP

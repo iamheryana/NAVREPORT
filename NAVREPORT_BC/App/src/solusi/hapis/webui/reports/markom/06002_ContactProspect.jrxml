@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06002_ContactProspect" language="groovy" pageWidth="2250" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2210" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="0.8264462809917767"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Sales" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Channel" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Campaign" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TipeProspect" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="tglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="tglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	CON.[No_]
+		,COM.COMMUNICATION_DATE
+		,CASE	WHEN COM.CHANNEL = 'T' THEN 'TELPON'
+				WHEN COM.CHANNEL = 'E' THEN 'EMAIL'
+				WHEN COM.CHANNEL = 'C' THEN 'CHAT (ZOPIM / WA)'
+				WHEN COM.CHANNEL = 'F' THEN 'FEED BACK FORM (EVENT - CUSTOMER GATHERING - CUSTOMER SATISFACTION)'
+				WHEN COM.CHANNEL = 'M' THEN 'MEDSOS'
+				ELSE ''
+		 END AS CHANNEL
+		,CASE	WHEN COM.CAMPAIGN = 'B' THEN 'BULETIN'
+				WHEN COM.CAMPAIGN = 'W' THEN 'WEBSITE'
+				WHEN COM.CAMPAIGN = 'E' THEN 'EVENT'
+				WHEN COM.CAMPAIGN = 'D' THEN 'DETIK.COM'
+				WHEN COM.CAMPAIGN = 'M' THEN 'MAJALAH (INFO KOMPUTER / LOGISTIK)'
+				WHEN COM.CAMPAIGN = 'S' THEN 'MEDIA SOSIAL'
+				WHEN COM.CAMPAIGN = 'R' THEN 'REFERENSI TEMAN / ORANG LAIN'
+				WHEN COM.CAMPAIGN = 'G' THEN 'GOOGLE SEARCH / SEO'
+				WHEN COM.CAMPAIGN = 'O' THEN 'OTHERS (LAIN2)'
+				ELSE ''
+		 END AS CAMPAIGN
+		,CON.[Search Name] AS COMPANY_NAME
+		,CASE	WHEN COM.TIPE_PROSPEK = 'E' THEN 'END USER'
+				WHEN COM.TIPE_PROSPEK = 'R' THEN 'RESELLER'
+				ELSE ''
+		 END AS TIPE_PROSPEK
+		,CON.[Job Title] AS POSITION
+		,(RTRIM(RTRIM(RTRIM(CON.[First Name])+' '+RTRIM(CON.[Middle Name]))+' ' +RTRIM(CON.[Surname]))) AS NAME
+		,CON.[Mobile Phone No_] AS HP
+		,CON.[Phone No_] AS PHONE
+		,CON.[Fax No_] AS FAX
+		,CON.[E-Mail] AS EMAIL
+		,COM.KETERANGAN
+		,CON.[Salesperson Code] AS SALES_INITIAL
+		,SLS.[Name] AS SALES_NAME
+FROM [dbo].[BC_AUTOJAYA$Contact] CON
+LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = CON.[Salesperson Code]
+INNER JOIN	(
+				SELECT	X.[No_] AS NO_CONTACT
+						, X.[Date] AS COMMUNICATION_DATE
+						, SUBSTRING(X.[Code],1,1) AS CHANNEL
+						, SUBSTRING(X.[Code],2,1) AS CAMPAIGN
+						, SUBSTRING(X.[Code],7,1) AS TIPE_PROSPEK
+						, MAX(X.KETERANGAN) AS KETERANGAN
+				FROM	(
+							SELECT  MCL.[No_]
+									,MCL.[Date]
+									,MCL.[Code]
+									,(
+										SELECT CL.[Comment] + ' ' as 'data()'
+										FROM [dbo].[BC_AUTOJAYA$Rlshp_ Mgt_ Comment Line] CL
+										WHERE	CL.[Table Name] = MCL.[Table Name] AND
+												CL.[No_] = MCL.[No_] AND
+												CL.[Date] = MCL.[Date] AND
+												CL.[Code] = MCL.[Code]
+										for xml path('')
+									 ) AS KETERANGAN
+							FROM [dbo].[BC_AUTOJAYA$Rlshp_ Mgt_ Comment Line] MCL
+						) X
+				GROUP BY  X.[No_], X.[Date], X.[Code]
+			) COM ON COM.NO_CONTACT = CON.[No_]
+WHERE
+		(
+			(CON.[Salesperson Code] = $P{Sales}) OR
+			($P{Sales} = 'ALL') OR
+			($P{Sales} = 'ACTIVE' AND CON.[Salesperson Code] IN (
+																	SELECT	DISTINCT M06.SLS_OR_CAB COLLATE Latin1_General_CI_AS AS SALES
+																	FROM	[dbo].[M06_TARGET_PIPELINE] M06
+																	WHERE	(M06.TAHUN = DATEPART(YEAR, GETDATE()) OR M06.TAHUN = DATEPART(YEAR, GETDATE()) - 1)  AND
+																			M06.JENIS = 'SALES' AND
+																			M06.[STATUS] =  'ACTIVE'
+																	) )
+		) AND
+		(COM.CHANNEL = $P{Channel} OR $P{Channel} = 'ALL') AND
+		(COM.CAMPAIGN = $P{Campaign} OR $P{Campaign} = 'ALL') AND
+		(COM.TIPE_PROSPEK = $P{TipeProspect} OR $P{TipeProspect} = 'ALL') AND
+		(COM.COMMUNICATION_DATE >= $P{tglFrom} AND COM.COMMUNICATION_DATE <= $P{tglUpto})]]>
+	</queryString>
+	<field name="No_" class="java.lang.String"/>
+	<field name="COMMUNICATION_DATE" class="java.sql.Timestamp"/>
+	<field name="CHANNEL" class="java.lang.String"/>
+	<field name="CAMPAIGN" class="java.lang.String"/>
+	<field name="COMPANY_NAME" class="java.lang.String"/>
+	<field name="TIPE_PROSPEK" class="java.lang.String"/>
+	<field name="POSITION" class="java.lang.String"/>
+	<field name="NAME" class="java.lang.String"/>
+	<field name="HP" class="java.lang.String"/>
+	<field name="PHONE" class="java.lang.String"/>
+	<field name="FAX" class="java.lang.String"/>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="SALES_INITIAL" class="java.lang.String"/>
+	<field name="SALES_NAME" class="java.lang.String"/>
+	<sortField name="COMMUNICATION_DATE"/>
+	<sortField name="COMPANY_NAME"/>
+	<variable name="vChannel" class="java.lang.String">
+		<variableExpression><![CDATA[$P{Channel}.equals( "T" ) ? "TELPON" : (
+$P{Channel}.equals( "E" ) ? "EMAIL" : (
+$P{Channel}.equals( "C" ) ? "CHAT (ZOPIM / WA)" : (
+$P{Channel}.equals( "F" ) ? "FEED BACK FORM (EVENT - CUSTOMER GATHERING - CUSTOMER SATISFACTION)" : (
+$P{Channel}.equals( "M" ) ? "MEDSOS" : "ALL"
+))))]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{Channel}.equals( "T" ) ? "TELPON" : ( $P{Channel}.equals( "E" ) ? "EMAIL" : ( $P{Channel}.equals( "C" ) ? "CHAT (ZOPIM / WA)" : ( $P{Channel}.equals( "F" ) ? "FEED BACK FORM (EVENT - CUSTOMER GATHERING - CUSTOMER SATISFACTION)" : ( $P{Channel}.equals( "M" ) ? "MEDSOS" : "ALL" ))))]]></initialValueExpression>
+	</variable>
+	<variable name="vCampaign" class="java.lang.String">
+		<variableExpression><![CDATA[$P{Campaign}.equals( "B" ) ? "BULETIN" : (
+$P{Campaign}.equals( "W" ) ? "WEBSITE" : (
+$P{Campaign}.equals( "E" ) ? "EVENT" : (
+$P{Campaign}.equals( "D" ) ? "DETIK.COM" : (
+$P{Campaign}.equals( "M" ) ? "MAJALAH (INFO KOMPUTER / LOGISTIK)" : (
+$P{Campaign}.equals( "S" ) ? "MEDIA SOSIAL" : (
+$P{Campaign}.equals( "R" ) ? "REFERENSI TEMAN / ORANG LAIN" : (
+$P{Campaign}.equals( "G" ) ? "GOOGLE SEARCH / SEO" : (
+$P{Campaign}.equals( "O" ) ? "OTHERS (LAIN2)" : "ALL"
+ ))))))))]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{Campaign}.equals( "B" ) ? "BULETIN" : (
+$P{Campaign}.equals( "W" ) ? "WEBSITE" : (
+$P{Campaign}.equals( "E" ) ? "EVENT" : (
+$P{Campaign}.equals( "D" ) ? "DETIK.COM" : (
+$P{Campaign}.equals( "M" ) ? "MAJALAH (INFO KOMPUTER / LOGISTIK)" : (
+$P{Campaign}.equals( "S" ) ? "MEDIA SOSIAL" : (
+$P{Campaign}.equals( "R" ) ? "REFERENSI TEMAN / ORANG LAIN" : (
+$P{Campaign}.equals( "G" ) ? "GOOGLE SEARCH / SEO" : (
+$P{Campaign}.equals( "O" ) ? "OTHERS (LAIN2)" : "ALL"
+ ))))))))]]></initialValueExpression>
+	</variable>
+	<variable name="vTipeProspek" class="java.lang.String">
+		<variableExpression><![CDATA[$P{TipeProspect}.equals( "E" ) ? "END USER" : (
+$P{TipeProspect}.equals( "R" ) ? "RESELLER" : "ALL")]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{TipeProspect}.equals( "E" ) ? "END USER" : ( $P{TipeProspect}.equals( "R" ) ? "RESELLER" : "ALL")]]></initialValueExpression>
+	</variable>
+	<title>
+		<band height="131" splitType="Stretch">
+			<staticText>
+				<reportElement x="846" y="117" width="84" height="14" uuid="8683911b-afd5-4560-9aab-4138c8cea56b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipe Prospek]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="5" width="75" height="14" uuid="9301212c-1e53-422e-aa1c-4aab8a758a6b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(06002)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="19" width="75" height="14" uuid="beeb2344-da69-4282-b18f-473ca1264306"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="47" width="75" height="14" uuid="877d103f-dec0-405b-8b88-e7cc98c084fc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Channel :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="61" width="75" height="14" uuid="32fe1eba-2e9f-4029-be65-31220f83015c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Campaign :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="75" width="75" height="14" uuid="df59e502-60b6-467c-b229-a020409673a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipe Prospek :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="117" width="75" height="14" uuid="e8ae8381-66fd-4148-b4cc-7fa4f27a7dd3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="580" y="117" width="266" height="14" uuid="f9b8b5e2-6ff6-478e-b7aa-a6334f9a01bc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Customer Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="930" y="117" width="169" height="14" uuid="ff9c5727-e1b1-4782-a89e-bbe502d84663"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Position]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1099" y="117" width="272" height="14" uuid="8c2f9d14-2bac-4b06-bf60-e64ba9d4a5a5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PIC Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1371" y="117" width="158" height="14" uuid="1dc539c1-0e87-4955-860e-a65053c765d7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobile Phone]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1529" y="117" width="158" height="14" uuid="53d366ca-d982-44ac-aa51-c97989363e71"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Telephone]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1687" y="117" width="158" height="14" uuid="021c2bb8-2e34-46c7-86bf-dd46c53626b9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fax]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1845" y="117" width="292" height="14" uuid="3b7d2cec-2f02-4ed0-8265-8eddc7bfbbc4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Email]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="89" width="75" height="14" uuid="9c816932-43f0-4e83-b5b1-41e16e90248f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="89" width="325" height="14" uuid="56ea41d3-34e3-404a-b17f-fd4d99eeae5e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Sales}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="2137" y="117" width="30" height="14" uuid="a74ded03-633a-4eb5-954b-f5dd20f01ea9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="117" width="325" height="14" uuid="b0b73c85-5b48-45c5-95e9-bde506d20c9b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Channel]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="405" y="117" width="175" height="14" uuid="bf5a59ad-74bb-43fc-88a4-75fef5bee413"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Campaign]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="33" width="75" height="14" uuid="c5f6be28-3544-4835-b86b-7e3fc63690f3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="103" width="75" height="14" uuid="bc8f4d5d-da80-43c1-a1df-dd54a3abe1f6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="80" y="33" width="75" height="14" uuid="c652fa88-b072-4a52-8646-d8d8cd7fa09e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{tglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="180" y="33" width="225" height="14" uuid="8b964548-6be7-4acd-ac5c-fda642e18e2d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{tglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="155" y="33" width="25" height="14" uuid="837164c8-5754-4b4e-b7c6-5d8ca27fe851"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="47" width="325" height="14" uuid="4988df48-52e1-4e9a-8a01-d141d8b66ddb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vChannel}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="61" width="325" height="14" uuid="b2061c11-f10c-466d-af30-953edb75913c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vCampaign}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="75" width="325" height="14" uuid="6dd958e1-4ed8-4b5e-93ea-e5f896760df3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vTipeProspek}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="103" width="325" height="14" uuid="c3af12b2-c82a-4afd-9fc1-ab47211c3472"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="19" width="325" height="14" uuid="ad5893af-cdbf-444b-b589-39f8792db54b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="5" width="325" height="14" uuid="c081a34b-8158-46fc-a0bc-0876d1d2c05d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Daftar Contact Prospect]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="2137" y="0" width="30" height="14" isPrintWhenDetailOverflows="true" uuid="36677a75-f61a-4d60-b1cb-75762f9f6ed8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES_INITIAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="580" y="0" width="266" height="14" isPrintWhenDetailOverflows="true" uuid="325c7368-e2c1-49b3-9489-381a9d1e79db"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="930" y="0" width="169" height="14" isPrintWhenDetailOverflows="true" uuid="0ab711eb-a483-4cb4-abd0-eb6510770119"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{POSITION}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="1099" y="0" width="272" height="14" isPrintWhenDetailOverflows="true" uuid="451dbb31-7654-489f-b3af-4615043bf344"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="1371" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="e35f9cc2-6d39-4dda-9932-4b5165acdaa1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{HP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="1529" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="70d7f13e-6765-469f-a728-f453db16d54a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PHONE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="1687" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="80ec12f5-2789-4c61-bd80-88037c649b52"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{FAX}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="1845" y="0" width="292" height="14" isPrintWhenDetailOverflows="true" uuid="2afc77b9-4400-472c-8c79-fd18999e16e8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="5" y="0" width="75" height="14" uuid="f700b852-dd5c-4cba-878a-4d580bc7e771"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMMUNICATION_DATE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="0" width="325" height="14" uuid="ddba6786-a846-4617-a524-4d5ef8d11d82"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CHANNEL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="405" y="0" width="175" height="14" uuid="3409d8fa-e9f7-45c4-ae82-99eb393ea743"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CAMPAIGN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="846" y="0" width="84" height="14" uuid="87852aa9-8ee0-41aa-a23a-3d7cb9030662"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPE_PROSPEK}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="131">
+			<staticText>
+				<reportElement x="80" y="117" width="325" height="14" uuid="91bef8cf-8b3b-4229-89a8-487eedfc2de4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="47" width="75" height="14" uuid="75dcf5c4-fee7-46b9-9b6b-ff5c04ffd8a8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Channel :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="89" width="75" height="14" uuid="fc3f3b64-6f18-423c-9108-bf05036937d5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="80" y="33" width="75" height="14" uuid="1053ba14-b07a-4692-82d8-28a5644fc6e4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{tglFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="89" width="325" height="14" uuid="b2015bc7-292b-41e9-ae2d-c83579e65c2e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Sales}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="19" width="325" height="14" uuid="87887940-6e3c-40c1-8309-853a5886c2ef"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="75" width="325" height="14" uuid="c2b1b31d-982a-4bb4-a3c6-6ea4dca52066"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vTipeProspek}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="19" width="75" height="14" uuid="f77ffda3-1681-410d-b6e1-00df186f72d5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="33" width="75" height="14" uuid="dcc1f2d2-5235-4c3a-b328-6a4c2de39848"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="75" width="75" height="14" uuid="be7a8c95-4add-4242-bd03-1a378b65dfd2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tipe Prospek :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="5" width="325" height="14" uuid="db78848f-7161-415c-8cca-b468cc1bb6ba"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Daftar Contact Prospect]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="61" width="75" height="14" uuid="881cd434-f1bb-4e86-b060-36581f46f94a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Campaign :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="103" width="325" height="14" uuid="874d617f-bff0-44a5-a4b7-944c7a5a620a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="61" width="325" height="14" uuid="fcbe6426-d6e7-4748-8578-74103274624c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vCampaign}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="5" width="75" height="14" uuid="1caa5c1e-77f9-43b8-9308-2b3db6c02a00"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(06002)]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="180" y="33" width="225" height="14" uuid="bba000bc-f0a0-44d0-ae49-238bae25d1e2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{tglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="155" y="33" width="25" height="14" uuid="88ad1fa0-4c76-4bed-83cf-17c873626634"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="103" width="75" height="14" uuid="3dd604c6-955b-4f6e-8ed4-d3ea03dec3bc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="47" width="325" height="14" uuid="67eb2a9c-3c33-4c0d-bb7b-520effc0106d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vChannel}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="117" width="75" height="14" uuid="f27ed231-23ad-4671-9d2c-0da22edfa013"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+ 	
+ 	<!-- ====================================================== -->
+    <!--                 LOAD mail.properties					-->
+    <!-- ====================================================== -->
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:mail.properties</value>
+		</property>
+	</bean>
+    <!-- ====================================================== -->
+    <!--                 HIBERNATE SESSIONFACTORY               -->
+    <!-- ====================================================== -->
+    <bean id="sessionFactory"
+          class="org.springframework.orm.hibernate3.LocalSessionFactoryBean"
+          name="sessionFactory">
+         <property name="entityInterceptor">
+			<bean class="solusi.hapis.backend.bean.AuditTrailInterceptor" />
+		</property>
+        <property name="dataSource" ref="dataSource"/>
+        <property name="hibernateProperties" ref="hibernateProperties"/>
+        <property name="mappingResources">
+            <list>
+                <value>solusi/hapis/backend/model/CountryCode.hbm.xml</value>
+                <value>solusi/hapis/backend/model/Ip4Country.hbm.xml</value>
+                <value>solusi/hapis/backend/model/IpToCountry.hbm.xml</value>
+                <value>solusi/hapis/backend/model/Ip2Country.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecGroup.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecUser.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecRole.hbm.xml</value>
+                <value>solusi/hapis/backend/model/IpcIp2country.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecUserrole.hbm.xml</value>
+                <value>solusi/hapis/backend/model/Auftrag.hbm.xml</value>
+                <value>solusi/hapis/backend/model/Kunde.hbm.xml</value>
+                <value>solusi/hapis/backend/model/HibernateEntityStatistics.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecGroupright.hbm.xml</value>
+                <value>solusi/hapis/backend/model/Filiale.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SysCountrycode.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecRight.hbm.xml</value>
+                <value>solusi/hapis/backend/model/Auftragposition.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecLoginlog.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SysIp4country.hbm.xml</value>
+                <value>solusi/hapis/backend/model/LogIp2country.hbm.xml</value>
+                <value>solusi/hapis/backend/model/HibernateStatistics.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecRolegroup.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecParam.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecLog.hbm.xml</value>
+                <value>solusi/hapis/backend/model/SecRoleright.hbm.xml</value>
+
+				<value>solusi/hapis/backend/tabel/model/T01managementadj.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/T02rekapcosting.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/T03salesperson.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/T04paramKomisi.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/T05periodecosting.hbm.xml</value>				
+				<value>solusi/hapis/backend/tabel/model/T06rekapkomisisatindo.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/T07itemsatindo.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/T08targetsales.hbm.xml</value>
+				
+				<value>solusi/hapis/backend/tabel/model/Tmp01rebate.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/Tmp02kertaskerja.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/Tmp03hasilopname.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/Tmp04efaktur.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/Tmp05navfaktur.hbm.xml</value>
+				<value>solusi/hapis/backend/tabel/model/Tmp06invoicelunas.hbm.xml</value>
+				
+				<value>solusi/hapis/backend/tabel/model/Tmp07invoicesatindo.hbm.xml</value>
+				
+            </list>
+        </property>
+    </bean>
+
+    <!-- ====================================================== -->
+    <!--                    Hibernate Template                  -->
+    <!-- ====================================================== -->
+    <bean id="hibernateTemplate" class="org.springframework.orm.hibernate3.HibernateTemplate">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="maxResults" value="3000"/>
+    </bean>
+
+    <!-- ====================================================== -->
+    <!--   Search class from Hibernate-Generic-DAO framework    -->
+    <!-- ====================================================== -->
+    <bean id="hibernateSearchSupport"
+          class="solusi.hapis.backend.security.dao.impl.HibernateSearchSupportImpl">
+        <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="hibernateSearchProcessor">
+            <bean class="com.trg.search.hibernate.HibernateSearchProcessor"
+                  factory-method="getInstanceForSessionFactory">
+                <constructor-arg ref="sessionFactory"/>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- ====================================================== -->
+    <!--                        Base bean                       -->
+    <!-- ====================================================== -->
+    <bean id="basisDAO" abstract="true" p:hibernateTemplate-ref="hibernateTemplate" class="solusi.hapis.backend.security.dao.impl.BasisDAO"/>
+
+    <!-- ====================================================== -->
+    <!--                        DAO beans                       -->
+    <!-- ====================================================== -->
+
+    <bean id="userDAO" class="solusi.hapis.backend.security.dao.impl.UserDAOImpl" parent="basisDAO"/>
+    <bean id="secGroupDAO" class="solusi.hapis.backend.security.dao.impl.SecGroupDAOImpl" parent="basisDAO"/>
+    <bean id="secGrouprightDAO" class="solusi.hapis.backend.security.dao.impl.SecGrouprightDAOImpl" parent="basisDAO"/>
+    <bean id="secRightDAO" class="solusi.hapis.backend.security.dao.impl.SecRightDAOImpl" parent="basisDAO"/>
+    <bean id="secRoleDAO" class="solusi.hapis.backend.security.dao.impl.SecRoleDAOImpl" parent="basisDAO"/>
+    <bean id="secRolegroupDAO" class="solusi.hapis.backend.security.dao.impl.SecRolegroupDAOImpl" parent="basisDAO"/>
+    <bean id="secUserroleDAO" class="solusi.hapis.backend.security.dao.impl.SecUserroleDAOImpl" parent="basisDAO"/>
+    <bean id="secTypDAO" class="solusi.hapis.backend.security.dao.impl.SecTypDAOImpl"/>
+    <bean id="secLoginlogDAO" class="solusi.hapis.backend.security.dao.impl.SecLoginlogDAOImpl" parent="basisDAO"/>
+    <bean id="secParamDAO" class="solusi.hapis.backend.security.dao.impl.SecParamDAOImpl" parent="basisDAO"/>
+    <bean id="secLogDAO" class="solusi.hapis.backend.security.dao.impl.SecLogDAOImpl" parent="basisDAO"/>
+    <bean id="secRolerightDAO" class="solusi.hapis.backend.security.dao.impl.SecRolerightDAOImpl" parent="basisDAO"/>
+   
+    <bean id="languageDAO" class="solusi.hapis.backend.security.dao.impl.LanguageDAOImpl"/>
+    <bean id="ipToCountryDAO" class="solusi.hapis.backend.security.dao.impl.IpToCountryDAOImpl" parent="basisDAO"/>
+    <bean id="ip2CountryDAO" class="solusi.hapis.backend.security.dao.impl.Ip2CountryDAOImpl" parent="basisDAO"/>
+    <bean id="ip4CountryDAO" class="solusi.hapis.backend.security.dao.impl.Ip4CountryDAOImpl" parent="basisDAO"/>
+    <bean id="countryCodeDAO" class="solusi.hapis.backend.security.dao.impl.CountryCodeDAOImpl" parent="basisDAO"/>
+    <bean id="hibernateStatisticsDao" class="solusi.hapis.backend.security.dao.impl.HibernateStatisticsDaoImpl" parent="basisDAO"/>
+    <bean id="hibernateEntityStatisticsDao" class="solusi.hapis.backend.security.dao.impl.HibernateEntityStatisticsDaoImpl"
+          parent="basisDAO"/>
+          
+  
+  
+  	 <bean id="selectQueryNavReportDAO" class="solusi.hapis.backend.parameter.dao.impl.SelectQueryNavReportDAOImpl"
+    		parent="basisDAO"/>  
+          
+          
+    <bean id="t01managementadjDAO" class="solusi.hapis.backend.tabel.dao.impl.T01managementadjDAOImpl"
+          parent="basisDAO"/>
+    <bean id="t02rekapcostingDAO" class="solusi.hapis.backend.tabel.dao.impl.T02rekapcostingDAOImpl"
+          parent="basisDAO"/>
+    <bean id="t03salespersonDAO" class="solusi.hapis.backend.tabel.dao.impl.T03salespersonDAOImpl"
+          parent="basisDAO"/>
+    <bean id="t04paramKomisiDAO" class="solusi.hapis.backend.tabel.dao.impl.T04paramKomisiDAOImpl"
+          parent="basisDAO"/>
+    <bean id="t05periodecostingDAO" class="solusi.hapis.backend.tabel.dao.impl.T05periodecostingDAOImpl"
+          parent="basisDAO"/>
+    <bean id="t06rekapkomisisatindoDAO" class="solusi.hapis.backend.tabel.dao.impl.T06rekapkomisisatindoDAOImpl"
+          parent="basisDAO"/>
+    <bean id="t07itemsatindoDAO" class="solusi.hapis.backend.tabel.dao.impl.T07itemsatindoDAOImpl"
+          parent="basisDAO"/>
+     <bean id="t08targetsalesDAO" class="solusi.hapis.backend.tabel.dao.impl.T08targetsalesDAOImpl"
+          parent="basisDAO"/>
+          
+    <bean id="tmp01rebateDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp01rebateDAOImpl"
+          parent="basisDAO"/>   
+    <bean id="tmp02kertaskerjaDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp02kertaskerjaDAOImpl"
+          parent="basisDAO"/>   
+    <bean id="tmp03hasilopnameDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp03hasilopnameDAOImpl"
+          parent="basisDAO"/>   
+	<bean id="tmp04efakturDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp04efakturDAOImpl"
+          parent="basisDAO"/>   
+    <bean id="tmp05navfakturDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp05navfakturDAOImpl"
+          parent="basisDAO"/>
+     <bean id="tmp06invoicelunasDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp06invoicelunasDAOImpl"
+          parent="basisDAO"/>
+    <bean id="tmp07invoicesatindoDAO" class="solusi.hapis.backend.tabel.dao.impl.Tmp07invoicesatindoDAOImpl"
+          parent="basisDAO"/>
+    <!-- ====================================================== -->
+    <!--                      SERVICE beans                     -->
+    <!-- ====================================================== -->
+
+
+    <bean name="userService" class="solusi.hapis.backend.security.service.impl.UserServiceImpl">
+        <property name="userDAO" ref="userDAO"/>
+        <property name="secUserroleDAO" ref="secUserroleDAO"/>
+        <property name="secRoleDAO" ref="secRoleDAO"/>
+        <property name="secRolegroupDAO" ref="secRolegroupDAO"/>
+        <property name="secGrouprightDAO" ref="secGrouprightDAO"/>
+        <property name="secGroupDAO" ref="secGroupDAO"/>
+        <property name="languageDAO" ref="languageDAO"/>
+        <property name="secRightDAO" ref="secRightDAO"/>
+    </bean>
+    <bean name="loginService" class="solusi.hapis.backend.security.service.impl.LoginServiceImpl">
+        <property name="userDAO" ref="userDAO"/>
+    </bean>
+    <bean name="securityService" class="solusi.hapis.backend.security.service.impl.SecurityServiceImpl">
+        <property name="userDAO" ref="userDAO"/>
+        <property name="secUserroleDAO" ref="secUserroleDAO"/>
+        <property name="secRoleDAO" ref="secRoleDAO"/>
+        <property name="secRolegroupDAO" ref="secRolegroupDAO"/>
+        <property name="secGrouprightDAO" ref="secGrouprightDAO"/>
+        <property name="secGroupDAO" ref="secGroupDAO"/>
+        <property name="secRightDAO" ref="secRightDAO"/>
+        <property name="secTypDAO" ref="secTypDAO"/>
+        <property name="secParamDAO" ref="secParamDAO"/>
+        <property name="secLogDAO" ref="secLogDAO"/>
+        <property name="secRolerightDAO" ref="secRolerightDAO"/>
+    </bean>
+
+    <bean name="loginLoggingService"
+          class="solusi.hapis.backend.security.service.impl.LoginLoggingServiceImpl">
+        <property name="secLoginlogDAO" ref="secLoginlogDAO"/>
+        <property name="countryCodeDAO" ref="countryCodeDAO"/>
+        <property name="ip2CountryDAO" ref="ip2CountryDAO"/>
+    </bean>
+
+    <bean name="pagedListService"
+          class="solusi.hapis.backend.security.service.impl.PagedListServiceImpl">
+        <property name="hibernateSearchSupport" ref="hibernateSearchSupport"/>
+    </bean>
+
+
+    <bean name="ipToCountryService"
+          class="solusi.hapis.backend.security.service.impl.IpToCountryServiceImpl">
+        <property name="ipToCountryDAO" ref="ipToCountryDAO"/>
+    </bean>
+    <bean name="ip2CountryService"
+          class="solusi.hapis.backend.security.service.impl.Ip2CountryServiceImpl">
+        <property name="ip2CountryDAO" ref="ip2CountryDAO"/>
+    </bean>
+    <bean name="ip4CountryService"
+          class="solusi.hapis.backend.security.service.impl.Ip4CountryServiceImpl">
+        <property name="ip4CountryDAO" ref="ip4CountryDAO"/>
+    </bean>
+
+    <bean name="countryCodeService"
+          class="solusi.hapis.backend.security.service.impl.CountryCodeServiceImpl">
+        <property name="countryCodeDAO" ref="countryCodeDAO"/>
+    </bean>
+    
+    <bean name="hibernateStatisticsService"
+          class="solusi.hapis.backend.security.service.impl.HibernateStatisticsServiceImpl">
+        <property name="hibernateStatisticsDao" ref="hibernateStatisticsDao"/>
+    </bean>
+    
+    <bean name="commonService" class="solusi.hapis.backend.security.service.impl.CommonServiceImpl">
+
+        <property name="secGroupDAO" ref="secGroupDAO"/>
+        <property name="secGrouprightDAO" ref="secGrouprightDAO"/>
+        <property name="secRightDAO" ref="secRightDAO"/>
+        <property name="secRoleDAO" ref="secRoleDAO"/>
+        <property name="secRolegroupDAO" ref="secRolegroupDAO"/>
+        <property name="userDAO" ref="userDAO"/>
+        <property name="secUserroleDAO" ref="secUserroleDAO"/>
+        <property name="secLoginlogDAO" ref="secLoginlogDAO"/>
+
+        <property name="hibernateStatisticsDao" ref="hibernateStatisticsDao"/>
+    </bean>
+
+	<bean name="selectQueryNavReportService" class="solusi.hapis.backend.parameter.service.impl.SelectQueryNavReportServiceImpl">
+		<property name="selectQueryNavReportDAO" ref="selectQueryNavReportDAO" />
+	</bean>
+	
+	<bean name="t01managementadjService" class="solusi.hapis.backend.tabel.service.impl.T01managementadjServiceImpl">
+		<property name="t01managementadjDAO" ref="t01managementadjDAO" />
+	</bean>
+	
+	<bean name="t02rekapcostingService" class="solusi.hapis.backend.tabel.service.impl.T02rekapcostingServiceImpl">
+		<property name="t02rekapcostingDAO" ref="t02rekapcostingDAO" />
+	</bean>
+	
+	<bean name="t03salespersonService" class="solusi.hapis.backend.tabel.service.impl.T03salespersonServiceImpl">
+		<property name="t03salespersonDAO" ref="t03salespersonDAO" />
+		<property name="t08targetsalesDAO" ref="t08targetsalesDAO" />
+	</bean>
+	
+	<bean name="t04paramKomisiService" class="solusi.hapis.backend.tabel.service.impl.T04paramKomisiServiceImpl">
+		<property name="t04paramKomisiDAO" ref="t04paramKomisiDAO" />
+	</bean>
+	
+	<bean name="t05periodecostingService" class="solusi.hapis.backend.tabel.service.impl.T05periodecostingServiceImpl">
+		<property name="t05periodecostingDAO" ref="t05periodecostingDAO" />
+	</bean>
+    
+    <bean name="t06rekapkomisisatindoService" class="solusi.hapis.backend.tabel.service.impl.T06rekapkomisisatindoServiceImpl">
+		<property name="t06rekapkomisisatindoDAO" ref="t06rekapkomisisatindoDAO" />
+	</bean>
+    
+    <bean name="t07itemsatindoService" class="solusi.hapis.backend.tabel.service.impl.T07itemsatindoServiceImpl">
+		<property name="t07itemsatindoDAO" ref="t07itemsatindoDAO" />
+	</bean>
+    
+    <bean name="tmp01rebateService" class="solusi.hapis.backend.tabel.service.impl.Tmp01rebateServiceImpl">
+		<property name="tmp01rebateDAO" ref="tmp01rebateDAO" />
+	</bean>
+	
+	<bean name="tmp02kertaskerjaService" class="solusi.hapis.backend.tabel.service.impl.Tmp02kertaskerjaServiceImpl">
+		<property name="tmp02kertaskerjaDAO" ref="tmp02kertaskerjaDAO" />
+	</bean>
+    
+    <bean name="tmp03hasilopnameService" class="solusi.hapis.backend.tabel.service.impl.Tmp03hasilopnameServiceImpl">
+		<property name="tmp03hasilopnameDAO" ref="tmp03hasilopnameDAO" />
+	</bean>
+	
+	<bean name="tmp04efakturService" class="solusi.hapis.backend.tabel.service.impl.Tmp04efakturServiceImpl">
+		<property name="tmp04efakturDAO" ref="tmp04efakturDAO" />
+	</bean>
+	
+	<bean name="tmp05navfakturService" class="solusi.hapis.backend.tabel.service.impl.Tmp05navfakturServiceImpl">
+		<property name="tmp05navfakturDAO" ref="tmp05navfakturDAO" />
+	</bean>
+	
+	<bean name="tmp06invoicelunasService" class="solusi.hapis.backend.tabel.service.impl.Tmp06invoicelunasServiceImpl">
+		<property name="tmp06invoicelunasDAO" ref="tmp06invoicelunasDAO" />
+	</bean>
+	
+	<bean name="tmp07invoicesatindoService" class="solusi.hapis.backend.tabel.service.impl.Tmp07invoicesatindoServiceImpl">
+		<property name="tmp07invoicesatindoDAO" ref="tmp07invoicesatindoDAO" />
+	</bean>
+	
+	<!--***************************** EMAIL *****************************-->
+	<bean id="sendMailService" class="solusi.hapis.backend.mail.service.impl.SendMailServiceImpl">
+		<property name="javaMailSender" ref="mailSender" />
+	</bean>
+	
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+  		<property name="host" value="${mail.host}" />
+		<property name="port" value="${mail.port}" />
+<!-- 		<property name="username" value="" /> -->
+<!-- 		<property name="password" value="" /> -->	 
+<!-- 		<property name="javaMailProperties"> -->
+<!-- 			<props> -->
+<!-- 	           	<prop key="mail.smtp.auth">true</prop> -->
+<!-- 	           	<prop key="mail.smtp.starttls.enable">true</prop> -->
+<!-- 	       	</props> -->
+<!-- 		</property> -->
+	</bean>
+	<!--***************************** EMAIL *****************************-->
+</beans>

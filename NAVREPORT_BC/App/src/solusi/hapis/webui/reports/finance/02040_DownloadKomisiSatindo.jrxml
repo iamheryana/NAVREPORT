@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02040_DownloadKomisiSatindo" language="groovy" pageWidth="2500" pageHeight="595" columnWidth="2460" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.3310000000000592"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglLunasFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglLunasUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XXX.COMPANY
+		,XXX.TGL_INV
+		,XXX.CUST_GRP
+		,XXX.NO_INV
+		,XXX.SALES
+		,XXX.SELL_TO_CODE
+		,XXX.SELL_TO_NAME
+		,XXX.BILL_TO_CODE
+		,XXX.BILL_TO_NAME
+		,XXX.DESCRIPTIONS
+		,XXX.NO_PO_CUST
+		,XXX.NO_FP
+		,XXX.VALUTA
+		,XXX.NILAI_INVOICE
+		,XXX.SISA_BELUM_LUNAS
+		,XXX.TGL_LUNAS
+		,XXX.NO_PELUNASAN
+		,XXX.KODE_BRG
+		,XXX.NAMA_BRG
+		,XXX.QTY
+		,XXX.HARGA_SATUAN
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,XX.TGL_INV
+					,XX.CUST_GRP
+					,XX.NO_INV
+					,XX.SALES
+					,XX.SELL_TO_CODE
+					,XX.SELL_TO_NAME
+					,XX.BILL_TO_CODE
+					,XX.BILL_TO_NAME
+					,XX.DESCRIPTIONS
+					,XX.NO_PO_CUST
+					,XX.NO_FP
+					,XX.VALUTA
+					,XX.NILAI_INVOICE
+					,XX.SISA_BELUM_LUNAS
+					,XX.TGL_LUNAS
+					,XX.NO_PELUNASAN
+					,XX.KODE_BRG
+					,XX.NAMA_BRG
+					,XX.QTY
+					,XX.HARGA_SATUAN
+			FROM	(
+					SELECT	X.TGL_INV
+							,CASE WHEN SUBSTRING(X.NO_INV, 1, 2) = '8S' THEN 'SAT' ELSE 'INDOMARCO' END AS CUST_GRP
+							,X.NO_INV
+							,X.SALES
+							,X.SELL_TO_CODE
+							,X.SELL_TO_NAME
+							,X.BILL_TO_CODE
+							,X.BILL_TO_NAME
+							,X.DESCRIPTIONS
+							,X.NO_PO_CUST
+							,X.NO_FP
+							,X.VALUTA
+							,X.NILAI_INVOICE
+							,LN.RMN_AMOUNT AS SISA_BELUM_LUNAS
+							,LN.TGL_LUNAS
+							,LN.NO_PELUNASAN
+							,SIL.[No_] AS KODE_BRG
+							,SIL.[Description] AS NAMA_BRG
+							,SIL.[Quantity] AS QTY
+							,SIL.[Unit Price] AS HARGA_SATUAN
+					FROM (
+							SELECT
+									SSIH.[Posting Date] AS TGL_INV
+									,SSIH.[No_] AS NO_INV
+									,SSIH.[Salesperson Code] AS SALES
+									,SSIH.[Sell-to Customer No_] AS SELL_TO_CODE
+									,SSIH.[Sell-to Customer Name] AS SELL_TO_NAME
+									,SSIH.[Bill-to Customer No_] AS BILL_TO_CODE
+									,SSIH.[Bill-to Name] AS BILL_TO_NAME
+									,SSIH.[Posting Description] AS DESCRIPTIONS
+									,SSIH.[External Document No_] AS NO_PO_CUST
+									,SSIH.[Faktur Pajak No_] AS NO_FP
+									,SSIH.[Currency Code] AS VALUTA
+									,SUM(SSID.[Amount Including VAT]) AS NILAI_INVOICE
+							FROM [dbo].[AUTOJAYA$Sales Invoice Header] SSIH
+							INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SSID ON SSID.[Document No_] = SSIH.[No_]
+							WHERE
+									(SSIH.[Posting Date] < '2016-2-1' AND SSIH.[Customer Posting Group] IN ('INDOMARCO', 'ALFA'))
+										OR
+									(SSIH.[Posting Date] > '2016-1-31' AND SUBSTRING(SSIH.[No_], 1, 2) in ( '8S', '9S'))
+							GROUP BY 		SSIH.[Posting Date], SSIH.[No_]
+									,SSIH.[Sell-to Customer No_]
+									,SSIH.[Sell-to Customer Name]
+									,SSIH.[Bill-to Customer No_]
+									,SSIH.[Bill-to Name]
+									,SSIH.[Posting Description]
+									,SSIH.[External Document No_]
+									,SSIH.[Faktur Pajak No_]
+									,SSIH.[Currency Code]
+									,SSIH.[Salesperson Code]
+						) X
+					LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = X.NO_INV
+					LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = X.NO_INV	AND SIL.[Type] = 2
+					LEFT JOIN (
+								SELECT
+										  CLE.[Document No_] AS NO_INV
+										  ,CLE.[External Document No_] AS NO_PO_CUST
+										  ,CLD.RMN_AMOUNT
+										  ,CLD2.TGL_LUNAS
+										  ,CLD2.NO_PELUNASAN
+								FROM [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+								LEFT JOIN (
+									SELECT	CLED.[Cust_ Ledger Entry No_]
+											,SUM(CLED.[Amount]) AS RMN_AMOUNT
+									FROM [dbo].[AUTOJAYA$Detailed Cust_ Ledg_ Entry] CLED
+									GROUP BY CLED.[Cust_ Ledger Entry No_]
+											)CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+								LEFT JOIN (
+											SELECT	CLED2.[Cust_ Ledger Entry No_]
+													,MAX(CLED2.[Posting Date]) AS TGL_LUNAS
+													,MAX(CLED2.[Document No_]) AS NO_PELUNASAN
+											FROM [dbo].[AUTOJAYA$Detailed Cust_ Ledg_ Entry] CLED2
+											WHERE CLED2.[Document Type] <> 2
+											GROUP BY CLED2.[Cust_ Ledger Entry No_]
+										  ) CLD2 ON CLD2.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+							  )		LN ON LN.NO_INV = X.NO_INV
+					WHERE CRM.[No_] IS NULL
+					) XX
+			WHERE	XX.SISA_BELUM_LUNAS = 0 AND
+					XX.HARGA_SATUAN > 100
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,XX.TGL_INV
+					,XX.CUST_GRP
+					,XX.NO_INV
+					,XX.SALES
+					,XX.SELL_TO_CODE
+					,XX.SELL_TO_NAME
+					,XX.BILL_TO_CODE
+					,XX.BILL_TO_NAME
+					,XX.DESCRIPTIONS
+					,XX.NO_PO_CUST
+					,XX.NO_FP
+					,XX.VALUTA
+					,XX.NILAI_INVOICE
+					,XX.SISA_BELUM_LUNAS
+					,XX.TGL_LUNAS
+					,XX.NO_PELUNASAN
+					,XX.KODE_BRG
+					,XX.NAMA_BRG
+					,XX.QTY
+					,XX.HARGA_SATUAN
+			FROM	(
+					SELECT	X.TGL_INV
+							,CASE WHEN SUBSTRING(X.NO_INV, 1, 2) = '8S' THEN 'SAT' ELSE 'INDOMARCO' END AS CUST_GRP
+							,X.NO_INV
+							,X.SALES
+							,X.SELL_TO_CODE
+							,X.SELL_TO_NAME
+							,X.BILL_TO_CODE
+							,X.BILL_TO_NAME
+							,X.DESCRIPTIONS
+							,X.NO_PO_CUST
+							,X.NO_FP
+							,X.VALUTA
+							,X.NILAI_INVOICE
+							,LN.RMN_AMOUNT AS SISA_BELUM_LUNAS
+							,LN.TGL_LUNAS
+							,LN.NO_PELUNASAN
+							,SIL.[No_] AS KODE_BRG
+							,SIL.[Description] AS NAMA_BRG
+							,SIL.[Quantity] AS QTY
+							,SIL.[Unit Price] AS HARGA_SATUAN
+					FROM (
+							SELECT
+									SSIH.[Posting Date] AS TGL_INV
+									,SSIH.[No_] AS NO_INV
+									,SSIH.[Salesperson Code] AS SALES
+									,SSIH.[Sell-to Customer No_] AS SELL_TO_CODE
+									,SSIH.[Sell-to Customer Name] AS SELL_TO_NAME
+									,SSIH.[Bill-to Customer No_] AS BILL_TO_CODE
+									,SSIH.[Bill-to Name] AS BILL_TO_NAME
+									,SSIH.[Posting Description] AS DESCRIPTIONS
+									,SSIH.[External Document No_] AS NO_PO_CUST
+									,SSIH.[Faktur Pajak No_] AS NO_FP
+									,SSIH.[Currency Code] AS VALUTA
+									,SUM(SSID.[Amount Including VAT]) AS NILAI_INVOICE
+							FROM [dbo].[SOLUSI$Sales Invoice Header] SSIH
+							INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SSID ON SSID.[Document No_] = SSIH.[No_]
+							WHERE
+									(SSIH.[Posting Date] < '2016-2-1' AND SSIH.[Customer Posting Group] IN ('INDOMARCO', 'ALFA'))
+										OR
+									(SSIH.[Posting Date] > '2016-1-31' AND SUBSTRING(SSIH.[No_], 1, 2) in ( '8S', '9S'))
+							GROUP BY 		SSIH.[Posting Date], SSIH.[No_]
+									,SSIH.[Sell-to Customer No_]
+									,SSIH.[Sell-to Customer Name]
+									,SSIH.[Bill-to Customer No_]
+									,SSIH.[Bill-to Name]
+									,SSIH.[Posting Description]
+									,SSIH.[External Document No_]
+									,SSIH.[Faktur Pajak No_]
+									,SSIH.[Currency Code]
+									,SSIH.[Salesperson Code]
+						) X
+					LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = X.NO_INV
+					LEFT JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = X.NO_INV	AND SIL.[Type] = 2
+					LEFT JOIN (
+								SELECT
+										  CLE.[Document No_] AS NO_INV
+										  ,CLE.[External Document No_] AS NO_PO_CUST
+										  ,CLD.RMN_AMOUNT
+										  ,CLD2.TGL_LUNAS
+										  ,CLD2.NO_PELUNASAN
+								FROM [dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+								LEFT JOIN (
+									SELECT	CLED.[Cust_ Ledger Entry No_]
+											,SUM(CLED.[Amount]) AS RMN_AMOUNT
+									FROM [dbo].[SOLUSI$Detailed Cust_ Ledg_ Entry] CLED
+									GROUP BY CLED.[Cust_ Ledger Entry No_]
+											)CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+								LEFT JOIN (
+											SELECT	CLED2.[Cust_ Ledger Entry No_]
+													,MAX(CLED2.[Posting Date]) AS TGL_LUNAS
+													,MAX(CLED2.[Document No_]) AS NO_PELUNASAN
+											FROM [dbo].[SOLUSI$Detailed Cust_ Ledg_ Entry] CLED2
+											WHERE CLED2.[Document Type] <> 2
+											GROUP BY CLED2.[Cust_ Ledger Entry No_]
+										  ) CLD2 ON CLD2.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+							  )		LN ON LN.NO_INV = X.NO_INV
+					WHERE CRM.[No_] IS NULL
+					) XX
+			WHERE	XX.SISA_BELUM_LUNAS = 0 AND
+					XX.HARGA_SATUAN > 100
+		)XXX
+WHERE XXX.TGL_LUNAS >= $P{TglLunasFrom} AND XXX.TGL_LUNAS <= $P{TglLunasUpto}]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="CUST_GRP" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="SALES" class="java.lang.String"/>
+	<field name="SELL_TO_CODE" class="java.lang.String"/>
+	<field name="SELL_TO_NAME" class="java.lang.String"/>
+	<field name="BILL_TO_CODE" class="java.lang.String"/>
+	<field name="BILL_TO_NAME" class="java.lang.String"/>
+	<field name="DESCRIPTIONS" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="VALUTA" class="java.lang.String"/>
+	<field name="NILAI_INVOICE" class="java.math.BigDecimal"/>
+	<field name="SISA_BELUM_LUNAS" class="java.math.BigDecimal"/>
+	<field name="TGL_LUNAS" class="java.sql.Timestamp"/>
+	<field name="NO_PELUNASAN" class="java.lang.String"/>
+	<field name="KODE_BRG" class="java.lang.String"/>
+	<field name="NAMA_BRG" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="HARGA_SATUAN" class="java.math.BigDecimal"/>
+	<title>
+		<band height="14" splitType="Stretch">
+			<staticText>
+				<reportElement x="210" y="0" width="77" height="14" uuid="8cf79679-3fe2-4352-82a6-127ab540fd10"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="60" height="14" uuid="3a766a66-fa2c-46b2-9ed3-8d84d4c37b4e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1227" y="0" width="251" height="14" uuid="80281303-f98c-45e2-aa49-340d23d4a634"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Description]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="287" y="0" width="119" height="14" uuid="2d44eaae-4155-4886-b3e6-8232d0fb8ddf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="406" y="0" width="119" height="14" uuid="f6cd3df2-105f-469b-aeb7-8b5425633522"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="625" y="0" width="251" height="14" uuid="9f99e9ec-1692-41bf-a304-24915627ef17"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Customer (Sell to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="525" y="0" width="100" height="14" uuid="8c98a369-ce2d-4d08-b98a-e5b2dc185eb1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Customer (Sell to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="976" y="0" width="251" height="14" uuid="c2baf25b-70b3-4144-9371-0e6666689fcd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Customer (Bill to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="876" y="0" width="100" height="14" uuid="ba31120c-d9aa-4af8-8df8-eee243512661"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Customer (Bill to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1478" y="0" width="27" height="14" uuid="828b252b-fd4f-438c-8a83-907d49467c8f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Valuta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1505" y="0" width="111" height="14" uuid="8cdc3e3e-a73e-4827-be81-50df3741c63d"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nilai Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1727" y="0" width="60" height="14" uuid="53ac6206-8909-4e44-9792-3cb158e21b28"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Lunas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1787" y="0" width="127" height="14" uuid="4158bd36-68a7-47e5-b291-96e7d90febe1"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No.Pelunasan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1616" y="0" width="111" height="14" uuid="4b291b2f-671c-440c-b1ea-1265dc81247e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nilai Sisa Belum Lunas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1914" y="0" width="127" height="14" uuid="d8b38ee0-a148-48d7-bfed-bab132795bc0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2041" y="0" width="251" height="14" uuid="08203cb4-3316-4d40-9e6e-d3aa2c759c94"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2292" y="0" width="48" height="14" uuid="93175802-2d96-4434-88c3-0e172a4f9e49"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2340" y="0" width="111" height="14" uuid="39fb6259-2d15-4178-af93-d22fbbb158ca"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Harga Satuan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="60" height="14" uuid="463e62dd-4fa1-4c2d-9f34-06ba77bd6a14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="60" y="0" width="60" height="14" uuid="8683911b-afd5-4560-9aab-4138c8cea56b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Register]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="120" y="0" width="30" height="14" uuid="652e0762-a54f-47c9-9f4b-b8997b32687d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="150" y="0" width="60" height="14" uuid="cc38f2c9-6a23-410f-b020-a306265a6c43"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="210" y="0" width="77" height="14" uuid="9404e9c5-03ae-4422-9e35-ee912d5fc6fb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="287" y="0" width="119" height="14" uuid="c1808959-40a8-425e-b01c-1c69f9132026"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="406" y="0" width="119" height="14" uuid="995609e1-eadf-4fae-9853-b34fcb732c1f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="525" y="0" width="100" height="14" uuid="244e4a0d-12c8-402e-8cf5-ef4835777019"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_CODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="625" y="0" width="251" height="14" uuid="8c5791b6-e553-4a24-b9d6-17ea014eb501"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="876" y="0" width="100" height="14" uuid="df11d605-7474-43e8-801b-21250239cc84"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILL_TO_CODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="976" y="0" width="251" height="14" uuid="60cdc131-c7aa-48e2-acc6-ba79f480f054"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILL_TO_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1227" y="0" width="251" height="14" uuid="a9229053-30c8-4890-9a6c-a49324d2892e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DESCRIPTIONS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1478" y="0" width="27" height="14" uuid="6ac0212e-8b74-43e3-8d5d-f09bcef81aa4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VALUTA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="1505" y="0" width="111" height="14" uuid="fd5463ff-04bf-442e-be7c-6fccbcd839ee"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_INVOICE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="1727" y="0" width="60" height="14" uuid="7af931df-e569-4c28-aa0b-d910a9f410d7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_LUNAS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1787" y="0" width="127" height="14" uuid="bf3475f9-8211-4c54-8cca-1c0509e83ee6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PELUNASAN}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1616" y="0" width="111" height="14" uuid="0db6c1be-5cba-48c6-bad9-15933b768ff5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SISA_BELUM_LUNAS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1914" y="0" width="127" height="14" uuid="4b00f608-8238-450b-bdab-af42a236a70e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KODE_BRG}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="2041" y="0" width="251" height="14" uuid="811f1317-5eee-4fde-b7e7-0ffdab11a814"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_BRG}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="2292" y="0" width="48" height="14" uuid="c74e1fbb-5a1f-4717-8e8d-614d60b12231"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="2340" y="0" width="111" height="14" uuid="e1119a96-74fb-47bd-9c1a-623bfb65f1dc"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{HARGA_SATUAN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="60" height="14" uuid="26863b14-1233-487e-9dc5-253082de9eec"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="60" y="0" width="60" height="14" uuid="8192badf-1a9e-4f9c-bdc7-e170f0a658b2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_GRP}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="120" y="0" width="30" height="14" uuid="25c3645b-bdbc-4a8b-b5c3-111a578da374"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

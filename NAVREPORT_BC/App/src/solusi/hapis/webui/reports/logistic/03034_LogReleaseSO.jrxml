@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03034_LogReleaseSO" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.6105100000000174"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglLog" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.*
+FROM	(
+			SELECT
+					DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),CLE.[Date and Time]) AS LOG_DATETIME
+					,CAST(CAST(DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),CLE.[Date and Time]) AS DATE) AS DATETIME) AS LOG_DATE
+					,CLE.[User ID]
+					,CLE.[Primary Key Field 2 Value] AS NO_SO
+					,	CASE	WHEN CLE.[Old Value] = '0' THEN 'OPEN'
+								WHEN CLE.[Old Value] = '1' THEN 'RELEASED'
+								WHEN CLE.[Old Value] = '3' THEN 'PENDING PREPAYMENT'
+								ELSE 'OTHERS'
+						END AS OLD_VALUE
+					,	CASE	WHEN CLE.[New Value] = '0' THEN 'OPEN'
+								WHEN CLE.[New Value] = '1' THEN 'RELEASED'
+								WHEN CLE.[New Value] = '3' THEN 'PENDING PREPAYMENT'
+								ELSE 'OTHERS'
+						END AS NEW_VALUE
+					,SOA.[AMOUNT_IDR] as AMOUNT_SO
+					,ISNULL(SOA.CURR_STATUS, 'SO N/A') AS CURR_STATUS
+			FROM [dbo].[BC_AUTOJAYA$Change Log Entry] CLE
+			LEFT JOIN	(
+							SELECT		XY.NO_SO
+										,XY.CURR_STATUS
+										,      CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+													(XY.AMOUNT_IDR - XY.UM_AMOUNT_IDR)
+												ELSE
+													(XY.AMOUNT_IDR - ((XY.UM_AMOUNT_IDR/XY.AMOUNT_IDR_TTL)*(XY.AMOUNT_IDR)))
+												END AS AMOUNT_IDR
+							FROM	(
+										SELECT	 SH.[No_] AS NO_SO
+												,	CASE	WHEN SH.[Status] = '0' THEN 'OPEN'
+															WHEN SH.[Status] = '1' THEN 'RELEASED'
+															WHEN SH.[Status] = '3' THEN 'PENDING PREPAYMENT'
+															ELSE 'OTHERS'
+													END AS CURR_STATUS
+												, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END,0) AS AMOUNT_IDR
+												, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL2.AMOUNT_TTL / SH.[Currency Factor],0) ELSE SL2.AMOUNT_TTL END,0) AS AMOUNT_IDR_TTL
+												, ISNULL(SL2.AMOUNT_TTL,0) AS AMOUNT_TTL
+												, ISNULL(UM.UM_AMOUNT_IDR,0) AS UM_AMOUNT_IDR
+										FROM [dbo].[BC_AUTOJAYA$Sales Header] SH
+										LEFT JOIN  (  SELECT X.[Document No_]
+																		,SUM(X.AMOUNT) AS AMOUNT
+																FROM (
+																				SELECT [Document No_]
+																							, [Quantity] AS QTY
+																							, [Quantity Invoiced] AS QTY_INV
+																							, CASE WHEN [Quantity Invoiced] <> 0 AND [Quantity] <> [Quantity Invoiced] THEN
+																									([Amount] / [Quantity]) * ([Quantity] - [Quantity Invoiced])
+																									ELSE
+																									[Amount]
+																									END AS AMOUNT
+																				FROM [dbo].[BC_AUTOJAYA$Sales Line]
+																				WHERE [Document Type] = 1 AND
+																						[Quantity] <> [Quantity Invoiced]
+																		) X
+																GROUP BY X.[Document No_]
+															)SL ON SL.[Document No_] = SH.[No_]
+										LEFT JOIN  (
+																SELECT [Document No_]
+																				, SUM([Amount]) AS AMOUNT_TTL
+																				FROM [dbo].[BC_AUTOJAYA$Sales Line]
+																				WHERE [Document Type] = 1
+																GROUP BY [Document No_]
+															)SL2 ON SL2.[Document No_] = SH.[No_]
+										LEFT JOIN     (
+																SELECT Y.NO_SO
+																				,SUM(Y.UM_AMOUNT) AS UM_AMOUNT
+																				,SUM(Y.UM_AMOUNT_IDR) AS UM_AMOUNT_IDR
+																FROM (
+																				SELECT [Prepayment Order No_] AS NO_SO
+																							,SUM(UMD.[Amount]) AS UM_AMOUNT
+																							,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) END AS UM_AMOUNT_IDR
+																				FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] UMH
+																				INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																				GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																				UNION ALL
+																				SELECT [Prepayment Order No_] AS NO_SO
+																							,SUM(UMD.[Amount]) * -1 AS UM_AMOUNT
+																							,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) * -1 END AS UM_AMOUNT_IDR
+																				FROM [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] UMH
+																				INNER JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																				GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																		) Y
+																GROUP BY Y.NO_SO
+															) UM ON UM.NO_SO = SH.[No_]
+										WHERE SH.[Document Type] = 1
+									) XY
+							) SOA ON SOA.NO_SO = CLE.[Primary Key Field 2 Value]
+			WHERE	CLE.[Table No_] = '36' AND
+					CLE.[Field No_] = '120'
+			UNION ALL
+			SELECT
+					DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),CLE.[Date and Time]) AS LOG_DATETIME
+					,CAST(CAST(DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),CLE.[Date and Time]) AS DATE) AS DATETIME) AS LOG_DATE
+					,CLE.[User ID]
+					,CLE.[Primary Key Field 2 Value] AS NO_SO
+					,	CASE	WHEN CLE.[Old Value] = '0' THEN 'OPEN'
+								WHEN CLE.[Old Value] = '1' THEN 'RELEASED'
+								WHEN CLE.[Old Value] = '3' THEN 'PENDING PREPAYMENT'
+								ELSE 'OTHERS'
+						END AS OLD_VALUE
+					,	CASE	WHEN CLE.[New Value] = '0' THEN 'OPEN'
+								WHEN CLE.[New Value] = '1' THEN 'RELEASED'
+								WHEN CLE.[New Value] = '3' THEN 'PENDING PREPAYMENT'
+								ELSE 'OTHERS'
+						END AS NEW_VALUE
+					,SOA.[AMOUNT_IDR] as AMOUNT_SO
+					,ISNULL(SOA.CURR_STATUS, 'SO N/A') AS CURR_STATUS
+			FROM [dbo].[BC_SOLUSI$Change Log Entry] CLE
+			LEFT JOIN	(
+							SELECT		XY.NO_SO
+										,XY.CURR_STATUS
+										,      CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+													(XY.AMOUNT_IDR - XY.UM_AMOUNT_IDR)
+												ELSE
+													(XY.AMOUNT_IDR - ((XY.UM_AMOUNT_IDR/XY.AMOUNT_IDR_TTL)*(XY.AMOUNT_IDR)))
+												END AS AMOUNT_IDR
+							FROM	(
+										SELECT	SH.[No_] AS NO_SO
+												,	CASE	WHEN SH.[Status] = '0' THEN 'OPEN'
+															WHEN SH.[Status] = '1' THEN 'RELEASED'
+															WHEN SH.[Status] = '3' THEN 'PENDING PREPAYMENT'
+															ELSE 'OTHERS'
+													END AS CURR_STATUS
+												, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END,0) AS AMOUNT_IDR
+												, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL2.AMOUNT_TTL / SH.[Currency Factor],0) ELSE SL2.AMOUNT_TTL END,0) AS AMOUNT_IDR_TTL
+												, ISNULL(SL2.AMOUNT_TTL,0) AS AMOUNT_TTL
+												, ISNULL(UM.UM_AMOUNT_IDR,0) AS UM_AMOUNT_IDR
+										FROM [dbo].[BC_SOLUSI$Sales Header] SH
+										LEFT JOIN  (  SELECT X.[Document No_]
+																		,SUM(X.AMOUNT) AS AMOUNT
+																FROM (
+																				SELECT [Document No_]
+																							, [Quantity] AS QTY
+																							, [Quantity Invoiced] AS QTY_INV
+																							, CASE WHEN [Quantity Invoiced] <> 0 AND [Quantity] <> [Quantity Invoiced] THEN
+																									([Amount] / [Quantity]) * ([Quantity] - [Quantity Invoiced])
+																									ELSE
+																									[Amount]
+																									END AS AMOUNT
+																				FROM [dbo].[BC_SOLUSI$Sales Line]
+																				WHERE [Document Type] = 1 AND
+																						[Quantity] <> [Quantity Invoiced]
+																		) X
+																GROUP BY X.[Document No_]
+															)SL ON SL.[Document No_] = SH.[No_]
+										LEFT JOIN  (
+																SELECT [Document No_]
+																				, SUM([Amount]) AS AMOUNT_TTL
+																				FROM [dbo].[BC_SOLUSI$Sales Line]
+																				WHERE [Document Type] = 1
+																GROUP BY [Document No_]
+															)SL2 ON SL2.[Document No_] = SH.[No_]
+										LEFT JOIN     (
+																SELECT Y.NO_SO
+																				,SUM(Y.UM_AMOUNT) AS UM_AMOUNT
+																				,SUM(Y.UM_AMOUNT_IDR) AS UM_AMOUNT_IDR
+																FROM (
+																				SELECT [Prepayment Order No_] AS NO_SO
+																							,SUM(UMD.[Amount]) AS UM_AMOUNT
+																							,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) END AS UM_AMOUNT_IDR
+																				FROM [dbo].[BC_SOLUSI$Sales Invoice Header] UMH
+																				INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																				GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																				UNION ALL
+																				SELECT [Prepayment Order No_] AS NO_SO
+																							,SUM(UMD.[Amount]) * -1 AS UM_AMOUNT
+																							,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) * -1 END AS UM_AMOUNT_IDR
+																				FROM [dbo].[BC_SOLUSI$Sales Cr_Memo Header] UMH
+																				INNER JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																				GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																		) Y
+																GROUP BY Y.NO_SO
+															) UM ON UM.NO_SO = SH.[No_]
+										WHERE SH.[Document Type] = 1
+									) XY
+							) SOA ON SOA.NO_SO = CLE.[Primary Key Field 2 Value]
+			WHERE	CLE.[Table No_] = '36' AND
+					CLE.[Field No_] = '120'
+		) XX
+WHERE XX.LOG_DATE = $P{TglLog}]]>
+	</queryString>
+	<field name="LOG_DATETIME" class="java.sql.Timestamp"/>
+	<field name="LOG_DATE" class="java.sql.Timestamp"/>
+	<field name="User ID" class="java.lang.String"/>
+	<field name="NO_SO" class="java.lang.String"/>
+	<field name="OLD_VALUE" class="java.lang.String"/>
+	<field name="NEW_VALUE" class="java.lang.String"/>
+	<field name="AMOUNT_SO" class="java.math.BigDecimal"/>
+	<field name="CURR_STATUS" class="java.lang.String"/>
+	<sortField name="LOG_DATETIME"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="70" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="14" width="153" height="14" uuid="19af8fd1-8dc2-4eba-a85a-be94171f3c91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Action on :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="153" y="28" width="100" height="14" uuid="625063cd-217b-47d4-8204-a71466c56a88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="153" height="14" uuid="168aa3a7-29fb-4223-b820-fea66cb4a62a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="153" height="14" uuid="5e765935-bb7b-4c46-8b9f-d1c16e5836c3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Change Log Date Time]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="153" height="14" uuid="f860d2b8-9728-44ab-a265-0c2616cefe69"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03034) Change Log - Release SO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="153" y="56" width="100" height="14" uuid="13881d53-732f-435f-9e00-0c9c5f5fb5a2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Action By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="253" y="56" width="80" height="14" uuid="3b57ef68-01f1-450d-9542-30bd71b5f54b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. SO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="333" y="56" width="80" height="14" uuid="8057ead2-b8ae-4a5f-9b3b-2f61e0e84140"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Action]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="413" y="56" width="80" height="14" uuid="b6039654-6278-4e3b-8d04-bcb5cf60ad84"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Amount Out. SO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="493" y="56" width="80" height="14" uuid="1dd3c05c-c34d-42d8-9bdd-a69d8906186c"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Current Status SO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="153" height="14" uuid="01897729-9bc6-42b1-ac6c-49a3989f7d02"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="153" y="42" width="100" height="14" uuid="ef4bc1ea-b19c-44b2-9eee-62a8132ff5da"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="153" y="14" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="b8a4e20d-a443-43b4-9756-e5f4a8b4d9e1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglLog}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="153" y="0" width="100" height="14" uuid="7a9d68e5-7a04-427e-99b0-2a02428828f0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss" isBlankWhenNull="false">
+				<reportElement x="0" y="0" width="153" height="14" uuid="82b5230a-4b47-4cdc-94c8-b0e02a076d98"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LOG_DATETIME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="153" y="0" width="100" height="14" uuid="5c0f4741-a56d-4e4a-8b1f-16bb2204458c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{User ID}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="253" y="0" width="80" height="14" uuid="90eba318-a3b2-489e-87a1-fedd08d542ae"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_SO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="333" y="0" width="80" height="14" uuid="afda8c19-2343-409b-abef-dbba27f97154"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NEW_VALUE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="413" y="0" width="80" height="14" uuid="48f34a4d-5f45-4991-b14d-343a9455a630"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_SO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="493" y="0" width="80" height="14" uuid="c69cb5c4-9c93-4d92-81e7-e3a3c2f6eb5a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CURR_STATUS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="253" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

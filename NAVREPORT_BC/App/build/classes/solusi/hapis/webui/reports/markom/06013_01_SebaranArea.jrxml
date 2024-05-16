@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06013_01_SebaranArea" language="groovy" pageWidth="188" pageHeight="590" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="188" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="5.55991731349253"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Hadir" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="T05Id" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT ISNULL(X.AREA, 'UNDEFINED') AS AREA
+		, SUM(X.JUMLAH) AS JUMLAH
+FROM	(
+			SELECT DISTINCT AREA, 0 AS JUMLAH
+			FROM [dbo].[T10_AREA_MAPPING]
+			UNION ALL
+			SELECT
+					T10.AREA
+					,COUNT(T06.T06_ID) AS JUMLAH
+			FROM [dbo].[T06_WEBINAR_ATTENDEE]  T06
+			INNER JOIN [dbo].[T05_WEBINAR_EVENT] T05 ON T05.T05_ID = T06.T05_ID
+			LEFT JOIN [dbo].[T10_AREA_MAPPING] T10 ON T10.KOTA = T06.[STATE_PROVINCE]
+			WHERE	T06.[T05_ID] = $P{T05Id} AND
+					T06.ORGANIZATION NOT LIKE 'ACS%' AND
+					(($P{Hadir} = 'ALL') OR ($P{Hadir} = T06.[ATTENDED]))
+			GROUP BY T10.AREA
+		) X
+GROUP BY X.AREA]]>
+	</queryString>
+	<field name="AREA" class="java.lang.String"/>
+	<field name="JUMLAH" class="java.lang.Integer"/>
+	<variable name="JUMLAH_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{JUMLAH}]]></variableExpression>
+	</variable>
+	<title>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement x="1" y="0" width="150" height="14" uuid="9301212c-1e53-422e-aa1c-4aab8a758a6b"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Sebaran Peserta berdasarkan Area :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="15" width="150" height="14" uuid="be171597-a302-4c13-b960-bea03b0a395c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Area]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="152" y="15" width="35" height="14" uuid="89ba6051-6d57-4daa-83dc-047dd0212905"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[#]]></text>
+			</staticText>
+			<line>
+				<reportElement x="1" y="29" width="186" height="1" uuid="f21ef9c2-237c-4135-87b3-1528d671a948"/>
+			</line>
+			<line>
+				<reportElement x="1" y="14" width="186" height="1" uuid="d491d27c-0c75-4f54-aac3-927d67ae3450"/>
+			</line>
+			<line>
+				<reportElement x="0" y="14" width="1" height="16" uuid="b3180bf8-4254-44a9-9336-53ff9752cad5"/>
+			</line>
+			<line>
+				<reportElement x="187" y="14" width="1" height="16" uuid="c9af6608-fc34-4609-96dd-1b916f36b10a"/>
+			</line>
+			<line>
+				<reportElement x="151" y="15" width="1" height="14" uuid="a29b1cbc-8196-4cef-8cfe-323785ebbe9b"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="b346b322-b00b-4830-9e81-c3b070f601c5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AREA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="152" y="0" width="35" height="14" isPrintWhenDetailOverflows="true" uuid="1e867d7b-a377-49b2-adab-ed83b745d63d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="151" y="0" width="1" height="14" uuid="7a57e2a6-59f8-41e2-8f8d-6e4c57ed9e40"/>
+			</line>
+			<line>
+				<reportElement x="187" y="0" width="1" height="14" uuid="3f7d5b22-5658-47a2-8bee-23e76bd88425"/>
+			</line>
+			<line>
+				<reportElement x="0" y="0" width="1" height="14" uuid="3020d775-e693-409c-bf83-5e8e8355d276"/>
+			</line>
+		</band>
+	</detail>
+	<summary>
+		<band height="16">
+			<staticText>
+				<reportElement x="1" y="1" width="150" height="14" uuid="d677ed4d-17fc-4477-af5c-733bce60897d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="152" y="1" width="35" height="14" uuid="00ab1607-46f6-4bd2-8c11-e13986bb4f5b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{JUMLAH_1}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="1" y="0" width="186" height="1" uuid="73eb0f64-6cfb-4d42-aba6-244c5e09860a"/>
+			</line>
+			<line>
+				<reportElement x="1" y="15" width="186" height="1" uuid="de58b117-56c9-461a-b59c-44587945f66b"/>
+			</line>
+			<line>
+				<reportElement x="151" y="1" width="1" height="14" uuid="46bb8500-12df-46bc-a005-cd985a96b36a"/>
+			</line>
+			<line>
+				<reportElement x="187" y="0" width="1" height="16" uuid="ce0ed410-0f2b-45fc-82b4-6c591a178f98"/>
+			</line>
+			<line>
+				<reportElement x="0" y="0" width="1" height="16" uuid="6b9a3560-6731-4e58-9f4d-712c768aa76b"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

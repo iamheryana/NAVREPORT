@@ -1,0 +1,702 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02053_BankAccountFlow" language="groovy" pageWidth="850" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="810" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.4641000000000435"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="80"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	 XXX.COMPANY
+		, XXX.NO_URUT
+		, XXX.BANK_ACC
+		, XXX.BANK_ACC_URUT
+		, XXX.TGL_TRANS
+		, XXX.KETERANGAN
+		, ROUND((XXX.PEMASUKAN/1000000),2)  - ROUND((XXX.PENGELUARAN/1000000),2)  AMOUNT
+		, ROUND((XXX.PEMASUKAN/1000000),2) AS PEMASUKAN
+		, ROUND((XXX.PENGELUARAN/1000000),2) AS PENGELUARAN
+		, XXX.AMOUNT_USD
+		, XXX.PEMASUKAN_USD
+		, XXX.PENGELUARAN_USD
+		, CAST(XXX.TAHUN AS VARCHAR(4))+CAST(XXX.BULAN AS VARCHAR(2))+CAST(XXX.WEEK_OF_MONTH AS VARCHAR(2)) AS URUT_WEEK
+		, 'WEEK '+CAST(XXX.WEEK_OF_MONTH AS VARCHAR(2))+' - '+
+			CASE	WHEN XXX.BULAN = 1 THEN 'JAN'
+					WHEN XXX.BULAN = 2 THEN 'FEB'
+					WHEN XXX.BULAN = 3 THEN 'MAR'
+					WHEN XXX.BULAN = 4 THEN 'APR'
+					WHEN XXX.BULAN = 5 THEN 'MAY'
+					WHEN XXX.BULAN = 6 THEN 'JUN'
+					WHEN XXX.BULAN = 7 THEN 'JUL'
+					WHEN XXX.BULAN = 8 THEN 'AUG'
+					WHEN XXX.BULAN = 9 THEN 'SEP'
+					WHEN XXX.BULAN = 10 THEN 'OCT'
+					WHEN XXX.BULAN = 11 THEN 'NOV'
+					WHEN XXX.BULAN = 12 THEN 'DEC'
+					ELSE 'NAN' END + ' ' + CAST(XXX.TAHUN AS VARCHAR(4)) AS KETERANGAN2
+			,UPPER(CONVERT(varchar, XXX.TGL_AWAL, 106)) +' Upto ' + UPPER(CONVERT(varchar, XXX.TGL_AKHIR, 106)) AS KETERANGAN3
+
+FROM	(
+SELECT
+			CASE WHEN XX.WEEK_OF_MONTH <> 1  AND XX.TGL <= 7 THEN
+				CASE WHEN XX.BULAN = 1 THEN
+					CASE WHEN XX.WEEK_OF_MONTH <=2 THEN XX.BULAN ELSE 12 END
+				ELSE XX.BULAN - 1 END
+			ELSE
+				XX.BULAN
+			END AS BULAN
+		,	CASE WHEN XX.WEEK_OF_MONTH <> 1  AND XX.TGL <= 7 THEN
+				CASE WHEN XX.BULAN = 1 THEN
+					CASE WHEN XX.WEEK_OF_MONTH <= 2 THEN XX.TAHUN ELSE XX.TAHUN - 1 END
+				ELSE
+					XX.TAHUN
+				END
+			ELSE
+				XX.TAHUN
+			END AS TAHUN
+		,	CASE WHEN DATEPART(weekday, XX.TGL_TRANS) = 2 THEN
+				 XX.TGL_TRANS
+			ELSE
+				DATEADD(DAY,  -1 * (DATEPART(weekday, XX.TGL_TRANS)-2), XX.TGL_TRANS)
+			END AS TGL_AWAL
+		,	DATEADD	( DAY, 6 ,
+						CASE WHEN DATEPART(weekday, XX.TGL_TRANS) = 2 THEN
+							 XX.TGL_TRANS
+						ELSE
+							DATEADD(DAY,  -1 * (DATEPART(weekday, XX.TGL_TRANS)-2), XX.TGL_TRANS)
+						END
+					) AS TGL_AKHIR
+		, XX.WEEK_OF_MONTH
+		, XX.COMPANY
+		, MIN(XX.NO_URUT) AS NO_URUT
+		, XX.BANK_ACC
+		, XX.BANK_ACC_URUT
+		, XX.TGL_TRANS
+		, XX.KETERANGAN
+		, SUM(XX.AMOUNT) AS AMOUNT
+		, SUM(XX.PEMASUKAN) AS PEMASUKAN
+		, SUM(XX.PENGELUARAN) AS PENGELUARAN
+		, SUM(XX.AMOUNT_USD) AS AMOUNT_USD
+		, SUM(XX.PEMASUKAN_USD) AS PEMASUKAN_USD
+		, SUM(XX.PENGELUARAN_USD) AS PENGELUARAN_USD
+		, SUM(XX.AMOUNT) + SUM(XX.AMOUNT_USD) AS AMT_CHECK
+FROM	(
+SELECT	X.COMPANY
+		, MIN(X.NO_URUT) AS NO_URUT
+		, X.BANK_ACC
+		, CASE WHEN X.CURR_CODE = 'IDR' THEN '2'+X.BANK_ACC  ELSE '1'+X.BANK_ACC END AS BANK_ACC_URUT
+		, X.TGL_TRANS
+		, datepart(day, datediff(day, 0, X.TGL_TRANS)/7 * 7)/7 + 1 AS WEEK_OF_MONTH
+		, datepart(DAY, X.TGL_TRANS) AS TGL
+		, datepart(MONTH,X.TGL_TRANS) AS BULAN
+		, datepart(YEAR,X.TGL_TRANS) AS TAHUN
+		, X.KETERANGAN
+		, CASE WHEN X.CURR_CODE = 'IDR' THEN SUM(X.AMOUNT)  ELSE 0 END AS AMOUNT
+		, CASE WHEN X.CURR_CODE = 'IDR' THEN SUM(X.PEMASUKAN)  ELSE 0 END AS PEMASUKAN
+		, CASE WHEN X.CURR_CODE = 'IDR' THEN SUM(X.PENGELUARAN)  ELSE 0 END AS PENGELUARAN
+		, CASE WHEN X.CURR_CODE = 'USD' THEN SUM(X.AMOUNT)  ELSE 0 END AS AMOUNT_USD
+		, CASE WHEN X.CURR_CODE = 'USD' THEN SUM(X.PEMASUKAN)  ELSE 0 END AS PEMASUKAN_USD
+		, CASE WHEN X.CURR_CODE = 'USD' THEN SUM(X.PENGELUARAN)  ELSE 0 END AS PENGELUARAN_USD
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,BLE.[Entry No_] AS NO_URUT
+					,CASE	WHEN  BLE.[Bank Account No_] = 'BCJD' THEN 'BCA USD'
+							WHEN  BLE.[Bank Account No_] = 'BCJR' THEN 'BCA IDR'
+							WHEN  BLE.[Bank Account No_] = 'BCVJR' THEN 'BCA VIRTUAL ACC'
+							WHEN  BLE.[Bank Account No_] = 'BIJD' THEN 'BII USD'
+							WHEN  BLE.[Bank Account No_] = 'BIJR' THEN 'BII IDR'
+							WHEN  BLE.[Bank Account No_] = 'BMGJR' THEN 'MEGA IDR'
+							WHEN  BLE.[Bank Account No_] = 'BMJD' THEN 'MANDIRI USD'
+							WHEN  BLE.[Bank Account No_] = 'BMJR' THEN 'MANDIRI IDR'
+							WHEN  BLE.[Bank Account No_] = 'BNJD' THEN 'PANIN USD'
+							WHEN  BLE.[Bank Account No_] = 'BNJR' THEN 'PANIN IDR'
+							WHEN  BLE.[Bank Account No_] = 'BPJR' THEN 'PERMATA IDR'
+							WHEN  BLE.[Bank Account No_] = 'BTJR-ES' THEN 'BTPN IDR - ESCROW'
+							WHEN  BLE.[Bank Account No_] = 'BTJR-OP' THEN 'BTPN IDR - OPERASIONAL'
+							ELSE 'NA'
+					END AS BANK_ACC
+					, CASE WHEN BLE.[Currency Code] = '' THEN 'IDR' ELSE BLE.[Currency Code] END  AS CURR_CODE
+					, BLE.[Posting Date] AS TGL_TRANS
+					, BLE.[Description] AS KETERANGAN
+					, BLE.Amount AS AMOUNT
+					, BLE.[Debit Amount] AS PEMASUKAN
+					, BLE.[Credit Amount] AS PENGELUARAN
+			FROM [dbo].[BC_AUTOJAYA$Bank Account Ledger Entry] BLE
+			WHERE	BLE.[Bank Account No_] IN
+											('BCJD','BCJR','BCVJR','BIJD','BIJR','BMGJR','BMJD','BMJR','BNJD','BNJR','BPJR','BTJR-ES','BTJR-OP')
+					AND (BLE.[Posting Date] >= $P{TglFrom} AND BLE.[Posting Date] <= $P{TglUpto})
+					AND BLE.[Reversed] = 0
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,BLE.[Entry No_] AS NO_URUT
+					,CASE	WHEN  BLE.[Bank Account No_] = 'BCJD' THEN 'BCA USD'
+							WHEN  BLE.[Bank Account No_] = 'BCJR' THEN 'BCA IDR'
+							WHEN  BLE.[Bank Account No_] = 'BCVJR' THEN 'BCA VIRTUAL ACC'
+							WHEN  BLE.[Bank Account No_] = 'BIJD' THEN 'BII USD'
+							WHEN  BLE.[Bank Account No_] = 'BIJR' THEN 'BII IDR'
+							WHEN  BLE.[Bank Account No_] = 'BMGJR' THEN 'MEGA IDR'
+							WHEN  BLE.[Bank Account No_] = 'BMJD' THEN 'MANDIRI USD'
+							WHEN  BLE.[Bank Account No_] = 'BMJR' THEN 'MANDIRI IDR'
+							WHEN  BLE.[Bank Account No_] = 'BNJD' THEN 'PANIN USD'
+							WHEN  BLE.[Bank Account No_] = 'BNJR' THEN 'PANIN IDR'
+							WHEN  BLE.[Bank Account No_] = 'BPJR' THEN 'PERMATA IDR'
+							WHEN  BLE.[Bank Account No_] = 'BTJR-ES' THEN 'BTPN IDR - ESCROW'
+							WHEN  BLE.[Bank Account No_] = 'BTJR-OP' THEN 'BTPN IDR - OPERASIONAL'
+							ELSE 'NA'
+					END AS BANK_ACC
+					, CASE WHEN BLE.[Currency Code] = '' THEN 'IDR' ELSE BLE.[Currency Code] END  AS CURR_CODE
+					, BLE.[Posting Date] AS TGL_TRANS
+					, BLE.[Description] AS KETERANGAN
+					, BLE.Amount AS AMOUNT
+					, BLE.[Debit Amount] AS PEMASUKAN
+					, BLE.[Credit Amount] AS PENGELUARAN
+			FROM [dbo].[BC_SOLUSI$Bank Account Ledger Entry] BLE
+			WHERE	BLE.[Bank Account No_] IN
+											('BCJD','BCJR','BCVJR','BIJD','BIJR','BMGJR','BMJD','BMJR','BNJD','BNJR','BPJR','BTJR-ES','BTJR-OP')
+					AND (BLE.[Posting Date] >= $P{TglFrom} AND BLE.[Posting Date] <= $P{TglUpto})
+					AND BLE.[Reversed] = 0
+		) X
+WHERE (X.COMPANY = $P{Company} OR $P{Company} = 'ALL')
+GROUP BY 	X.COMPANY
+		, X.BANK_ACC
+		, X.CURR_CODE
+		, X.TGL_TRANS
+		, X.KETERANGAN
+		) XX
+GROUP BY	XX.TGL, XX.BULAN, XX.TAHUN
+			, XX.WEEK_OF_MONTH
+			, XX.COMPANY
+			, XX.BANK_ACC
+			, XX.BANK_ACC_URUT
+			, XX.TGL_TRANS
+			, XX.KETERANGAN
+		) XXX
+WHERE XXX.AMT_CHECK <> 0]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_URUT" class="java.lang.Integer"/>
+	<field name="BANK_ACC" class="java.lang.String"/>
+	<field name="BANK_ACC_URUT" class="java.lang.String"/>
+	<field name="TGL_TRANS" class="java.sql.Timestamp"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="PEMASUKAN" class="java.math.BigDecimal"/>
+	<field name="PENGELUARAN" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_USD" class="java.math.BigDecimal"/>
+	<field name="PEMASUKAN_USD" class="java.math.BigDecimal"/>
+	<field name="PENGELUARAN_USD" class="java.math.BigDecimal"/>
+	<field name="URUT_WEEK" class="java.lang.String"/>
+	<field name="KETERANGAN2" class="java.lang.String"/>
+	<field name="KETERANGAN3" class="java.lang.String"/>
+	<sortField name="URUT_WEEK"/>
+	<sortField name="BANK_ACC_URUT"/>
+	<sortField name="TGL_TRANS"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_URUT"/>
+	<variable name="PEMASUKAN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Week" calculation="Sum">
+		<variableExpression><![CDATA[$F{PEMASUKAN}]]></variableExpression>
+	</variable>
+	<variable name="PENGELUARAN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Week" calculation="Sum">
+		<variableExpression><![CDATA[$F{PENGELUARAN}]]></variableExpression>
+	</variable>
+	<variable name="PEMASUKAN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAccount" calculation="Sum">
+		<variableExpression><![CDATA[$F{PEMASUKAN}]]></variableExpression>
+	</variable>
+	<variable name="PENGELUARAN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAccount" calculation="Sum">
+		<variableExpression><![CDATA[$F{PENGELUARAN}]]></variableExpression>
+	</variable>
+	<variable name="PEMASUKAN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PEMASUKAN}]]></variableExpression>
+	</variable>
+	<variable name="PENGELUARAN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PENGELUARAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Week" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_2" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAccount" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="PEMASUKAN_USD_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Week" calculation="Sum">
+		<variableExpression><![CDATA[$F{PEMASUKAN_USD}]]></variableExpression>
+	</variable>
+	<variable name="PEMASUKAN_USD_2" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAccount" calculation="Sum">
+		<variableExpression><![CDATA[$F{PEMASUKAN_USD}]]></variableExpression>
+	</variable>
+	<variable name="PEMASUKAN_USD_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PEMASUKAN_USD}]]></variableExpression>
+	</variable>
+	<variable name="PENGELUARAN_USD_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Week" calculation="Sum">
+		<variableExpression><![CDATA[$F{PENGELUARAN_USD}]]></variableExpression>
+	</variable>
+	<variable name="PENGELUARAN_USD_2" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAccount" calculation="Sum">
+		<variableExpression><![CDATA[$F{PENGELUARAN_USD}]]></variableExpression>
+	</variable>
+	<variable name="PENGELUARAN_USD_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PENGELUARAN_USD}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_USD_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Week" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_USD}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_USD_2" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAccount" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_USD}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_USD_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_USD}]]></variableExpression>
+	</variable>
+	<group name="Week">
+		<groupExpression><![CDATA[$F{URUT_WEEK}]]></groupExpression>
+		<groupHeader>
+			<band height="28">
+				<textField>
+					<reportElement x="0" y="0" width="150" height="14" uuid="ebe9196c-49b3-4ae1-9fb5-f04bb342132c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KETERANGAN2}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="0" y="14" width="150" height="14" uuid="9257f241-7706-4f70-9032-5244d6d9d5f7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KETERANGAN3}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b6de0a34-9cdc-472e-a60a-fb36d29e4a25"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PEMASUKAN_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="380" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ef59d0e0-70f1-4ac3-821c-dd08918fda03"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PENGELUARAN_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="150" y="0" width="150" height="14" uuid="9b5897c2-43a8-43bf-b029-a21ff0f44488"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total per Week]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="150" y="14" width="150" height="14" uuid="10f43cc1-c436-455e-a736-08b8e62f5a6b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="620" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b638e827-5ec0-42d3-84aa-39be9514731d"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PENGELUARAN_USD_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="700" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="d5447064-bc60-4602-8b43-a68581c895a0"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_USD_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="460" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b99e0942-d86d-4e42-8348-27d1d49a8af8"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="540" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="d6f5dfa1-c91a-4a9f-b684-301509a361a0"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PEMASUKAN_USD_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="BankAccount">
+		<groupExpression><![CDATA[$F{BANK_ACC}]]></groupExpression>
+		<groupFooter>
+			<band height="14">
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="e437646c-d480-4a4d-9f59-0c623006d9e5"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PEMASUKAN_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="380" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="028bde9c-2830-4e58-aae5-0143444daae3"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PENGELUARAN_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="150" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="d2248fca-9fcb-4ca9-8ea9-37bee152a958"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BANK_ACC}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="540" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="42b03b82-cb84-4d88-b54b-6dc32aad188e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PEMASUKAN_USD_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="620" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="401c431d-17e0-47b2-8a3b-4626fa768d36"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PENGELUARAN_USD_2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="126" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="56" width="150" height="14" uuid="273acc50-f860-4b9b-a35d-1ee0d9baf160"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="150" y="56" width="150" height="14" uuid="48585bdb-7da3-41b6-a457-c994cab22a69"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="1b3db7e0-6931-44d1-95d9-2c49df65d168"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="150" height="14" uuid="df74745f-847b-4db7-8bb5-e7e564179882"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="3c3775ea-e9bb-49ac-a7b1-75116f70804b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02053) Bank Account -  Flow (Summary)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="150" height="14" uuid="b5447c28-463c-4d1a-9a3c-950377eb13f7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Transaksi :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="112" width="150" height="14" uuid="bca7bdca-c26a-4e0a-92d2-8dfc8135fe5c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bank Account]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="150" height="14" uuid="b8207def-dcb5-4f9d-b5f6-b0c1fcf9b034"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="112" width="80" height="14" uuid="b4b81706-7071-43e4-a3c5-1396e885a377"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Penerimaan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="150" height="14" uuid="ee5f59e6-9e3b-44ea-b271-83f0c8e6185e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Keterangan]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="150" y="42" width="150" height="14" uuid="7bfe5a03-5f4c-48a9-86bf-e2633b70795e"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="380" y="42" width="80" height="14" uuid="c8adb7ce-adf4-4112-9c7b-60b67db181f8"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="42" width="80" height="14" uuid="63ceaa1d-d141-4cb3-9788-42dea00f9f4e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="150" height="14" uuid="6e18864c-d8a1-4ae9-90d1-46e4ecaa586b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="112" width="80" height="14" uuid="0e30cb65-a571-4294-8790-183120d4533c"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pengeluaran]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="28" width="150" height="14" uuid="c393d262-2e50-44e4-8619-b8384c34e2aa"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="620" y="112" width="80" height="14" uuid="a043b182-1587-4fab-884a-78b938949576"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pengeluaran]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="540" y="112" width="80" height="14" uuid="85569bbe-a6e6-46b8-b7cb-4df1b6a22783"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Penerimaan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="460" y="112" width="80" height="14" uuid="2e891bcb-d034-407c-9942-2352c3319a60"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="700" y="112" width="80" height="14" uuid="26a474c5-d1ab-4904-ae79-c9b3408b5908"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="98" width="160" height="14" uuid="a6a68a5d-21d4-4762-af70-aea51761afa4"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[IDR (in 1,000,000)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="540" y="98" width="160" height="14" uuid="f3275884-c6d5-4e50-a993-cba5bbff240b"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[USD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="150" height="14" uuid="ad4ed262-41c9-4483-b73e-95089d8a5541"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<summary>
+		<band height="55">
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="c31ee69c-d74d-4349-bb9e-180475c60379"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="771aec90-3d1c-4cfb-8c3b-b1e8ef0cec46"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PEMASUKAN_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="380" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a8d455c3-b1a9-4600-a0f6-44a5c4e80487"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PENGELUARAN_3}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="150" y="0" width="150" height="14" uuid="6647902d-3e1e-476e-893c-90818fc6746e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Grand Total]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="460" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="def170d7-c598-4fd9-b520-deebd70a343e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="540" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="2706ebe4-9809-4e19-828a-806bc5ace559"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PEMASUKAN_USD_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="620" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a8fee50e-db61-4708-a8e0-d546680e26f3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PENGELUARAN_USD_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="700" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="dfec3fe0-e63f-4dda-b7ac-2ce5b347d3e9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_USD_3}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="167">
+			<staticText>
+				<reportElement x="0" y="98" width="300" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="42" width="80" height="14" uuid="baeb1d31-19b9-4d2d-845f-38dff4d5a10a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="150" y="42" width="150" height="14" uuid="59ed641a-c6ed-4f0a-86aa-43507478dee3"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="150" y="56" width="150" height="14" uuid="a6334168-b3b2-4796-8a2b-ca77d7a09dac"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="150" y="28" width="150" height="14" uuid="4ba387de-df22-4978-8acb-ae7ce16e2088"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="22518ee8-144b-487f-8df3-f5e2d7c112d6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="68740446-96e0-4caf-a4f6-facd491d7071"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02053) Bank Account -  Flow (Summary)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="150" height="14" uuid="5cb7b163-93f7-410d-8bf1-56c2abbc35e8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="150" height="14" uuid="60b9d74d-5ac9-4820-8f5a-8af6f1be1c97"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="150" height="14" uuid="2a34f724-52ac-483f-90d0-94709089cce3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Transaksi :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="380" y="42" width="80" height="14" uuid="4961ab92-556b-4b5c-b179-257dbf52fb28"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="150" height="14" uuid="552b035e-d2fb-489c-8c24-82c7e4e091a6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="150" height="14" uuid="b7de40c3-92b0-4fb5-8a5b-f1cb939269a6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

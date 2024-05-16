@@ -1,0 +1,698 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02029_SPPelunasanAR_SATINDO" language="groovy" pageWidth="2380" pageHeight="595" columnWidth="2340" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.2100000000000528"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglLunasFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglLunasUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CustGroup" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.TGL_INV
+		,XX.CUST_GRP
+		,XX.NO_INV
+		,XX.SELL_TO_CODE
+		,XX.SELL_TO_NAME
+		,XX.BILL_TO_CODE
+		,XX.BILL_TO_NAME
+		,XX.DESCRIPTIONS
+		,XX.NO_PO_CUST
+		,XX.NO_FP
+		,XX.VALUTA
+		,XX.NILAI_INVOICE
+		,XX.SISA_BELUM_LUNAS
+		,XX.TGL_LUNAS
+		,XX.NO_PELUNASAN
+		,XX.KODE_BRG
+		,XX.NAMA_BRG
+		,XX.QTY
+		,XX.HARGA_SATUAN
+FROM	(
+		SELECT	X.TGL_INV
+				,CASE WHEN SUBSTRING(X.NO_INV, 1, 2) = '8S' THEN 'SAT' ELSE 'INDOMARCO' END AS CUST_GRP
+				,X.NO_INV
+				,X.SELL_TO_CODE
+				,X.SELL_TO_NAME
+				,X.BILL_TO_CODE
+				,X.BILL_TO_NAME
+				,X.DESCRIPTIONS
+				,X.NO_PO_CUST
+				,X.NO_FP
+				,X.VALUTA
+				,X.NILAI_INVOICE
+				,LN.RMN_AMOUNT AS SISA_BELUM_LUNAS
+				,LN.TGL_LUNAS
+				,LN.NO_PELUNASAN
+				,SIL.[No_] AS KODE_BRG
+				,SIL.[Description] AS NAMA_BRG
+				,SIL.[Quantity] AS QTY
+				,SIL.[Unit Price] AS HARGA_SATUAN
+		FROM (
+				SELECT
+						SSIH.[Posting Date] AS TGL_INV
+						,SSIH.[No_] AS NO_INV
+						,SSIH.[Sell-to Customer No_] AS SELL_TO_CODE
+						,SSIH.[Sell-to Customer Name] AS SELL_TO_NAME
+						,SSIH.[Bill-to Customer No_] AS BILL_TO_CODE
+						,SSIH.[Bill-to Name] AS BILL_TO_NAME
+						,SSIH.[Posting Description] AS DESCRIPTIONS
+						,SSIH.[External Document No_] AS NO_PO_CUST
+						,SSIH.[Faktur Pajak No_] AS NO_FP
+						,SSIH.[Currency Code] AS VALUTA
+						,SUM(SSID.[Amount Including VAT]) AS NILAI_INVOICE
+				FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SSIH
+				INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SSID ON SSID.[Document No_] = SSIH.[No_]
+				WHERE
+						(SSIH.[Posting Date] < '2016-2-1' AND SSIH.[Customer Posting Group] IN ('INDOMARCO', 'ALFA'))
+							OR
+						(SSIH.[Posting Date] > '2016-1-31' AND SUBSTRING(SSIH.[No_], 1, 2) in ( '8S', '9S'))
+				GROUP BY 		SSIH.[Posting Date], SSIH.[No_]
+						,SSIH.[Sell-to Customer No_]
+						,SSIH.[Sell-to Customer Name]
+						,SSIH.[Bill-to Customer No_]
+						,SSIH.[Bill-to Name]
+						,SSIH.[Posting Description]
+						,SSIH.[External Document No_]
+						,SSIH.[Faktur Pajak No_]
+						,SSIH.[Currency Code]
+			) X
+		LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = X.NO_INV
+		LEFT JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = X.NO_INV	AND SIL.[Type] = 2
+		LEFT JOIN (
+					SELECT
+							  CLE.[Document No_] AS NO_INV
+							  ,CLE.[External Document No_] AS NO_PO_CUST
+							  ,CLD.RMN_AMOUNT
+							  ,CLD2.TGL_LUNAS
+							  ,CLD2.NO_PELUNASAN
+					FROM [dbo].[BC_SOLUSI$Cust_ Ledger Entry] CLE
+					LEFT JOIN (
+						SELECT	CLED.[Cust_ Ledger Entry No_]
+								,SUM(CLED.[Amount]) AS RMN_AMOUNT
+						FROM [dbo].[BC_SOLUSI$Detailed Cust_ Ledg_ Entry] CLED
+						GROUP BY CLED.[Cust_ Ledger Entry No_]
+								)CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+					LEFT JOIN (
+								SELECT	CLED2.[Cust_ Ledger Entry No_]
+										,MAX(CLED2.[Posting Date]) AS TGL_LUNAS
+										,MAX(CLED2.[Document No_]) AS NO_PELUNASAN
+								FROM [dbo].[BC_SOLUSI$Detailed Cust_ Ledg_ Entry] CLED2
+								WHERE CLED2.[Document Type] <> 2
+								GROUP BY CLED2.[Cust_ Ledger Entry No_]
+							  ) CLD2 ON CLD2.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+				  )		LN ON LN.NO_INV = X.NO_INV
+		WHERE CRM.[No_] IS NULL
+		) XX
+WHERE
+
+	(XX.TGL_INV >= $P{TglInvFrom} AND XX.TGL_INV <=$P{TglInvUpto}) AND
+	(XX.TGL_LUNAS >= $P{TglLunasFrom} AND XX.TGL_LUNAS <=$P{TglLunasUpto}) AND
+	XX.CUST_GRP = $P{CustGroup}]]>
+	</queryString>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="CUST_GRP" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="SELL_TO_CODE" class="java.lang.String"/>
+	<field name="SELL_TO_NAME" class="java.lang.String"/>
+	<field name="BILL_TO_CODE" class="java.lang.String"/>
+	<field name="BILL_TO_NAME" class="java.lang.String"/>
+	<field name="DESCRIPTIONS" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="VALUTA" class="java.lang.String"/>
+	<field name="NILAI_INVOICE" class="java.math.BigDecimal"/>
+	<field name="SISA_BELUM_LUNAS" class="java.math.BigDecimal"/>
+	<field name="TGL_LUNAS" class="java.sql.Timestamp"/>
+	<field name="NO_PELUNASAN" class="java.lang.String"/>
+	<field name="KODE_BRG" class="java.lang.String"/>
+	<field name="NAMA_BRG" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="HARGA_SATUAN" class="java.math.BigDecimal"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="TGL_LUNAS"/>
+	<title>
+		<band height="112" splitType="Stretch">
+			<staticText>
+				<reportElement x="68" y="98" width="77" height="14" uuid="8cf79679-3fe2-4352-82a6-127ab540fd10"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="0" width="251" height="14" uuid="e3affb08-2fe4-475c-9687-1227b37c6b71"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LAP. PELUNASAN AR - SAT/INDOMARCO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="145" y="14" width="119" height="14" uuid="49d19d4f-dca9-445a-8f08-bdfe3eecf8c0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT. SOLUSI PERIFERAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="0" width="60" height="14" uuid="b228d3a6-d02a-47a5-b6f8-5111063bd14c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="14" width="77" height="14" uuid="b228d3a6-d02a-47a5-b6f8-5111063bd14c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="28" width="77" height="14" uuid="4223dcd2-af49-4384-a3dd-109c976047b9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cetak :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="42" width="60" height="14" uuid="60766843-14ee-4d29-a4f0-5fd1a19a0727"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="56" width="60" height="14" uuid="4f6d5b12-b163-4ba0-a227-2644bfebc038"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="145" y="84" width="119" height="14" uuid="94770f61-756a-4d8a-ae1c-20c61ede82a3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="145" y="28" width="119" height="14" uuid="fecceb7d-8dec-4317-bdb9-dfba793f1d23"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="98" width="60" height="14" uuid="3a766a66-fa2c-46b2-9ed3-8d84d4c37b4e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="28" width="60" height="14" uuid="f3d15f3c-876d-48a6-9fcc-d14c1da312f8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="14" width="60" height="14" uuid="8bee5a97-45d1-48c8-b798-b65d5c8b52e6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="42" width="77" height="14" uuid="9af17f2b-8b75-4e49-92e3-7c1b41de3d87"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Group :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="56" width="77" height="14" uuid="d5100843-ed50-40f7-9701-1a52df9b300b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="0" width="77" height="14" uuid="99904a94-ecbd-4f79-b7ad-c723c1a415a2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1085" y="98" width="251" height="14" uuid="80281303-f98c-45e2-aa49-340d23d4a634"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Description]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="145" y="98" width="119" height="14" uuid="2d44eaae-4155-4886-b3e6-8232d0fb8ddf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="98" width="119" height="14" uuid="f6cd3df2-105f-469b-aeb7-8b5425633522"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="98" width="251" height="14" uuid="9f99e9ec-1692-41bf-a304-24915627ef17"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Customer (Sell to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="98" width="100" height="14" uuid="8c98a369-ce2d-4d08-b98a-e5b2dc185eb1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Customer (Sell to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="834" y="98" width="251" height="14" uuid="c2baf25b-70b3-4144-9371-0e6666689fcd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Customer (Bill to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="734" y="98" width="100" height="14" uuid="ba31120c-d9aa-4af8-8df8-eee243512661"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Customer (Bill to)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1336" y="98" width="27" height="14" uuid="828b252b-fd4f-438c-8a83-907d49467c8f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Valuta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1363" y="98" width="111" height="14" uuid="8cdc3e3e-a73e-4827-be81-50df3741c63d"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nilai Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1585" y="98" width="60" height="14" uuid="53ac6206-8909-4e44-9792-3cb158e21b28"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Lunas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1645" y="98" width="127" height="14" uuid="4158bd36-68a7-47e5-b291-96e7d90febe1"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No.Pelunasan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="70" width="60" height="14" uuid="5ef43482-7c0c-416c-8f18-3aed70234e79"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="84" width="60" height="14" uuid="cfd7e91a-8c80-4604-af76-5f97845e4d82"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="70" width="77" height="14" uuid="1e988f30-cedf-425c-a6c2-4076fade5078"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Pelunasan :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="68" y="84" width="77" height="14" uuid="5a8f0628-1c54-4069-8f42-ed6477f651ae"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="145" y="0" width="119" height="14" uuid="5af86de6-0144-41cc-96b2-c62b98ffc7df"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="145" y="56" width="119" height="14" uuid="129ee54a-6bae-4c37-9994-b23e6f731672"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="145" y="70" width="119" height="14" uuid="66e3dbff-2ee8-468a-9a9c-bf8014b1526c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglLunasFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="264" y="84" width="119" height="14" uuid="d4acc74c-6670-4f9d-9bfe-286da465fb1f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="70" width="119" height="14" uuid="1ad36197-a352-4257-b11a-4d1fde50f2d7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="56" width="119" height="14" uuid="3bc068bf-dea5-4eed-ac07-3767cd0bba46"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="42" width="119" height="14" uuid="1125e7d1-a151-487a-bce6-5c9369a1aa1d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="28" width="119" height="14" uuid="471f590e-ff33-4783-8ba9-b4b4e90f85fe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="14" width="119" height="14" uuid="52ba6531-edae-46c5-b7bf-e2207a90a694"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="0" width="119" height="14" uuid="a58c5a6b-2696-49b4-a54b-418d1d192be5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="84" width="100" height="14" uuid="140cd165-0750-4820-8f7b-52ee237c14a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="28" width="100" height="14" uuid="407d4b18-abc6-4f3b-8147-26f587b70125"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="14" width="100" height="14" uuid="f67d7d97-08a8-4da2-8a3d-ff6a61c73973"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="0" width="100" height="14" uuid="02db41e6-6a88-4431-b169-b820e5355d50"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02029)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="14" width="251" height="14" uuid="4a5478c8-4cc0-4d92-b749-b27fd9a79bd5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="28" width="251" height="14" uuid="e07fb31f-1143-4def-8132-f20da6b3ccaf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="383" y="56" width="100" height="14" uuid="22ca1d1a-f913-44e3-a947-f1f3df4e5aeb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvUpto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="383" y="70" width="100" height="14" uuid="a0d30559-ccb0-4214-b4c8-53d39a3ecc5f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglLunasUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="483" y="42" width="251" height="14" uuid="a9a3b7ce-42b7-436b-8e16-506de2865523"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="56" width="251" height="14" uuid="9a9b6fbe-dc3b-4b08-95fd-fa4b675fd669"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="70" width="251" height="14" uuid="bb145932-083f-46e9-a670-a4f96397f00e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="483" y="84" width="251" height="14" uuid="2358ba35-cebc-44ba-a374-dd16d665b66e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1474" y="98" width="111" height="14" uuid="4b291b2f-671c-440c-b1ea-1265dc81247e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nilai Sisa Belum Lunas]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1772" y="98" width="127" height="14" uuid="d8b38ee0-a148-48d7-bfed-bab132795bc0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1899" y="98" width="251" height="14" uuid="08203cb4-3316-4d40-9e6e-d3aa2c759c94"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2150" y="98" width="48" height="14" uuid="93175802-2d96-4434-88c3-0e172a4f9e49"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2198" y="98" width="111" height="14" uuid="39fb6259-2d15-4178-af93-d22fbbb158ca"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Harga Satuan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="42" width="100" height="14" uuid="59a69095-0dd8-47d7-a692-ee6f79e5d960"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="145" y="42" width="119" height="14" uuid="f85ea4a3-526e-476c-aa2d-bc3573bafc2d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{CustGroup}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="8" y="1" width="60" height="14" uuid="cc38f2c9-6a23-410f-b020-a306265a6c43"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="68" y="1" width="77" height="14" uuid="9404e9c5-03ae-4422-9e35-ee912d5fc6fb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="145" y="1" width="119" height="14" uuid="c1808959-40a8-425e-b01c-1c69f9132026"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="264" y="1" width="119" height="14" uuid="995609e1-eadf-4fae-9853-b34fcb732c1f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="383" y="1" width="100" height="14" uuid="244e4a0d-12c8-402e-8cf5-ef4835777019"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_CODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="483" y="1" width="251" height="14" uuid="8c5791b6-e553-4a24-b9d6-17ea014eb501"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="734" y="1" width="100" height="14" uuid="df11d605-7474-43e8-801b-21250239cc84"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILL_TO_CODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="834" y="1" width="251" height="14" uuid="60cdc131-c7aa-48e2-acc6-ba79f480f054"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILL_TO_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1085" y="1" width="251" height="14" uuid="a9229053-30c8-4890-9a6c-a49324d2892e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DESCRIPTIONS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1336" y="1" width="27" height="14" uuid="6ac0212e-8b74-43e3-8d5d-f09bcef81aa4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VALUTA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="1363" y="1" width="111" height="14" uuid="fd5463ff-04bf-442e-be7c-6fccbcd839ee"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_INVOICE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="1585" y="1" width="60" height="14" uuid="7af931df-e569-4c28-aa0b-d910a9f410d7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_LUNAS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1645" y="1" width="127" height="14" uuid="bf3475f9-8211-4c54-8cca-1c0509e83ee6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PELUNASAN}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1474" y="1" width="111" height="14" uuid="0db6c1be-5cba-48c6-bad9-15933b768ff5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SISA_BELUM_LUNAS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1772" y="1" width="127" height="14" uuid="4b00f608-8238-450b-bdab-af42a236a70e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KODE_BRG}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1899" y="1" width="251" height="14" uuid="811f1317-5eee-4fde-b7e7-0ffdab11a814"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_BRG}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="2150" y="1" width="48" height="14" uuid="c74e1fbb-5a1f-4717-8e8d-614d60b12231"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="2198" y="1" width="111" height="14" uuid="e1119a96-74fb-47bd-9c1a-623bfb65f1dc"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{HARGA_SATUAN}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

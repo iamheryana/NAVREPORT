@@ -1,0 +1,928 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01059_00_InvoiceSoftcopy" language="groovy" pageWidth="612" pageHeight="792" whenNoDataType="NoDataSection" columnWidth="592" leftMargin="10" rightMargin="10" topMargin="10" bottomMargin="10" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.610510000000055"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="183"/>
+	<parameter name="InvoiceFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="InvoiceUpto" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="PrintMaterai" class="java.lang.String"/>
+	<parameter name="PrintPO" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	INV.COMP
+		,INV.COMPANY
+		,INV.ALAMAT1
+		,INV.ALAMAT2
+		,INV.PHONE_FAX
+		,INV.EMAIL
+		,INV.WEBPAGE
+		,INV.INV_NO
+		,INV.TGL_INV
+		,INV.SLM
+		,INV.VALUTA
+		,INV.KETERANGAN
+		,INV.PEMBELI
+		,INV.ALAMAT_PEMBELI
+		,INV.PO_CUST
+		,INV.SURAT_JALAN
+		, ROW_NUMBER() OVER (PARTITION BY INV.INV_NO, INV.NORUT ORDER BY INV.INV_NO,INV.NO_URUT) AS NO_ITEM
+		,INV.NO_URUT
+		,INV.TIPE
+		,INV.NAMA_BARANG
+		,INV.QTY
+		,INV.HARGA_SATUAN
+		,INV.JUMLAH_HARGA
+		,INV.POTONGAN
+		,INV.TOTAL
+		,INV.JUMLAH
+		,INV.UANG_MUKA
+		,INV.DPP
+		,INV.VAT
+		,INV.YHDB
+		,INV.TERBILANG
+		, CASE	WHEN INV.YHDB >= 5000000  THEN 10000 ELSE 0 END AS MATERAI
+		,CBA.[Name] AS ACC_DC
+		,CBA.[Bank Account No_] AS ACC_NO
+		,	CASE WHEN INV.KODE_CUST IN ('ALFA024', 'AL00605')
+				THEN 'VA' ELSE 'NORMAL'
+			END AS BA_TYPE
+		,TTD.TTD
+		,TTD.JABATAN
+		, EM.[EMAIL_FINANCE]
+FROM	(
+			SELECT	'AUTOJAYA' AS COMP
+					,XY.COMPANY
+					,XY.ALAMAT1
+					,XY.ALAMAT2
+					,XY.PHONE_FAX
+					,XY.EMAIL
+					,XY.WEBPAGE
+					,X.INV_NO
+					,X.TGL_INV
+					,X.SLM
+					,X.NAMA_DC
+					,X.VALUTA
+					,X.KETERANGAN
+					,X.PEMBELI
+					,X.KODE_CUST
+					,X.ALAMAT_PEMBELI
+					,X.PO_CUST
+					,X.SURAT_JALAN
+					,X.NO_URUT
+					,X.NAMA_BARANG
+					,X.QTY
+					,X.HARGA_SATUAN
+					,X.JUMLAH_HARGA
+					,X.POTONGAN
+					,X.TOTAL
+					,X.JUMLAH
+					,X.UANG_MUKA
+					,X.DPP
+					,X.VAT
+					,X.TIPE
+					,X.NORUT
+					, (X.DPP+X.VAT) AS YHDB
+					, (SELECT [NavBI].[dbo].terbilang((X.DPP+X.VAT))) AS TERBILANG
+			FROM	(
+						SELECT	SIH.[No_] AS INV_NO
+								,SIH.[Posting Date] AS TGL_INV
+								,SLS.[Name] AS SLM
+								,SIH.[Sell-to Customer No_] AS NAMA_DC
+								,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS VALUTA
+								,(SIH.[Sell-to Customer Name] + ' / '+SIH.[Posting Description]) AS KETERANGAN
+								,SIH.[Bill-to Name] AS PEMBELI
+								,SIH.[Bill-to Customer No_] KODE_CUST
+								,(SIH.[Bill-to Address]+' '+SIH.[Bill-to Address 2]) AS ALAMAT_PEMBELI
+								,SIH.[External Document No_] AS PO_CUST
+								,(
+
+									SELECT '| '+DO.[No_] + ' | ' as 'data()'
+									FROM	(
+												SELECT DOH.[No_]
+													  ,DOH.[Order No_]
+												FROM [dbo].[BC_AUTOJAYA$Sales Shipment Header] DOH
+												INNER  JOIN	(
+																SELECT X.NO_DO
+																FROM	(
+																			SELECT [Document No_] AS NO_DO
+																				  ,SUM([Quantity]) AS JML
+																			FROM [dbo].[BC_AUTOJAYA$Sales Shipment Line]
+																			GROUP BY [Document No_]
+																		) X
+																WHERE X.JML <> 0
+															) DOD ON DOD.NO_DO = DOH.[No_]
+											) DO
+									WHERE	DO.[Order No_] = SIH.[Order No_]
+									for xml path('')
+									) AS SURAT_JALAN
+								,SIL.[Line No_] AS NO_URUT
+								,SIL.[Description] AS NAMA_BARANG
+								,SIL.[Quantity] AS QTY
+								,SIL.[Unit Price] AS HARGA_SATUAN
+								,(SIL.[Quantity] * SIL.[Unit Price]) AS JUMLAH_HARGA
+								,SIL.[Line Discount Amount] AS POTONGAN
+								,SIL.[Amount] AS TOTAL
+								,SIL.[Type] AS TIPE
+								,CASE WHEN SIL.[Type] = 0 THEN 'NO' ELSE 'YES' END AS NORUT
+								, SUM(CASE WHEN SIL.[No_] NOT IN ('400.110.03', '220.190.00') THEN SIL.[Amount] ELSE 0 END) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS JUMLAH
+								, SUM(CASE WHEN SIL.[No_] IN ('400.110.03', '220.190.00') THEN SIL.[Amount] ELSE 0 END) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS UANG_MUKA
+								, SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS DPP
+								,	CASE WHEN SIH.[Posting Date] < CAST('04/01/2022' AS DATETIME) THEN
+										CASE WHEN SIH.[Currency Code] <> '' THEN
+											ROUND(((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.1)),2)
+										ELSE
+											FLOOR((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.1))
+										END
+									ELSE
+										CASE WHEN SIH.[Currency Code] <> '' THEN
+											ROUND(((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.11)),2)
+										ELSE
+											FLOOR((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.11))
+										END
+									END AS VAT
+						FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+						INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SIH.[Salesperson Code]
+						WHERE SIH.[No_] >= $P{InvoiceFrom} AND SIH.[No_] <= $P{InvoiceUpto}
+					) X
+			LEFT JOIN	(
+							SELECT [Name] AS COMPANY
+									,[Address] AS ALAMAT1
+									,[Address 2] +', '+ [City] + ' ' + [County] + ' ' +[Post Code] AS ALAMAT2
+									,'Telp.: '+[Phone No_]+ ' ' +[Phone No_ 2]+', Fax. : '+[Fax No_] AS PHONE_FAX
+									,'Email : '+[E-Mail] AS EMAIL
+									,'Website : '+[Home Page] AS WEBPAGE
+							FROM [dbo].[BC_AUTOJAYA$Company Information]
+						) XY ON 1=1
+			UNION ALL
+			SELECT	'SOLUSI' AS COMP
+					,XY.COMPANY
+					,XY.ALAMAT1
+					,XY.ALAMAT2
+					,XY.PHONE_FAX
+					,XY.EMAIL
+					,XY.WEBPAGE
+					,X.INV_NO
+					,X.TGL_INV
+					,X.SLM
+					,X.NAMA_DC
+					,X.VALUTA
+					,X.KETERANGAN
+					,X.PEMBELI
+					,X.KODE_CUST
+					,X.ALAMAT_PEMBELI
+					,X.PO_CUST
+					,X.SURAT_JALAN
+					,X.NO_URUT
+					,X.NAMA_BARANG
+					,X.QTY
+					,X.HARGA_SATUAN
+					,X.JUMLAH_HARGA
+					,X.POTONGAN
+					,X.TOTAL
+					,X.JUMLAH
+					,X.UANG_MUKA
+					,X.DPP
+					,X.VAT
+					,X.TIPE
+					,X.NORUT
+					, (X.DPP+X.VAT) AS YHDB
+					, (SELECT [NavBI].[dbo].terbilang((X.DPP+X.VAT))) AS TERBILANG
+			FROM	(
+						SELECT	SIH.[No_] AS INV_NO
+								,SIH.[Posting Date] AS TGL_INV
+								,SLS.[Name] AS SLM
+								,SIH.[Sell-to Customer No_] AS NAMA_DC
+								,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS VALUTA
+								,(SIH.[Sell-to Customer Name] + ' / '+SIH.[Posting Description]) AS KETERANGAN
+								,SIH.[Bill-to Name] AS PEMBELI
+								,SIH.[Bill-to Customer No_] KODE_CUST
+								,(SIH.[Bill-to Address]+' '+SIH.[Bill-to Address 2]) AS ALAMAT_PEMBELI
+								,SIH.[External Document No_] AS PO_CUST
+								,(
+
+									SELECT '| '+DO.[No_] + ' | ' as 'data()'
+									FROM	(
+												SELECT DOH.[No_]
+													  ,DOH.[Order No_]
+												FROM [dbo].[BC_SOLUSI$Sales Shipment Header] DOH
+												INNER  JOIN	(
+																SELECT X.NO_DO
+																FROM	(
+																			SELECT [Document No_] AS NO_DO
+																				  ,SUM([Quantity]) AS JML
+																			FROM [dbo].[BC_SOLUSI$Sales Shipment Line]
+																			GROUP BY [Document No_]
+																		) X
+																WHERE X.JML <> 0
+															) DOD ON DOD.NO_DO = DOH.[No_]
+											) DO
+									WHERE	DO.[Order No_] = SIH.[Order No_]
+									for xml path('')
+									) AS SURAT_JALAN
+								,SIL.[Line No_] AS NO_URUT
+								,SIL.[Description] AS NAMA_BARANG
+								,SIL.[Quantity] AS QTY
+								,SIL.[Unit Price] AS HARGA_SATUAN
+								,(SIL.[Quantity] * SIL.[Unit Price]) AS JUMLAH_HARGA
+								,SIL.[Line Discount Amount] AS POTONGAN
+								,SIL.[Amount] AS TOTAL
+								,SIL.[Type] AS TIPE
+								,CASE WHEN SIL.[Type] = 0 THEN 'NO' ELSE 'YES' END AS NORUT
+								, SUM(CASE WHEN SIL.[No_] NOT IN ('400.110.03', '220.190.00') THEN SIL.[Amount] ELSE 0 END) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS JUMLAH
+								, SUM(CASE WHEN SIL.[No_] IN ('400.110.03', '220.190.00')  THEN SIL.[Amount] ELSE 0 END) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS UANG_MUKA
+								, SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS DPP
+								,	CASE WHEN SIH.[Posting Date] < CAST('04/01/2022' AS DATETIME) THEN
+										CASE WHEN SIH.[Currency Code] <> '' THEN
+											ROUND(((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.1)),2)
+										ELSE
+											FLOOR((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.1))
+										END
+									ELSE
+										CASE WHEN SIH.[Currency Code] <> '' THEN
+											ROUND(((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.11)),2)
+										ELSE
+											FLOOR((SUM(SIL.[Amount]) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) * 0.11))
+										END
+									END AS VAT
+						FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+						INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SIH.[Salesperson Code]
+						WHERE SIH.[No_] >= $P{InvoiceFrom} AND SIH.[No_] <= $P{InvoiceUpto}
+					) X
+			LEFT JOIN	(
+							SELECT [Name] AS COMPANY
+									,[Address] AS ALAMAT1
+									,[Address 2] +', '+ [City] + ' ' + [County] + ' ' +[Post Code] AS ALAMAT2
+									,'Telp.: '+[Phone No_]+ ' ' +[Phone No_ 2]+', Fax. : '+[Fax No_] AS PHONE_FAX
+									,'Email : '+[E-Mail] AS EMAIL
+									,'Website : '+[Home Page] AS WEBPAGE
+							FROM [dbo].[BC_SOLUSI$Company Information]
+						) XY ON 1=1
+		) INV
+LEFT JOIN [dbo].[BC_AUTOJAYA$Customer Bank Account] CBA ON  CBA.[Customer No_] = INV.NAMA_DC AND CBA.[Code] = 'VA01'
+LEFT JOIN	(
+				SELECT	'AUTOJAYA' AS COMPANY
+						,[Sales Invoice - Name] AS TTD
+						,[Sales Invoice - Job Title] AS JABATAN
+				FROM [dbo].[BC_AUTOJAYA$General Ledger Setup]
+				UNION ALL
+				SELECT	'SOLUSI' AS COMPANY
+						,[Sales Invoice - Name] AS TTD
+						,[Sales Invoice - Job Title] AS JABATAN
+				FROM [dbo].[BC_SOLUSI$General Ledger Setup]
+			) TTD ON TTD.COMPANY = INV.COMP
+LEFT JOIN	[dbo].[P05_PARAM_PREPRINT_INVOICE] EM ON EM.KODE = '01']]>
+	</queryString>
+	<field name="COMP" class="java.lang.String"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="ALAMAT1" class="java.lang.String"/>
+	<field name="ALAMAT2" class="java.lang.String"/>
+	<field name="PHONE_FAX" class="java.lang.String"/>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="WEBPAGE" class="java.lang.String"/>
+	<field name="INV_NO" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="SLM" class="java.lang.String"/>
+	<field name="VALUTA" class="java.lang.String"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="PEMBELI" class="java.lang.String"/>
+	<field name="ALAMAT_PEMBELI" class="java.lang.String"/>
+	<field name="PO_CUST" class="java.lang.String"/>
+	<field name="SURAT_JALAN" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.Long"/>
+	<field name="NO_URUT" class="java.lang.Integer"/>
+	<field name="TIPE" class="java.lang.Integer"/>
+	<field name="NAMA_BARANG" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="HARGA_SATUAN" class="java.math.BigDecimal"/>
+	<field name="JUMLAH_HARGA" class="java.math.BigDecimal"/>
+	<field name="POTONGAN" class="java.math.BigDecimal"/>
+	<field name="TOTAL" class="java.math.BigDecimal"/>
+	<field name="JUMLAH" class="java.math.BigDecimal"/>
+	<field name="UANG_MUKA" class="java.math.BigDecimal"/>
+	<field name="DPP" class="java.math.BigDecimal"/>
+	<field name="VAT" class="java.math.BigDecimal"/>
+	<field name="YHDB" class="java.math.BigDecimal"/>
+	<field name="TERBILANG" class="java.lang.String"/>
+	<field name="MATERAI" class="java.lang.Integer"/>
+	<field name="ACC_DC" class="java.lang.String"/>
+	<field name="ACC_NO" class="java.lang.String"/>
+	<field name="BA_TYPE" class="java.lang.String"/>
+	<field name="TTD" class="java.lang.String"/>
+	<field name="JABATAN" class="java.lang.String"/>
+	<field name="EMAIL_FINANCE" class="java.lang.String"/>
+	<sortField name="INV_NO"/>
+	<sortField name="NO_URUT"/>
+	<group name="Invoice" isStartNewPage="true">
+		<groupExpression><![CDATA[$F{INV_NO}]]></groupExpression>
+		<groupFooter>
+			<band height="42">
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="58" y="14" width="534" height="14" isPrintWhenDetailOverflows="true" uuid="e90cb5c5-823b-437b-b6f9-5202aa194de2"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Segoe UI" size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SURAT_JALAN}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="58" height="14" uuid="82a3f916-3a9c-4bdd-9d3f-a839f7cbc464"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Segoe UI" size="8"/>
+					</textElement>
+					<text><![CDATA[Shipment No. :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="592" height="14" uuid="0905579c-3baf-4129-a2ef-bef173d3194a"/>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="592" height="14" uuid="ff28ed08-418f-4af9-9d04-85b1d8d7f3b7"/>
+					<textElement verticalAlignment="Middle">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<pageHeader>
+		<band height="219">
+			<textField>
+				<reportElement x="0" y="0" width="296" height="14" uuid="d9ed7da4-7f45-4bf1-bdf9-eb9c46b4b0e1"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="14" width="374" height="14" uuid="1a323d68-6473-4276-b64c-c2be1e177cf3"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT1}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="28" width="374" height="14" uuid="568f18e1-6016-4208-88ad-36cfb506ab6b"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="42" width="374" height="14" uuid="edf8ea02-f6dc-4f4e-adb9-5d0aaeec0d10"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PHONE_FAX}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="56" width="374" height="14" uuid="b0b4ff0e-35c9-4014-9179-fa3964775c11"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="70" width="374" height="14" uuid="79ab6f3d-9cdd-4408-81f8-7d3046382e31"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{WEBPAGE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="0" width="60" height="14" uuid="48bfcab7-6421-4aa3-b07b-e63f659a9ee7">
+					<printWhenExpression><![CDATA[$P{PrintPO}.equals( "Y" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PO Customer :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="355" y="0" width="237" height="14" uuid="c768767e-8304-4b55-ac72-85533313c817">
+					<printWhenExpression><![CDATA[$P{PrintPO}.equals( "Y" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PO_CUST}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="92" width="296" height="20" uuid="347389b3-b2f2-44dc-8929-ddfc54232036"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[INVOICE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="296" y="92" width="28" height="20" uuid="8759bfa1-815b-4e14-ab83-68dd1beffff4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No.]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="324" y="92" width="268" height="20" uuid="a1b0d55c-ab8e-47e9-82b7-99494b1a9216"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INV_NO}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="126" width="71" height="14" uuid="01a85c57-7a35-412e-b12c-8a48976c7ab0"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Tanggal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="140" width="71" height="14" uuid="92f07a9b-8778-4367-bbcc-5b7041a15f17"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Salesman]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="154" width="71" height="14" uuid="4c300490-2606-4569-98a7-835ad86809e8"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Valuta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="168" width="71" height="14" uuid="358d2430-ebfb-48e0-8b55-9ce0746a2e6d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Keterangan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="71" y="126" width="10" height="14" uuid="9d865408-d870-44c0-9b44-de84e52612d6"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="71" y="140" width="10" height="14" uuid="630e776c-339a-4c9c-8ad2-d09ada695a64"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="71" y="154" width="10" height="14" uuid="16401dfd-7d24-4e75-89d2-8c0c91d63b14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="71" y="168" width="10" height="14" uuid="8e6fc5ec-d419-4092-8161-c210c9527600"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="81" y="126" width="215" height="14" uuid="c6ee5eef-2b75-4810-aaa1-ed910b0cde54"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="81" y="140" width="215" height="14" uuid="38e6fa68-ddc2-4891-b949-34d9c006eb2f"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SLM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="81" y="154" width="215" height="14" uuid="897608d8-5108-4abb-9aed-7c1a47d1a4b6"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VALUTA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="81" y="168" width="215" height="14" isPrintWhenDetailOverflows="true" uuid="2a5d3580-42ef-4af2-ab65-3de99fda5cb6"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="296" y="126" width="296" height="14" uuid="d6c1961c-69d7-4636-bfe4-bc3e54e4c538"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Pembeli :]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="296" y="140" width="296" height="14" isPrintWhenDetailOverflows="true" uuid="fb82b864-fc01-41f3-82b0-903324213934"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PEMBELI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="295" y="168" width="296" height="14" isPrintWhenDetailOverflows="true" uuid="9465d05d-dfb7-4803-b799-1cd46c5a6aa2"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_PEMBELI}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="592" height="8" uuid="8a98e129-3cec-4ba2-a49f-8e6abad9ea44"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="592" height="14" uuid="ef9a1253-5ea2-4b7c-b47e-76a164c647a4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="202" width="22" height="14" uuid="1f7330b1-c692-4b5c-92bd-63d49b5f38f1"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="360" y="202" width="75" height="14" uuid="43f4d096-c49c-4745-a95e-83f7bef17fe2"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[JUMLAH HARGA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="436" y="202" width="70" height="14" uuid="6815af51-fe5c-4561-a165-93a68b114b2e"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[POTONGAN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="506" y="202" width="85" height="14" uuid="c0ab019a-a844-488e-8d54-762e2d317211"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="199" width="592" height="1" uuid="1a44c996-4823-45d2-af60-a1df41ebbc69"/>
+			</line>
+			<line>
+				<reportElement x="0" y="218" width="592" height="1" uuid="954b7461-3928-4d1e-960b-ef7729464ad0"/>
+			</line>
+			<staticText>
+				<reportElement x="22" y="202" width="233" height="14" uuid="b69132dd-e9ad-4a88-868d-08565a6e863c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[NAMA BARANG]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="255" y="202" width="35" height="14" uuid="afb1fd9a-6ae0-4bb1-8c3d-52ad08d4c7b5"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[UNIT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="290" y="202" width="70" height="14" uuid="8ea211a1-a3f0-4a69-a51e-79643014cefb"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[HARGA/UNIT]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{QTY} >= 0]]></printWhenExpression>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="22" y="0" width="233" height="14" isPrintWhenDetailOverflows="true" uuid="53b6761f-a395-44ca-9fc1-a5cf745794ed"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_BARANG}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="255" y="0" width="35" height="14" uuid="998ff8fe-3725-4010-a2e4-277229bebafb">
+					<printWhenExpression><![CDATA[$F{TIPE} !=0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[( $F{QTY} == 0 ? "-" : $F{QTY} )]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="290" y="0" width="70" height="14" uuid="a51aaa83-9226-40a5-ac2b-9f24766e9d01">
+					<printWhenExpression><![CDATA[$F{TIPE} !=0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[( $F{HARGA_SATUAN} == 0 ? "-" : $F{HARGA_SATUAN} )]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="360" y="0" width="75" height="14" uuid="dc70660b-bfee-4678-bd6f-71849e623558">
+					<printWhenExpression><![CDATA[$F{TIPE} !=0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[( $F{JUMLAH_HARGA} == 0 ? "-" : $F{JUMLAH_HARGA} )]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="436" y="0" width="70" height="14" uuid="7cf8b3a6-8a34-42d4-8359-b1fd80bd26ae">
+					<printWhenExpression><![CDATA[$F{TIPE} !=0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[( $F{POTONGAN} == 0 ? "-" : $F{POTONGAN} )]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="506" y="0" width="85" height="14" uuid="f03ca7ad-7fc3-4ade-a64e-57d4de694ad3">
+					<printWhenExpression><![CDATA[$F{TIPE} !=0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[( $F{TOTAL} == 0 ? "-" : $F{TOTAL} )]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="22" height="14" uuid="f9749527-63b9-4182-8f53-2d51366f870d">
+					<printWhenExpression><![CDATA[$F{TIPE} !=0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="191">
+			<rectangle>
+				<reportElement x="0" y="0" width="592" height="74" uuid="6bd6e743-e565-4635-96ab-be43e4b49f3b"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="13" y="10" width="58" height="14" uuid="6ddd892d-902f-4d0b-a90f-472a120b2016"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Terbilang :]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="13" y="24" width="393" height="14" uuid="a34691ca-6b56-4a6b-aaa5-43e93afc5dc4"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["*** "+$F{TERBILANG}+" ***"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="418" y="0" width="85" height="14" uuid="66a27be4-f960-4df0-8399-e44590dac22d"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Jumlah]]></text>
+			</staticText>
+			<line>
+				<reportElement x="505" y="0" width="1" height="74" uuid="f4bce31e-2fbb-455f-bfd7-befee285858b"/>
+			</line>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="506" y="0" width="85" height="14" uuid="4cf48ac6-8e58-47a2-beb6-b5415f07e312"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="506" y="15" width="85" height="14" uuid="c3fe20f4-5ee4-4996-81a7-29a235739d14"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UANG_MUKA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="506" y="30" width="85" height="14" uuid="c485d1ed-b1a0-4e84-acc0-e49679bcb5f4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DPP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="506" y="45" width="85" height="14" uuid="3aeacbb4-24aa-43c7-aa5b-6918f9364711"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VAT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00; (#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="506" y="60" width="85" height="14" uuid="057e4ef9-ea3b-403e-aebf-a2c3783c1677"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{YHDB}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="418" y="14" width="174" height="1" uuid="e380c108-4ece-42e6-88de-7b8ea6b92990"/>
+			</line>
+			<line>
+				<reportElement x="418" y="29" width="174" height="1" uuid="53454537-0731-4334-9106-0a1eeccd3896"/>
+			</line>
+			<staticText>
+				<reportElement x="418" y="60" width="85" height="14" uuid="17838655-9c7b-4789-b1ea-51c03b55fd3a"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Yang Harus Dibayar]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="45" width="85" height="14" uuid="37faa3f7-0287-43b9-95cf-eb5462852d66"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[VAT %]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="30" width="85" height="14" uuid="b6e573af-8a84-43a9-9ebd-a576860c929b"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[DPP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="418" y="15" width="85" height="14" uuid="18a793e1-65b6-48b6-8fe3-3c6df17f7066"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Uang Muka]]></text>
+			</staticText>
+			<line>
+				<reportElement x="418" y="44" width="174" height="1" uuid="51a34e62-1d5e-4fe7-9f95-c44ca2c4765a"/>
+			</line>
+			<line>
+				<reportElement x="418" y="59" width="174" height="1" uuid="9c9246f7-a136-43ff-a118-d85a42dfce06"/>
+			</line>
+			<line>
+				<reportElement x="417" y="0" width="1" height="74" uuid="3a5dd7bd-cbf9-4d3e-b2fb-508ba736a421"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="80" width="174" height="14" uuid="c95cf416-ef52-43d5-b5a9-c85e6898cf5f"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Hormat kami,]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="176" width="174" height="1" uuid="8bd87726-97cb-4a82-9ac2-a543bfcd4370"/>
+			</line>
+			<staticText>
+				<reportElement x="276" y="80" width="315" height="14" uuid="f392834f-2861-44ed-94ee-3c508c09d39e"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[Transfer Full Amount to Acc. :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="276" y="94" width="315" height="14" uuid="29478931-2417-4016-9880-4bdeadc89bbe"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement x="276" y="108" width="315" height="54" uuid="bb058bf6-1c96-4aa9-ac2b-58534168cbd4">
+					<printWhenExpression><![CDATA[$F{BA_TYPE}.equals( "NORMAL" ) == true||
+$F{BA_TYPE}.equals( "VA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<subreportParameter name="Company">
+					<subreportParameterExpression><![CDATA[$F{COMP}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "01059_01_InvoiceSoftcopySub.jasper"]]></subreportExpression>
+			</subreport>
+			<textField>
+				<reportElement x="275" y="148" width="315" height="14" uuid="4b192e77-ab8a-4d4e-8b10-88b38017c578">
+					<printWhenExpression><![CDATA[$F{BA_TYPE}.equals( "VA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACC_NO}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="275" y="134" width="315" height="14" uuid="4c3c2ba8-55fa-4a3c-b36f-3a26e3934a8d">
+					<printWhenExpression><![CDATA[$F{BA_TYPE}.equals( "VA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[BCA Virtual Account (IDR)]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="177" width="174" height="14" uuid="c0aca650-9767-4401-809f-b391ad61b3cd"/>
+				<textElement>
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JABATAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="23" y="108" width="35" height="29" uuid="6e6c0191-853c-40be-b31a-7606d3aeae99">
+					<printWhenExpression><![CDATA[$F{YHDB}.compareTo( 5000000 )>0
+&&
+$P{PrintMaterai}.equals( "Y" ) == false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="6"/>
+				</textElement>
+				<text><![CDATA[Materai 10,000]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="90" width="260" height="93" uuid="573001a5-2a3d-4a1a-9038-05a478165a92">
+					<printWhenExpression><![CDATA[$F{COMP}.equals( "AUTOJAYA" )  == true
+&&
+$F{MATERAI} == 10000
+&&
+$P{PrintMaterai}.equals( "Y" ) == true]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{SUBREPORT_DIR} +"01059_02_AJ_10RB.gif"]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="1" y="162" width="174" height="14" uuid="76a9920a-c61d-4f13-aca0-7f4fd9f9438d"/>
+				<textElement>
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TTD}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="1" y="88" width="155" height="93" uuid="6fa80e11-0f1e-4f0f-ac99-e69467e03435">
+					<printWhenExpression><![CDATA[$F{COMP}.equals( "SOLUSI" )  == true
+&&
+$F{MATERAI} == 10000
+&&
+$P{PrintMaterai}.equals( "Y" ) == true]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{SUBREPORT_DIR} +"01059_02_SP_10RB.gif"]]></imageExpression>
+			</image>
+			<image>
+				<reportElement x="2" y="74" width="212" height="115" uuid="f28abd30-c53c-459f-927b-caec2a341582">
+					<printWhenExpression><![CDATA[$F{COMP}.equals( "AUTOJAYA" )  == true
+&&
+$F{MATERAI} == 0
+&&
+$P{PrintMaterai}.equals( "Y" ) == true]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{SUBREPORT_DIR}+"01059_02_AJ_NOMAT.gif"]]></imageExpression>
+			</image>
+			<image>
+				<reportElement x="18" y="72" width="242" height="117" uuid="1f88f044-455a-498b-942f-5c66c597125d">
+					<printWhenExpression><![CDATA[$F{COMP}.equals( "SOLUSI" )  == true
+&&
+$F{MATERAI} == 0
+&&
+$P{PrintMaterai}.equals( "Y" ) == true]]></printWhenExpression>
+				</reportElement>
+				<imageExpression><![CDATA[$P{SUBREPORT_DIR} +"01059_02_SP_NOMAT.gif"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="275" y="162" width="315" height="14" uuid="4be05054-fe28-4f40-a2ef-ec046f32677b">
+					<printWhenExpression><![CDATA[$F{BA_TYPE}.equals( "VA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[*) Mohon Cantumkan No. Invoice pada Keterangan Transfer ]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="281" y="176" width="309" height="14" isPrintWhenDetailOverflows="true" uuid="b85b3365-ef1b-4894-b83b-36c47af3e0e1">
+					<printWhenExpression><![CDATA[$F{BA_TYPE}.equals( "VA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font fontName="Segoe UI" size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["dan Kirim Bukti Transfer ke alamat email : "+$F{EMAIL_FINANCE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010303_LapSalesMarginAnalisisByCustomer_00" language="groovy" pageWidth="1000" pageHeight="595" orientation="Landscape" columnWidth="960" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.771561000000022"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvTo" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="GroupMargin" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProsesId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT  XXX.CAB_KODE
+		, XXX.CABANG
+		, XXX.NAMA_CUST
+		, SUM(XXX.NILAI_UM) AS NILAI_UM
+		, SUM(XXX.NILAI_DPP) AS NILAI_DPP
+		, (SUM(XXX.NILAI_DPP) / XXX.NILAI_DPP_NASIONAL) * 100 AS DPP_PCN
+		, SUM(XXX.NILAI_TOTAL) AS NILAI_TOTAL
+		, (SUM(XXX.NILAI_TOTAL) / XXX.NILAI_TOTAL_NASIONAL) * 100 AS TOTAL_PCN
+		, SUM(XXX.NILAI_COGS) AS NILAI_COGS
+		, SUM(XXX.MARGIN_DPP) AS MARGIN_DPP
+		, SUM(XXX.MARGIN) AS MARGIN
+		, XXX.NILAI_DPP_NASIONAL
+		, XXX.NILAI_TOTAL_NASIONAL
+		,	CASE WHEN SUM(XXX.MARGIN_DPP) = 0 THEN 0
+				ELSE
+					CASE WHEN SUM(XXX.NILAI_DPP) > 0 THEN
+						((SUM(XXX.MARGIN_DPP))/ SUM(XXX.NILAI_DPP))*100
+					ELSE
+						CASE WHEN SUM(XXX.NILAI_COGS) < 0 THEN
+							100
+						ELSE
+							-100
+						END
+					END
+				END AS MARGIN_DPP_PCN
+		,	CASE WHEN SUM(XXX.MARGIN) = 0 THEN 0
+				ELSE
+					CASE WHEN SUM(XXX.NILAI_TOTAL) > 0 THEN
+						((SUM(XXX.MARGIN))/ SUM(XXX.NILAI_TOTAL))*100
+					ELSE
+						CASE WHEN SUM(XXX.NILAI_COGS) < 0 THEN
+							100
+						ELSE
+							-100
+						END
+					END
+				END AS MARGIN_PCN
+FROM	(
+			SELECT CAB_KODE
+					, CABANG
+					, NAMA_CUST
+					, NILAI_UM
+					, NILAI_DPP
+					, NILAI_TOTAL
+					, NILAI_COGS
+					, MARGIN_DPP
+					, MARGIN
+					, GROUP_MARGIN_DPP
+					, GROUP_MARGIN
+					, SUM(NILAI_DPP) OVER (PARTITION BY 1 ) AS NILAI_DPP_NASIONAL
+					, SUM(NILAI_TOTAL) OVER (PARTITION BY 1 ) AS NILAI_TOTAL_NASIONAL
+			FROM	[NavBI].[dbo].[TEMP19_SALES_MARGIN_ANALYSIS]
+			WHERE	 PROSES_ID = $P{ProsesId} AND
+					(
+						REG <> 'CREDIT MEMO' OR
+						REG = 'CREDIT MEMO'  AND NO_INV IN	(
+																SELECT CRM_NO
+																FROM [NavBI].[dbo].[TEMP19_SALES_MARGIN_ANALYSIS]
+																WHERE PROSES_ID = $P{ProsesId} AND REG <> 'CREDIT MEMO' AND CRM_NO IS NOT NULL
+															)
+					)
+		) XXX
+WHERE  ($P{GroupMargin} = 'ALL' OR XXX.GROUP_MARGIN_DPP = $P{GroupMargin})
+GROUP BY XXX.CAB_KODE, XXX.CABANG, XXX.NILAI_DPP_NASIONAL, XXX.NILAI_TOTAL_NASIONAL, XXX.NAMA_CUST]]>
+	</queryString>
+	<field name="CAB_KODE" class="java.lang.String"/>
+	<field name="CABANG" class="java.lang.String"/>
+	<field name="NAMA_CUST" class="java.lang.String"/>
+	<field name="NILAI_UM" class="java.math.BigDecimal"/>
+	<field name="NILAI_DPP" class="java.math.BigDecimal"/>
+	<field name="DPP_PCN" class="java.math.BigDecimal"/>
+	<field name="NILAI_TOTAL" class="java.math.BigDecimal"/>
+	<field name="TOTAL_PCN" class="java.math.BigDecimal"/>
+	<field name="NILAI_COGS" class="java.math.BigDecimal"/>
+	<field name="MARGIN_DPP" class="java.math.BigDecimal"/>
+	<field name="MARGIN" class="java.math.BigDecimal"/>
+	<field name="NILAI_DPP_NASIONAL" class="java.math.BigDecimal"/>
+	<field name="NILAI_TOTAL_NASIONAL" class="java.math.BigDecimal"/>
+	<field name="MARGIN_DPP_PCN" class="java.math.BigDecimal"/>
+	<field name="MARGIN_PCN" class="java.math.BigDecimal"/>
+	<sortField name="CAB_KODE"/>
+	<sortField name="NILAI_DPP" order="Descending"/>
+	<variable name="NILAI_DPP_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{NILAI_DPP}]]></variableExpression>
+		<initialValueExpression><![CDATA[$F{NILAI_DPP}]]></initialValueExpression>
+	</variable>
+	<variable name="NILAI_COGS_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{NILAI_COGS}]]></variableExpression>
+		<initialValueExpression><![CDATA[$F{NILAI_COGS}]]></initialValueExpression>
+	</variable>
+	<variable name="MARGIN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{MARGIN_DPP}]]></variableExpression>
+		<initialValueExpression><![CDATA[$F{MARGIN_DPP}]]></initialValueExpression>
+	</variable>
+	<variable name="Pcn_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[($V{MARGIN_3}==0?0:
+ ($V{NILAI_DPP_3}==0 ? ($V{NILAI_COGS_3} > 0 ? 100:-100) : ($V{MARGIN_3}/$V{NILAI_DPP_3})*100 )
+ )]]></variableExpression>
+		<initialValueExpression><![CDATA[($V{MARGIN_3}==0?0:
+ ($V{NILAI_DPP_3}==0 ? ($V{NILAI_COGS_3} > 0 ? 100:-100) : ($V{MARGIN_3}/$V{NILAI_DPP_3})*100 )
+ )]]></initialValueExpression>
+	</variable>
+	<variable name="NILAI_UM_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{NILAI_UM}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_TOTAL_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{NILAI_TOTAL}]]></variableExpression>
+		<initialValueExpression><![CDATA[$F{NILAI_TOTAL}]]></initialValueExpression>
+	</variable>
+	<variable name="GroupMargin" class="java.lang.String">
+		<variableExpression><![CDATA[$P{GroupMargin}.equals( "A" )?"Diatas atau sama dengan (>=) 30%":
+($P{GroupMargin}.equals( "B" )?"Antara 20% s/d dibawah 30%":
+($P{GroupMargin}.equals( "C" )?"Antara 10% s/d dibawah 20%":
+($P{GroupMargin}.equals( "D" )?"Dibawah 10%":"ALL"
+)))]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{GroupMargin}.equals( "A" )?"Diatas atau sama dengan (>=) 30%":
+($P{GroupMargin}.equals( "B" )?"Antara 20% s/d dibawah 30%":
+($P{GroupMargin}.equals( "C" )?"Antara 10% s/d dibawah 20%":
+($P{GroupMargin}.equals( "D" )?"Dibawah 10%":"ALL"
+)))]]></initialValueExpression>
+	</variable>
+	<variable name="TOTAL_PCN_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL_PCN}]]></variableExpression>
+	</variable>
+	<variable name="DPP_PCN_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{DPP_PCN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DPP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{NILAI_DPP}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_COGS_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{NILAI_COGS}]]></variableExpression>
+	</variable>
+	<variable name="MARGIN_DPP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{MARGIN_DPP}]]></variableExpression>
+	</variable>
+	<variable name="Pcn_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[($V{MARGIN_DPP_1}==0?0:
+ ($V{NILAI_DPP_1}==0 ? ($V{NILAI_COGS_1} > 0 ? 100:-100) : ($V{MARGIN_DPP_1}/$V{NILAI_DPP_1})*100 )
+ )]]></variableExpression>
+		<initialValueExpression><![CDATA[($V{MARGIN_DPP_1}==0?0:
+ ($V{NILAI_DPP_1}==0 ? ($V{NILAI_COGS_1} > 0 ? 100:-100) : ($V{MARGIN_DPP_1}/$V{NILAI_DPP_1})*100 )
+ )]]></initialValueExpression>
+	</variable>
+	<group name="Cabang">
+		<groupExpression><![CDATA[$F{CAB_KODE}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true">
+					<reportElement x="25" y="0" width="100" height="14" uuid="58b4bc28-b368-47cf-b289-769111fb1f2d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="0" y="0" width="25" height="14" uuid="1b89ad06-d4f4-4636-a61a-e46193d5900b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CAB_KODE}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="525" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="757f4187-bb6f-4c92-9a6e-1881a02b983f"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_DPP_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="625" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="7715cbc1-0bdf-4c80-89d5-53937e7ab1ef"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_COGS_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="725" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="c38a9881-03be-4b8c-9f3c-a2e6ced1ee16"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{MARGIN_DPP_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="825" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="6c9adcf9-d99e-469e-be7a-20b443fbe52c"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Pcn_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="125" height="14" uuid="e7acce65-c534-4aa2-afdf-372dfdf697e7"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL per CABANG]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="84" splitType="Stretch">
+			<staticText>
+				<reportElement x="125" y="0" width="400" height="14" uuid="6a807459-6b0d-4b90-aa60-a542bc0e3546"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(010303) LAPORAN SALES - GROSS MARGIN ANALYSIS by CUSTOMER]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="125" y="14" width="400" height="14" uuid="0f788482-c86b-4616-98b6-c9dbd9b36a28"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="525" y="14" width="100" height="14" uuid="e983ef99-7a2c-412b-8c04-aa31da3407c1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="725" y="14" width="100" height="14" uuid="a76e333a-f2cb-410c-a1dd-330ea4d1d958"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="625" y="14" width="100" height="14" uuid="ea61e6ae-bb65-4ec0-aaea-81fb3b1f7e6c"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="125" y="28" width="400" height="14" uuid="71dcf215-3f41-4196-9ef2-10b085a450a9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Group Margin :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="525" y="42" width="200" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="25" y="70" width="100" height="14" uuid="1a0a7d66-4dc0-4ec8-93c3-d8c90d44153b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="25" height="14" uuid="1a05c09c-a846-42d2-9f66-c8c9506a4684"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cab]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="625" y="70" width="100" height="14" uuid="9cd44e6d-103e-4f05-9020-cc09d33d8e02"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COGS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="725" y="70" width="100" height="14" uuid="6dc5ac78-7111-4db8-8f59-6b91f809f7c9"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Margin]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="825" y="70" width="75" height="14" uuid="cea2d978-00a7-4e06-8516-27c14bd07346"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="25" height="14" uuid="0fcbfb68-7164-4d89-b8fa-943654205a3e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="25" height="14" uuid="d942ea65-0b0a-4197-8255-b7cacec7c02e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="25" height="14" uuid="823c57d1-ba71-4e99-9cbb-8a546edd138d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="25" height="14" uuid="b5e6d58e-42c2-4cd2-8920-81356fff09e7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="125" y="42" width="400" height="14" uuid="2416e567-b590-46cd-b14e-f9281133ba81"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak Pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="56" width="100" height="14" uuid="5283741c-7cbb-4b4a-9927-e7c10e1e79a7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="25" height="14" uuid="ee9af5b5-446f-462b-aa01-3b1a7e69dc6a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="525" y="28" width="200" height="14" uuid="a16da025-db59-40f4-83ff-7edc191f7ba3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GroupMargin}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="525" y="70" width="100" height="14" uuid="7c23a212-d7f4-4910-9748-ef3b1addd97c"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Penjualan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="125" y="70" width="400" height="14" uuid="9ec45e04-3bff-44d0-b2af-50a9d5762a18"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="42" width="100" height="14" uuid="310a61dd-2675-4126-86de-f7eda04f6900"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="28" width="100" height="14" uuid="825fa880-9738-4bf4-b96e-e2fcfffd959f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="14" width="100" height="14" uuid="c99285b4-e39d-48c0-af4d-0c34934006e9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="0" width="100" height="14" uuid="7c89eab4-d2a0-4a2f-a58f-ad39599175be"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="100" height="14" uuid="f966832e-cd23-40c7-9db1-f3610e519b8c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_DPP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###;(#,###)">
+				<reportElement x="625" y="0" width="100" height="14" uuid="53eb1be4-a507-4645-bb3f-1617f7b80c42"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_COGS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###;(#,###)">
+				<reportElement x="725" y="0" width="100" height="14" uuid="4b6e7771-a36c-41a7-9dc5-15b7722ae23e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MARGIN_DPP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="##0.00;(##0.00)" isBlankWhenNull="true">
+				<reportElement x="825" y="0" width="75" height="14" uuid="75a6cb32-e45e-4fb8-88dd-2febfd65d48e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MARGIN_DPP_PCN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="25" height="14" uuid="c6f58dcc-a4d0-4580-8242-6fd1a85d1dcd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="0" width="100" height="14" uuid="d9bbfba7-8032-416a-9795-0225f544e122"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="125" y="0" width="400" height="14" isPrintWhenDetailOverflows="true" uuid="386dd06e-f832-4627-a408-4a9bf9dae3ed"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_CUST}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="14" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="125" height="14" uuid="f87e11fd-527b-4d38-b6fe-e12413167442"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRAND TOTAL]]></text>
+			</staticText>
+			<textField pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="100" height="14" uuid="a0b2ae31-4467-467e-9569-c04e4b09050d"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_DPP_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="625" y="0" width="100" height="14" uuid="fe37cbf1-e478-458b-847d-42329374c499"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_COGS_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="725" y="0" width="100" height="14" uuid="a95826be-85ae-4bef-bc17-d6dc2676572c"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{MARGIN_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="825" y="0" width="75" height="14" uuid="3826f0c9-73a3-4302-81b9-154a7574ddad"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Pcn_3}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

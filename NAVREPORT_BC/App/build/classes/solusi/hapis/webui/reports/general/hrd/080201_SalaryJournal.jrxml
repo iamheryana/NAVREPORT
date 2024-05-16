@@ -1,0 +1,718 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="080201_SalaryJournal" language="groovy" pageWidth="800" pageHeight="845" whenNoDataType="NoDataSection" columnWidth="800" leftMargin="0" rightMargin="0" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.6105100000000026"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="ProsesId" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	JSAL.SRT
+		, CASE WHEN JSAL.COMPANY = 'AJ' THEN 'PT. AUTOJAYA IDETECH' ELSE 'PT. SOLUSI PERIFERAL' END AS COMPANY
+		, PRD.PERIODE
+		, JSAL.NO_ACC
+		, JSAL.ACC_NAME + ' - '+ PRD.PERIODE AS ACC_NAME
+		, JSAL.BRANCHES
+		, JSAL.DEBIT
+		, JSAL.CREDIT
+		, JSAL.TOTAL
+		, ISNULL(TEMP.URUT, 99999) AS URUT
+FROM	(
+SELECT	1 AS SRT
+		, SAL.COMPANY
+		, SAL.NO_ACC
+		, SAL.ACC_NAME
+		, SAL.BRANCHES
+		, SUM(SAL.AMT) AS DEBIT
+		, 0 AS  CREDIT
+		, SUM(SAL.AMT) - 0 AS TOTAL
+FROM	(
+			SELECT	AMT.COMPANY
+					, GLA.[No_] AS NO_ACC
+					,
+						CASE WHEN GLA.[No_] IN ('640.103.40', '640.100.40', '640.116.40', '640.102.40', '640.143.40', '640.106.40', '640.108.40') THEN
+							CASE WHEN AMT.UNIT_USAHA = 'PEGAWAI KONTRAK' AND  GLA.[No_] IN  ('640.103.40', '640.100.40', '640.116.40', '640.106.40') THEN
+								GLA.[Name] + ' (P.Kontrak)'
+							ELSE
+								GLA.[Name] + ' (G&A)'
+							END
+						ELSE
+							CASE WHEN GLA.[No_] = '220.180.00' THEN
+								GLA.[Name]
+							ELSE
+								GLA.[Name] +' ('+ AMT.AREA +')'COLLATE Latin1_General_CI_AS
+							END
+						END AS  ACC_NAME
+					, CASE WHEN AMT.AREA = 'HO' THEN '10'
+						   WHEN AMT.AREA = 'SBY' THEN '15'
+						   WHEN AMT.AREA = 'CKR' THEN '16'
+						   WHEN AMT.AREA = 'SMG' THEN '17'
+						   WHEN AMT.AREA = 'DPS' THEN '19'
+						   ELSE '10' END AS BRANCHES
+					,
+						CASE WHEN AMT.UNIT_USAHA IN ('GENERAL & ADMIN', 'PEGAWAI KONTRAK') THEN
+							CASE	WHEN GLA.[No_] = '640.103.40' THEN AMT.AMOUNT_THR
+									WHEN GLA.[No_] = '640.100.40' THEN AMT.AMOUNT_GAPOK
+									WHEN GLA.[No_] = '640.116.40' THEN AMT.AMOUNT_BONUS_NSALES
+									WHEN GLA.[No_] = '640.102.40' THEN AMT.AMOUNT_ALLOWANCE
+									WHEN GLA.[No_] = '640.143.40' THEN AMT.AMOUNT_JHT_JP
+									WHEN GLA.[No_] = '640.106.40' THEN AMT.AMOUNT_PESANGON
+									WHEN GLA.[No_] = '220.180.00' THEN AMT.AMOUNT_CICILAN_PESANGON
+									WHEN GLA.[No_] = '640.108.40' THEN AMT.AMOUNT_BONUS_MANAGEMENT
+									ELSE 0
+							END
+						ELSE
+							CASE WHEN AMT.UNIT_USAHA = 'OPERATION' THEN
+								CASE	WHEN GLA.[No_] = '620.103.20' THEN AMT.AMOUNT_THR
+										WHEN GLA.[No_] = '620.100.20' THEN AMT.AMOUNT_GAPOK
+										WHEN GLA.[No_] = '620.115.20' THEN AMT.AMOUNT_BONUS_NSALES
+										WHEN GLA.[No_] = '620.102.20' THEN AMT.AMOUNT_ALLOWANCE
+										WHEN GLA.[No_] = '620.122.20' THEN AMT.AMOUNT_JHT_JP
+										WHEN GLA.[No_] = '620.106.20' THEN AMT.AMOUNT_PESANGON
+										WHEN GLA.[No_] = '220.180.00' THEN AMT.AMOUNT_CICILAN_PESANGON
+										WHEN GLA.[No_] = '640.108.40' THEN AMT.AMOUNT_BONUS_MANAGEMENT
+										ELSE 0
+								END
+							ELSE
+								0
+							END
+						END AS AMT
+			FROM [dbo].[BC_AUTOJAYA$G_L Account]  GLA
+			LEFT JOIN	(
+							SELECT	CASE WHEN AREA = 'PT. Solusi Periferal' THEN 'SP' ELSE 'AJ' END AS COMPANY
+									, CASE	WHEN AREA = 'PT. Autojaya Idetech' THEN 'HO'
+											 WHEN AREA = 'PT. Solusi Periferal' THEN 'HO'
+											 WHEN AREA = 'PT. Autojaya Idetech - Surabaya' THEN 'SBY'
+											 WHEN AREA = 'PT. Autojaya Idetech - Cikarang' THEN 'CKR'
+											 WHEN AREA = 'PT. Autojaya Idetech - Semarang' THEN 'SMG'
+											 WHEN AREA = 'PT. Autojaya Idetech - Denpasar' THEN 'DPS'
+											 ELSE 'HO' END AS AREA
+									, UNIT_USAHA
+									, PERIODE
+									, SUM(CAST(D_THR AS NUMERIC(20))) AS AMOUNT_THR
+									, SUM(CAST(D_BSAL AS NUMERIC(20))) AS AMOUNT_GAPOK
+									,	CASE WHEN AREA = 'PT. Solusi Periferal'  AND UNIT_USAHA = 'PEGAWAI KONTRAK' THEN
+											CASE WHEN PERIODE <= '202206' THEN
+												CASE WHEN SUM(CAST(D_CPSG AS NUMERIC(20))) <= 14886000 THEN
+													SUM(CAST(D_CPSG AS NUMERIC(20)))
+												ELSE
+													14886000
+												END
+											ELSE
+												0
+											END
+										ELSE
+											0
+										END AS AMOUNT_CICILAN_PESANGON
+									,	CASE WHEN AREA = 'PT. Solusi Periferal' AND UNIT_USAHA = 'PEGAWAI KONTRAK' THEN
+											CASE WHEN PERIODE <= '202206' THEN
+												CASE WHEN SUM(CAST(D_CPSG AS NUMERIC(20))) <= 14886000 THEN
+													0
+												ELSE
+													SUM(CAST(D_CPSG AS NUMERIC(20))) - 14886000
+												END
+											ELSE
+												SUM(CAST(D_CPSG AS NUMERIC(20)))
+											END
+										ELSE
+											SUM(CAST(D_CPSG AS NUMERIC(20)))
+										END AS AMOUNT_PESANGON
+									, SUM
+										(
+											CASE WHEN JOB_GRADE NOT IN ('Board Of Director', 'Commissary') THEN
+												CAST(D_BNSN AS NUMERIC(20))
+											ELSE
+												0
+											END
+										) AS AMOUNT_BONUS_NSALES
+									, SUM
+										(
+											CASE WHEN JOB_GRADE IN ('Board Of Director', 'Commissary') THEN
+												CAST(D_BNSN AS NUMERIC(20))
+											ELSE
+												0
+											END
+										) AS AMOUNT_BONUS_MANAGEMENT
+									, (
+										SUM(CAST(D_AMED AS NUMERIC(20))) +
+										SUM(CAST(D_JKK AS NUMERIC(20))) +
+										SUM(CAST(D_JKM AS NUMERIC(20))) +
+										SUM(CAST(D_TD24 AS NUMERIC(20))) +
+										SUM(CAST(D_TDNS AS NUMERIC(20))) +
+										SUM(CAST(D_TJHP AS NUMERIC(20))) +
+										SUM(CAST(D_TKHS AS NUMERIC(20))) +
+										SUM(CAST(D_LBR AS NUMERIC(20))) +
+										SUM(CAST(D_TJKS AS NUMERIC(20))) +
+										SUM(CAST(D_TMED AS NUMERIC(20))) +
+										SUM(CAST(D_JPK AS NUMERIC(20)))
+									  ) AS AMOUNT_ALLOWANCE
+									, (
+										(((3.7 * SUM(	CAST((D_JHT) AS NUMERIC(20))))/2)) +
+										((SUM(CAST(D_JPS AS NUMERIC(20))) * 2))
+									  )	 AS AMOUNT_JHT_JP
+							FROM [dbo].[TEMP07_SALARY_HAPIS]
+							WHERE PROSES_ID = $P{ProsesId}
+							GROUP BY AREA, UNIT_USAHA, PERIODE
+						) AMT ON 1 = 1
+			WHERE [No_] IN ( '640.103.40', '620.103.20',
+							 '640.100.40', '620.100.20',
+							 '640.116.40', '620.115.20',
+							 '640.102.40', '620.102.20',
+							 '640.143.40', '620.122.20',
+							 '640.106.40', '620.106.20',
+							 '220.180.00', '640.108.40')
+		) SAL
+WHERE SAL.AMT <> 0
+GROUP BY SAL.COMPANY
+		,SAL.NO_ACC
+		,SAL.ACC_NAME
+		,SAL.BRANCHES
+UNION ALL
+SELECT	1 AS SRT
+		,SKB.COMPANY
+		,SKB.NO_ACC
+		,SKB.ACC_NAME
+		,SKB.BRANCHES
+		,SKB.DEBIT
+		,SKB.CREDIT
+		,SKB.TOTAL
+FROM	(
+			SELECT	AMT.COMPANY
+					, GLA.[No_] AS NO_ACC
+					, GLA.[Name] +' '+ AMT.AREA COLLATE Latin1_General_CI_AS AS  ACC_NAME
+					, CASE WHEN AMT.AREA = 'HO' THEN '10'
+							WHEN AMT.AREA = 'SBY' THEN '15'
+							WHEN AMT.AREA = 'CKR' THEN '16'
+							WHEN AMT.AREA = 'SMG' THEN '17'
+							WHEN AMT.AREA = 'DPS' THEN '19'
+							ELSE '10' END AS BRANCHES
+					, CASE	WHEN GLA.[No_] = '610.106.10' THEN AMT.AMOUNT_KOMISI_SALES
+							WHEN GLA.[No_] = '610.107.10' THEN AMT.AMOUNT_BONUS_SALES
+							WHEN GLA.[No_] = '620.106.20' THEN AMT.AMOUNT_PESANGON
+							ELSE 0
+					  END AS DEBIT
+					, 0 AS CREDIT
+					, CASE	WHEN GLA.[No_] = '610.106.10' THEN AMT.AMOUNT_KOMISI_SALES
+							WHEN GLA.[No_] = '610.107.10' THEN AMT.AMOUNT_BONUS_SALES
+							WHEN GLA.[No_] = '620.106.20' THEN AMT.AMOUNT_PESANGON
+							ELSE 0
+					  END - 0 AS TOTAL
+			FROM [dbo].[BC_AUTOJAYA$G_L Account]  GLA
+			LEFT JOIN	(
+							SELECT	CASE WHEN AREA = 'PT. Solusi Periferal' THEN 'SP' ELSE 'AJ' END AS COMPANY
+									, CASE	WHEN AREA = 'PT. Autojaya Idetech' THEN 'HO'
+											 WHEN AREA = 'PT. Solusi Periferal' THEN 'HO'
+											 WHEN AREA = 'PT. Autojaya Idetech - Surabaya' THEN 'SBY'
+											 WHEN AREA = 'PT. Autojaya Idetech - Cikarang' THEN 'CKR'
+											 WHEN AREA = 'PT. Autojaya Idetech - Semarang' THEN 'SMG'
+											 WHEN AREA = 'PT. Autojaya Idetech - Denpasar' THEN 'DPS'
+											 ELSE 'HO' END AS AREA
+									, UNIT_USAHA
+									, SUM(CAST(D_KOMS AS NUMERIC(20))) AS AMOUNT_KOMISI_SALES
+									, SUM(CAST(D_BNSA AS NUMERIC(20))) AS AMOUNT_BONUS_SALES
+									, SUM(CAST(D_PESA AS NUMERIC(20))) AS AMOUNT_PESANGON
+							FROM [dbo].[TEMP07_SALARY_HAPIS]
+							WHERE PROSES_ID = $P{ProsesId}
+							GROUP BY AREA, UNIT_USAHA
+						) AMT ON 1 = 1
+			WHERE [No_] IN ('610.106.10', '610.107.10', '620.106.20')
+		) SKB
+WHERE SKB.TOTAL <> 0
+UNION ALL
+SELECT	2 AS SRT
+		, X.COMPANY
+		, X.NO_ACC
+		, X.ACC_NAME
+		, X.BRANCHES
+		, X.DEBIT
+		, X.CREDIT
+		, X.TOTAL
+FROM	(
+SELECT	AMT.COMPANY
+		, GLA.[No_] AS NO_ACC
+		, GLA.[Name] AS  ACC_NAME
+		, '10' AS BRANCHES
+		, 0 AS DEBIT
+		, SUM(
+				CASE	WHEN GLA.[No_] = '118.110.00' THEN AMT.AMOUNT_ASXT
+						WHEN GLA.[No_] = '114.135.00' THEN AMT.AMOUNT_PIUTANG_K
+						WHEN GLA.[No_] = '114.136.00' THEN AMT.AMOUNT_PADV
+						WHEN GLA.[No_] = '115.100.00' THEN AMT.AMOUNT_TOTAL
+						WHEN GLA.[No_] = '220.160.00' THEN AMOUNT_BPJS_KESEHATAN
+						WHEN GLA.[No_] = '220.165.00' THEN AMOUNT_BPJS_KETENAGAKERJAAN
+						WHEN GLA.[No_] = '230.110.00' THEN AMOUNT_PAJAK_PPH21
+						ELSE 0 END
+			 ) 	AS CREDIT
+		,
+			0 -
+			  SUM(
+					CASE	WHEN GLA.[No_] = '118.110.00' THEN AMOUNT_ASXT
+							WHEN GLA.[No_] = '114.135.00' THEN AMOUNT_PIUTANG_K
+							WHEN GLA.[No_] = '114.136.00' THEN AMOUNT_PADV
+							WHEN GLA.[No_] = '115.100.00' THEN AMT.AMOUNT_TOTAL
+							WHEN GLA.[No_] = '220.160.00' THEN AMOUNT_BPJS_KESEHATAN
+							WHEN GLA.[No_] = '220.165.00' THEN AMOUNT_BPJS_KETENAGAKERJAAN
+							WHEN GLA.[No_] = '230.110.00' THEN AMOUNT_PAJAK_PPH21
+							ELSE 0 END
+				)	AS TOTAL
+FROM [dbo].[BC_AUTOJAYA$G_L Account]  GLA
+LEFT JOIN	(
+				SELECT	CASE WHEN AREA = 'PT. Solusi Periferal' THEN 'SP' ELSE 'AJ' END AS COMPANY
+						, SUM	(	CASE WHEN CAST(P_ASXT AS NUMERIC(20)) = CAST(D_AMED AS NUMERIC(20)) THEN CAST(D_AMED AS NUMERIC(20))
+									ELSE
+										CAST(P_ASXT AS NUMERIC(20)) +
+										CAST(D_AMED AS NUMERIC(20))
+									END
+								) AS AMOUNT_ASXT
+						, SUM(	CAST(P_PINJ AS NUMERIC(20))  ) AS AMOUNT_PIUTANG_K
+						,	CASE WHEN SUM(	CAST(D_AMED AS NUMERIC(20))  ) <> 0 THEN
+								SUM(  CAST(P_ADVP AS NUMERIC(20)) +  CAST(P_PADV AS NUMERIC(20))) - SUM(	CAST(D_AMED AS NUMERIC(20))  )
+							ELSE
+								SUM(  CAST(P_ADVP AS NUMERIC(20)) +  CAST(P_PADV AS NUMERIC(20)))
+							END AS AMOUNT_PADV
+						, SUM(	(
+									CAST([D_BSAL] AS NUMERIC(20)) +
+									CAST([D_TJHP] AS NUMERIC(20)) +
+									CAST([D_AMED] AS NUMERIC(20)) +
+									CAST([D_TMED] AS NUMERIC(20)) +
+									CAST([D_TDNS] AS NUMERIC(20)) +
+									CAST([D_TD24] AS NUMERIC(20)) +
+									CAST([D_TOTX] AS NUMERIC(20)) +
+									CAST([D_TONX] AS NUMERIC(20)) +
+									CAST([D_LBR] AS NUMERIC(20)) +
+									CAST([D_BNSA] AS NUMERIC(20)) +
+									CAST([D_BNSN] AS NUMERIC(20)) +
+									CAST([D_TJKS] AS NUMERIC(20)) +
+									CAST([D_TKHS] AS NUMERIC(20)) +
+									CAST([D_KOMS] AS NUMERIC(20)) +
+									CAST([D_THR] AS NUMERIC(20)) +
+									CAST([D_JKK] AS NUMERIC(20)) +
+									CAST([D_JKM] AS NUMERIC(20)) +
+									CAST([D_CPSG] AS NUMERIC(20)) +
+									CAST([D_JPK] AS NUMERIC(20))
+								) -
+								(
+									CAST([P_PINJ] AS NUMERIC(20)) +
+									CAST([P_ADVP] AS NUMERIC(20)) +
+									CAST([P_PADV] AS NUMERIC(20)) +
+									CAST([P_ASXT] AS NUMERIC(20)) +
+									CAST([P_POTL] AS NUMERIC(20)) +
+									CAST([P_PJK] AS NUMERIC(20)) +
+									CAST([P_BPJK] AS NUMERIC(20)) +
+									CAST([D_JPS] AS NUMERIC(20)) +
+									CAST([D_JHT] AS NUMERIC(20)) +
+									CAST([P_JKK] AS NUMERIC(20)) +
+									CAST([P_JKM] AS NUMERIC(20))
+								)
+							  ) AS AMOUNT_TOTAL
+						, SUM(	CAST((P_BPJK) AS NUMERIC(20)) )
+								AS AMOUNT_BPJS_KESEHATAN
+						, ((
+							SUM(	CAST((D_JHT) AS NUMERIC(20))) +
+							((3.7 * SUM(	CAST((D_JHT) AS NUMERIC(20))))/2)
+						  )  ) +
+						  SUM(CAST(D_JKK AS NUMERIC(20))) +
+						  SUM(CAST(D_JKM AS NUMERIC(20))) +
+						  ((
+							SUM(CAST(D_JPS AS NUMERIC(20))) +
+							(SUM(CAST(D_JPS AS NUMERIC(20))) * 2)
+						  ) )
+						 AS AMOUNT_BPJS_KETENAGAKERJAAN
+						, SUM(CAST(P_PJK AS NUMERIC(20))) AS AMOUNT_PAJAK_PPH21
+				FROM [dbo].[TEMP07_SALARY_HAPIS]
+				WHERE PROSES_ID = $P{ProsesId}
+				GROUP BY AREA
+			) AMT ON 1 = 1
+WHERE [No_] IN ('118.110.00', '114.135.00', '114.136.00','115.100.00',
+				'220.160.00', '220.165.00', '230.110.00')
+GROUP BY AMT.COMPANY
+		, GLA.[No_]
+		, GLA.[Name]
+			) X
+WHERE X.TOTAL <> 0
+UNION ALL
+SELECT	3 AS SRT
+		, SAL.COMPANY
+		, SAL.NO_ACC
+		, SAL.ACC_NAME
+		, SAL.BRANCHES
+		, 0 AS DEBIT
+		, SUM(SAL.AMOUNT_POT_LAIN) AS  CREDIT
+		, 0 - SUM(SAL.AMOUNT_POT_LAIN) AS TOTAL
+FROM	(
+			SELECT	CASE WHEN AREA = 'PT. Solusi Periferal' THEN 'SP' ELSE 'AJ' END AS COMPANY
+					, '???.???.??' AS NO_ACC
+					,
+						CASE	WHEN UNIT_USAHA = 'PEGAWAI KONTRAK' THEN 'POTONGAN LAIN-LAIN (P.Kontrak)'
+								WHEN UNIT_USAHA = 'GENERAL & ADMIN' THEN 'POTONGAN LAIN-LAIN (G&A)'
+								WHEN UNIT_USAHA = 'OPERATION' THEN 'POTONGAN LAIN-LAIN (Operation)'
+								ELSE ''
+						END AS  ACC_NAME
+					, CASE	WHEN AREA = 'PT. Autojaya Idetech' THEN '10'
+								WHEN AREA = 'PT. Solusi Periferal' THEN '10'
+								WHEN AREA = 'PT. Autojaya Idetech - Surabaya' THEN '15'
+								WHEN AREA = 'PT. Autojaya Idetech - Cikarang' THEN '16'
+								WHEN AREA = 'PT. Autojaya Idetech - Semarang' THEN '17'
+								WHEN AREA = 'PT. Autojaya Idetech - Denpasar' THEN '19'
+								ELSE '10' END AS BRANCHES
+					, SUM(CAST([P_POTL] AS NUMERIC(20))) AS AMOUNT_POT_LAIN
+			FROM [dbo].[TEMP07_SALARY_HAPIS]
+			WHERE PROSES_ID = $P{ProsesId}
+			GROUP BY AREA, UNIT_USAHA
+		) SAL
+WHERE SAL.AMOUNT_POT_LAIN <> 0
+GROUP BY SAL.COMPANY
+		,SAL.NO_ACC
+		,SAL.ACC_NAME
+		,SAL.BRANCHES
+		)JSAL
+LEFT JOIN [dbo].[TEMP07_01_URUTAN] TEMP ON TEMP.NO_ACC = JSAL.NO_ACC COLLATE Latin1_General_CI_AS
+LEFT JOIN	(
+				SELECT
+						CASE	WHEN SUBSTRING(X.PERIODE, 5, 2) = '01' THEN 'JANUARI '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '02' THEN 'FEBRUARI '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '03' THEN 'MARET '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '04' THEN 'APRIL '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '05' THEN 'MEI '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '06' THEN 'JUNI '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '07' THEN 'JULI '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '08' THEN 'AGUSTUS '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '09' THEN 'SEPTEMBER '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '10' THEN 'OKTOBER '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '11' THEN 'NOVEMBER '+SUBSTRING(X.PERIODE, 1, 4)
+								WHEN SUBSTRING(X.PERIODE, 5, 2) = '12' THEN 'DESEMBER '+SUBSTRING(X.PERIODE, 1, 4)
+								END AS PERIODE
+				FROM	(
+							SELECT DISTINCT PERIODE
+							FROM [dbo].[TEMP07_SALARY_HAPIS]
+							WHERE PROSES_ID = $P{ProsesId}
+						) X
+			) PRD ON 1 = 1
+WHERE JSAL.TOTAL <> 0]]>
+	</queryString>
+	<field name="SRT" class="java.lang.Integer"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="PERIODE" class="java.lang.String"/>
+	<field name="NO_ACC" class="java.lang.String"/>
+	<field name="ACC_NAME" class="java.lang.String"/>
+	<field name="BRANCHES" class="java.lang.String"/>
+	<field name="DEBIT" class="java.math.BigDecimal"/>
+	<field name="CREDIT" class="java.math.BigDecimal"/>
+	<field name="TOTAL" class="java.math.BigDecimal"/>
+	<field name="URUT" class="java.lang.Integer"/>
+	<sortField name="COMPANY"/>
+	<sortField name="URUT"/>
+	<sortField name="SRT"/>
+	<sortField name="NO_ACC"/>
+	<sortField name="BRANCHES"/>
+	<variable name="DEBIT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{DEBIT}]]></variableExpression>
+	</variable>
+	<variable name="CREDIT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{CREDIT}]]></variableExpression>
+	</variable>
+	<group name="Company">
+		<groupExpression><![CDATA[$F{COMPANY}]]></groupExpression>
+		<groupHeader>
+			<band height="70">
+				<staticText>
+					<reportElement x="0" y="56" width="95" height="14" uuid="5dd3a3be-9c01-4d96-969c-cde97b8b84fa"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Account No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="95" y="56" width="350" height="14" uuid="156b68a0-ab91-45ab-bf53-679ff09cca35"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="445" y="56" width="50" height="14" uuid="8ca0ba36-a4a5-4937-b123-4fe543a62d39"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Branches]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="495" y="56" width="100" height="14" uuid="52acb082-02e3-47e0-9b45-def7d2dd5d1d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Debit]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="595" y="56" width="100" height="14" uuid="97664720-2268-491f-a053-19e296b0cf9a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Credit]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="95" height="14" uuid="7d8114ad-a44a-444b-bef6-e708e79d0400"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Company :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="95" height="14" uuid="d1f5a309-9712-43be-bc96-51d621d686d6"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Periode :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="95" height="14" uuid="a32c05f2-b47d-49ec-af0b-e9db0fb67096"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="95" y="0" width="350" height="14" uuid="8692ede1-40da-4205-856c-82ddf66f4bff"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="95" y="14" width="350" height="14" uuid="64aada27-da66-41d3-bb91-af6bb815bcc1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="95" y="28" width="350" height="14" uuid="09dfd785-a430-41eb-8703-a7ee6ca8e59f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PERIODE}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="95" y="42" width="350" height="14" uuid="0aee3217-1af1-4322-9c8e-a814bddd949a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="42" width="95" height="14" uuid="38deeba3-3b6a-4da1-a99c-d5659cce1289"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="42">
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="495" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="b4b770d9-54ad-4670-a4a8-7e12ac3fcf99"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{DEBIT_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="595" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="e51573cb-ee23-41db-b3e6-2f026313fee7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{CREDIT_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="95" height="14" uuid="d4847a82-2293-4a7b-8a2b-861c69c09148"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="95" y="0" width="350" height="14" uuid="8d301203-4d1b-41b1-8302-f9e795c61556"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="95" height="14" uuid="cf522f86-5ebb-4a25-bac0-890129646fb3"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="95" y="14" width="350" height="14" uuid="edc37645-7387-4b93-b70d-4727ed4e85ee"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="95" height="14" uuid="d3c9e34f-e057-43c1-9b51-846474534dd9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="95" y="28" width="350" height="14" uuid="748cecc4-f420-4f69-8922-81a8731ff9f7"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="42" splitType="Stretch">
+			<staticText>
+				<reportElement x="95" y="28" width="350" height="14" uuid="e91eac52-fa03-4955-bfe9-2f35ef5d5687"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="95" y="0" width="350" height="14" uuid="6691be1a-f78e-4c2d-a555-884d130e5708"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Journal Salary]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="95" height="14" uuid="566ed316-df37-4e00-bb89-94dda5169dc7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="95" height="14" uuid="689e0aa8-46c0-4185-9d6a-962cdcf83b14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="95" y="14" width="350" height="14" uuid="201070ef-e966-4986-a076-deb0135ee60f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="95" height="14" uuid="99cac461-e02f-410e-a809-e5c567cf0834"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(080201) ]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="95" height="14" isPrintWhenDetailOverflows="true" uuid="bca6f637-2dcb-4dc9-9a80-f597f4fdc0e1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ACC}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="95" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" uuid="91755197-e6f6-4954-920d-cb1a592afe5e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACC_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="445" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="d9462988-f564-408a-bb34-6766a4be300b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BRANCHES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="495" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="09d45499-4f35-4b71-88e5-1f792f755703"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DEBIT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="595" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="3d7389d7-f5fe-42b4-b1a8-03ca6dd29c10"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CREDIT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="56">
+			<staticText>
+				<reportElement x="95" y="42" width="350" height="14" uuid="e6489694-3f5e-4ab7-a024-17fab1827d75"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA YANG MEMENUHI KRITERIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="95" height="14" uuid="047af61b-8676-4d05-8d85-cd3c8afd0f3e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="95" y="28" width="350" height="14" uuid="91c4fd5c-2c9c-4b71-bb72-5be4011f236b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="95" y="0" width="350" height="14" uuid="dfa10093-6875-4ec2-a691-a9f2f0bde83a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Journal Salary]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="95" height="14" uuid="a822ea9c-1e27-4b23-8f77-312055a12b43"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(080201) ]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="95" y="14" width="350" height="14" uuid="bd27feeb-6352-4880-8bae-0ac53056c603"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="95" height="14" uuid="80b10b44-aa34-4a53-a138-1e5a499374c4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="95" height="14" uuid="6a0b5ccb-e5a6-484c-9af3-4bf98a1c1886"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

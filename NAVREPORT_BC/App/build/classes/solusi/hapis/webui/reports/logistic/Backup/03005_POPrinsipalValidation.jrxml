@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03005_POPrincipalValidation" language="groovy" pageWidth="1125" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1085" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.6105100000000425"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	POP.COMPANY
+		,POP.NO_PO
+		,POP.VENDOR_NO
+		,VDR.[Name] AS DISTI
+		,POP.TGL_PO
+		,POP.CURR_CODE
+		,POP.NO_ITEM
+		,POP.ITEM_DESC
+		,POP.DIM_PRINCIPAL
+		,PRIN.[Name] AS PRINCIPAL
+		,POP.AMOUNT
+		,'SATU PO LEBIH DARI 1 PRINCIPAL' AS VAL_DESC
+		, 1 AS JENIS_VAL
+FROM	(
+			SELECT	POP2.COMPANY
+					,POP2.NO_PO
+					,POP2.VENDOR_NO
+					,POP2.TGL_PO
+					,POP2.CURR_CODE
+					,POP2.NO_ITEM
+					,POP2.ITEM_DESC
+					,POP2.DIM_PRINCIPAL
+					,POP2.AMOUNT
+			FROM	(
+						SELECT	POP1.COMPANY
+								,POP1.NO_PO
+								,CASE WHEN POP1.VENDOR_NO = 'SUPP050' THEN 'SUPP072' ELSE POP1.VENDOR_NO END AS VENDOR_NO
+								,POP1.TGL_PO
+								,CASE WHEN POP1.VENDOR_NO IN ('SUPP050', 'SUPP021') AND POP1.CURR_CODE = 'USD' THEN 'IDR' ELSE POP1.CURR_CODE END AS CURR_CODE
+								,CASE WHEN POP1.VENDOR_NO IN ('SUPP050', 'SUPP021') AND POP1.CURR_CODE = 'USD' THEN ROUND((POP1.AMOUNT * ISNULL(CER.[Relational Exch_ Rate Amount], 1)),0)
+									ELSE POP1.AMOUNT
+								 END AS AMOUNT
+								,POP1.NO_ITEM
+								,POP1.ITEM_DESC
+								,POP1.DIM_PRINCIPAL
+						FROM	(
+									SELECT 'AUTOJAYA' AS COMPANY
+											,POH.[No_] AS NO_PO
+											,POH.[Pay-to Vendor No_] AS VENDOR_NO
+											,POH.[Pay-to Name] AS VENDOR_NAME
+											,POH.[Order Date] AS TGL_PO
+											,CASE WHEN POH.[Currency Code] = '' THEN 'IDR' ELSE POH.[Currency Code] END AS CURR_CODE
+											, (	SELECT  MAX([Starting Date]) AS EXC_DATE
+												FROM [dbo].[AUTOJAYA$Currency Exchange Rate]
+												WHERE [Currency Code] = POH.[Currency Code]
+														AND [Starting Date] <= POH.[Order Date]
+											 ) AS EXC_DATE
+											,DIM.DIM_PRINCIPAL
+											,POD.[No_] AS NO_ITEM
+											,POD.[Description] AS ITEM_DESC
+											,POD.[Line Amount] AS AMOUNT
+									FROM [dbo].[AUTOJAYA$Purchase Header] POH
+									LEFT JOIN [dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_] AND POD.[Document Type] = POH.[Document Type]
+									LEFT JOIN	(
+													SELECT [Dimension Set ID]
+														  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+														  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+														  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+													FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+													GROUP BY [Dimension Set ID]
+												) DIM ON DIM.[Dimension Set ID] = POD.[Dimension Set ID]
+									WHERE POH.[No_] IN	(
+															SELECT XX.[Document No_]
+															FROM	(
+																		SELECT X.[Document No_], COUNT(X.DIM_PRINCIPAL) AS JML_DIM
+																		FROM	(
+																					SELECT DISTINCT PCL.[Document No_]
+																							,DIM.DIM_PRINCIPAL
+																					FROM [dbo].[AUTOJAYA$Purchase Line] PCL
+																					LEFT JOIN	(
+																									SELECT [Dimension Set ID]
+																										  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+																										  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+																										  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+																									FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+																									GROUP BY [Dimension Set ID]
+																								) DIM ON DIM.[Dimension Set ID] = PCL.[Dimension Set ID]
+																					WHERE	(DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01') AND DIM.DIM_PRODUCT NOT IN ('H007','H008','H009','H012'))
+																							AND
+																							(	(PCL.[Document Type] = 1 AND SUBSTRING(PCL.[Document No_],5,1) <> 'P')
+																								OR
+																								(PCL.[Document Type] = 4 AND SUBSTRING(PCL.[Document No_],6,1) = 'P')
+																							)
+																				) X
+																		GROUP BY X.[Document No_]
+																	) XX
+															WHERE XX.JML_DIM > 1
+														)
+								) POP1
+						LEFT JOIN [dbo].[AUTOJAYA$Currency Exchange Rate] CER ON CER.[Currency Code] = 'USD' AND  CER.[Starting Date] = POP1.EXC_DATE
+					) POP2
+			UNION ALL
+			SELECT	POP2.COMPANY
+					,POP2.NO_PO
+					,POP2.VENDOR_NO
+					,POP2.TGL_PO
+					,POP2.CURR_CODE
+					,POP2.NO_ITEM
+					,POP2.ITEM_DESC
+					,POP2.DIM_PRINCIPAL
+					,POP2.AMOUNT
+
+			FROM	(
+						SELECT	POP1.COMPANY
+								,POP1.NO_PO
+								,CASE WHEN POP1.VENDOR_NO = 'SUPP050' THEN 'SUPP072' ELSE POP1.VENDOR_NO END AS VENDOR_NO
+								,POP1.TGL_PO
+								,CASE WHEN POP1.VENDOR_NO IN ('SUPP050', 'SUPP021') AND POP1.CURR_CODE = 'USD' THEN 'IDR' ELSE POP1.CURR_CODE END AS CURR_CODE
+								,CASE WHEN POP1.VENDOR_NO IN ('SUPP050', 'SUPP021') AND POP1.CURR_CODE = 'USD' THEN ROUND((POP1.AMOUNT * ISNULL(CER.[Relational Exch_ Rate Amount], 1)),0)
+									ELSE POP1.AMOUNT
+								 END AS AMOUNT
+								,POP1.NO_ITEM
+								,POP1.ITEM_DESC
+								,POP1.DIM_PRINCIPAL
+						FROM	(
+									SELECT 'SOLUSI' AS COMPANY
+											,POH.[No_] AS NO_PO
+											,POH.[Pay-to Vendor No_] AS VENDOR_NO
+											,POH.[Pay-to Name] AS VENDOR_NAME
+											,POH.[Order Date] AS TGL_PO
+											,CASE WHEN POH.[Currency Code] = '' THEN 'IDR' ELSE POH.[Currency Code] END AS CURR_CODE
+											, (	SELECT  MAX([Starting Date]) AS EXC_DATE
+												FROM [dbo].[SOLUSI$Currency Exchange Rate]
+												WHERE [Currency Code] = POH.[Currency Code]
+														AND [Starting Date] <= POH.[Order Date]
+											 ) AS EXC_DATE
+											,DIM.DIM_PRINCIPAL
+											,POD.[No_] AS NO_ITEM
+											,POD.[Description] AS ITEM_DESC
+											,POD.[Line Amount] AS AMOUNT
+									FROM [dbo].[SOLUSI$Purchase Header] POH
+									LEFT JOIN [dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_] AND POD.[Document Type] = POH.[Document Type]
+									LEFT JOIN	(
+													SELECT [Dimension Set ID]
+														  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+														  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+														  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+													FROM [dbo].[SOLUSI$Dimension Set Entry]
+													GROUP BY [Dimension Set ID]
+												) DIM ON DIM.[Dimension Set ID] = POD.[Dimension Set ID]
+									WHERE POH.[No_] IN	(
+															SELECT XX.[Document No_]
+															FROM	(
+																		SELECT X.[Document No_], COUNT(X.DIM_PRINCIPAL) AS JML_DIM
+																		FROM	(
+																					SELECT DISTINCT PCL.[Document No_]
+																							,DIM.DIM_PRINCIPAL
+																					FROM [dbo].[SOLUSI$Purchase Line] PCL
+																					LEFT JOIN	(
+																									SELECT [Dimension Set ID]
+																										  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+																										  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+																										  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+																									FROM [dbo].[SOLUSI$Dimension Set Entry]
+																									GROUP BY [Dimension Set ID]
+																								) DIM ON DIM.[Dimension Set ID] = PCL.[Dimension Set ID]
+																					WHERE	(DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01') AND DIM.DIM_PRODUCT NOT IN ('H007','H008','H009','H012'))
+																							AND
+																							(	(PCL.[Document Type] = 1 AND SUBSTRING(PCL.[Document No_],5,1) <> 'P')
+																								OR
+																								(PCL.[Document Type] = 4 AND SUBSTRING(PCL.[Document No_],6,1) = 'P')
+																							)
+																				) X
+																		GROUP BY X.[Document No_]
+																	) XX
+															WHERE XX.JML_DIM > 1
+														)
+								) POP1
+						LEFT JOIN [dbo].[SOLUSI$Currency Exchange Rate] CER ON CER.[Currency Code] = 'USD' AND  CER.[Starting Date] = POP1.EXC_DATE
+					) POP2
+		) POP
+LEFT JOIN	(
+				SELECT	VEN.[No_], MAX([Name]) AS [Name]
+						FROM	(
+									SELECT [No_], [Name]
+									FROM [dbo].[AUTOJAYA$Vendor]
+									UNION ALL
+									SELECT [No_], [Name]
+									FROM [dbo].[SOLUSI$Vendor]
+								) VEN
+						GROUP BY VEN.[No_]
+			) VDR ON VDR.[No_] = POP.VENDOR_NO
+LEFT JOIN	(
+				SELECT	PRI.[Code], MAX(PRI.[Name]) AS [Name]
+				FROM	(
+							SELECT [Code]
+								  ,[Name]
+							FROM [dbo].[AUTOJAYA$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT [Code]
+								  ,[Name]
+							FROM [dbo].[SOLUSI$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+						) PRI
+				GROUP BY PRI.[Code]
+			) PRIN ON PRIN.[Code] = POP.DIM_PRINCIPAL
+WHERE POP.VENDOR_NO NOT IN ('SUPP005', 'SUPP032') AND
+	(POP.TGL_PO >= $P{TglFrom} AND POP.TGL_PO <=$P{TglUpto})
+UNION ALL
+SELECT	'AUTOJAYA' AS COMPANY
+		,PCL.[Document No_] AS NO_PO
+		,PCH.[Pay-to Vendor No_] AS VENDOR_NO
+		,PCH.[Pay-to Name] AS DISTI
+		,PCH.[Order Date] AS TGL_PO
+		,CASE WHEN PCH.[Currency Code] = '' THEN 'IDR' ELSE PCH.[Currency Code] END AS CURR_CODE
+		,PCL.[No_] AS NO_ITEM
+		,PCL.[Description] AS ITEM_DESC
+		,DIM.DIM_PRINCIPAL
+		,PRIN.[Name] AS PRINCIPAL
+		,PCL.[Line Amount] AS AMOUNT
+		,('PEMBELIAN PRINCIPAL : '+DIM.DIM_PRINCIPAL+' KE : '+PCH.[Pay-to Name]+ ' TIDAK VALID') AS VAL_DESC
+		, 2 AS JENIS_VAL
+FROM [dbo].[AUTOJAYA$Purchase Header] PCH
+INNER JOIN [dbo].[AUTOJAYA$Purchase Line] PCL ON  PCL.[Document No_] = PCH.[No_] AND PCL.[Document Type] = PCH.[Document Type]
+LEFT JOIN	(
+				SELECT [Dimension Set ID]
+					  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+					  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+					  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+				FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIM ON DIM.[Dimension Set ID] = PCL.[Dimension Set ID]
+LEFT JOIN	[dbo].[AUTOJAYA$Dimension Value] PRIN ON PRIN.[Dimension Code] = 'PRINCIPAL' AND PRIN.[Code] = DIM.DIM_PRINCIPAL
+WHERE
+		(	(PCL.[Document Type] = 1 AND SUBSTRING(PCL.[Document No_],5,1) <> 'P')
+			OR
+			(PCL.[Document Type] = 4 AND SUBSTRING(PCL.[Document No_],6,1) = 'P')
+		) AND
+		(
+			--(DIM.DIM_PRINCIPAL = 'HONE' AND PCH.[Pay-to Vendor No_] IN ('SUPP021', 'SUPP421', 'SUPP316')) OR
+			(DIM.DIM_PRINCIPAL = 'HONS' AND PCH.[Pay-to Vendor No_] NOT IN ('SUPP417', 'SUPP123')) OR
+			(DIM.DIM_PRINCIPAL = 'ZEBR' AND PCH.[Pay-to Vendor No_] NOT IN ('SUPP018','SUPP050','SUPP072','SUPP078','SUPP006','SUPP321')) OR
+			(DIM.DIM_PRINCIPAL = 'HP' AND PCH.[Pay-to Vendor No_] NOT IN ('SUPP239','SUPP031')) OR
+			(DIM.DIM_PRINCIPAL = 'XTRN' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP018','SUPP305')) OR
+			(DIM.DIM_PRINCIPAL = 'FORTI' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP006','SUPP321','SUPP036')) OR
+			(DIM.DIM_PRINCIPAL = 'POIN' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP080')) OR
+			--(DIM.DIM_PRINCIPAL = 'TELV' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP143')) OR
+			(DIM.DIM_PRINCIPAL = 'HIKV' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP297')) OR
+			(DIM.DIM_PRINCIPAL = 'SEUIC' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP135'))
+		) AND
+		(
+			(DIM.DIM_PRINCIPAL = 'ZEBR' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			--(DIM.DIM_PRINCIPAL = 'HONE' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'HONS' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'HONS' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'POIN' AND DIM.DIM_ITEM_CATEGORY IN ('HW01')) OR
+			(DIM.DIM_PRINCIPAL = 'HP' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'XTRN' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'XTRN' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'FORTI' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'FORTI' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			--(DIM.DIM_PRINCIPAL = 'TELV' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'HIKV' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'SAMSUNG' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'SAMSUNG' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'SEUIC' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'SEUIC' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'JANZ' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01'))
+		) AND
+		(PCH.[Order Date] >= $P{TglFrom} AND PCH.[Order Date] <=$P{TglUpto}) AND
+		PCH.[Pay-to Vendor No_] NOT IN ('SUPP005', 'SUPP032') AND
+		PCL.[Document No_]	NOT IN	(
+										SELECT XX.[Document No_]
+										FROM	(
+													SELECT X.[Document No_], COUNT(X.DIM_PRINCIPAL) AS JML_DIM
+													FROM	(
+																SELECT DISTINCT PCL.[Document No_]
+																		,DIM.DIM_PRINCIPAL
+																FROM [dbo].[AUTOJAYA$Purchase Line] PCL
+																LEFT JOIN	(
+																				SELECT [Dimension Set ID]
+																					  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+																					  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+																					  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+																				FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+																				GROUP BY [Dimension Set ID]
+																			) DIM ON DIM.[Dimension Set ID] = PCL.[Dimension Set ID]
+																WHERE	(DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01') AND DIM.DIM_PRODUCT NOT IN ('H007','H008','H009','H012'))
+																		AND
+																		(	(PCL.[Document Type] = 1 AND SUBSTRING(PCL.[Document No_],5,1) <> 'P')
+																			OR
+																			(PCL.[Document Type] = 4 AND SUBSTRING(PCL.[Document No_],6,1) = 'P')
+																		)
+															) X
+													GROUP BY X.[Document No_]
+												) XX
+										WHERE XX.JML_DIM > 1
+									)
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		,PCL.[Document No_] AS NO_PO
+		,PCH.[Pay-to Vendor No_] AS VENDOR_NO
+		,PCH.[Pay-to Name] AS DISTI
+		,PCH.[Order Date] AS TGL_PO
+		,CASE WHEN PCH.[Currency Code] = '' THEN 'IDR' ELSE PCH.[Currency Code] END AS CURR_CODE
+		,PCL.[No_] AS NO_ITEM
+		,PCL.[Description] AS ITEM_DESC
+		,DIM.DIM_PRINCIPAL
+		,PRIN.[Name] AS PRINCIPAL
+		,PCL.[Line Amount] AS AMOUNT
+		,('PEMBELIAN PRINCIPAL : '+DIM.DIM_PRINCIPAL+' KE : '+PCH.[Pay-to Name]+ ' TIDAK VALID') AS VAL_DESC
+		, 2 AS JENIS_VAL
+FROM [dbo].[SOLUSI$Purchase Header] PCH
+INNER JOIN [dbo].[SOLUSI$Purchase Line] PCL ON  PCL.[Document No_] = PCH.[No_] AND PCL.[Document Type] = PCH.[Document Type]
+LEFT JOIN	(
+				SELECT [Dimension Set ID]
+					  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+					  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+					  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+				FROM [dbo].[SOLUSI$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIM ON DIM.[Dimension Set ID] = PCL.[Dimension Set ID]
+LEFT JOIN	[dbo].[SOLUSI$Dimension Value] PRIN ON PRIN.[Dimension Code] = 'PRINCIPAL' AND PRIN.[Code] = DIM.DIM_PRINCIPAL
+WHERE
+		(	(PCL.[Document Type] = 1 AND SUBSTRING(PCL.[Document No_],5,1) <> 'P')
+			OR
+			(PCL.[Document Type] = 4 AND SUBSTRING(PCL.[Document No_],6,1) = 'P')
+		) AND
+		(
+			--(DIM.DIM_PRINCIPAL = 'HONE' AND PCH.[Pay-to Vendor No_] IN ('SUPP021', 'SUPP421', 'SUPP316')) OR
+			(DIM.DIM_PRINCIPAL = 'HONS' AND PCH.[Pay-to Vendor No_] NOT IN ('SUPP417', 'SUPP123')) OR
+			(DIM.DIM_PRINCIPAL = 'ZEBR' AND PCH.[Pay-to Vendor No_] NOT IN ('SUPP018','SUPP050','SUPP072','SUPP078','SUPP006','SUPP321')) OR
+			(DIM.DIM_PRINCIPAL = 'HP' AND PCH.[Pay-to Vendor No_] NOT IN ('SUPP239','SUPP031')) OR
+			(DIM.DIM_PRINCIPAL = 'XTRN' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP018','SUPP305')) OR
+			(DIM.DIM_PRINCIPAL = 'FORTI' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP006','SUPP321','SUPP036')) OR
+			(DIM.DIM_PRINCIPAL = 'POIN' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP080')) OR
+			--(DIM.DIM_PRINCIPAL = 'TELV' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP143')) OR
+			(DIM.DIM_PRINCIPAL = 'HIKV' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP297')) OR
+			(DIM.DIM_PRINCIPAL = 'SEUIC' AND  PCH.[Pay-to Vendor No_] NOT IN ('SUPP135'))
+		) AND
+		(
+			(DIM.DIM_PRINCIPAL = 'ZEBR' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			--(DIM.DIM_PRINCIPAL = 'HONE' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'HONS' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'HONS' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'POIN' AND DIM.DIM_ITEM_CATEGORY IN ('HW01')) OR
+			(DIM.DIM_PRINCIPAL = 'HP' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'XTRN' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'XTRN' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'FORTI' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'FORTI' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			--(DIM.DIM_PRINCIPAL = 'TELV' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'HIKV' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'SAMSUNG' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'SAMSUNG' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405') OR
+			(DIM.DIM_PRINCIPAL = 'SEUIC' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01')) OR
+			(DIM.DIM_PRINCIPAL = 'SEUIC' AND DIM.DIM_ITEM_CATEGORY = 'PS04' AND  DIM.DIM_PRODUCT = 'S405')  OR
+			(DIM.DIM_PRINCIPAL = 'JANZ' AND DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01'))
+		) AND
+		(PCH.[Order Date] >= $P{TglFrom} AND PCH.[Order Date] <=$P{TglUpto}) AND
+		PCH.[Pay-to Vendor No_] NOT IN ('SUPP005', 'SUPP032') AND
+		PCL.[Document No_]	NOT IN	(
+										SELECT XX.[Document No_]
+										FROM	(
+													SELECT X.[Document No_], COUNT(X.DIM_PRINCIPAL) AS JML_DIM
+													FROM	(
+																SELECT DISTINCT PCL.[Document No_]
+																		,DIM.DIM_PRINCIPAL
+																FROM [dbo].[SOLUSI$Purchase Line] PCL
+																LEFT JOIN	(
+																				SELECT [Dimension Set ID]
+																					  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+																					  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+																					  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+																				FROM [dbo].[SOLUSI$Dimension Set Entry]
+																				GROUP BY [Dimension Set ID]
+																			) DIM ON DIM.[Dimension Set ID] = PCL.[Dimension Set ID]
+																WHERE	(DIM.DIM_ITEM_CATEGORY IN ('HW01', 'PS01') AND DIM.DIM_PRODUCT NOT IN ('H007','H008','H009','H012'))
+																		AND
+																		(	(PCL.[Document Type] = 1 AND SUBSTRING(PCL.[Document No_],5,1) <> 'P')
+																			OR
+																			(PCL.[Document Type] = 4 AND SUBSTRING(PCL.[Document No_],6,1) = 'P')
+																		)
+															) X
+													GROUP BY X.[Document No_]
+												) XX
+										WHERE XX.JML_DIM > 1
+									)]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_PO" class="java.lang.String"/>
+	<field name="VENDOR_NO" class="java.lang.String"/>
+	<field name="DISTI" class="java.lang.String"/>
+	<field name="TGL_PO" class="java.sql.Timestamp"/>
+	<field name="CURR_CODE" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="ITEM_DESC" class="java.lang.String"/>
+	<field name="DIM_PRINCIPAL" class="java.lang.String"/>
+	<field name="PRINCIPAL" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="VAL_DESC" class="java.lang.String"/>
+	<field name="JENIS_VAL" class="java.lang.Integer"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_PO"/>
+	<group name="PO">
+		<groupExpression><![CDATA[$F{NO_PO}]]></groupExpression>
+		<groupHeader>
+			<band height="29">
+				<textField>
+					<reportElement x="13" y="1" width="100" height="14" uuid="57d32e43-84c6-4ad0-8fb0-cef59eb2814c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="113" y="1" width="104" height="14" uuid="fdd90f60-dc0a-48e8-bebc-906a63f72732"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_PO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="279" y="1" width="68" height="14" uuid="322afd55-2aa6-405c-a423-e34dd068edf2"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{VENDOR_NO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="347" y="1" width="318" height="14" uuid="fbbaa0d6-440f-41a3-93f8-53fc3ba8a595"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DISTI}]]></textFieldExpression>
+				</textField>
+				<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="217" y="1" width="62" height="14" uuid="c8a15115-6adb-4ad5-b317-3e3c998fd7fe"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_PO}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="13" y="15" width="47" height="14" uuid="687c86ec-acaa-4df8-82b3-bb661db55ef2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="60" y="15" width="157" height="14" uuid="f2420e2d-8b61-4d3c-ab31-6fbeb34e3b12"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Item No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="217" y="15" width="227" height="14" uuid="95bdbe39-b195-4de0-b6db-c482888b1d15"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Item Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="444" y="15" width="55" height="14" uuid="1a0be78e-06d6-442b-9964-20f665ffb039"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Principal]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="499" y="15" width="166" height="14" uuid="09110de4-5905-4469-a0d0-00738d3c3a33"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Principal Description]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="665" y="1" width="406" height="14" uuid="4d297c13-c864-48b7-b725-a1e14fd22ee1">
+						<printWhenExpression><![CDATA[$F{JENIS_VAL}==1]]></printWhenExpression>
+					</reportElement>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{VAL_DESC}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="665" y="15" width="406" height="14" uuid="ebaa71d1-9ace-4fd9-8a70-fa82c2bac11b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Validation]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="85" splitType="Stretch">
+			<staticText>
+				<reportElement x="13" y="43" width="100" height="14" uuid="273acc50-f860-4b9b-a35d-1ee0d9baf160"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="113" y="43" width="104" height="14" uuid="48585bdb-7da3-41b6-a457-c994cab22a69"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="15" width="100" height="14" uuid="1b3db7e0-6931-44d1-95d9-2c49df65d168"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="1" width="100" height="14" uuid="3c3775ea-e9bb-49ac-a7b1-75116f70804b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03005) PO PRINCIPAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="29" width="100" height="14" uuid="b5447c28-463c-4d1a-9a3c-950377eb13f7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl PO :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="71" width="100" height="14" uuid="44157ebc-fa58-4900-840f-ee4ad8cc8af1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="113" y="71" width="104" height="14" uuid="bca7bdca-c26a-4e0a-92d2-8dfc8135fe5c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No PO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="217" y="71" width="62" height="14" uuid="874b7d34-fee6-4cb7-87b2-8c832c5b4a26"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl PO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="57" width="100" height="14" uuid="b8207def-dcb5-4f9d-b5f6-b0c1fcf9b034"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="113" y="57" width="104" height="14" uuid="fd9a5a19-2fb6-4dc8-8f45-ab59f6a6e780"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="217" y="57" width="62" height="14" uuid="84256e33-77b8-4e81-9634-b79a1a5c2563"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="347" y="71" width="318" height="14" uuid="b4b81706-7071-43e4-a3c5-1396e885a377"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vendor Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="113" y="15" width="104" height="14" uuid="d1ff11ec-0dff-4d18-a53d-836d6f25b79c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="113" y="1" width="104" height="14" uuid="8af99eb1-cb64-4ae3-9b00-7dfbd0b4f5ca"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALIDATION]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="113" y="29" width="104" height="14" uuid="468d7d7f-919b-45d3-bd7e-90974dc2e724"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="279" y="29" width="68" height="14" uuid="a209abb2-7dd1-4e3d-a072-a124885de16f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="217" y="43" width="62" height="14" uuid="c50b78ea-aa19-450b-a871-97d790859a61"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="217" y="29" width="62" height="14" uuid="ada13cae-393e-44bb-b721-65f0ee218993"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[sd]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="279" y="43" width="68" height="14" uuid="cdbb6fe7-0b1b-4032-919f-c727c907b769"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="279" y="57" width="68" height="14" uuid="e4bd8007-b0fa-47d7-9cb0-b7a43abda611"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="279" y="71" width="68" height="14" uuid="c940400b-563d-4574-ac20-6dacb60f5caa"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vendor No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="665" y="71" width="406" height="14" uuid="26b6cb4f-b4c5-4857-a88d-3c33518e8b32"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Validation]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15">
+			<staticText>
+				<reportElement x="13" y="1" width="47" height="14" uuid="b8a8172f-58f9-4410-bf49-8b0321ae4a4c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="60" y="1" width="157" height="14" uuid="0c2a9431-8c99-4903-8e66-c1a47ec65706"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="217" y="1" width="227" height="14" uuid="64ff7971-b1d0-4c41-a2a3-9693214e300c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_DESC}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="444" y="1" width="55" height="14" uuid="af5b1600-7b6a-4b86-a324-03bf840f0103"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="499" y="1" width="166" height="14" uuid="d230b223-0f64-4622-85c2-533bf33848c7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="665" y="1" width="406" height="14" uuid="76705cb8-ceed-4490-b45e-86ad128bf728">
+					<printWhenExpression><![CDATA[$F{JENIS_VAL}==2]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VAL_DESC}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="13" y="12" width="204" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

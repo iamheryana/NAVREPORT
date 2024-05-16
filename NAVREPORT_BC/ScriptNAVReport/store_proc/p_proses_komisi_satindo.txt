@@ -1,0 +1,110 @@
+-- Function: p_proses_komisi_satindo(character varying, character varying, character varying)
+
+-- DROP FUNCTION p_proses_komisi_satindo(character varying, character varying, character varying);
+
+CREATE OR REPLACE FUNCTION p_proses_komisi_satindo(p_masa character varying, p_tahun character varying, p_status character varying)
+  RETURNS character varying AS
+$BODY$ 
+--
+DECLARE hasil  VARCHAR(300);  
+DECLARE vBulan  VARCHAR(20);  
+DECLARE vStatusClose  VARCHAR(1);
+DECLARE vJmProses INTEGER;
+--
+BEGIN
+	IF p_masa = '01' THEN vBulan := 'JANUARI' ;
+	ELSIF p_masa = '02' THEN vBulan := 'FEBRUARI' ;
+	ELSIF p_masa = '03' THEN vBulan := 'MARET';
+	ELSIF p_masa = '04' THEN vBulan := 'APRIL';
+	ELSIF p_masa = '05' THEN vBulan := 'MEI';
+	ELSIF p_masa = '06' THEN vBulan := 'JUNI';
+	ELSIF p_masa = '07' THEN vBulan := 'JULI';
+	ELSIF p_masa = '08' THEN vBulan := 'AGUSTUS';
+	ELSIF p_masa = '09' THEN vBulan := 'SEPTEMBER';
+	ELSIF p_masa = '10' THEN vBulan := 'OKTOBER';
+	ELSIF p_masa = '11' THEN vBulan := 'NOVEMBER';
+	ELSIF p_masa = '12' THEN vBulan := 'DESEMBER'; ELSE vBulan := 'NA' ;
+	END IF;
+	--
+	vStatusClose := 'N';
+	--
+	SELECT close_komisi INTO vStatusClose
+	FROM t05periodecosting
+	WHERE 	masa = p_masa AND
+		tahun = p_tahun;
+	--
+	IF vStatusClose = 'Y' THEN
+		hasil := p_status||' Komisi GAGAL - Periode Komisi ('||vBulan||'-'||p_tahun||') sudah di Close !'; 
+	ELSE	
+		IF p_status = 'PROSES' THEN
+			SELECT 	count(t06.no_invoice) INTO vJmProses		
+			FROM t06rekapkomisisatindo t06
+			WHERE 	t06.masa_komisi = p_masa AND
+				t06.tahun_komisi = p_tahun AND
+				t06.flag_komisi = 'Y';
+			--
+			IF vJmProses > 0 THEN
+				hasil := 'PROSES Komisi Gagal - Periode Komisi ('||vBulan||'-'||p_tahun||') sudah pernah dilakukan !'; 
+			ELSE
+				UPDATE t06rekapkomisisatindo SET
+					 masa_komisi = p_masa
+					,tahun_komisi = p_tahun
+					,amount_komisi =  (f_get_komisi(tgl_invoice, no_item, reg, 'KOMISI') * qty)
+					,flag_komisi = 'Y'
+				WHERE	 flag_komisi = 'N';
+				--
+				INSERT INTO t02rekapcosting (
+					company, sales, no_bso, no_so, tgl_so, 
+					customer, no_po_cust, amount, no_invoice, tgl_invoice, tgl_lunas, 
+					pcn_komisi, amount_komisi, flag_komisi, pcn_tqs, amount_tqs, flag_tqs,
+					masa_komisi, tahun_komisi, masa_tqs, tahun_tqs,
+					version, created_by, created_on, updated_by, updated_on)
+				SELECT 	max(t06.company) as company, t06.sales, 'NA' as no_bso, 'NA' as no_so, null as tgl_so, 
+					t06.reg as customer, t06.reg as no_po_cust, sum(t06.nilai_invoice) as amount, 'NA' as no_invoice, max(t06.tgl_invoice) as tgl_invoice, max(t06.tgl_lunas) as tgl_lunas,
+					0 as pcn_komisi, SUM(t06.amount_komisi) as amount_komisi, 'Y' as flag_komisi, 0 as pcn_tqs, 0 as amount_tqs, 'Y' as flag_tqs,
+					max(t06.masa_komisi) as masa_komisi, max(t06.tahun_komisi) as tahun_komisi, 
+					'00' as masa_tqs, '0000'  as tahun_tqs,
+					1 as version, 'AUTO' as created_by, current_timestamp as created_on, 'AUTO' as updated_by, current_timestamp as updated_on
+				FROM t06rekapkomisisatindo t06
+				WHERE 	t06.masa_komisi = p_masa AND
+					t06.tahun_komisi = p_tahun AND
+					t06.flag_komisi = 'Y'
+				GROUP BY t06.reg, t06.sales;
+				--			
+				hasil := 'PROSES sudah selesai !';
+			END IF;
+		ELSE
+			SELECT 	count(t06.no_invoice) INTO vJmProses		
+			FROM t06rekapkomisisatindo t06
+			WHERE 	t06.masa_komisi = p_masa AND
+				t06.tahun_komisi = p_tahun AND
+				t06.flag_komisi = 'Y';
+			--
+			IF vJmProses = 0 THEN
+				hasil := p_masa||'UNPROSES Komisi Gagal - Belum ada yang diproses pada Periode Komisi ('||vBulan||'-'||p_tahun||') !'; 
+			ELSE
+				UPDATE t06rekapkomisisatindo SET
+					 masa_komisi = ''
+					,tahun_komisi = ''
+					,amount_komisi =  0
+					,flag_komisi = 'N'
+				WHERE	masa_komisi = p_masa AND
+					tahun_komisi = p_tahun AND
+					flag_komisi = 'Y';
+				--
+				DELETE FROM t02rekapcosting
+				WHERE 	masa_komisi = p_masa AND
+					tahun_komisi = p_tahun AND
+					flag_komisi = 'Y';
+				--
+				hasil := 'Unproses sudah selesai !'; 
+			END IF;
+		END IF;
+	END IF;
+	--	
+	RETURN hasil;
+--
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;

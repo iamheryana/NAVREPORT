@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="080202_LapPPH21perCabang" language="groovy" pageWidth="800" pageHeight="845" whenNoDataType="NoDataSection" columnWidth="800" leftMargin="0" rightMargin="0" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.6105100000000026"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="ProsesId" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	X.CABANG
+		, COUNT(X.CABANG) AS JML_PEG
+		,CASE	WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '01' THEN 'JANUARI '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '02' THEN 'FEBRUARI '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '03' THEN 'MARET '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '04' THEN 'APRIL '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '05' THEN 'MEI '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '06' THEN 'JUNI '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '07' THEN 'JULI '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '08' THEN 'AGUSTUS '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '09' THEN 'SEPTEMBER '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '10' THEN 'OKTOBER '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '11' THEN 'NOVEMBER '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				WHEN SUBSTRING(MAX(X.PERIODE), 5, 2) = '12' THEN 'DESEMBER '+SUBSTRING(MAX(X.PERIODE), 1, 4)
+				END AS PERIODE
+		, SUM(X.GROSS_INCOME) AS GROSS_INCOME
+		, SUM(X.INCOME_TAX) AS INCOME_TAX
+FROM	(
+			SELECT
+
+						CASE WHEN CAST([D_CPSG] AS NUMERIC(20)) <> 0 THEN
+							CASE	WHEN AREA = 'PT. Autojaya Idetech' THEN 'PT. Autojaya Idetech - (HO) - (Pesangon)'
+									WHEN AREA = 'PT. Autojaya Idetech - Cikarang' THEN 'PT. Autojaya Idetech - (HO) - (Pesangon)'
+									WHEN AREA = 'PT. Autojaya Idetech - Surabaya' THEN 'PT. Autojaya Idetech - (SBY) - (Pesangon)'
+									WHEN AREA = 'PT. Autojaya Idetech - Semarang' THEN 'PT. Autojaya Idetech - (SBY) - (Pesangon)'
+									WHEN AREA = 'PT. Autojaya Idetech - Denpasar' THEN 'PT. Autojaya Idetech - (SBY) - (Pesangon)'
+									WHEN AREA = 'PT. Solusi Periferal' THEN 'PT. Solusi Periferal - (Pesangon)'
+									ELSE 'NA - (Pesangon)' END
+						ELSE
+							CASE	WHEN AREA = 'PT. Autojaya Idetech' THEN 'PT. Autojaya Idetech - (HO)'
+									WHEN AREA = 'PT. Autojaya Idetech - Cikarang' THEN 'PT. Autojaya Idetech - (HO)'
+									WHEN AREA = 'PT. Autojaya Idetech - Surabaya' THEN 'PT. Autojaya Idetech - (SBY)'
+									WHEN AREA = 'PT. Autojaya Idetech - Semarang' THEN 'PT. Autojaya Idetech - (SBY)'
+									WHEN AREA = 'PT. Autojaya Idetech - Denpasar' THEN 'PT. Autojaya Idetech - (SBY)'
+									WHEN AREA = 'PT. Solusi Periferal' THEN 'PT. Solusi Periferal'
+									ELSE 'NA' END
+						END AS CABANG
+					,	(
+								CAST([D_BSAL] AS NUMERIC(20)) +
+								CAST([D_TJHP] AS NUMERIC(20)) +
+								CAST([D_AMED] AS NUMERIC(20)) +
+								CAST([D_TMED] AS NUMERIC(20)) +
+								CAST([D_TDNS] AS NUMERIC(20)) +
+								CAST([D_TD24] AS NUMERIC(20)) +
+								CAST([D_TOTX] AS NUMERIC(20)) +
+								CAST([D_TONX] AS NUMERIC(20)) +
+								CAST([D_LBR] AS NUMERIC(20)) +
+								CAST([D_BNSA] AS NUMERIC(20)) +
+								CAST([D_BNSN] AS NUMERIC(20)) +
+								CAST([D_TJKS] AS NUMERIC(20)) +
+								CAST([D_TKHS] AS NUMERIC(20)) +
+								CAST([D_KOMS] AS NUMERIC(20)) +
+								CAST([D_THR] AS NUMERIC(20)) +
+								CAST([D_JKK] AS NUMERIC(20)) +
+								CAST([D_JKM] AS NUMERIC(20)) +
+								CAST([D_CPSG] AS NUMERIC(20)) +
+								CAST([D_JPK] AS NUMERIC(20))
+						) AS GROSS_INCOME
+					, (CAST(P_PJK AS NUMERIC(20))) AS INCOME_TAX
+					, PERIODE
+			FROM [dbo].[TEMP07_SALARY_HAPIS]
+			WHERE PROSES_ID = $P{ProsesId}
+		) X
+GROUP BY X.CABANG]]>
+	</queryString>
+	<field name="CABANG" class="java.lang.String"/>
+	<field name="JML_PEG" class="java.lang.Integer"/>
+	<field name="PERIODE" class="java.lang.String"/>
+	<field name="GROSS_INCOME" class="java.math.BigDecimal"/>
+	<field name="INCOME_TAX" class="java.math.BigDecimal"/>
+	<sortField name="CABANG"/>
+	<variable name="JML_PEG_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{JML_PEG}]]></variableExpression>
+	</variable>
+	<variable name="GROSS_INCOME_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{GROSS_INCOME}]]></variableExpression>
+	</variable>
+	<variable name="INCOME_TAX_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{INCOME_TAX}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="84" splitType="Stretch">
+			<staticText>
+				<reportElement x="150" y="56" width="250" height="14" uuid="e91eac52-fa03-4955-bfe9-2f35ef5d5687"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="250" height="14" uuid="6691be1a-f78e-4c2d-a555-884d130e5708"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Laporan PPh 21 per Cabang]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="150" height="14" uuid="566ed316-df37-4e00-bb89-94dda5169dc7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="150" height="14" uuid="689e0aa8-46c0-4185-9d6a-962cdcf83b14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="150" y="42" width="250" height="14" uuid="201070ef-e966-4986-a076-deb0135ee60f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="99cac461-e02f-410e-a809-e5c567cf0834"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(080202) ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="150" height="14" uuid="e9fcf533-452d-489b-be64-f4a274f0392d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="150" height="14" uuid="a9e534c7-af75-4429-8860-b00afe0c6ab3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="150" height="14" uuid="b71d8ca7-b7c1-4b11-b5b7-006494d8b132"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="70" width="50" height="14" uuid="bcd01464-4525-4d38-8eb2-763a326fb973"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[# Peg.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="70" width="100" height="14" uuid="f4184071-1c04-42b3-80c7-0560ab5c7ff6"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Gross Income]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="70" width="100" height="14" uuid="c5f1b292-c742-4e0e-b034-69da1d7e9095"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Income Tax]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="28" width="250" height="14" uuid="c99a190d-bcc4-4f87-ab46-e922333861d0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PERIODE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="a21c7c82-947c-4508-b2bd-974779fb7405"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="e267ae1a-b179-44e8-9e90-304f8b226edc"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_PEG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="00f58e13-5a1c-47ba-8a54-7c86f8d853f7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{GROSS_INCOME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9a4a86bf-dc1e-434e-9582-a84e0c0d286a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INCOME_TAX}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="14">
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="168479ab-25d4-4dce-aa1f-51dcb89befa4"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{JML_PEG_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="6ff9686c-8ee3-4291-b2de-844aa4ce294b"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GROSS_INCOME_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="1edc2842-1823-408c-bdb7-56a6a5d9d8b0"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{INCOME_TAX_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="66c52e29-c0d3-4ea8-a61c-3189deff0933"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+		</band>
+	</summary>
+	<noData>
+		<band height="70">
+			<staticText>
+				<reportElement x="150" y="56" width="250" height="14" uuid="e6489694-3f5e-4ab7-a024-17fab1827d75"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA YANG MEMENUHI KRITERIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="150" height="14" uuid="047af61b-8676-4d05-8d85-cd3c8afd0f3e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="42" width="250" height="14" uuid="91c4fd5c-2c9c-4b71-bb72-5be4011f236b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="250" height="14" uuid="dfa10093-6875-4ec2-a691-a9f2f0bde83a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Laporan PPh 21 per Cabang]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="a822ea9c-1e27-4b23-8f77-312055a12b43"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(080202) ]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="150" y="28" width="250" height="14" uuid="bd27feeb-6352-4880-8bae-0ac53056c603"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="150" height="14" uuid="80b10b44-aa34-4a53-a138-1e5a499374c4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="150" height="14" uuid="6a0b5ccb-e5a6-484c-9af3-4bf98a1c1886"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="150" height="14" uuid="673bdc8d-244f-4974-a3f5-cbf299892958"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

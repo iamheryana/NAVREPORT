@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SPStockPO" language="groovy" pageWidth="850" pageHeight="842" columnWidth="810" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="10ece9de-3cc5-44db-b48d-0b00203fba6e">
+	<property name="ireport.zoom" value="2.5937424601000023"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="ItemNo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	PO.ITEM_NO
+		,PO.NO_PO
+		,PO.VENDOR_CODE
+		,PO.VENDOR_NAME
+		,PO.TGL_ORDER
+		,ISNULL(PO.QTY_ON_ORDER,0) AS QTY_ON_ORDER
+		,PO.EXPECTED_DATE
+		,ISNULL(RSV.RSRV_ON_ORDER,0) AS RSRV_ON_ORDER
+		,CASE	WHEN PO.CODE_REASON = '1' THEN '1. PRINCIPAL / VENDOR'
+			WHEN PO.CODE_REASON = '2' THEN '2. IMPORT PROSES (TPPI, PI, INSPECTION)'
+			WHEN PO.CODE_REASON = '3' THEN '3. CUSTOM CLEARANCE'
+			ELSE '' END AS CODE_REASON
+FROM	(
+			SELECT POD.[No_] AS ITEM_NO
+				  ,POH.[No_] AS NO_PO
+				  ,POH.[Pay-to Vendor No_] AS VENDOR_CODE
+				  ,POH.[Pay-to Name] AS VENDOR_NAME
+				  ,POH.[Order Date] AS TGL_ORDER
+				  ,SUM(POD.[Outstanding Qty_ (Base)]) AS QTY_ON_ORDER
+				  ,POD.[Expected Receipt Date] AS EXPECTED_DATE
+				  ,POD.[IC Partner Reference] AS CODE_REASON
+			FROM [dbo].[SOLUSI$Purchase Header] POH
+			INNER JOIN [dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+			WHERE POH.[Document Type] = 1 AND
+				SUBSTRING( POH.[No_], 5, 1) <> 'P' AND
+				POD.[Type] = 2
+			GROUP BY POD.[No_]
+					,POH.[No_]
+					,POH.[Pay-to Vendor No_]
+					,POH.[Pay-to Name]
+					,POH.[Order Date]
+					,POD.[Expected Receipt Date]
+					,POD.[IC Partner Reference]
+		) PO
+LEFT JOIN	(
+				SELECT  [Item No_] AS ITEM_NO
+						, [Source ID] AS NO_PO
+						, SUM([Quantity (Base)]) AS RSRV_ON_ORDER
+				FROM [dbo].[SOLUSI$Reservation Entry]
+				WHERE [Reservation Status] = 0 AND
+					  [Positive] = 1 AND
+					  SUBSTRING([Source ID], 5, 1) <> 'P' AND
+					  [Source ID] <>''
+				GROUP BY [Item No_],  [Source ID]
+			) RSV ON RSV.ITEM_NO = PO.ITEM_NO AND RSV.NO_PO = PO.NO_PO
+WHERE PO.QTY_ON_ORDER > 0 AND
+	PO.ITEM_NO = $P{ItemNo}]]>
+	</queryString>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="NO_PO" class="java.lang.String"/>
+	<field name="VENDOR_CODE" class="java.lang.String"/>
+	<field name="VENDOR_NAME" class="java.lang.String"/>
+	<field name="TGL_ORDER" class="java.sql.Timestamp"/>
+	<field name="QTY_ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="EXPECTED_DATE" class="java.sql.Timestamp"/>
+	<field name="RSRV_ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="CODE_REASON" class="java.lang.String"/>
+	<title>
+		<band height="45" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="0" width="239" height="14" uuid="c016e09b-e288-4243-9c38-eec96fc62d38"/>
+				<textElement>
+					<font size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Purchase Information :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="30" width="86" height="14" uuid="93f0e4a8-099e-4954-8e8a-1cca3396d559"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[PO No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="96" y="30" width="51" height="14" uuid="5df6c982-c8b6-485e-92a9-8f3639b5c12c"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="147" y="30" width="255" height="14" uuid="faac503a-6054-4f27-8a05-d541f91f45db"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Vendor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="403" y="15" width="96" height="14" uuid="0ea2b95e-4aee-4ed0-98fc-3c3c917a4790"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="403" y="30" width="46" height="14" uuid="50903da0-2369-4b61-a38c-d4bbb8853724"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Order]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="453" y="30" width="46" height="14" uuid="f5a80a8a-c8ed-454d-a6f0-6d3a3ee5120b"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Reserve]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="503" y="15" width="60" height="14" uuid="ead78e5d-57ef-4f07-9cee-898e2aa74155"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Expected]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="503" y="30" width="60" height="14" uuid="640343f9-ee59-4bb2-8900-87be2a04ea66"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Receipt Date]]></text>
+			</staticText>
+			<line>
+				<reportElement x="403" y="29" width="99" height="1" uuid="6821141e-3e1d-4ba0-a0a7-2a19236d2d58"/>
+			</line>
+			<staticText>
+				<reportElement x="563" y="30" width="235" height="14" uuid="07fbbeeb-9af6-4e4c-9273-599dbbfdf1ed"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+			<line>
+				<reportElement x="10" y="14" width="788" height="1" uuid="5345cf58-6935-4377-a217-46d78d58297e"/>
+			</line>
+			<line>
+				<reportElement x="10" y="44" width="788" height="1" uuid="9a32107d-dd09-41e7-9870-d8ba9a3f9626"/>
+			</line>
+			<line>
+				<reportElement x="402" y="15" width="1" height="29" uuid="c93b4a27-feee-4d2e-af5f-fb49f8d81172"/>
+			</line>
+			<line>
+				<reportElement x="452" y="30" width="1" height="14" uuid="b2c7e006-9463-48c9-8e62-43c657ee4913"/>
+			</line>
+			<line>
+				<reportElement x="502" y="15" width="1" height="29" uuid="63b6d546-7828-4114-8f70-0080c04d7802"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="10" y="1" width="86" height="14" uuid="d1e20a32-6a96-4eef-96f8-25dff54589bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="147" y="1" width="55" height="14" uuid="4ca632e3-50c1-4518-8896-56d2b1f30d01"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VENDOR_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="202" y="1" width="200" height="14" uuid="a5a7c19f-d047-43da-93ec-f46940fa3d27"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VENDOR_NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="96" y="1" width="51" height="14" uuid="313c03af-68d5-4487-8be7-7704c17b383f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="403" y="1" width="46" height="14" uuid="f9840dea-0c4b-4b26-8f7e-584407600b70"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="453" y="1" width="46" height="14" uuid="c61b63ca-ed9b-4304-9673-9dcd67a64172"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RSRV_ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="503" y="1" width="60" height="14" uuid="459ae1a5-7e40-409c-b33c-21a2bea6091b"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXPECTED_DATE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="563" y="1" width="235" height="14" uuid="41425805-f7bd-452e-b938-9aee8f598e30"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CODE_REASON}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="402" y="0" width="1" height="15" uuid="0f627e5b-840c-46f3-81e7-c4968f29da30"/>
+			</line>
+			<line>
+				<reportElement x="452" y="0" width="1" height="15" uuid="53c3751e-6394-4d88-9167-bd8b3620fb96"/>
+			</line>
+			<line>
+				<reportElement x="502" y="0" width="1" height="15" uuid="8bfbc3d0-b7ad-4d51-b5de-fad11b345cb3"/>
+			</line>
+		</band>
+	</detail>
+	<summary>
+		<band height="1">
+			<line>
+				<reportElement x="10" y="0" width="788" height="1" uuid="374b39ce-7e3a-4f22-aa46-cc99646feddc"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

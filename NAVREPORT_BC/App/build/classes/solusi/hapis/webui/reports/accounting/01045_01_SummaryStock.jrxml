@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01045_01_SummaryStock" language="groovy" pageWidth="225" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="225" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="a53b757b-d6fd-4d62-bcbe-9cbdffa89d2f">
+	<property name="ireport.zoom" value="1.1000000000000016"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="ItemNo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.*
+FROM	(
+SELECT	'AUTOJAYA' AS COMPANY
+		, STK.NO_ITEM
+		, STK.LOC_CODE
+		, STK.QTY
+FROM	(
+			SELECT	[Item No_] AS NO_ITEM
+					,[Location Code] AS LOC_CODE
+					, SUM([Quantity]) AS QTY
+			FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry]
+			WHERE	([Posting Date] <= GETDATE())
+			GROUP BY [Item No_], [Location Code]
+		) STK
+WHERE	STK.NO_ITEM = $P{ItemNo}
+		AND STK.QTY > 0
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		, STK.NO_ITEM
+		, STK.LOC_CODE
+		, STK.QTY
+FROM	(
+			SELECT	[Item No_] AS NO_ITEM
+					,[Location Code] AS LOC_CODE
+					, SUM([Quantity]) AS QTY
+			FROM [dbo].[BC_SOLUSI$Item Ledger Entry]
+			WHERE	([Posting Date] <= GETDATE())
+			GROUP BY [Item No_], [Location Code]
+		) STK
+WHERE	STK.NO_ITEM = $P{ItemNo}
+		AND STK.QTY > 0
+) X
+WHERE X.COMPANY = $P{Company}]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="LOC_CODE" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<sortField name="LOC_CODE"/>
+	<title>
+		<band height="28" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="14" width="150" height="14" uuid="e1c7a2e3-8ffc-4c77-8e54-56a7a3a9f21d"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Location]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="14" width="75" height="14" uuid="8f6afb6e-34fd-4214-8b91-4d8214f0ac65"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="4231572d-5fa8-44ab-966a-681511772b3c"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Summary all Location (per Today)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="75" height="14" uuid="d548c64c-7a47-4390-b612-85d99a46bd5c"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="150" height="14" uuid="7f719b67-d95e-4a36-a885-002ca9e0b679"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LOC_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" uuid="441960dc-5fe2-45ec-83d9-ab5378a31648"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

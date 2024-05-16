@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01051_04_TTFIndomarcoBGR" language="groovy" pageWidth="809" pageHeight="616" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="769" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.1000000000000338"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="InvFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="InvUpto" class="java.lang.String"/>
+	<parameter name="Tambahan1" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Tambahan2" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Tambahan3" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AmtTambahan1" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AmtTambahan2" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AmtTambahan3" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	1 AS NO_SORT
+		,X.COMPANY
+		,X.TGL_INV
+		,X.NO_INV
+		,X.NO_BPB
+		,X.NO_SP
+		,X.NO_FAKTUR_PAJAK
+		,X.AMOUNT
+		,X.NAMA_COMPANY
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,AJ.TGL_INV
+					,AJ.NO_INV
+					,AJ.NO_BPB
+					,AJ.NO_SP
+					,AJ.NO_FAKTUR_PAJAK
+					,AJ.AMOUNT
+					,CPI.[Name] AS NAMA_COMPANY
+			FROM	(
+						SELECT SIH.[No_] AS NO_INV
+								,SIH.[Posting Date] AS TGL_INV
+								,SIH.[Your Reference] AS NO_BPB
+								,SIH.[External Document No_] AS NO_SP
+								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FAKTUR_PAJAK
+								,SUM(SIL.[Amount Including VAT]) AS AMOUNT
+						FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+						INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+						GROUP BY  SIH.[No_], SIH.[Tax Area Code], SIH.[Faktur Pajak No_], SIH.[Your Reference], SIH.[External Document No_], SIH.[Posting Date]
+					) AJ
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Company Information] CPI ON 1 = 1
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,SP.TGL_INV
+					,SP.NO_INV
+					,SP.NO_BPB
+					,SP.NO_SP
+					,SP.NO_FAKTUR_PAJAK
+					,SP.AMOUNT
+					,CPI.[Name] AS NAMA_COMPANY
+			FROM	(
+						SELECT SIH.[No_] AS NO_INV
+								,SIH.[Posting Date] AS TGL_INV
+								,SIH.[Your Reference] AS NO_BPB
+								,SIH.[External Document No_] AS NO_SP
+								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FAKTUR_PAJAK
+								,SUM(SIL.[Amount Including VAT]) AS AMOUNT
+						FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+						INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+						GROUP BY  SIH.[No_], SIH.[Tax Area Code], SIH.[Faktur Pajak No_], SIH.[Your Reference], SIH.[External Document No_], SIH.[Posting Date]
+					) SP
+			LEFT JOIN [dbo].[BC_SOLUSI$Company Information] CPI ON 1 = 1
+		) X
+WHERE X.COMPANY = $P{Company} AND
+	(X.NO_INV >= $P{InvFrom} AND X.NO_INV <= $P{InvUpto})
+UNION ALL
+SELECT	2 AS NO_SORT
+		,XX.COMPANY
+		,XX.TGL_INV
+		,XX.NO_INV
+		,XX.NO_BPB
+		,XX.NO_SP
+		,XX.NO_FAKTUR_PAJAK
+		,XX.AMOUNT
+		,XX.NAMA_COMPANY
+FROM	(
+			SELECT	 $P{Company} AS COMPANY
+					, NULL AS TGL_INV
+					, NULL AS NO_INV
+					, $P{Tambahan1} NO_BPB
+					, NULL AS NO_SP
+					, NULL AS NO_FAKTUR_PAJAK
+					, $P{AmtTambahan1} AMOUNT
+					, NULL AS NAMA_COMPANY
+			UNION ALL
+			SELECT	 $P{Company} AS COMPANY
+					, NULL AS TGL_INV
+					, NULL AS NO_INV
+					, $P{Tambahan2} NO_BPB
+					, NULL AS NO_SP
+					, NULL AS NO_FAKTUR_PAJAK
+					, $P{AmtTambahan2} AMOUNT
+					, NULL AS NAMA_COMPANY
+			UNION ALL
+			SELECT	 $P{Company} AS COMPANY
+					, NULL AS TGL_INV
+					, NULL AS NO_INV
+					, $P{Tambahan3} NO_BPB
+					, NULL AS NO_SP
+					, NULL AS NO_FAKTUR_PAJAK
+					, $P{AmtTambahan3} AMOUNT
+					, NULL AS NAMA_COMPANY
+		) XX
+WHERE XX.AMOUNT <> 0
+]]>
+	</queryString>
+	<field name="NO_SORT" class="java.lang.Integer"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="NO_BPB" class="java.lang.String"/>
+	<field name="NO_SP" class="java.lang.String"/>
+	<field name="NO_FAKTUR_PAJAK" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="NAMA_COMPANY" class="java.lang.String"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_SORT"/>
+	<sortField name="NO_INV"/>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<pageHeader>
+		<band height="170">
+			<textField>
+				<reportElement x="242" y="85" width="201" height="18" uuid="ed33a898-c850-4366-8a4d-36dd9cb63434"/>
+				<textElement verticalAlignment="Top">
+					<font size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_COMPANY}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="18">
+			<staticText>
+				<reportElement x="0" y="0" width="20" height="18" uuid="6fa5742e-724f-4d53-aff9-01c389c913ae"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="11" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="20" y="0" width="112" height="18" uuid="e9d4c897-9a87-4a99-aa47-3826743f2d22"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="367" y="0" width="155" height="18" isPrintWhenDetailOverflows="true" uuid="a9646000-9cfd-4b2d-baa2-8456e6f23f47"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="SansSerif" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="242" y="0" width="125" height="18" uuid="45c1a0d6-916f-4387-bc35-da535202233e"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_FAKTUR_PAJAK}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="132" y="0" width="110" height="18" isPrintWhenDetailOverflows="true" uuid="dde0d9bf-0136-4137-8848-8c6de17f8a8e"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="536" y="0" width="210" height="18" isPrintWhenDetailOverflows="true" uuid="1e4f1b09-1519-4edd-8ea7-1e36bf6f8356"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_BPB}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<lastPageFooter>
+		<band height="190">
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="367" y="0" width="155" height="18" isPrintWhenDetailOverflows="true" uuid="9165e956-cda7-42ee-9d70-1e81bbae08f7"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="242" y="0" width="125" height="18" uuid="98757e4c-653d-4040-b20b-d41f88ad59a9"/>
+				<textElement textAlignment="Right" verticalAlignment="Top">
+					<font fontName="SansSerif" size="11" isBold="true"/>
+				</textElement>
+				<text><![CDATA[JUMLAH]]></text>
+			</staticText>
+		</band>
+	</lastPageFooter>
+</jasperReport>

@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03030_InvoiceZebraCampaign_v2" language="groovy" pageWidth="950" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="910" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.210000000000003"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT XX.*
+FROM	(
+			SELECT	X.NO_INV
+					,X.TGL_INV
+					,X.NO_PO_CUST
+					,X.SALES
+					,X.CUST_NO
+					,X.CUST_NAME
+					,DTL.NO_ITEM
+					,DTL.ITEM_DESC
+					,DTL.QTY
+					,DTL.UOM
+					,DTL.UNIT_PRICE
+					,DTL.AMOUNT
+					,DTL.DIM_PRODUCT
+					,DTL.PRODUCT
+					,CASE WHEN ISNULL(UM.ADA_UM,0) > 0 THEN 'Ada Uang Muka' ELSE 'Normal' END AS JENIS_INV
+					,X.STS
+					,	(
+							SELECT COUNT(SLH.[No_]) AS ADA_SEBELUMNYA
+							FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SLH
+							LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] SCH ON SCH.[Applies-to Doc_ No_] = SLH.[No_]
+							INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SLL ON SLL.[Document No_] = SLH.[No_]
+							LEFT JOIN	(
+											SELECT [Dimension Set ID]
+												  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+											FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+											GROUP BY [Dimension Set ID]
+										) DDM ON DDM.[Dimension Set ID] = SLL.[Dimension Set ID]
+							WHERE	SCH.[Applies-to Doc_ No_] IS NULL AND
+									SLH.[Customer Posting Group] NOT IN ('ALFA', 'INDOMARCO') AND
+									DDM.DIM_PRINCIPAL = 'ZEBR' AND
+									SLL.[Type] = 2 AND
+									SLL.[Quantity] <> 0 AND
+									DDM.DIM_PRODUCT IN ('H001', 'H002', 'H003', 'H004', 'H013', 'H014') AND
+									SLH.[Bill-to Customer No_] = X.CUST_NO AND
+									SLH.[Posting Date] < X.TGL_INV AND
+									SLH.[No_] <> X.NO_INV
+						) AS ADA_SEBELUMNYA
+			FROM	(
+						SELECT SIH.[No_] AS NO_INV
+								,SIH.[Posting Date] AS TGL_INV
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,SIH.[Salesperson Code] AS SALES
+								,SIH.[Bill-to Customer No_] AS CUST_NO
+								,SIH.[Bill-to Name] AS CUST_NAME
+								,CASE WHEN CMH.[Applies-to Doc_ No_] IS NULL THEN 'Active' ELSE 'Cancel' END AS STS
+						FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[Applies-to Doc_ No_] = SIH.[No_]
+						WHERE SIH.[Customer Posting Group] NOT IN ('ALFA', 'INDOMARCO')
+					) X
+			LEFT JOIN	(
+							SELECT [Document No_] AS NO_INV
+									, SUM(CASE WHEN [Type] = 1 THEN 1 ELSE 0 END) AS ADA_UM
+							FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line]
+							GROUP BY [Document No_]
+						) UM ON UM.NO_INV = X.NO_INV
+			INNER JOIN	(
+							SELECT SIL.[Document No_] AS NO_INV
+									,SIL.[No_] AS NO_ITEM
+									,SIL.[Description] AS ITEM_DESC
+									,SIL.[Quantity] AS QTY
+									,SIL.[Unit of Measure] AS UOM
+									,SIL.[Unit Price] AS UNIT_PRICE
+									,SIL.[Amount] AS AMOUNT
+									,DIM.DIM_PRODUCT
+									,PRD.[Description] AS PRODUCT
+							FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL
+							LEFT JOIN	(
+											SELECT [Dimension Set ID]
+												  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+											FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+											GROUP BY [Dimension Set ID]
+										) DIM ON DIM.[Dimension Set ID] = SIL.[Dimension Set ID]
+							LEFT JOIN [dbo].[BC_AUTOJAYA$Product Group] PRD ON PRD.[Code] = DIM.DIM_PRODUCT
+							WHERE	DIM.DIM_PRINCIPAL = 'ZEBR' AND
+									SIL.[Type] = 2 AND
+									SIL.[Quantity] <> 0 AND
+									DIM.DIM_PRODUCT IN ('H001', 'H002', 'H003', 'H004', 'H013', 'H014')
+						) DTL ON DTL.NO_INV = X.NO_INV
+			WHERE	(X.CUST_NO NOT IN ('AUJA001' , 'AUJA002', 'SOPE001', 'DUTA001', 'NOAH001' ,'GLCO001', 'KHDS001'))
+					AND (X.TGL_INV >= $P{TglInvFrom} AND X.TGL_INV <= $P{TglInvUpto})
+			UNION ALL
+			SELECT	X.NO_INV
+					,X.TGL_INV
+					,X.NO_PO_CUST
+					,X.SALES
+					,X.CUST_NO
+					,X.CUST_NAME
+					,DTL.NO_ITEM
+					,DTL.ITEM_DESC
+					,DTL.QTY
+					,DTL.UOM
+					,DTL.UNIT_PRICE
+					,DTL.AMOUNT
+					,DTL.DIM_PRODUCT
+					,DTL.PRODUCT
+					,CASE WHEN ISNULL(UM.ADA_UM,0) > 0 THEN 'Ada Uang Muka' ELSE 'Normal' END AS JENIS_INV
+					,X.STS
+					,	(
+							SELECT COUNT(SLH.[No_]) AS ADA_SEBELUMNYA
+							FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SLH
+							LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] SCH ON SCH.[Applies-to Doc_ No_] = SLH.[No_]
+							INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SLL ON SLL.[Document No_] = SLH.[No_]
+							LEFT JOIN	(
+											SELECT [Dimension Set ID]
+												  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+											FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+											GROUP BY [Dimension Set ID]
+										) DDM ON DDM.[Dimension Set ID] = SLL.[Dimension Set ID]
+							WHERE	SCH.[Applies-to Doc_ No_] IS NULL AND
+									DDM.DIM_PRINCIPAL = 'ZEBR' AND
+									SLL.[Type] = 2 AND
+									SLH.[Bill-to Customer No_] = X.CUST_NO AND
+									SLH.[Posting Date] < X.TGL_INV AND
+									SLH.[No_] <> X.NO_INV
+						) AS ADA_SEBELUMNYA
+			FROM	(
+						SELECT SIH.[No_] AS NO_INV
+								,SIH.[Posting Date] AS TGL_INV
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,SIH.[Salesperson Code] AS SALES
+								,SIH.[Bill-to Customer No_] AS CUST_NO
+								,SIH.[Bill-to Name] AS CUST_NAME
+								,CASE WHEN CMH.[Applies-to Doc_ No_] IS NULL THEN 'Active' ELSE 'Cancel' END AS STS
+						FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+						LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[Applies-to Doc_ No_] = SIH.[No_]
+						WHERE SIH.[Customer Posting Group] NOT IN ('ALFA', 'INDOMARCO')
+					) X
+			LEFT JOIN	(
+							SELECT [Document No_] AS NO_INV
+									, SUM(CASE WHEN [Type] = 1 THEN 1 ELSE 0 END) AS ADA_UM
+							FROM [dbo].[BC_SOLUSI$Sales Invoice Line]
+							GROUP BY [Document No_]
+						) UM ON UM.NO_INV = X.NO_INV
+			INNER JOIN	(
+							SELECT SIL.[Document No_] AS NO_INV
+									,SIL.[No_] AS NO_ITEM
+									,SIL.[Description] AS ITEM_DESC
+									,SIL.[Quantity] AS QTY
+									,SIL.[Unit of Measure] AS UOM
+									,SIL.[Unit Price] AS UNIT_PRICE
+									,SIL.[Amount] AS AMOUNT
+									,DIM.DIM_PRODUCT
+									,PRD.[Description] AS PRODUCT
+							FROM [dbo].[BC_SOLUSI$Sales Invoice Line] SIL
+							LEFT JOIN	(
+											SELECT [Dimension Set ID]
+												  ,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+												  ,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+											FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+											GROUP BY [Dimension Set ID]
+										) DIM ON DIM.[Dimension Set ID] = SIL.[Dimension Set ID]
+							LEFT JOIN [dbo].[BC_AUTOJAYA$Product Group] PRD ON PRD.[Code] = DIM.DIM_PRODUCT
+							WHERE	DIM.DIM_PRINCIPAL = 'ZEBR' AND
+									SIL.[Type] = 2 AND
+									SIL.[Quantity] <> 0 AND
+									DIM.DIM_PRODUCT IN ('H001', 'H002', 'H003', 'H004', 'H013', 'H014')
+						) DTL ON DTL.NO_INV = X.NO_INV
+			WHERE	(X.CUST_NO NOT IN ('AUJA001' , 'AUJA002', 'SOPE001', 'DUTA001', 'NOAH001' ,'GLCO001', 'KHDS001','AGIT001'))
+					AND (X.TGL_INV >= $P{TglInvFrom} AND X.TGL_INV <= $P{TglInvUpto})
+		) XX
+WHERE XX.ADA_SEBELUMNYA = 0]]>
+	</queryString>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="SALES" class="java.lang.String"/>
+	<field name="CUST_NO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="ITEM_DESC" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="UNIT_PRICE" class="java.math.BigDecimal"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="DIM_PRODUCT" class="java.lang.String"/>
+	<field name="PRODUCT" class="java.lang.String"/>
+	<field name="JENIS_INV" class="java.lang.String"/>
+	<field name="STS" class="java.lang.String"/>
+	<field name="ADA_SEBELUMNYA" class="java.lang.Integer"/>
+	<sortField name="NO_INV"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="NO_ITEM"/>
+	<group name="Inv">
+		<groupExpression><![CDATA[$F{NO_INV}]]></groupExpression>
+		<groupHeader>
+			<band height="44">
+				<textField>
+					<reportElement x="5" y="1" width="65" height="14" uuid="b2308481-ef3b-414c-a485-487af4b55204"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+				</textField>
+				<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="70" y="1" width="57" height="14" uuid="90c55cf0-fd3b-45d8-bde7-b6f0361824d7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="160" y="1" width="121" height="14" uuid="ddc7881b-d233-479c-9ed1-8d4d6d74fbe6"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="127" y="1" width="33" height="14" uuid="45fb1486-824a-4de1-b03f-493e63a0504c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SALES}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="281" y="1" width="68" height="14" uuid="e28f4419-7531-4cae-9ed2-ec0c170f5e37"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="349" y="1" width="238" height="14" uuid="f6b29af8-f5b3-4b59-99ba-3f6a280a8242"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="587" y="1" width="95" height="14" uuid="0b559511-af21-4aa4-95ae-73caedc7a488"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JENIS_INV}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="5" y="15" width="65" height="14" uuid="cf3454ea-6932-4ab0-b36c-513c1e8db869"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="5" y="29" width="65" height="14" uuid="b640f3f7-6ce8-47bb-80ca-59a6a499ebfb"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="70" y="29" width="90" height="14" uuid="9646273e-cf8c-4a76-a9b6-f9769e2519f7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[No. Item]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="160" y="29" width="189" height="14" uuid="03d20f3c-425e-408b-b5a7-2c994a851751"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="440" y="29" width="43" height="14" uuid="2a7fe4ac-67b8-4119-9efc-100d0434f5d6"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="483" y="29" width="35" height="14" uuid="da33eb50-78c3-4f23-b173-234d8722cbed"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[UOM]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="518" y="29" width="69" height="14" uuid="818aaa20-dbae-4564-8a96-3c775caf42cd"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Unit Price]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="587" y="29" width="95" height="14" uuid="0bdda3d4-5095-4b05-b96e-b38858f13d86"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+				<line>
+					<reportElement x="70" y="43" width="612" height="1" uuid="8253b5fb-e752-46cd-80c3-ae8b31463daf"/>
+				</line>
+				<staticText>
+					<reportElement x="349" y="29" width="91" height="14" uuid="bae03d17-0116-414e-9ee1-92fd0925f46e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Product Grp.]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="682" y="1" width="55" height="14" uuid="b68ae3a1-71cb-4f53-aec9-6353290da0f4"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{STS}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="17">
+				<line>
+					<reportElement x="70" y="0" width="612" height="1" uuid="e34d1861-f134-40e2-9106-44c13e3b7140"/>
+				</line>
+				<staticText>
+					<reportElement x="5" y="2" width="65" height="14" uuid="5f391018-91eb-425d-b8c3-1f0b1e250889"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<line>
+					<reportElement x="5" y="16" width="732" height="1" uuid="abdf78a0-6d8b-43cf-932f-38147b6399d7"/>
+				</line>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="105" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="70" y="48" width="279" height="14" uuid="c2d9574e-e8a5-427a-90ac-6d9237ff504c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="1" width="344" height="20" uuid="b77a26b0-2afb-43e3-aecc-a73602163fc6"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03030) List Invoice - Zebra Campaign - New Customer]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="160" y="34" width="189" height="14" uuid="a8ea16f6-3291-4ff5-83cd-fbd4a07fb556"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvUpto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="70" y="34" width="57" height="14" uuid="5d829eff-dadb-4877-91e1-2831dc3172aa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="127" y="90" width="33" height="14" uuid="a0e1a798-5ff6-4006-add4-377d80b4ea59"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="21" width="65" height="14" uuid="603d48f5-2242-459f-93b2-b020aa19a512"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="34" width="65" height="14" uuid="a213e920-b1d0-4371-9f9f-e27175f9d545"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="127" y="34" width="33" height="14" uuid="b899f210-0173-4630-88a5-4c20f6dd3465"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="48" width="65" height="14" uuid="9757ba90-b58b-4a38-865d-bffbe446f869"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="62" width="65" height="14" uuid="2583d9c4-6e7e-40ac-a7e5-1645866d64f6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="76" width="65" height="14" uuid="23a4a6ea-0218-44f2-9564-712ccd6e1ed4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="90" width="65" height="14" uuid="3b59c7a0-a18d-4377-81d3-997500e080cf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="70" y="90" width="57" height="14" uuid="0c947331-5acf-4b37-972c-939a78600d1f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="90" width="121" height="14" uuid="9f38bf06-cec8-4d8f-88e8-59936a12d685"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="281" y="90" width="68" height="14" uuid="a14ee9d1-a876-4c5d-bf98-da6b93b2232f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="349" y="90" width="238" height="14" uuid="fe224d20-47d7-430b-b4c4-f6132c739fa4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="587" y="90" width="95" height="14" uuid="2cf2dd19-7cd3-46cb-bc04-fa9337aff778"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Jenis Invoice]]></text>
+			</staticText>
+			<line>
+				<reportElement x="5" y="104" width="732" height="1" uuid="88638e57-929b-4b78-b52f-356056670db3"/>
+			</line>
+			<staticText>
+				<reportElement x="682" y="90" width="55" height="14" uuid="b99cfb4c-f029-4c37-b0df-65b21a3fa71f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="70" y="0" width="90" height="14" uuid="8d30c188-5a4b-46fc-9aa7-abbfba986641"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="160" y="0" width="189" height="14" uuid="30be8f3e-bf3e-4524-b536-efe57251f349"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_DESC}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="440" y="0" width="43" height="14" uuid="8ffb27a6-7ec4-4aa3-b74b-0cb15f3bdfa0"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="483" y="0" width="35" height="14" uuid="02aea541-a623-451c-bcb8-04bcfa6fd023"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UOM}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="518" y="0" width="69" height="14" uuid="14b79db3-077e-403a-8f77-e3e8b3c813ca"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UNIT_PRICE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="587" y="0" width="95" height="14" uuid="083e5478-45b3-4891-9a1f-b046e3a2957b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="349" y="0" width="91" height="14" uuid="29a7d82a-128b-474f-b1eb-a4925058b676"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="98">
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="70" y="37" width="57" height="14" uuid="76ac165b-2fe8-46b2-9c79-34f52aea8664"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="37" width="65" height="14" uuid="34f0257d-b474-40a7-b423-8ce2d5e84c85"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="160" y="37" width="189" height="14" uuid="63306b85-3f6f-4366-a991-8dbb4f6f853d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvUpto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="70" y="50" width="279" height="14" uuid="513b3621-f180-4634-86db-283ebc86289e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="23" width="65" height="14" uuid="f88cf6e4-c94d-45b2-b4fc-f19881d06b3d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="64" width="65" height="14" uuid="ddc3720d-b25b-402b-858f-e5cc7c2257b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="127" y="37" width="33" height="14" uuid="f17af377-3ee7-47f4-89d3-a719946acd45"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="3" width="344" height="20" uuid="cfb4baed-993a-4726-82eb-deb5cbba372d"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03030) List Invoice - Zebra Campaign - New Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="51" width="65" height="14" uuid="50b1d27c-cab7-4218-a2c4-d732ce481000"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="78" width="344" height="20" uuid="19dbef8b-4d68-4e8a-a245-98f94f450022"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[*** Tidak ada Invoice yang memenuhi kriteria ***]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

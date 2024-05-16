@@ -1,0 +1,29 @@
+CREATE OR REPLACE FUNCTION p_cek_periode_closing(pTanggal date)
+  RETURNS character varying AS
+$BODY$ 
+--
+DECLARE vPeriode  		VARCHAR(6);  
+DECLARE vPeriodeClosing  	VARCHAR(6);  
+DECLARE vHasil  		VARCHAR(200);  
+--
+BEGIN 
+	--
+	--
+	vPeriode := to_char(pTanggal,'YYYYMM');
+	--
+	SELECT MAX(tahun||masa) INTO vPeriodeClosing
+	FROM t05periodecosting
+	WHERE close_komisi = 'Y' OR close_tqs = 'Y';
+	--
+	IF vPeriode <= vPeriodeClosing THEN
+		vHasil := 'Periode untuk Tanggal Mulai Berlaku tersebut sudah closing';
+	ELSE
+		vHasil := 'OK';
+	END IF;
+	--
+	RETURN vHasil;
+--
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;

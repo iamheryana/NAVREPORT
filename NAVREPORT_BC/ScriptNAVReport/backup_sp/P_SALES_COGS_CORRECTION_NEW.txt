@@ -1,0 +1,28 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_SALES_COGS_CORRECTION_NEW]    Script Date: 07-02-2023 4:57:49 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[P_SALES_COGS_CORRECTION_NEW] 
+	@ProsesId  nvarchar(100) ,  
+	@Cabang  nvarchar(15),
+	@PeriodeFrom  datetime , 
+	@PeriodeUpto  datetime , 	
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	DECLARE @TglInvFrom DATETIME = CAST(@PeriodeFrom AS DATETIME);
+	DECLARE @CurrYear int = DATEPART(YEAR, @TglInvFrom);
+	--
+	IF @CurrYear < 2022  
+	BEGIN
+		EXEC [P_SALES_COGS_CORRECTION_2021] @ProsesId, @Cabang, @PeriodeFrom, @PeriodeUpto, @Action
+	END;
+	--
+	IF @CurrYear >= 2022  
+	BEGIN
+		EXEC [P_SALES_COGS_CORRECTION_2022] @ProsesId, @Cabang, @PeriodeFrom, @PeriodeUpto, @Action
+	END;
+END;

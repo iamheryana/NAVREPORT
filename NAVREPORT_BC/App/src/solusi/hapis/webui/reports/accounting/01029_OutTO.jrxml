@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01029_OutTO" language="groovy" pageWidth="850" pageHeight="555" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="850" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.4641000000000444"/>
+	<property name="ireport.x" value="146"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Respon" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	TOO.COMPANY
+		,TOO.TGL_TO
+		,TOO.NOTE
+		,TOO.NO_TO
+		,TOO.TRANSF_FROM
+		,TOO.TRANSF_TO
+		,TOO.NO_ITEM
+		,TOO.NAMA_ITEM
+		,TOO.QTY
+		,TOO.QTY_SHIPPED
+		,TOO.QTY_RCV
+		,TOO.QTY_OUT
+		,TOO.UOM
+		,TOO.KETERANGAN
+		,TOO.RESPON
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,TRH.[Posting Date] AS TGL_TO
+					,TRH.[External Document No_] AS NOTE
+					,TRO.[Document No_] AS NO_TO
+					,TRO.[Transfer-from Code] AS TRANSF_FROM
+					,TRO.[Transfer-to Code] AS TRANSF_TO
+					,TRO.[Item No_] AS NO_ITEM
+					,TRO.[Description] AS NAMA_ITEM
+					,TRO.[Quantity] AS QTY
+					,TRO.[Quantity Shipped] AS QTY_SHIPPED
+					,TRO.[Quantity Received] AS QTY_RCV
+					,CASE WHEN TRO.[Completely Shipped] = 1  THEN TRO.[Quantity]  - TRO.[Quantity Received] ELSE
+						TRO.[Quantity] - TRO.[Quantity Shipped]
+						END AS QTY_OUT
+					,TRO.[Unit of Measure] AS UOM
+					,CASE WHEN TRO.[Completely Shipped] = 1 THEN 'Sudah Post Ship Tapi Belum Post Receive' ELSE 'Belum Post Ship dan Post Receive' END KETERANGAN
+					,CASE WHEN TRO.RESPON LIKE '%OL%' THEN 'ONLINE'
+						  WHEN TRO.RESPON LIKE '%SC%' THEN 'SERVICE CENTER'
+						  WHEN TRO.RESPON LIKE '%CKR%' THEN 'CIKARANG'
+						  WHEN TRO.RESPON LIKE '%SMR%' THEN 'SEMARANG'
+						  WHEN TRO.RESPON LIKE '%SBY%' THEN 'SURABAYA'
+						  WHEN TRO.RESPON LIKE '%DPS%' THEN 'BALI'
+						  WHEN TRO.RESPON LIKE '%HO%' THEN 'JAKARTA'
+						  ELSE 'OTHERS' END AS RESPON
+			FROM	(
+						SELECT [Document No_]
+							  ,[Description]
+							  ,[Item No_]
+							  ,[Quantity]
+							  ,[Unit of Measure]
+							  ,[Quantity Shipped]
+							  ,[Quantity Received]
+							  ,[Transfer-from Code]
+							  ,[Transfer-to Code]
+							  ,[Completely Shipped]
+							  ,[Completely Received]
+							  ,CASE WHEN [Completely Shipped] = 1 THEN [Transfer-to Code] ELSE [Transfer-from Code] END AS RESPON
+						FROM [dbo].[BC_AUTOJAYA$Transfer Line]
+						WHERE	[In-Transit Code] = 'INTRANSIT' AND
+								(([Completely Shipped] = 1 AND [Completely Received] = 0) OR
+								([Completely Shipped] = 0 AND [Completely Received] = 0))
+					) TRO
+			INNER JOIN [dbo].[BC_AUTOJAYA$Transfer Header] TRH ON TRH.[No_] = TRO.[Document No_]
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,TRH.[Posting Date] AS TGL_TO
+					,TRH.[External Document No_] AS NOTE
+					,TRO.[Document No_] AS NO_TO
+					,TRO.[Transfer-from Code] AS TRANSF_FROM
+					,TRO.[Transfer-to Code] AS TRANSF_TO
+					,TRO.[Item No_] AS NO_ITEM
+					,TRO.[Description] AS NAMA_ITEM
+					,TRO.[Quantity] AS QTY
+					,TRO.[Quantity Shipped] AS QTY_SHIPPED
+					,TRO.[Quantity Received] AS QTY_RCV
+					,CASE WHEN TRO.[Completely Shipped] = 1  THEN TRO.[Quantity]  - TRO.[Quantity Received] ELSE
+						TRO.[Quantity] - TRO.[Quantity Shipped]
+						END AS QTY_OUT
+					,TRO.[Unit of Measure] AS UOM
+					,CASE WHEN TRO.[Completely Shipped] = 1 THEN 'Sudah Post Ship Tapi Belum Post Receive' ELSE 'Belum Post Ship dan Post Receive' END KETERANGAN
+					,CASE WHEN TRO.RESPON LIKE '%OL%' THEN 'ONLINE'
+						  WHEN TRO.RESPON LIKE '%SC%' THEN 'SERVICE CENTER'
+						  WHEN TRO.RESPON LIKE '%CKR%' THEN 'CIKARANG'
+						  WHEN TRO.RESPON LIKE '%SMR%' THEN 'SEMARANG'
+						  WHEN TRO.RESPON LIKE '%SBY%' THEN 'SURABAYA'
+						  WHEN TRO.RESPON LIKE '%DPS%' THEN 'BALI'
+						  WHEN TRO.RESPON LIKE '%HO%' THEN 'JAKARTA'
+						  ELSE 'OTHERS' END AS RESPON
+			FROM	(
+						SELECT [Document No_]
+							  ,[Description]
+							  ,[Item No_]
+							  ,[Quantity]
+							  ,[Unit of Measure]
+							  ,[Quantity Shipped]
+							  ,[Quantity Received]
+							  ,[Transfer-from Code]
+							  ,[Transfer-to Code]
+							  ,[Completely Shipped]
+							  ,[Completely Received]
+							  ,CASE WHEN [Completely Shipped] = 1 THEN [Transfer-to Code] ELSE [Transfer-from Code] END AS RESPON
+						FROM [dbo].[BC_SOLUSI$Transfer Line]
+						WHERE	[In-Transit Code] = 'INTRANSIT' AND
+								(([Completely Shipped] = 1 AND [Completely Received] = 0) OR
+								([Completely Shipped] = 0 AND [Completely Received] = 0))
+					) TRO
+			INNER JOIN [dbo].[BC_SOLUSI$Transfer Header] TRH ON TRH.[No_] = TRO.[Document No_]
+		)TOO
+WHERE (TOO.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
+TOO.TGL_TO <= $P{TglUpto} AND
+(TOO.RESPON = $P{Respon} OR $P{Respon} = 'ALL')]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="TGL_TO" class="java.sql.Timestamp"/>
+	<field name="NOTE" class="java.lang.String"/>
+	<field name="NO_TO" class="java.lang.String"/>
+	<field name="TRANSF_FROM" class="java.lang.String"/>
+	<field name="TRANSF_TO" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="NAMA_ITEM" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="QTY_SHIPPED" class="java.math.BigDecimal"/>
+	<field name="QTY_RCV" class="java.math.BigDecimal"/>
+	<field name="QTY_OUT" class="java.math.BigDecimal"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="RESPON" class="java.lang.String"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_TO"/>
+	<sortField name="TGL_TO"/>
+	<group name="NoTO">
+		<groupExpression><![CDATA[$F{NO_TO}]]></groupExpression>
+		<groupHeader>
+			<band height="44">
+				<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="67" y="1" width="118" height="14" uuid="b04391a1-28c8-4ffc-8a58-37871398b89d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_TO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="185" y="1" width="100" height="14" uuid="b13d2de6-8466-4386-b724-430e718ef8ac"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_TO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="285" y="1" width="60" height="14" uuid="ed80cac1-52ff-443a-9848-37b7f39a6f99"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TRANSF_FROM}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="345" y="1" width="60" height="14" uuid="e8421cef-96ae-4777-a639-95672a6c0be5"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TRANSF_TO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="13" y="1" width="54" height="14" uuid="7aa043f7-d6ba-4bda-97ff-54021c515938"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="13" y="15" width="54" height="14" uuid="b3d5395a-94fa-46c1-b8c9-307432e0a961"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="13" y="29" width="54" height="14" uuid="a35c2ea5-2f30-49d2-bc79-03dea93c94e6"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="67" y="29" width="118" height="14" uuid="774a4575-904b-4040-a945-f08cba2eaf49"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Item No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="185" y="29" width="220" height="14" uuid="c491de86-9d54-49f9-986a-aac19a9781d7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Item Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="405" y="29" width="41" height="14" uuid="8530e794-2418-4b34-9c1a-1309c06f60f9"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="569" y="29" width="41" height="14" uuid="8a06cba1-b775-41e4-b904-688f51101de2"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[UOM]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="610" y="29" width="216" height="14" uuid="fc61c6f9-696e-4751-b95e-c4a8d096c8e1"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Action]]></text>
+				</staticText>
+				<line>
+					<reportElement x="67" y="43" width="759" height="1" uuid="ade839ca-8f36-48f3-8262-a05f47f750d1"/>
+				</line>
+				<staticText>
+					<reportElement x="446" y="29" width="41" height="14" uuid="89caef00-e4e8-428b-b223-c33d8c184dfa"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Shipped]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="487" y="29" width="41" height="14" uuid="ff435129-3a3c-4103-a6c2-56725f70fc6e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Received]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="528" y="29" width="41" height="14" uuid="8b719ab4-f437-4c2a-b317-9d7e2617108d"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Out. Qty]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="67" y="15" width="118" height="14" uuid="f26d719f-abcb-41cd-8c38-ab36cdea297c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="185" y="15" width="220" height="14" uuid="bb07bc6f-75a7-4814-b75c-446b3ff84b91"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="405" y="15" width="41" height="14" uuid="336b48fb-f218-40f5-8042-02b10e40e00e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="446" y="15" width="41" height="14" uuid="7c5c941a-3d52-459b-bb81-7f6244c3c0fa"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="487" y="15" width="41" height="14" uuid="5715578a-7c18-4050-a6bb-ad730d7b84d0"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty.]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="405" y="1" width="205" height="14" uuid="83bc417c-ebac-4f27-a7c9-5631bdaaab36"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NOTE}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="17">
+				<line>
+					<reportElement x="67" y="1" width="759" height="1" uuid="db1f5737-1683-4abe-aa95-e42089122fab"/>
+				</line>
+				<staticText>
+					<reportElement x="13" y="2" width="54" height="14" uuid="c057e363-a4ea-42ae-9fcb-9c2cee4aa7dc"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<line>
+					<reportElement x="13" y="16" width="827" height="1" uuid="d6f4af82-3e2b-4511-a963-f762252dc718"/>
+				</line>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="115" splitType="Stretch">
+			<staticText>
+				<reportElement x="67" y="71" width="118" height="14" uuid="273acc50-f860-4b9b-a35d-1ee0d9baf160"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="185" y="71" width="100" height="14" uuid="48585bdb-7da3-41b6-a457-c994cab22a69"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="15" width="54" height="14" uuid="1b3db7e0-6931-44d1-95d9-2c49df65d168"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="85" width="100" height="14" uuid="f70e1075-1b45-4379-8437-99990537cebc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="1" width="54" height="14" uuid="0e5d75a8-947a-443c-bcd1-67948a694c92"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01029)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="1" width="100" height="14" uuid="3c3775ea-e9bb-49ac-a7b1-75116f70804b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(TRANSFER ORDER)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="67" y="1" width="118" height="14" uuid="43a6dcc2-fef5-4bf1-8718-05990aadc700"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LAP. OUTSTANDING TO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="67" y="15" width="118" height="14" uuid="30262786-5aed-461f-9665-59bc42e0b675"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="29" width="54" height="14" uuid="b5447c28-463c-4d1a-9a3c-950377eb13f7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="67" y="85" width="118" height="14" uuid="1c521797-36a0-4600-a51e-4134202eab95"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="15" width="100" height="14" uuid="85684ee3-fcdc-465d-8b0b-6f7a2d9251c3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="71" width="54" height="14" uuid="20dc9c5c-6d97-4c45-8d55-05200cd037a6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="67" y="43" width="118" height="14" uuid="89caf794-234d-44ca-83ff-2caa43db1f14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggung Jawab :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="85" width="54" height="14" uuid="91fc4d8c-5e28-4f1c-9484-eae0e5785031"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="185" y="57" width="100" height="14" uuid="f362af02-8790-4955-90d2-4d994098d171"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="285" y="100" width="60" height="14" uuid="8cc12bbe-763f-4bb7-a827-a7e22e5b07e7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[From]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="67" y="100" width="118" height="14" uuid="356c798c-2aa1-4331-bb10-ef45b6c6919e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Posting]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="100" width="100" height="14" uuid="83386142-9060-46b3-9010-29e02ec9368f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. TO]]></text>
+			</staticText>
+			<line>
+				<reportElement x="13" y="114" width="827" height="1" uuid="f318271c-9e95-4103-b07d-63932a25b432"/>
+			</line>
+			<staticText>
+				<reportElement x="13" y="100" width="54" height="14" uuid="6de6164e-1992-409c-9c33-cfeaaf29d412"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="345" y="100" width="60" height="14" uuid="d542c835-2708-4902-b13c-20dbe2082c69"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[To]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="67" y="29" width="118" height="14" uuid="72efa51c-884f-4ad6-85cd-6c2f10e87291"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="185" y="29" width="100" height="14" uuid="a6fe5d0e-6000-412d-aed8-317bcf54e40b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="67" y="57" width="118" height="14" uuid="be5700cc-acc2-48ff-bf14-00519a934404"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode s/d:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="43" width="54" height="14" uuid="502e80e2-bbb9-4819-8fc4-ceb5a928ec98"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="57" width="54" height="14" uuid="6dd36258-4ca4-4361-9157-d31d3a64f344"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="185" y="43" width="100" height="14" uuid="1d3b5c39-e300-4a0f-aaa3-cbde615089ef"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Respon}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="13" y="99" width="827" height="1" uuid="9944b107-95ff-41f1-8b41-4f4968fdb929"/>
+			</line>
+			<staticText>
+				<reportElement x="405" y="100" width="205" height="14" uuid="cacf37b3-ca8f-4852-a6e4-f4d020a9af7b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Note]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="67" y="1" width="118" height="14" uuid="33cd631c-47b1-4adf-8bfd-3318695118e7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="185" y="1" width="220" height="14" uuid="895b9061-e44e-4ed3-9635-252a246912e3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_ITEM}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="405" y="1" width="41" height="14" uuid="8a24374e-ee43-40d7-8eee-64ad429b4a91"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="569" y="1" width="41" height="14" uuid="02ba860a-3c6f-4bce-a538-0e33fbfcc1da"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UOM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="610" y="1" width="216" height="14" uuid="8a8320d8-3330-4f32-ab1f-086254cb2969"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="1" width="54" height="14" uuid="f5478c74-1021-48bf-add9-553e7fffde77"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="446" y="1" width="41" height="14" uuid="9aee99cb-7f09-4504-a773-8e3ea7b28ce3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_SHIPPED}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="487" y="1" width="41" height="14" uuid="60db2b1f-b13b-40c7-8d08-afb288f0d9c7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_RCV}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="528" y="1" width="41" height="14" uuid="a04fda84-f6ab-43d7-a10a-78a481bbcb7a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_OUT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="39"/>
+	</summary>
+	<noData>
+		<band height="41">
+			<staticText>
+				<reportElement x="13" y="12" width="204" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,1007 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010107_InvoiceBundlingAdjustment" language="groovy" pageWidth="1170" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1130" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.4641000000000037"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date"/>
+	<parameter name="TglUpto" class="java.util.Date"/>
+	<parameter name="Cabang" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	'AUTOJAYA' AS COMPANY
+		, XII.TGL_INV
+		, XII.NO_INVOICE
+		, XII.CUST_NAME
+		, CAB.[Name] AS CABANG
+		, XII.NILAI_TOTAL
+		, XII.COGS
+		 ,XII.DIM_BRANCHES
+		, XII.DIM_APPLICATION
+		, XII.DIM_SALESMAN
+		, XII.DIM_SECTOR
+		, XII.DIM_PROJECT
+		, XII.DIM_ITEM_CATEGORY
+		, XII.DIM_PRODUCT
+		, XII.DIM_PRINCIPAL
+		, XII.DIM_CUSTOMER
+FROM	(
+			SELECT	XIX.TGL_INV
+					, XIX.NO_INVOICE
+					, XIX.CUST_NAME
+					, XIX.NILAI_TOTAL
+					, XIX.COGS
+					 ,XIX.DIM_BRANCHES
+					, XIX.DIM_APPLICATION
+					, XIX.DIM_SALESMAN
+					, XIX.DIM_SECTOR
+					, XIX.DIM_PROJECT
+					, XIX.DIM_ITEM_CATEGORY
+					, XIX.DIM_PRODUCT
+					, XIX.DIM_PRINCIPAL
+					, XIX.DIM_CUSTOMER
+					, SUM(XIX.NILAI_TOTAL)  OVER (PARTITION BY  XIX.NO_INVOICE) AS TTL_INV
+					, SUM(XIX.COGS)  OVER (PARTITION BY  XIX.NO_INVOICE) AS TTL_COGS
+			FROM	(
+						SELECT  XXX.TGL_INV
+								, XXX.NO_INVOICE
+								, XXX.CUST_NAME
+								,((SUM(XXX.NILAI_PENJUALAN) + SUM(XXX.NILAI_DISC) + SUM(XXX.NILAI_UM)) * -1 ) + SUM(XXX.NILAI_UM) AS NILAI_TOTAL
+								, SUM(XXX.NILAI_COGS) AS COGS
+								,XXX.DIM_BRANCHES
+								,XXX.DIM_APPLICATION
+								,XXX.DIM_SALESMAN
+								,XXX.DIM_SECTOR
+								,XXX.DIM_PROJECT
+								,XXX.DIM_ITEM_CATEGORY
+								,XXX.DIM_PRODUCT
+								,XXX.DIM_PRINCIPAL
+								,XXX.DIM_CUSTOMER
+						FROM (
+									SELECT	GLE.[Posting Date] AS TGL_INV
+											,GLE.[Document No_] AS NO_INVOICE
+											,SIA.[Bill-to Name] AS CUST_NAME
+											,CASE WHEN GLE.[G_L Account No_] IN ('400.110.00', '400.110.01', '400.110.04') THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_PENJUALAN
+											,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01') THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_DISC
+											,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_UM
+											,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_PPN
+											,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+												CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Debit Amount]
+												ELSE GLE.[Amount]
+												END
+											ELSE
+												0
+											END AS NILAI_COGS
+											,DIMS.DIM_BRANCHES
+											,DIMS.DIM_APPLICATION
+											,DIMS.DIM_SALESMAN
+											,DIMS.DIM_SECTOR
+											,DIMS.DIM_PROJECT
+											,DIMS.DIM_ITEM_CATEGORY
+											,DIMS.DIM_PRODUCT
+											,DIMS.DIM_PRINCIPAL
+											,SIA.[Bill-to Customer No_] AS DIM_CUSTOMER
+									FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+									INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIA ON SIA.[No_] = GLE.[Document No_]
+									LEFT JOIN
+												(
+													SELECT [Dimension Set ID] AS DIM_ID
+															,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS DIM_BRANCHES
+															,MAX(CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END) AS DIM_APPLICATION
+															,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS DIM_SALESMAN
+															,MAX(CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END) AS DIM_SECTOR
+															,MAX(CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END) AS DIM_PROJECT
+															,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+															,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+															,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+													FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+													GROUP BY [Dimension Set ID]
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									WHERE	GLE.[G_L Account No_] IN ('500.110.00' , '400.110.00', '230.190.00', '400.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04') AND
+											(GLE.[Posting Date] >= $P{TglFrom} AND GLE.[Posting Date] <= $P{TglUpto})
+								) XXX
+						WHERE XXX.NO_INVOICE IN (
+													SELECT	DISTINCT XX.NO_INVOICE
+													FROM	(
+																SELECT  XXX.TGL_INV
+																		, XXX.NO_INVOICE
+																		, XXX.CABANG
+																		, XXX.ITEM_CAT
+																		,((SUM(XXX.NILAI_PENJUALAN) + SUM(XXX.NILAI_DISC) + SUM(XXX.NILAI_UM)) * -1 ) + SUM(XXX.NILAI_UM) AS NILAI_TOTAL
+																		, SUM(XXX.NILAI_COGS) AS COGS
+																FROM (
+																			SELECT	GLE.[Posting Date] AS TGL_INV
+																					,GLE.[Document No_] AS NO_INVOICE
+																					,CASE WHEN GLE.[G_L Account No_] IN ('400.110.00', '400.110.01', '400.110.04') THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_PENJUALAN
+																					,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01') THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_DISC
+																					,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_UM
+																					,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_PPN
+																					,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+																						CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Debit Amount]
+																						ELSE GLE.[Amount]
+																						END
+																					ELSE
+																						0
+																					END AS NILAI_COGS
+																					, GLE.[Global Dimension 1 Code] AS CABANG
+																					, GLE.[Global Dimension 2 Code] AS ITEM_CAT
+																			FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+																			INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIA ON SIA.[No_] = GLE.[Document No_]
+																			WHERE	GLE.[G_L Account No_] IN ('500.110.00' , '400.110.00', '230.190.00', '400.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04')
+																		) XXX
+																GROUP BY XXX.NO_INVOICE
+																		, XXX.CABANG
+																		, XXX.ITEM_CAT
+																		, XXX.TGL_INV
+															) XX
+													WHERE	XX.COGS <> 0 AND XX.NILAI_TOTAL = 0 AND
+															(XX.TGL_INV >= $P{TglFrom} AND XX.TGL_INV <= $P{TglUpto})
+												)
+						GROUP BY XXX.NO_INVOICE
+								,XXX.TGL_INV
+								,XXX.CUST_NAME
+								,XXX.DIM_BRANCHES
+								,XXX.DIM_APPLICATION
+								,XXX.DIM_SALESMAN
+								,XXX.DIM_SECTOR
+								,XXX.DIM_PROJECT
+								,XXX.DIM_ITEM_CATEGORY
+								,XXX.DIM_PRODUCT
+								,XXX.DIM_PRINCIPAL
+								,XXX.DIM_CUSTOMER
+					) XIX
+		) XII
+LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XII.DIM_BRANCHES
+WHERE	(CAB.[Name] = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		XII.TTL_INV <> 0 AND XII.TTL_COGS > 0 AND
+		XII.NO_INVOICE NOT IN	(
+									SELECT	DISTINCT SLS2.NO_INV
+									FROM	(
+												SELECT	SLS.NO_INV
+														, SLS.CUST_NO
+														, SLS.NO_ITEM
+														,	(
+																SELECT MAX(T12.TGL_BERLAKU)
+																FROM [dbo].[T12_PS_ADJ_PRICE] T12
+																WHERE T12.TGL_BERLAKU <= SLS.TGL_INV
+																		AND T12.CUST_NO  = SLS.CUST_NO
+																		AND T12.ITEM_NO = SLS.NO_ITEM
+															)  AS TGL_BERLAKU
+												FROM	(
+															SELECT	SIH.[No_] AS NO_INV
+																	,SIH.[Posting Date] AS TGL_INV
+																	,SIL.[No_]  AS NO_ITEM
+
+																	,CASE	WHEN CUS.[Customer Posting Group] = 'ALFA' THEN 'ALFA'
+																			WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN 'INDOMARCO'
+																			ELSE SIH.[Bill-to Customer No_]
+																		END AS CUST_NO
+															FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header]  SIH
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON  SIL.[Document No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer No_]
+															LEFT JOIN [dbo].[T15_SATINDO_ADJ] T15 ON T15.NO_INVOICE = SIH.[No_]
+															WHERE	SIL.[Type] = 2 AND
+																	SIL.[Shortcut Dimension 2 Code] <> 'HW01' AND
+																	SIL.[Unit Price] = 0 AND
+																	CRM.[No_] IS NULL
+														) SLS
+												WHERE	(SLS.TGL_INV >= $P{TglFrom} AND SLS.TGL_INV <= $P{TglUpto})
+											) SLS2
+									LEFT JOIN [dbo].[T12_PS_ADJ_PRICE] T12 ON T12.TGL_BERLAKU = SLS2.TGL_BERLAKU AND T12.CUST_NO = SLS2.CUST_NO   AND T12.ITEM_NO = SLS2.NO_ITEM
+									WHERE T12.T12_ID IS NOT NULL
+								)
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		, XII.TGL_INV
+		, XII.NO_INVOICE
+		, XII.CUST_NAME
+		, CAB.[Name] AS CABANG
+		, XII.NILAI_TOTAL
+		, XII.COGS
+		 ,XII.DIM_BRANCHES
+		, XII.DIM_APPLICATION
+		, XII.DIM_SALESMAN
+		, XII.DIM_SECTOR
+		, XII.DIM_PROJECT
+		, XII.DIM_ITEM_CATEGORY
+		, XII.DIM_PRODUCT
+		, XII.DIM_PRINCIPAL
+		, XII.DIM_CUSTOMER
+FROM	(
+			SELECT	XIX.TGL_INV
+					, XIX.NO_INVOICE
+					, XIX.CUST_NAME
+					, XIX.NILAI_TOTAL
+					, XIX.COGS
+					 ,XIX.DIM_BRANCHES
+					, XIX.DIM_APPLICATION
+					, XIX.DIM_SALESMAN
+					, XIX.DIM_SECTOR
+					, XIX.DIM_PROJECT
+					, XIX.DIM_ITEM_CATEGORY
+					, XIX.DIM_PRODUCT
+					, XIX.DIM_PRINCIPAL
+					, XIX.DIM_CUSTOMER
+					, SUM(XIX.NILAI_TOTAL)  OVER (PARTITION BY  XIX.NO_INVOICE) AS TTL_INV
+					, SUM(XIX.COGS)  OVER (PARTITION BY  XIX.NO_INVOICE) AS TTL_COGS
+			FROM	(
+						SELECT  XXX.TGL_INV
+								, XXX.NO_INVOICE
+								, XXX.CUST_NAME
+								,((SUM(XXX.NILAI_PENJUALAN) + SUM(XXX.NILAI_DISC) + SUM(XXX.NILAI_UM)) * -1 ) + SUM(XXX.NILAI_UM) AS NILAI_TOTAL
+								, SUM(XXX.NILAI_COGS) AS COGS
+								,XXX.DIM_BRANCHES
+								,XXX.DIM_APPLICATION
+								,XXX.DIM_SALESMAN
+								,XXX.DIM_SECTOR
+								,XXX.DIM_PROJECT
+								,XXX.DIM_ITEM_CATEGORY
+								,XXX.DIM_PRODUCT
+								,XXX.DIM_PRINCIPAL
+								,XXX.DIM_CUSTOMER
+						FROM (
+									SELECT	GLE.[Posting Date] AS TGL_INV
+											,GLE.[Document No_] AS NO_INVOICE
+											,SIA.[Bill-to Name] AS CUST_NAME
+											,CASE WHEN GLE.[G_L Account No_] IN ('400.110.00', '400.110.01', '400.110.04') THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_PENJUALAN
+											,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01') THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_DISC
+											,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_UM
+											,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+												GLE.[Amount]
+											ELSE
+												0
+											END AS NILAI_PPN
+											,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+												CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Debit Amount]
+												ELSE GLE.[Amount]
+												END
+											ELSE
+												0
+											END AS NILAI_COGS
+											,DIMS.DIM_BRANCHES
+											,DIMS.DIM_APPLICATION
+											,DIMS.DIM_SALESMAN
+											,DIMS.DIM_SECTOR
+											,DIMS.DIM_PROJECT
+											,DIMS.DIM_ITEM_CATEGORY
+											,DIMS.DIM_PRODUCT
+											,DIMS.DIM_PRINCIPAL
+											,SIA.[Bill-to Customer No_] AS DIM_CUSTOMER
+									FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+									INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Header] SIA ON SIA.[No_] = GLE.[Document No_]
+									LEFT JOIN
+												(
+													SELECT [Dimension Set ID] AS DIM_ID
+															,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS DIM_BRANCHES
+															,MAX(CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END) AS DIM_APPLICATION
+															,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS DIM_SALESMAN
+															,MAX(CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END) AS DIM_SECTOR
+															,MAX(CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END) AS DIM_PROJECT
+															,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+															,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+															,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+													FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+													GROUP BY [Dimension Set ID]
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									WHERE	GLE.[G_L Account No_] IN ('500.110.00' , '400.110.00', '230.190.00', '400.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04') AND
+											(GLE.[Posting Date] >= $P{TglFrom} AND GLE.[Posting Date] <= $P{TglUpto})
+								) XXX
+						WHERE XXX.NO_INVOICE IN (
+													SELECT	DISTINCT XX.NO_INVOICE
+													FROM	(
+																SELECT  XXX.TGL_INV
+																		, XXX.NO_INVOICE
+																		, XXX.CABANG
+																		, XXX.ITEM_CAT
+																		,((SUM(XXX.NILAI_PENJUALAN) + SUM(XXX.NILAI_DISC) + SUM(XXX.NILAI_UM)) * -1 ) + SUM(XXX.NILAI_UM) AS NILAI_TOTAL
+																		, SUM(XXX.NILAI_COGS) AS COGS
+																FROM (
+																			SELECT	GLE.[Posting Date] AS TGL_INV
+																					,GLE.[Document No_] AS NO_INVOICE
+																					,CASE WHEN GLE.[G_L Account No_] IN ('400.110.00', '400.110.01', '400.110.04') THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_PENJUALAN
+																					,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01') THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_DISC
+																					,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_UM
+																					,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+																						GLE.[Amount]
+																					ELSE
+																						0
+																					END AS NILAI_PPN
+																					,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+																						CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Debit Amount]
+																						ELSE GLE.[Amount]
+																						END
+																					ELSE
+																						0
+																					END AS NILAI_COGS
+																					, GLE.[Global Dimension 1 Code] AS CABANG
+																					, GLE.[Global Dimension 2 Code] AS ITEM_CAT
+																			FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+																			INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Header] SIA ON SIA.[No_] = GLE.[Document No_]
+																			WHERE	GLE.[G_L Account No_] IN ('500.110.00' , '400.110.00', '230.190.00', '400.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04')
+																		) XXX
+																GROUP BY XXX.NO_INVOICE
+																		, XXX.CABANG
+																		, XXX.ITEM_CAT
+																		, XXX.TGL_INV
+															) XX
+													WHERE	XX.COGS <> 0 AND XX.NILAI_TOTAL = 0 AND
+															(XX.TGL_INV >= $P{TglFrom} AND XX.TGL_INV <= $P{TglUpto})
+												)
+						GROUP BY XXX.NO_INVOICE
+								,XXX.TGL_INV
+								,XXX.CUST_NAME
+								,XXX.DIM_BRANCHES
+								,XXX.DIM_APPLICATION
+								,XXX.DIM_SALESMAN
+								,XXX.DIM_SECTOR
+								,XXX.DIM_PROJECT
+								,XXX.DIM_ITEM_CATEGORY
+								,XXX.DIM_PRODUCT
+								,XXX.DIM_PRINCIPAL
+								,XXX.DIM_CUSTOMER
+					) XIX
+		) XII
+LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XII.DIM_BRANCHES
+WHERE	(CAB.[Name] = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		XII.TTL_INV <> 0 AND XII.TTL_COGS > 0 AND
+		XII.NO_INVOICE NOT IN	(
+									SELECT	DISTINCT SLS2.NO_INV
+									FROM	(
+												SELECT	SLS.NO_INV
+														, SLS.CUST_NO
+														, SLS.NO_ITEM
+														,	(
+																SELECT MAX(T12.TGL_BERLAKU)
+																FROM [dbo].[T12_PS_ADJ_PRICE] T12
+																WHERE T12.TGL_BERLAKU <= SLS.TGL_INV
+																		AND T12.CUST_NO  = SLS.CUST_NO
+																		AND T12.ITEM_NO = SLS.NO_ITEM
+															)  AS TGL_BERLAKU
+												FROM	(
+															SELECT	SIH.[No_] AS NO_INV
+																	,SIH.[Posting Date] AS TGL_INV
+																	,SIL.[No_]  AS NO_ITEM
+
+																	,CASE	WHEN CUS.[Customer Posting Group] = 'ALFA' THEN 'ALFA'
+																			WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN 'INDOMARCO'
+																			ELSE SIH.[Bill-to Customer No_]
+																		END AS CUST_NO
+															FROM [dbo].[BC_SOLUSI$Sales Invoice Header]  SIH
+															LEFT JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON  SIL.[Document No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer No_]
+															LEFT JOIN [dbo].[T15_SATINDO_ADJ] T15 ON T15.NO_INVOICE = SIH.[No_]
+															WHERE	SIL.[Type] = 2 AND
+																	SIL.[Shortcut Dimension 2 Code] <> 'HW01' AND
+																	SIL.[Unit Price] = 0 AND
+																	CRM.[No_] IS NULL
+														) SLS
+												WHERE	(SLS.TGL_INV >= $P{TglFrom} AND SLS.TGL_INV <= $P{TglUpto})
+											) SLS2
+									LEFT JOIN [dbo].[T12_PS_ADJ_PRICE] T12 ON T12.TGL_BERLAKU = SLS2.TGL_BERLAKU AND T12.CUST_NO = SLS2.CUST_NO   AND T12.ITEM_NO = SLS2.NO_ITEM
+									WHERE T12.T12_ID IS NOT NULL
+								)]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_INVOICE" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="CABANG" class="java.lang.String"/>
+	<field name="NILAI_TOTAL" class="java.math.BigDecimal"/>
+	<field name="COGS" class="java.math.BigDecimal"/>
+	<field name="DIM_BRANCHES" class="java.lang.String"/>
+	<field name="DIM_APPLICATION" class="java.lang.String"/>
+	<field name="DIM_SALESMAN" class="java.lang.String"/>
+	<field name="DIM_SECTOR" class="java.lang.String"/>
+	<field name="DIM_PROJECT" class="java.lang.String"/>
+	<field name="DIM_ITEM_CATEGORY" class="java.lang.String"/>
+	<field name="DIM_PRODUCT" class="java.lang.String"/>
+	<field name="DIM_PRINCIPAL" class="java.lang.String"/>
+	<field name="DIM_CUSTOMER" class="java.lang.String"/>
+	<sortField name="DIM_BRANCHES"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_INVOICE"/>
+	<sortField name="NILAI_TOTAL" order="Descending"/>
+	<sortField name="DIM_ITEM_CATEGORY"/>
+	<sortField name="DIM_PRODUCT"/>
+	<group name="Cabang">
+		<groupExpression><![CDATA[$F{DIM_BRANCHES}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="99d21eb9-0300-4c86-8df5-5dc55b736fc8"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="ea1e1909-7e35-48b5-85f1-49f673f8fbfa"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Company">
+		<groupExpression><![CDATA[$F{COMPANY}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="ba89e4d1-3a85-4c80-8454-da857a944a1f"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="656341ec-5619-4113-83b0-991658f5a0dd"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Invoice">
+		<groupExpression><![CDATA[$F{NO_INVOICE}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="1f7e72cc-5ab5-4de0-a1de-ca729c1e88fe"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="275" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="5d386851-43d3-490d-a8b1-c4e7986a2000"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INVOICE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="375" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="a446ddbd-dbf6-4101-8670-ad71b3b6ea3b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="5ad65a2d-498d-4ba1-ab0a-c652f5bf9b25"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="112" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="100" y="70" width="275" height="14" uuid="c2d9574e-e8a5-427a-90ac-6d9237ff504c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="14" width="275" height="14" uuid="f8dc1ccc-aa64-432c-a2e6-a647b00a11da"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(010107) Invoice Bundling - Adjustment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="98" width="100" height="14" uuid="d483dbd3-8fbe-4579-a8fd-ab112057a936"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="100" height="14" uuid="4c1e6814-8ae4-4154-a90d-d24b3e356349"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="100" height="14" uuid="f44c171b-3974-4b29-939f-757fa05c7bf7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="2f89c47d-a7f0-4e17-979f-ad2749049b31"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="100" height="14" uuid="327948c0-806f-40c9-a4b5-b74406668362"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="84" width="275" height="14" uuid="ecb72784-d9ce-4244-9870-ec0850af35b8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="d59182d7-3f36-4468-91cd-0ac1b5011974"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="a2672691-ff78-41dc-a012-660329a1f7d1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="28" width="275" height="14" uuid="15f448c4-af71-4359-836e-1184948fbb81"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="98" width="250" height="14" uuid="651df8ad-6e38-4ad2-a49f-d51ce1c191a0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="40187f7c-5069-4288-8a31-3bd5fe65b930"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="100" y="56" width="100" height="14" uuid="63b2bc0a-2392-47ef-b99c-7ff15fbab5fe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="625" y="98" width="80" height="14" uuid="bcf9a676-e1bc-42b3-bd25-42662c46e643"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="98" width="75" height="14" uuid="acdd07ff-dbeb-403f-818f-d9f7b24d3808"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="42" width="275" height="14" uuid="12d941a7-5f94-4d71-a017-53c7c84f7477"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="e0d7c3d9-a83f-4fc7-804d-32f277c98888"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="275" y="98" width="100" height="14" uuid="725f8935-973e-4f7e-aa17-d0ad21ac1bb9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="705" y="98" width="80" height="14" uuid="d5fab46c-12ca-4219-af34-113ac38835b0"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[COGS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="785" y="98" width="25" height="14" uuid="f4034036-906a-4e44-bf3f-0cc1ffe575cb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="810" y="98" width="100" height="14" uuid="160cafb8-e5ff-47fd-b529-ab699d3a0a5b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimension Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="910" y="98" width="100" height="14" uuid="ed3514ff-1aef-4fdd-a9a7-505d60d414f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimension Value]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="275" y="56" width="100" height="14" uuid="d4feaffe-d794-478a-ae43-2f5426ffb3ca"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="200" y="56" width="75" height="14" uuid="316900dc-2238-466c-ac58-5777617d2965"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="126" splitType="Stretch">
+			<staticText>
+				<reportElement x="810" y="70" width="100" height="14" uuid="2e019823-327b-42d8-b799-a8f1eb19f2cb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRODUCT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="810" y="28" width="100" height="14" uuid="a26657e8-9f8d-47a2-970e-424211bc24a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BRANCHES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="810" y="112" width="100" height="14" uuid="0bb24b45-2418-44e9-ad82-1a7c4aacbffc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PROJECT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="810" y="98" width="100" height="14" uuid="bb47cf59-1948-406a-9f19-35c444e7291f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SECTOR]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="910" y="56" width="100" height="14" uuid="9f1e17dc-2b33-464f-af02-2ce113f3c371"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_ITEM_CATEGORY}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="810" y="56" width="100" height="14" uuid="06f9df4e-e982-423f-aaea-bd8a6c4af995"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ITEM CATEGORY]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="910" y="0" width="100" height="14" uuid="dd783ef3-4229-4b3a-a358-24749b1da3f7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_APPLICATION}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="910" y="84" width="100" height="14" uuid="a588bca8-05b0-428a-8a3b-94b063139167"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="910" y="28" width="100" height="14" uuid="a9a6b81a-a2c3-4022-bfc9-0bf5031df8b7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_BRANCHES}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="910" y="98" width="100" height="14" uuid="0e93babb-548a-4fcf-9cf4-6b974281008c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SECTOR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="910" y="14" width="100" height="14" uuid="f69dc3f0-0804-4891-84c6-880a44ea60e8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SALESMAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="810" y="84" width="100" height="14" uuid="455cf6db-afdc-4559-b69b-75291c7e78fe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRINCIPAL]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="910" y="70" width="100" height="14" uuid="8c1af2b5-1c83-4a35-b086-836f7ba6dabd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="910" y="112" width="100" height="14" uuid="5aa4e15d-7dfe-4415-957b-fbafc811293b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PROJECT}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="810" y="0" width="100" height="14" uuid="4fa65704-8521-425c-b216-200b7271f6bc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[APPLICATION]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="810" y="42" width="100" height="14" uuid="e3c9c362-0d09-4373-84f7-179fdd2ed353"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CUSTOMER]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="810" y="14" width="100" height="14" uuid="6e38f855-a34c-4c40-be49-931ef59117d7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SALESMAN]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="910" y="42" width="100" height="14" uuid="8139ac72-9607-4e82-a409-8cbd49f26fc8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_CUSTOMER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###.##" isBlankWhenNull="true">
+				<reportElement x="625" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="492c76e6-4224-4f48-8ed9-d56e6215cbaa"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_TOTAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###.##" isBlankWhenNull="true">
+				<reportElement x="705" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="27443d21-9203-4d62-acbd-570324886102"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COGS}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="785" y="0" width="25" height="14" uuid="7f7f0bde-2e83-4f33-815a-1f908190aee8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<noData>
+		<band height="112">
+			<staticText>
+				<reportElement x="100" y="98" width="275" height="14" uuid="c10988e7-7273-45fd-9b88-a4450e60b229"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="ae1421e3-0316-499b-8740-f4be227758b5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="100" height="14" uuid="833cae86-ee5c-4c9c-a2be-15ad1d9f13af"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="28" width="275" height="14" uuid="459adadd-ba4c-47f3-b671-bfc2a244b074"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="56" width="75" height="14" uuid="4f87e43a-471c-4cba-b8a9-3b255db2ba68"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="3a21f420-3673-406a-aad1-79249f8f3bc9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="b6e85794-6320-404a-8f2c-3eb5e6a96f34"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="42" width="275" height="14" uuid="963ec1cb-23c1-4491-b97b-8a1175d250e6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="100" height="14" uuid="685a98ae-a8c7-4fc7-909f-50d5924f2ce3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="100" y="70" width="275" height="14" uuid="060cba3c-130d-4f20-9159-2af8322bd264"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="275" y="56" width="100" height="14" uuid="684b54fa-2581-4560-8436-6fb226530784"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="84" width="275" height="14" uuid="5ded8b18-3227-43c2-be4f-deda2b8439b8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="100" y="56" width="100" height="14" uuid="c43f2aec-d3cd-4c04-a85d-cc36d347abef"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="59e866ac-e518-41c7-b8d9-88543c164ff9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="14" width="275" height="14" uuid="c81cd437-8ac3-4d44-9388-68808abff6b1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(010107) Invoice Bundling - Adjustment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="5ec9836c-3da3-4850-ab17-a7652af56a70"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="100" height="14" uuid="b5b7c212-8399-4a58-af45-fa885ca2fc81"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

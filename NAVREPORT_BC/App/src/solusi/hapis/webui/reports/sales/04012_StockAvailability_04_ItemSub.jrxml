@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04012_StockAvailability_04_ItemSub" language="groovy" pageWidth="575" pageHeight="842" columnWidth="575" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="10ece9de-3cc5-44db-b48d-0b00203fba6e">
+	<property name="ireport.zoom" value="2.593742460100004"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="ItemNo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.COMPANY
+		, X.ITEM_NO
+		, X.ITEM_SUB
+		, X.ITEM_DESC
+		, X.STOCK_OH
+		, X.RSRV_OH
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					, IST.[No_] AS ITEM_NO
+					, IST.[Substitute No_] AS ITEM_SUB
+					, ITM.[Description] AS ITEM_DESC
+					, ISNULL(STO.STOCK_OH, 0 ) AS STOCK_OH
+					, ISNULL(STO.RSRV_OH, 0 ) AS RSRV_OH
+			FROM [dbo].[BC_AUTOJAYA$Item Substitution] IST
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Item] ITM ON ITM.[No_] = IST.[Substitute No_]
+			LEFT JOIN	(
+							SELECT STK.ITEM_NO
+									, SUM(STK.STOCK_OH) AS STOCK_OH
+									, SUM(STK.RSRV_OH) AS RSRV_OH
+							FROM (
+									SELECT
+											[Item No_] AS ITEM_NO
+											,[Location Code] AS LOC_CODE
+											,SUM([Quantity]) AS STOCK_OH
+											, 0 AS RSRV_OH
+									FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry]
+									GROUP BY [Item No_],[Location Code]
+									UNION ALL
+									SELECT	RSV.ITEM_NO
+											, RSV.LOC_CODE
+											, 0 AS STOCK_OH
+											, SUM(RSV.RSRV_OH) AS RSRV_OH
+									FROM	(
+												SELECT  RES.[Item No_] AS ITEM_NO
+														, RES.[Location Code] AS LOC_CODE
+														, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+												FROM [dbo].[BC_AUTOJAYA$Reservation Entry] RES
+												WHERE RES.[Reservation Status] = 0 AND
+														RES.[Positive] = 1 AND
+														SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+											) RSV
+									GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+									) STK
+							GROUP BY STK.ITEM_NO
+						) STO ON STO.ITEM_NO = IST.[Substitute No_]
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					, IST.[No_] AS ITEM_NO
+					, IST.[Substitute No_] AS ITEM_SUB
+					, ITM.[Description] AS ITEM_DESC
+					, ISNULL(STO.STOCK_OH, 0 ) AS STOCK_OH
+					, ISNULL(STO.RSRV_OH, 0 ) AS RSRV_OH
+			FROM [dbo].[BC_SOLUSI$Item Substitution] IST
+			LEFT JOIN [dbo].[BC_SOLUSI$Item] ITM ON ITM.[No_] = IST.[Substitute No_]
+			LEFT JOIN	(
+							SELECT STK.ITEM_NO
+									, SUM(STK.STOCK_OH) AS STOCK_OH
+									, SUM(STK.RSRV_OH) AS RSRV_OH
+							FROM (
+									SELECT
+											[Item No_] AS ITEM_NO
+											,[Location Code] AS LOC_CODE
+											,SUM([Quantity]) AS STOCK_OH
+											, 0 AS RSRV_OH
+									FROM [dbo].[BC_SOLUSI$Item Ledger Entry]
+									GROUP BY [Item No_],[Location Code]
+									UNION ALL
+									SELECT	RSV.ITEM_NO
+											, RSV.LOC_CODE
+											, 0 AS STOCK_OH
+											, SUM(RSV.RSRV_OH) AS RSRV_OH
+									FROM	(
+												SELECT  RES.[Item No_] AS ITEM_NO
+														, RES.[Location Code] AS LOC_CODE
+														, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+												FROM [dbo].[BC_SOLUSI$Reservation Entry] RES
+												WHERE RES.[Reservation Status] = 0 AND
+														RES.[Positive] = 1 AND
+														SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+											) RSV
+									GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+									) STK
+							GROUP BY STK.ITEM_NO
+						) STO ON STO.ITEM_NO = IST.[Substitute No_]
+		) X
+WHERE	X.STOCK_OH > 0 AND
+	X.COMPANY = $P{Company} AND
+		X.ITEM_NO = $P{ItemNo}]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="ITEM_SUB" class="java.lang.String"/>
+	<field name="ITEM_DESC" class="java.lang.String"/>
+	<field name="STOCK_OH" class="java.math.BigDecimal"/>
+	<field name="RSRV_OH" class="java.math.BigDecimal"/>
+	<title>
+		<band height="45" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="120" height="14" uuid="c016e09b-e288-4243-9c38-eec96fc62d38"/>
+				<textElement>
+					<font size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Item Subtitusi :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="30" width="120" height="14" uuid="93f0e4a8-099e-4954-8e8a-1cca3396d559"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Item No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="120" y="30" width="324" height="14" uuid="faac503a-6054-4f27-8a05-d541f91f45db"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Desc.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="445" y="15" width="129" height="14" uuid="0ea2b95e-4aee-4ed0-98fc-3c3c917a4790"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="445" y="30" width="60" height="14" uuid="50903da0-2369-4b61-a38c-d4bbb8853724"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[On Hand]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="510" y="30" width="60" height="14" uuid="f5a80a8a-c8ed-454d-a6f0-6d3a3ee5120b"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Reserve]]></text>
+			</staticText>
+			<line>
+				<reportElement x="445" y="29" width="129" height="1" uuid="6821141e-3e1d-4ba0-a0a7-2a19236d2d58"/>
+			</line>
+			<staticText>
+				<reportElement x="570" y="30" width="4" height="14" uuid="7ea76c92-d504-4baf-b93e-7069255fc505"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="505" y="30" width="4" height="14" uuid="ea9cdb0b-005f-487f-99f8-df0b9fcceacf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="14" width="575" height="1" uuid="ee47ccec-01bd-470a-9f56-4c2fa654a000"/>
+			</line>
+			<line>
+				<reportElement x="0" y="44" width="575" height="1" uuid="bd7ad328-fd83-4e2b-ba80-29ab397d5327"/>
+			</line>
+			<line>
+				<reportElement x="509" y="30" width="1" height="14" uuid="cf694547-4298-4e50-8ad5-f62f54d47785"/>
+			</line>
+			<line>
+				<reportElement x="444" y="15" width="1" height="29" uuid="438d0dfb-47ab-4d0f-88c3-536724446986"/>
+			</line>
+			<line>
+				<reportElement x="574" y="15" width="1" height="29" uuid="af3f00e4-21d4-4a63-a7a8-2972aa9e3b9f"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="120" height="14" isPrintWhenDetailOverflows="true" uuid="61bac6a7-8361-4165-992b-b3a1dd9af91e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_SUB}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="120" y="0" width="324" height="14" isPrintWhenDetailOverflows="true" uuid="9b5ff004-3fb7-4ef2-8fae-6a1eeb3919c5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_DESC}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="445" y="0" width="60" height="14" isPrintWhenDetailOverflows="true" uuid="b67c52d8-4e04-4701-9acc-94d9ecf6588c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{STOCK_OH}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="510" y="0" width="60" height="14" isPrintWhenDetailOverflows="true" uuid="2acc33bc-3066-4a4d-84fc-4c442c3492f9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RSRV_OH}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="505" y="0" width="4" height="14" uuid="6f739d90-99ad-4f7a-947e-07e75d7ae533"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="570" y="0" width="4" height="14" uuid="2ea9fcab-c7b1-4ba1-89ad-cd1f40a209d7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<line>
+				<reportElement x="509" y="0" width="1" height="14" uuid="34bee711-051e-4c2e-b2aa-759e02abe185"/>
+			</line>
+			<line>
+				<reportElement x="444" y="0" width="1" height="14" uuid="35e62b97-c8c5-4daf-a1af-ace80762c1b6"/>
+			</line>
+			<line>
+				<reportElement x="574" y="0" width="1" height="14" uuid="423b6297-ab6b-4c08-ad3a-e16b678a5018"/>
+			</line>
+		</band>
+	</detail>
+	<summary>
+		<band height="15">
+			<line>
+				<reportElement x="0" y="0" width="575" height="1" uuid="c223db07-ade2-49bc-994d-cae9e29c313f"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="1" width="120" height="14" uuid="e2a77a1a-0a3e-4bd0-b3f9-dbacb26c3961"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

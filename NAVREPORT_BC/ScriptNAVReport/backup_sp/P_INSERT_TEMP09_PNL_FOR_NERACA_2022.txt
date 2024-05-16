@@ -1,0 +1,235 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_INSERT_TEMP09_PNL_FOR_NERACA_2022]    Script Date: 07-02-2023 4:46:22 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[P_INSERT_TEMP09_PNL_FOR_NERACA_2022] 
+	@ProsesId  nvarchar(100) ,   
+	@cntYear int,    
+	@TglFrom DATETIME,   
+	@TglUpto DATETIME,   
+	@Cabang  nvarchar(15) ,
+	@Pembagi  DECIMAL(15,2)
+AS   
+BEGIN
+	INSERT INTO [dbo].[TEMP09_SALES_COGS_PNL]
+				([TAHUN]
+				,[COMPANY]
+				,[JENIS_AMOUNT]
+				,[AMOUNT]
+				,[PROSES_ID])
+	SELECT	 @cntYear AS TAHUN	
+			,XXX.COMPANY
+			,XXX.JENIS_AMOUNT
+			,XXX.AMOUNT
+			,@ProsesId AS PROSES_ID
+	FROM	(
+				SELECT	XX.COMPANY
+						,XX.JENIS_AMOUNT
+						,SUM(XX.AMOUNT) AS AMOUNT
+				FROM	(
+							SELECT	X.COMPANY
+									,X.ITEM_CAT
+									,X.TITLE
+									,X.GRP AS JENIS_AMOUNT
+									,ROUND(SUM(X.AMOUNT) / @Pembagi ,0) AS AMOUNT
+							FROM	(
+										SELECT	'AUTOJAYA' AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy Sales' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+															,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+															,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND GLE.[Document No_] <> '9SIAT200197'
+															AND GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+										UNION ALL
+										SELECT	'AUTOJAYA' AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy Sales' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+															,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+															,'SLS-0303' AS SORT_SLS
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy Sales' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+															,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+															,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <= @TglUpto)
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy Sales' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+															,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+															,'SLS-0303' AS SORT_SLS
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS										
+										UNION ALL
+										SELECT	CASE WHEN  SLC.SALES_TITLE = '1. COGS FA' THEN 'AUTOJAYA' ELSE 'SOLUSI' END AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy COGS' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+															,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+															,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND GLE.[Document No_] <> '9SIAT200197'
+															AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto)
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+										UNION ALL
+										SELECT	CASE WHEN  SLC.AMT_COM = 'AJ' THEN 'AUTOJAYA' ELSE 'SOLUSI' END AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy COGS' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	'3. Others COGS Adjustment' AS SALES_TITLE
+															,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+															,'SLS-0403' AS SORT_SLS
+															, CASE WHEN GLE.[Description] LIKE 'FA%' THEN 'AJ' ELSE 'SP' END AS AMT_COM
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto)
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS, SLC.AMT_COM
+										UNION ALL
+										SELECT	CASE WHEN  SLC.SALES_TITLE = '1. COGS FA' THEN 'SOLUSI' ELSE 'AUTOJAYA'  END AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy COGS' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+															,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+															,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto)
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+										UNION ALL
+										SELECT	CASE WHEN  SLC.AMT_COM = 'AJ' THEN 'AUTOJAYA' ELSE 'SOLUSI' END AS COMPANY
+												, '' AS ITEM_CAT
+												, '10' AS BRANCHES
+												,'Koreksi Intercoy COGS' AS GRP
+												, SLC.SALES_TITLE2 AS TITLE		
+												, SUM(SLC.[Amount]) AS AMOUNT
+										FROM	(
+													SELECT	'3. Others COGS Adjustment' AS SALES_TITLE
+															,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+															,'SLS-0403' AS SORT_SLS
+															, CASE WHEN GLE.[Description] LIKE 'FA%' THEN 'SP' ELSE 'AJ' END AS AMT_COM
+															, GLE.[Amount]
+													FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+													WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+															AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto)
+												) SLC
+										WHERE @Cabang = 'ALL' OR @Cabang = '10'
+										GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS, SLC.AMT_COM
+									) X
+							GROUP BY X.COMPANY, X.ITEM_CAT, X.TITLE, X.GRP
+						) XX
+				GROUP BY XX.COMPANY, XX.JENIS_AMOUNT
+				UNION ALL
+				SELECT	X.COMPANY
+						,'Hutang Intercoy' AS JENIS_AMOUNT
+						,ROUND(SUM(X.AMOUNT) / @Pembagi ,0) AS AMOUNT
+				FROM	(
+							SELECT	CASE WHEN  SLC.AMT_COM = 'AJ' THEN 'AUTOJAYA' ELSE 'SOLUSI' END AS COMPANY
+									, '' AS ITEM_CAT
+									, '10' AS BRANCHES
+									,'Koreksi Intercoy COGS' AS GRP
+									, SLC.SALES_TITLE2 AS TITLE		
+									, SUM(SLC.[Amount]) AS AMOUNT
+							FROM	(
+										SELECT	'3. Others COGS Adjustment' AS SALES_TITLE
+												,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+												,'SLS-0403' AS SORT_SLS
+												, CASE WHEN GLE.[Description] LIKE 'FA%' THEN 'AJ' ELSE 'SP' END AS AMT_COM
+												, GLE.[Amount]
+										FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+										WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+												AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto)
+									) SLC
+							WHERE @Cabang = 'ALL' OR @Cabang = '10'
+							GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS, SLC.AMT_COM
+							UNION ALL
+							SELECT	CASE WHEN  SLC.AMT_COM = 'AJ' THEN 'AUTOJAYA' ELSE 'SOLUSI' END AS COMPANY
+									, '' AS ITEM_CAT
+									, '10' AS BRANCHES
+									,'Koreksi Intercoy COGS' AS GRP
+									, SLC.SALES_TITLE2 AS TITLE		
+									, SUM(SLC.[Amount]) AS AMOUNT
+							FROM	(
+										SELECT	'3. Others COGS Adjustment' AS SALES_TITLE
+												,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+												,'SLS-0403' AS SORT_SLS
+												, CASE WHEN GLE.[Description] LIKE 'FA%' THEN 'SP' ELSE 'AJ' END AS AMT_COM
+												, GLE.[Amount]
+										FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+										WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+												AND (GLE.[Posting Date] >= @TglFrom AND GLE.[Posting Date] <=  @TglUpto)
+									) SLC
+							WHERE @Cabang = 'ALL' OR @Cabang = '10'
+							GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS, SLC.AMT_COM
+						) X 
+				GROUP BY X.COMPANY
+			) XXX;
+END;

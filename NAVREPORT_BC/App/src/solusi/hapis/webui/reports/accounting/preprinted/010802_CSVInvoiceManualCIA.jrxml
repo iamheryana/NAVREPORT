@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010802_CSVInvoiceManualCIA" language="groovy" pageWidth="2000" pageHeight="792" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2000" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.7715610000000601"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="InvoiceFrom" class="java.lang.String"/>
+	<parameter name="InvoiceUpto" class="java.lang.String"/>
+	<parameter name="PrintItemNol" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	XX.KODE
+		, XX.KD_JENIS_TRANSAKSI
+		, XX.FG_PENGGANTI
+		, XX.NOMOR_FAKTUR
+		, XX.MASA_PAJAK
+		, XX.TAHUN_PAJAK
+		, XX.TANGGAL_FAKTUR
+		, XX.NPWP
+		, XX.NAMA
+		, XX.ALAMAT_LENGKAP
+		, XX.JUMLAH_DPP
+		, XX.JUMLAH_PPN
+		, XX.JUMLAH_PPNBM
+		, XX.ID_KETERANGAN_TAMBAHAN
+		, XX.FG_UANG_MUKA
+		, XX.UANG_MUKA_DPP
+		, XX.UANG_MUKA_PPN
+		, XX.UANG_MUKA_PPNBM
+		, XX.REFERENSI
+		, XX.KODE_DOKUMEN_PENDUKUNG
+		, XX.LINE_KODE
+		, XX.LINE_KODE_OBJEK
+		, XX.LINE_NAMA
+		, XX.LINE_HARGA_SATUAN
+		, XX.LINE_JUMLAH_BARANG
+		, XX.LINE_HARGA_TOTAL
+		, XX.LINE_DISKON
+		, XX.LINE_DPP
+		, CASE WHEN XX.NO_URUT = XX.MAX_NO_URUT THEN XX.JUMLAH_PPN - XX.PREV_RUN_PPN ELSE XX.LINE_PPN END AS LINE_PPN
+		, XX.LINE_TARIF_PPNBM
+		, XX.LINE_PPNBM
+FROM	(
+			SELECT	X.KODE
+					, X.KD_JENIS_TRANSAKSI
+					, X.FG_PENGGANTI
+					, X.NOMOR_FAKTUR
+					, X.MASA_PAJAK
+					, X.TAHUN_PAJAK
+					, X.TANGGAL_FAKTUR
+					, X.NPWP
+					, X.NAMA
+					, X.ALAMAT_LENGKAP
+					, X.JUMLAH_DPP
+					, X.JUMLAH_PPN
+					, X.JUMLAH_PPNBM
+					, X.ID_KETERANGAN_TAMBAHAN
+					, X.FG_UANG_MUKA
+					, X.UANG_MUKA_DPP
+					, X.UANG_MUKA_PPN
+					, X.UANG_MUKA_PPNBM
+					, X.REFERENSI
+					, X.KODE_DOKUMEN_PENDUKUNG
+					, X.LINE_KODE
+					, X.LINE_KODE_OBJEK
+					, X.LINE_NAMA
+					, X.LINE_HARGA_SATUAN
+					, X.LINE_JUMLAH_BARANG
+					, X.LINE_HARGA_TOTAL
+					, X.LINE_DISKON
+					, X.LINE_DPP
+					, X.LINE_PPN
+					, X.LINE_TARIF_PPNBM
+					, X.LINE_PPNBM
+					, X.NO_URUT
+					, X.RUN_PPN
+					, ISNULL(LAG(X.RUN_PPN) OVER (PARTITION BY X.REFERENSI ORDER BY  X.NO_URUT),0)  AS PREV_RUN_PPN
+					, MAX(X.NO_URUT) OVER (PARTITION BY X.REFERENSI) AS MAX_NO_URUT
+			FROM	(
+						SELECT	FRM.[Header Code] AS KODE
+								, RIGHT (('0'+CAST(FRM.[CSV - Kode Jenis Transaksi] AS VARCHAR)),2) AS KD_JENIS_TRANSAKSI
+								, '0' AS FG_PENGGANTI
+								, REPLACE(ERH.[Faktur Pajak No_], '.', '') AS NOMOR_FAKTUR
+								, DATEPART(MONTH,ERH.[Faktur Pajak Date]) AS MASA_PAJAK
+								, DATEPART(YEAR,ERH.[Faktur Pajak Date]) AS TAHUN_PAJAK
+								, CONVERT(varchar, ERH.[Faktur Pajak Date], 103) AS TANGGAL_FAKTUR
+								, REPLACE(REPLACE(CUS.[VAT Registration No_], '.', ''), '-', '')   AS NPWP
+								, FMM.[Tax Name] AS NAMA
+								, FMM.[Tax Address 1] + FMM.[Tax Address 2] AS ALAMAT_LENGKAP
+								, SIL.DPP AS JUMLAH_DPP
+								, FLOOR(SIL.PPN) AS JUMLAH_PPN
+								, 0 AS JUMLAH_PPNBM
+								, FRM.[CSV - ID Keterangan] AS ID_KETERANGAN_TAMBAHAN
+								, 0 AS FG_UANG_MUKA
+								, 0 AS UANG_MUKA_DPP
+								, 0 AS UANG_MUKA_PPN
+								, 0 AS UANG_MUKA_PPNBM
+								, SIH.[No_] AS REFERENSI
+								, ERH.[Kode Dokumen Pendukung] AS KODE_DOKUMEN_PENDUKUNG
+								,'OF' AS LINE_KODE
+								,SOL.NO_ITEM AS LINE_KODE_OBJEK
+								,SOL.[Description] AS LINE_NAMA
+								,SOL.[Unit Price] AS LINE_HARGA_SATUAN
+								,SOL.[Quantity] AS LINE_JUMLAH_BARANG
+								,SOL.[Amount] AS LINE_HARGA_TOTAL
+								,SOL.[Line Discount Amount] AS  LINE_DISKON
+								,SOL.[Amount] AS LINE_DPP
+								,FLOOR(SOL.[Amount Including VAT] - SOL.[Amount])  AS LINE_PPN
+								, 0 AS LINE_TARIF_PPNBM
+								, 0 AS LINE_PPNBM
+								, ROW_NUMBER() OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS NO_URUT
+								, SUM(FLOOR(SOL.[Amount Including VAT] - SOL.[Amount])) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_] ROWS UNBOUNDED PRECEDING) AS RUN_PPN
+						FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+						INNER JOIN	(
+										SELECT	[Document No_] AS NO_INV
+												, SUM([Amount]) AS DPP
+												, SUM([Amount Including VAT] - [Amount]) AS PPN
+										FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line]
+										GROUP BY [Document No_]
+									) SIL ON SIL.NO_INV = SIH.[No_]
+						INNER JOIN	(
+										SELECT	SLH.[No_]
+												,SLL.[No_] AS NO_ITEM
+												,SLL.[Line No_]
+												,SLL.[Description]
+												,SLL.[Quantity]
+												,SLL.[Unit Price]
+												,SLL.[Line Discount Amount]
+												,SLL.[Amount]
+												,SLL.[Type]
+												,SLL.[Amount Including VAT]
+										FROM [dbo].[BC_AUTOJAYA$Sales Header] SLH
+										INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SLL ON SLL.[Document No_] = SLH.[No_] AND SLL.[Document Type] = SLH.[Document Type]
+										WHERE SLH.[Document Type] = 1
+										UNION ALL
+										SELECT	SHA.[No_]
+												,SLA.[No_] AS NO_ITEM
+												,SLA.[Line No_]
+												,SLA.[Description]
+												,SLA.[Quantity]
+												,SLA.[Unit Price]
+												,SLA.[Line Discount Amount]
+												,SLA.[Amount]
+												,SLA.[Type]
+												,SLA.[Amount Including VAT]
+										FROM	(
+													SELECT  [Document Type]
+															, [No_]
+															, MAX([Version No_]) AS [Version No_]
+													FROM	[dbo].[BC_AUTOJAYA$Sales Header Archive]
+													GROUP BY [Document Type], [No_]
+												) SHA
+										INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line Archive] SLA ON SLA.[Document No_] = SHA.[No_] AND SLA.[Document Type] = SHA.[Document Type] AND SLA.[Version No_] = SHA.[Version No_]
+										LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Header] SLH ON SLH.[No_] = SHA.[No_] AND SLH.[Document Type] = SHA.[Document Type]
+										WHERE	SHA.[Document Type] = 1 AND
+												SLH.[No_] IS NULL
+									) SOL ON SOL.[No_]  = SIH.[Prepayment Order No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Register Header - n] ERH ON ERH.[No_] = SIH.[No_] AND ERH.[Document Type] = 5
+						LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Register Mapping - n] FRM ON FRM.[E-Faktur ID] = ERH.[E-Faktur Register Mapping ID]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Master Mapping - n] FMM ON FMM.[No_] = SIH.[Bill-to Customer No_] AND FMM.[Type] = 1
+						WHERE	SOL.[Type] <> 0 AND
+								(($P{PrintItemNol} = 'N' AND SOL.[Unit Price] <> 0 ) OR $P{PrintItemNol} = 'Y' ) AND
+								SIH.[No_] >= $P{InvoiceFrom} AND SIH.[No_] <= $P{InvoiceUpto}
+					) X
+		) XX
+UNION ALL
+SELECT	XX.KODE
+		, XX.KD_JENIS_TRANSAKSI
+		, XX.FG_PENGGANTI
+		, XX.NOMOR_FAKTUR
+		, XX.MASA_PAJAK
+		, XX.TAHUN_PAJAK
+		, XX.TANGGAL_FAKTUR
+		, XX.NPWP
+		, XX.NAMA
+		, XX.ALAMAT_LENGKAP
+		, XX.JUMLAH_DPP
+		, XX.JUMLAH_PPN
+		, XX.JUMLAH_PPNBM
+		, XX.ID_KETERANGAN_TAMBAHAN
+		, XX.FG_UANG_MUKA
+		, XX.UANG_MUKA_DPP
+		, XX.UANG_MUKA_PPN
+		, XX.UANG_MUKA_PPNBM
+		, XX.REFERENSI
+		, XX.KODE_DOKUMEN_PENDUKUNG
+		, XX.LINE_KODE
+		, XX.LINE_KODE_OBJEK
+		, XX.LINE_NAMA
+		, XX.LINE_HARGA_SATUAN
+		, XX.LINE_JUMLAH_BARANG
+		, XX.LINE_HARGA_TOTAL
+		, XX.LINE_DISKON
+		, XX.LINE_DPP
+		, CASE WHEN XX.NO_URUT = XX.MAX_NO_URUT THEN XX.JUMLAH_PPN - XX.PREV_RUN_PPN ELSE XX.LINE_PPN END AS LINE_PPN
+		, XX.LINE_TARIF_PPNBM
+		, XX.LINE_PPNBM
+FROM	(
+			SELECT	X.KODE
+					, X.KD_JENIS_TRANSAKSI
+					, X.FG_PENGGANTI
+					, X.NOMOR_FAKTUR
+					, X.MASA_PAJAK
+					, X.TAHUN_PAJAK
+					, X.TANGGAL_FAKTUR
+					, X.NPWP
+					, X.NAMA
+					, X.ALAMAT_LENGKAP
+					, X.JUMLAH_DPP
+					, X.JUMLAH_PPN
+					, X.JUMLAH_PPNBM
+					, X.ID_KETERANGAN_TAMBAHAN
+					, X.FG_UANG_MUKA
+					, X.UANG_MUKA_DPP
+					, X.UANG_MUKA_PPN
+					, X.UANG_MUKA_PPNBM
+					, X.REFERENSI
+					, X.KODE_DOKUMEN_PENDUKUNG
+					, X.LINE_KODE
+					, X.LINE_KODE_OBJEK
+					, X.LINE_NAMA
+					, X.LINE_HARGA_SATUAN
+					, X.LINE_JUMLAH_BARANG
+					, X.LINE_HARGA_TOTAL
+					, X.LINE_DISKON
+					, X.LINE_DPP
+					, X.LINE_PPN
+					, X.LINE_TARIF_PPNBM
+					, X.LINE_PPNBM
+					, X.NO_URUT
+					, X.RUN_PPN
+					, ISNULL(LAG(X.RUN_PPN) OVER (PARTITION BY X.REFERENSI ORDER BY  X.NO_URUT),0)  AS PREV_RUN_PPN
+					, MAX(X.NO_URUT) OVER (PARTITION BY X.REFERENSI) AS MAX_NO_URUT
+			FROM	(
+						SELECT	FRM.[Header Code] AS KODE
+								, RIGHT (('0'+CAST(FRM.[CSV - Kode Jenis Transaksi] AS VARCHAR)),2) AS KD_JENIS_TRANSAKSI
+								, '0' AS FG_PENGGANTI
+								, REPLACE(ERH.[Faktur Pajak No_], '.', '') AS NOMOR_FAKTUR
+								, DATEPART(MONTH,ERH.[Faktur Pajak Date]) AS MASA_PAJAK
+								, DATEPART(YEAR,ERH.[Faktur Pajak Date]) AS TAHUN_PAJAK
+								, CONVERT(varchar, ERH.[Faktur Pajak Date], 103) AS TANGGAL_FAKTUR
+								, REPLACE(REPLACE(CUS.[VAT Registration No_], '.', ''), '-', '')   AS NPWP
+								, FMM.[Tax Name] AS NAMA
+								, FMM.[Tax Address 1] + FMM.[Tax Address 2] AS ALAMAT_LENGKAP
+								, SIL.DPP AS JUMLAH_DPP
+								, FLOOR(SIL.PPN) AS JUMLAH_PPN
+								, 0 AS JUMLAH_PPNBM
+								, FRM.[CSV - ID Keterangan] AS ID_KETERANGAN_TAMBAHAN
+								, 0 AS FG_UANG_MUKA
+								, 0 AS UANG_MUKA_DPP
+								, 0 AS UANG_MUKA_PPN
+								, 0 AS UANG_MUKA_PPNBM
+								, SIH.[No_] AS REFERENSI
+								, ERH.[Kode Dokumen Pendukung] AS KODE_DOKUMEN_PENDUKUNG
+								,'OF' AS LINE_KODE
+								,SOL.NO_ITEM AS LINE_KODE_OBJEK
+								,SOL.[Description] AS LINE_NAMA
+								,SOL.[Unit Price] AS LINE_HARGA_SATUAN
+								,SOL.[Quantity] AS LINE_JUMLAH_BARANG
+								,SOL.[Amount] AS LINE_HARGA_TOTAL
+								,SOL.[Line Discount Amount] AS  LINE_DISKON
+								,SOL.[Amount] AS LINE_DPP
+								,FLOOR(SOL.[Amount Including VAT] - SOL.[Amount])  AS LINE_PPN
+								, 0 AS LINE_TARIF_PPNBM
+								, 0 AS LINE_PPNBM
+								, ROW_NUMBER() OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_]) AS NO_URUT
+								, SUM(FLOOR(SOL.[Amount Including VAT] - SOL.[Amount])) OVER (PARTITION BY SIH.[No_] ORDER BY SIH.[No_] ROWS UNBOUNDED PRECEDING) AS RUN_PPN
+						FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+						INNER JOIN	(
+										SELECT	[Document No_] AS NO_INV
+												, SUM([Amount]) AS DPP
+												, SUM([Amount Including VAT] - [Amount]) AS PPN
+										FROM [dbo].[BC_SOLUSI$Sales Invoice Line]
+										GROUP BY [Document No_]
+									) SIL ON SIL.NO_INV = SIH.[No_]
+						INNER JOIN	(
+										SELECT	SLH.[No_]
+												,SLL.[No_] AS NO_ITEM
+												,SLL.[Line No_]
+												,SLL.[Description]
+												,SLL.[Quantity]
+												,SLL.[Unit Price]
+												,SLL.[Line Discount Amount]
+												,SLL.[Amount]
+												,SLL.[Type]
+												,SLL.[Amount Including VAT]
+										FROM [dbo].[BC_SOLUSI$Sales Header] SLH
+										INNER JOIN [dbo].[BC_SOLUSI$Sales Line] SLL ON SLL.[Document No_] = SLH.[No_] AND SLL.[Document Type] = SLH.[Document Type]
+										WHERE SLH.[Document Type] = 1
+										UNION ALL
+										SELECT	SHA.[No_]
+												,SLA.[No_] AS NO_ITEM
+												,SLA.[Line No_]
+												,SLA.[Description]
+												,SLA.[Quantity]
+												,SLA.[Unit Price]
+												,SLA.[Line Discount Amount]
+												,SLA.[Amount]
+												,SLA.[Type]
+												,SLA.[Amount Including VAT]
+										FROM	(
+													SELECT  [Document Type]
+															, [No_]
+															, MAX([Version No_]) AS [Version No_]
+													FROM	[dbo].[BC_SOLUSI$Sales Header Archive]
+													GROUP BY [Document Type], [No_]
+												) SHA
+										INNER JOIN [dbo].[BC_SOLUSI$Sales Line Archive] SLA ON SLA.[Document No_] = SHA.[No_] AND SLA.[Document Type] = SHA.[Document Type] AND SLA.[Version No_] = SHA.[Version No_]
+										LEFT JOIN [dbo].[BC_SOLUSI$Sales Header] SLH ON SLH.[No_] = SHA.[No_] AND SLH.[Document Type] = SHA.[Document Type]
+										WHERE	SHA.[Document Type] = 1 AND
+												SLH.[No_] IS NULL
+									) SOL ON SOL.[No_]  = SIH.[Prepayment Order No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer No_]
+						LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Register Header - n] ERH ON ERH.[No_] = SIH.[No_] AND ERH.[Document Type] = 5
+						LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Register Mapping - n] FRM ON FRM.[E-Faktur ID] = ERH.[E-Faktur Register Mapping ID]
+						LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Master Mapping - n] FMM ON FMM.[No_] = SIH.[Bill-to Customer No_] AND FMM.[Type] = 1
+						WHERE	SOL.[Type] <> 0 AND
+								(($P{PrintItemNol} = 'N' AND SOL.[Unit Price] <> 0 ) OR $P{PrintItemNol} = 'Y' ) AND
+								SIH.[No_] >= $P{InvoiceFrom} AND SIH.[No_] <= $P{InvoiceUpto}
+					) X
+		) XX]]>
+	</queryString>
+	<field name="KODE" class="java.lang.String"/>
+	<field name="KD_JENIS_TRANSAKSI" class="java.lang.String"/>
+	<field name="FG_PENGGANTI" class="java.lang.String"/>
+	<field name="NOMOR_FAKTUR" class="java.lang.String"/>
+	<field name="MASA_PAJAK" class="java.lang.Integer"/>
+	<field name="TAHUN_PAJAK" class="java.lang.Integer"/>
+	<field name="TANGGAL_FAKTUR" class="java.lang.String"/>
+	<field name="NPWP" class="java.lang.String"/>
+	<field name="NAMA" class="java.lang.String"/>
+	<field name="ALAMAT_LENGKAP" class="java.lang.String"/>
+	<field name="JUMLAH_DPP" class="java.math.BigDecimal"/>
+	<field name="JUMLAH_PPN" class="java.math.BigDecimal"/>
+	<field name="JUMLAH_PPNBM" class="java.lang.Integer"/>
+	<field name="ID_KETERANGAN_TAMBAHAN" class="java.lang.Integer"/>
+	<field name="FG_UANG_MUKA" class="java.lang.Integer"/>
+	<field name="UANG_MUKA_DPP" class="java.lang.Integer"/>
+	<field name="UANG_MUKA_PPN" class="java.lang.Integer"/>
+	<field name="UANG_MUKA_PPNBM" class="java.lang.Integer"/>
+	<field name="REFERENSI" class="java.lang.String"/>
+	<field name="KODE_DOKUMEN_PENDUKUNG" class="java.lang.String"/>
+	<field name="LINE_KODE" class="java.lang.String"/>
+	<field name="LINE_KODE_OBJEK" class="java.lang.String"/>
+	<field name="LINE_NAMA" class="java.lang.String"/>
+	<field name="LINE_HARGA_SATUAN" class="java.math.BigDecimal"/>
+	<field name="LINE_JUMLAH_BARANG" class="java.math.BigDecimal"/>
+	<field name="LINE_HARGA_TOTAL" class="java.math.BigDecimal"/>
+	<field name="LINE_DISKON" class="java.math.BigDecimal"/>
+	<field name="LINE_DPP" class="java.math.BigDecimal"/>
+	<field name="LINE_PPN" class="java.math.BigDecimal"/>
+	<field name="LINE_TARIF_PPNBM" class="java.lang.Integer"/>
+	<field name="LINE_PPNBM" class="java.lang.Integer"/>
+	<sortField name="NOMOR_FAKTUR"/>
+	<sortField name="REFERENSI"/>
+	<group name="NoInvoice">
+		<groupExpression><![CDATA[$F{REFERENSI}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true">
+					<reportElement x="0" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="645535cb-0396-4ae8-ad0a-124759d9200e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="100" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="40170efc-61b0-416a-ae97-a9ccf2da1dee"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KD_JENIS_TRANSAKSI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="f5d8fbff-0048-4df5-b333-aac9b96d3734"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{FG_PENGGANTI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="6989e723-69a4-49fb-80f7-a08f7ba0ca0b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NOMOR_FAKTUR}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="400" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="203de14f-278a-43d8-a50b-fe6c44e3ec8f"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{MASA_PAJAK}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="500" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="373db3d8-3a8a-40ce-99f5-137cff77a4c4"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TAHUN_PAJAK}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="600" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="e33b0450-1b92-4163-b4c2-bc97d092dea7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TANGGAL_FAKTUR}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="700" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="3135b0ab-d7ad-4f17-8918-4c3b0950917d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NPWP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="800" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="467a3751-b95e-43a3-bbac-b952a071632a"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="900" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="4f7535e3-9a37-4abe-91c7-33a650c6493d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ALAMAT_LENGKAP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1000" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="dcd5a47c-702c-4089-b00c-20e17d9357b8"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUMLAH_DPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1100" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="7b6d2769-8924-4420-9369-7df423835afd"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUMLAH_PPN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="45eddf8e-403e-459d-8150-bbf3877ab8f0"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUMLAH_PPNBM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="1300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="c4fe7a2a-485d-4da1-adfa-c82c22660d43"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ID_KETERANGAN_TAMBAHAN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1400" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="f23225c3-428e-4db0-8a61-dbc2265877d2"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{FG_UANG_MUKA}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1500" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="76935d04-2e29-4a6b-b348-728a147d4d2b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{UANG_MUKA_DPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1600" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="87d4f022-1a79-42b1-b094-53e252095a4b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{UANG_MUKA_PPN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="####">
+					<reportElement x="1700" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="651b7100-ec39-45ca-bcf6-7682a2171e58"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{UANG_MUKA_PPNBM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="1800" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="3968934e-61e8-4405-b110-e88a9ca08294"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{REFERENSI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="1900" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="c1d8000b-b494-4b66-b360-c5bac1d8c878"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_DOKUMEN_PENDUKUNG}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<title>
+		<band height="42">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="5a35d10d-e9ba-4e26-a28a-7937eddd8133"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="1507f065-2abc-40e4-9048-02d1a6624ab8"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="58f7891e-23d8-4229-bcc0-2be859a7d717"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Segoe UI" size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="0" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="eb5317d7-f07e-4657-a72c-837a35992d87"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_KODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="100" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="85dba203-dd0f-4389-a629-c0a8847e44c0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_KODE_OBJEK}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="09520255-e8c8-43ef-81bf-2afba6d4e146"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_NAMA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####">
+				<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="4d45cf6f-2fe4-4bf5-b180-d5a50b40da79"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_HARGA_SATUAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="400" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="acd01cfd-a18d-41c4-a8f8-5dc3b73e93a4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_JUMLAH_BARANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="500" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9a2e4f7d-7b5c-402f-85aa-8e0e32d45d20"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_HARGA_TOTAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="600" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="e5f27fdc-37d2-40fa-96a4-e8dde6daad56"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_DISKON}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="700" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="cdcf65c0-0f1f-4324-b240-a933043adf22"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_DPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="800" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="0801a213-e071-4330-bf04-17fb01fcd763"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_PPN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="900" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="1848f04f-79be-4061-a216-f3abbee2cd36"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_TARIF_PPNBM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="####" isBlankWhenNull="false">
+				<reportElement x="1000" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="e8a870bf-d195-4dbc-a533-8df35535b0a0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LINE_PPNBM}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

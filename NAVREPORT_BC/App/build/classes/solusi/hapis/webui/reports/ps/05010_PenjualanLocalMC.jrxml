@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="05010_PenjualanLocalMC" language="groovy" pageWidth="1450" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1410" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.771561000000022"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NoItem" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JenisRpt" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	'A' AS GRP
+		, XXX.COMPANY
+		, XXX.NO_INV
+		, XXX.TGL_INV
+		, XXX.NO_PO_CUST
+		, XXX.CUST_NO
+		, XXX.CUST_NAME
+		, XXX.SALES
+		, XXX.NO_ITEM
+		, XXX.DESC_ITEM
+		, XXX.QTY
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					, SIH.[No_] AS NO_INV
+					, SIH.[Posting Date] AS TGL_INV
+					, SIH.[Bill-to Customer No_] AS CUST_NO
+					, SIH.[Bill-to Name]AS CUST_NAME
+					, SIH.[External Document No_] AS NO_PO_CUST
+					, SIH.[Salesperson Code] AS SALES
+					, SIL.[No_] AS NO_ITEM
+					, SIL.[Description] AS DESC_ITEM
+					, SIL.[Quantity] AS QTY
+			FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+			INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Item] ITM ON ITM.[No_] = SIL.[No_]
+			WHERE	SIL.[Type] = 2 AND
+					SIL.[Quantity] <> 0 AND
+					ITM.[Product Group Code] = 'S404' AND
+					CRM.[Applies-to Doc_ No_] IS NULL
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					, SIH.[No_] AS NO_INV
+					, SIH.[Posting Date] AS TGL_INV
+					, SIH.[Bill-to Customer No_] AS CUST_NO
+					, SIH.[Bill-to Name] AS CUST_NAME
+					, SIH.[External Document No_] AS NO_PO_CUST
+					, SIH.[Salesperson Code] AS SALES
+					, SIL.[No_] AS NO_ITEM
+					, SIL.[Description] AS DESC_ITEM
+					, SIL.[Quantity] AS QTY
+			FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+			INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+			LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+			LEFT JOIN [dbo].[BC_SOLUSI$Item] ITM ON ITM.[No_] = SIL.[No_]
+			WHERE	SIL.[Type] = 2 AND
+					SIL.[Quantity] <> 0 AND
+					ITM.[Product Group Code] = 'S404' AND
+					CRM.[Applies-to Doc_ No_] IS NULL
+		) XXX
+WHERE	(XXX.TGL_INV >= $P{TglFrom} AND XXX.TGL_INV <= $P{TglUpto}) AND
+		(XXX.NO_ITEM = $P{NoItem} OR  $P{NoItem} = 'ALL')]]>
+	</queryString>
+	<field name="GRP" class="java.lang.String"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="CUST_NO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="SALES" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="DESC_ITEM" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<sortField name="NO_ITEM"/>
+	<sortField name="COMPANY"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="NO_INV"/>
+	<variable name="QTY_1" class="java.math.BigDecimal" resetType="Group" resetGroup="NoItem" calculation="Sum">
+		<variableExpression><![CDATA[$F{QTY}]]></variableExpression>
+	</variable>
+	<variable name="QTY_2" class="java.math.BigDecimal" resetType="Group" resetGroup="NoItem" calculation="Sum">
+		<variableExpression><![CDATA[$F{QTY}]]></variableExpression>
+	</variable>
+	<variable name="JenisLaporan" class="java.lang.String">
+		<variableExpression><![CDATA[( $P{JenisRpt}.equals("SUM") == true ? "Summary" : "Detail" ) ]]></variableExpression>
+		<initialValueExpression><![CDATA[( $P{JenisRpt}.equals("SUM") == true ? "Summary" : "Detail" ) ]]></initialValueExpression>
+	</variable>
+	<group name="Grp">
+		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JenisRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="200" height="14" uuid="d2ef399d-85f8-4bea-a136-60b90d4357d5"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Item No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="200" y="0" width="300" height="14" uuid="c613b068-c25b-4af2-90bb-9405c313bdc2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Item Desc.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="0" width="100" height="14" uuid="87ea80e1-7ae3-410b-86d9-da7186f1a51f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[No. Invoice]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="600" y="0" width="100" height="14" uuid="4cd23f24-30bb-480f-9eee-bbfe737532c7"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tgl. Invoice]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="900" y="0" width="100" height="14" uuid="1376c0a0-0b43-483a-9b15-ea83dae834e8"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Cust. Code]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1000" y="0" width="300" height="14" uuid="22f5c25e-e72b-4ab1-bf33-d64544e1f436"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Customer Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="700" y="0" width="50" height="14" uuid="375c63fb-5318-4ef9-9a96-08b42e0ef030"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Sales]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1300" y="0" width="80" height="14" uuid="8409175c-7c5b-4f22-9841-4fec44f65cf2"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Quantity]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="750" y="0" width="150" height="14" uuid="d4fb5a5d-1a73-46b6-9f34-576cd077795b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PO Customer]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JenisRpt}.equals( "SUM" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="200" height="14" uuid="721e9b4b-d12e-42c6-8bbf-c5a9cfc2e2f1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Item No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="200" y="0" width="300" height="14" uuid="4d3a8211-8e21-4bff-8af8-1fb583d3679e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Item Desc.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="0" width="80" height="14" uuid="7732dc7b-0e72-4ef1-8b51-675fd8d15229"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Quantity]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="NoItem">
+		<groupExpression><![CDATA[$F{NO_ITEM}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JenisRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="2182ded8-75dd-4555-9028-c4a6132bd022"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="c16fa7dc-5373-4068-a8a4-499c6433f6d6"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DESC_ITEM}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JenisRpt}.equals( "SUM" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="a4416433-192a-4592-bff5-38e676e9f78d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="ffbeecd2-4793-4658-a9f9-69ee65324492"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DESC_ITEM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" evaluationTime="Group" evaluationGroup="NoItem" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="80" height="14" uuid="3c3806b2-facc-4515-b221-b87a3250e51a"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{QTY_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<printWhenExpression><![CDATA[$P{JenisRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1300" y="0" width="80" height="14" uuid="7abfce18-560e-4bd3-8f99-4f21c2f54ecb"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{QTY_2}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="1000" y="0" width="300" height="14" uuid="7af568bc-d09e-467e-af96-91fd69805bc0"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1000" y="14" width="300" height="14" uuid="d66d1287-6e41-4a2e-bbdb-4173c682b866"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="98" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="500" height="14" uuid="938b7c4e-b9a2-42b5-a945-272a47d2fff4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(05010) Penjualan - Local Maintenance Contract]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="200" height="14" uuid="ccd2bf87-348f-4955-ba94-bb970927e353"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="200" height="14" uuid="fc5509e6-b80b-40d0-b457-bb7310dce8d3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Invoice :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="200" height="14" uuid="dc74423f-cf30-400b-aef3-216400d19c18"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No Item :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="200" height="14" uuid="f0783306-807f-4e1a-8aa7-6e1576e795c7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="200" y="70" width="300" height="14" uuid="263ec5fc-0513-4da8-9c7b-fc1cf1178bf8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="200" y="28" width="100" height="14" uuid="a07ad7cd-7977-4ea2-98b8-5965990c5df9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="350" y="28" width="150" height="14" uuid="d5449534-1040-4c64-ae2d-270b157c6dc4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="200" y="42" width="300" height="14" uuid="e4090e58-28e3-42b8-83eb-34fe7a2f511b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NoItem}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="28" width="50" height="14" uuid="dd54abcf-de25-472b-b60c-47a7c7a9a575"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="200" height="14" uuid="7ad85017-2cb7-4848-a724-eb3e476f4cd7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="200" height="14" uuid="2eb4e7a7-27c3-41e3-ad7c-c2de9cee253e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Laporan :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="200" y="56" width="300" height="14" uuid="09451289-147b-4be6-8885-34f2506e9e2b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{JenisLaporan}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<printWhenExpression><![CDATA[$P{JenisRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="500" y="0" width="100" height="14" uuid="c542ae99-ef03-4d45-a214-2c71bf0ab6bf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="600" y="0" width="100" height="14" uuid="79a91edb-d0f2-48d4-873f-9b91e32a4073"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="750" y="0" width="150" height="14" uuid="fbd54e60-e9e2-472d-96de-f31c4821d54a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="900" y="0" width="100" height="14" uuid="75fa2559-3008-4956-b13a-c9adec992d23"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1000" y="0" width="300" height="14" uuid="5258079d-db50-4485-9fab-f713ef1f75a2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="700" y="0" width="50" height="14" uuid="a5ab7c0b-f6dc-4b5d-a448-a5f70d7a8ed5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1300" y="0" width="80" height="14" uuid="c3b5d800-26ed-406f-a890-0e3e54afef03"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="112">
+			<staticText>
+				<reportElement x="0" y="98" width="200" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="200" height="14" uuid="807cfb36-2243-42cb-9f88-b9d622bc1651"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="28" width="50" height="14" uuid="c5fe3649-8781-4e45-86cc-fa193e2b52d4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="200" y="42" width="300" height="14" uuid="b40edadf-ce16-46e0-9a42-44506e1f0647"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NoItem}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="200" y="70" width="300" height="14" uuid="d22e8165-f479-4c46-bc8e-5465a9be589b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="500" height="14" uuid="e71ad1ef-b433-4c03-afaf-86f8d0e37f4b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(05010) Penjualan - Local Maintenance Contract]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="200" height="14" uuid="a48c367a-3c57-4cd8-9a2e-6bce7ee9a806"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="200" height="14" uuid="1b7c3752-d29b-488d-9cbe-331c951e9d6f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="200" height="14" uuid="c726989c-65f3-42c9-b2e8-5ac76c67737b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No Item :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="200" height="14" uuid="d6578212-3b27-41be-9afe-d7089dbaecc7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Invoice :]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="350" y="28" width="150" height="14" uuid="ad5c66df-6558-4041-9645-1dfeef59ba19"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="200" y="28" width="100" height="14" uuid="e7b0cee8-2b3d-4328-ac11-87c7ffb45592"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="200" y="56" width="300" height="14" uuid="a8e87768-1c20-4cd8-a4a7-6babb283e242"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{JenisLaporan}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="200" height="14" uuid="d6f25655-d96a-4908-ab0c-b791e67bbc42"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Laporan :]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

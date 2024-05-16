@@ -1,0 +1,2251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01047_COGSPembelian" language="groovy" pageWidth="595" pageHeight="854" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.3310000000000388"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="33"/>
+	<parameter name="Company" class="java.lang.String"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date"/>
+	<queryString>
+		<![CDATA[SELECT'AUTOJAYA' AS COMPANY
+		, XX.AMT_FGOODS_AWAL_LEDGER
+		, XX.AMT_FGOODS_AWAL_BF
+		, XX.AMT_FGOODS_AWAL_FINAL
+		, XX.AMT_PEMBELIAN
+		, XX.AMT_AVAILABLE_STOCK
+		, XX.AMT_FGOODS_AKHIR_LEDGER
+		, XX.AMT_FGOODS_AKHIR_BF
+		, XX.AMT_FGOODS_AKHIR_FINAL
+		, XX.COGS_FORMULA_TAX
+		, XX.AMT_COGS_PNL
+		, XX.AMT_REBATE
+		, XX.AMT_WO_MS
+		, XX.AMT_COGS_CORRECTION
+		, XX.COGS_REAL_FINAL
+		, XX.SELISIH
+FROM	(
+SELECT	'AUTOJAYA' AS COMPANY
+		, ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) AS AMT_FGOODS_AWAL_LEDGER
+		, ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0) AS AMT_FGOODS_AWAL_BF
+		, (ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) AS AMT_FGOODS_AWAL_FINAL
+		, ROUND(SUM(X.AMT_PEMBELIAN),0) AS AMT_PEMBELIAN
+		, ((ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) + ROUND(SUM(X.AMT_PEMBELIAN),0)) AS AMT_AVAILABLE_STOCK
+		, ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) AS AMT_FGOODS_AKHIR_LEDGER
+		, ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0) AS AMT_FGOODS_AKHIR_BF
+		, (ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0)) AS AMT_FGOODS_AKHIR_FINAL
+		,	(
+				((ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) + ROUND(SUM(X.AMT_PEMBELIAN),0)) -
+				(ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0))
+			) AS COGS_FORMULA_TAX
+		, ROUND(SUM(X.AMT_COGS_PNL),0) AS AMT_COGS_PNL
+		, ROUND(SUM(X.AMT_REBATE),0) AS AMT_REBATE
+		, ROUND(SUM(X.AMT_WO_MS),0) AS AMT_WO_MS
+		, ROUND(SUM(X.AMT_COGS_CORRECTION),0) AS AMT_COGS_CORRECTION
+		, (ROUND(SUM(X.AMT_COGS_PNL),0) + ROUND(SUM(X.AMT_REBATE),0) + ROUND(SUM(X.AMT_WO_MS),0) + ROUND(SUM(X.AMT_COGS_CORRECTION),0)) AS COGS_REAL_FINAL
+		,	(
+				(
+					((ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) + ROUND(SUM(X.AMT_PEMBELIAN),0)) -
+					(ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0))
+				) -
+				(ROUND(SUM(X.AMT_COGS_PNL),0) + ROUND(SUM(X.AMT_REBATE),0) + ROUND(SUM(X.AMT_WO_MS),0) + ROUND(SUM(X.AMT_COGS_CORRECTION),0))
+			) AS SELISIH
+FROM	(
+SELECT	SUM(GE.[Amount]) AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('116.199.00' , '116.199.01')
+		AND GE.[Posting Date] < $P{TglFrom}
+UNION ALL
+SELECT	  0 AS AMT_FGOODS_AWAL_LEDGER
+		, SUM(XXX.AMOUNT) AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,CASE	WHEN OGR.NO_GR =  'ADJ-SEPT 5' THEN 'Others'
+							WHEN OGR.NO_GR =  'GRAT160626' THEN 'GR'
+							ELSE 'GR'
+					 END AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_GR
+					,CASE	WHEN OGR.NO_GR =  'ADJ-SEPT 5' THEN CAST('2015-09-29' AS datetime)
+							WHEN OGR.NO_GR =  'GRAT160626' THEN CAST('2016-10-31' AS datetime)
+							ELSE PRH.[Posting Date]
+					 END AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								,ROUND(SUM(X.AMOUNT),0) AS AMOUNT
+						FROM	(
+									SELECT	[Document No_] AS NO_GR
+											,SUM([Amount]) * -1 AS AMOUNT
+									FROM [dbo].[BC_AUTOJAYA$G_L Entry]
+									WHERE [G_L Account No_] = '210.111.00'
+											AND [Source Code] = 'INVTPCOST'
+											AND [Document No_] LIKE 'G%'
+									GROUP BY [Document No_]
+									UNION ALL
+									SELECT 'ADJ-SEPT 5' AS NO_GR, -303670172 AS AMOUNT_GR
+									UNION ALL
+									SELECT 'GRAT160626' AS NO_GR,  -16920000 AS AMOUNT_GR
+									UNION ALL
+									SELECT	X.NO_GR
+											, SUM(X.AMOUNT_GR) * -1 AS AMOUNT_GR
+									FROM	(
+												SELECT	PIL.[Document No_] AS NO_INV
+														, PIL.[Receipt No_] AS NO_GR
+														, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT_GR
+												FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PIL
+												LEFT JOIN	(
+																SELECT	PRL.[Document No_] AS GR_NO
+																		, PRL.[Line No_] AS GR_LINE
+																		, PRL.[Unit Cost (LCY)] AS HARGA_SAT
+																FROM [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Line] PRL
+																WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+															) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+												WHERE	PIL.[Receipt No_] <> ''
+														AND PIL.[Document No_] IN	(
+																						SELECT DISTINCT [Document No_]
+																						FROM [dbo].[BC_AUTOJAYA$G_L Entry]
+																						WHERE [G_L Account No_] = '210.111.00'
+																								AND [Source Code] = 'INVTPCOST'
+																								AND [Document No_] LIKE 'P%'
+																								AND [Posting Date] < $P{TglFrom}
+																					)
+												GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+											) X
+									GROUP BY X.NO_GR
+								) X
+						GROUP BY X.NO_GR
+					) OGR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			WHERE OGR.AMOUNT <> 0
+			UNION ALL
+			SELECT	'AUTOJAYA' AS COMPANY
+					,'Invoice' AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_INV AS NO_GR
+					,PIH.[Posting Date] AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								, X.NO_INV
+								, SUM(X.AMOUNT) * -1 AS AMOUNT
+						FROM	(
+									SELECT	PIL.[Document No_] AS NO_INV
+											, PIL.[Receipt No_] AS NO_GR
+											, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT
+									FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PIL
+									LEFT JOIN	(
+													SELECT	PRL.[Document No_] AS GR_NO
+															, PRL.[Line No_] AS GR_LINE
+															, PRL.[Unit Cost (LCY)] AS HARGA_SAT
+													FROM [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Line] PRL
+													WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+												) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+									WHERE	PIL.[Receipt No_] <> ''
+											AND PIL.[Document No_] IN	(
+																			SELECT DISTINCT [Document No_]
+																			FROM [dbo].[BC_AUTOJAYA$G_L Entry]
+																			WHERE [G_L Account No_] = '210.111.00'
+																					AND [Source Code] = 'INVTPCOST'
+																					AND [Document No_] LIKE 'P%'
+																					AND [Posting Date] < $P{TglFrom}
+																		)
+									GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+								) X
+						GROUP BY X.NO_GR, X.NO_INV
+					) OGR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = OGR.NO_INV
+			WHERE PRH.[Posting Date] >= $P{TglFrom}
+		) XXX
+WHERE XXX.TGL_RCV < $P{TglFrom}
+UNION ALL
+SELECT	0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, SUM(DTL.AMOUNT_FGOODS) + SUM(DTL.AMOUNT_DCOST) + SUM(DTL.AMOUNT_PEMBELIAN) + SUM(DTL.AMOUNT_PEMBELIAN_IC) AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM	(
+			SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'INVOICE UM' ELSE 'INVOICE' END AS REG
+					, MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+					, GLE.[Document No_] AS NO_INV
+					, PIH.[Posting Date] AS TGL_INV
+					, '' AS NO_INV_CANCEL
+					, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+					, PIH.[Pay-to Name] AS NAMA_SUPP
+					, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+					, PIH.[Vendor Tax Invoice No_] AS NO_FP
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+							GLE.[Amount] ELSE 0
+						  END ) AS AMT_PPN
+			FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+			INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+			WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+			GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_],
+					 PIH.[Vendor Tax Invoice No_], PIH.[Posting Date]
+			UNION ALL
+			SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
+					, MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+					, GLE.[Document No_] AS NO_INV
+					, CIH.[Posting Date] AS TGL_INV
+					, CIH.[Applies-to Doc_ No_]  AS NO_INV_CANCEL
+					, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+					, CIH.[Pay-to Name] AS NAMA_SUPP
+					, '' AS NO_INV_SUPP
+					, CIH.[Vendor Tax Invoice No_] AS NO_FP
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+							GLE.[Amount] ELSE 0
+						  END ) AS AMT_PPN
+			FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+			INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+			WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+			GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_],
+					 CIH.[Applies-to Doc_ No_] , CIH.[Posting Date]
+		) HDR
+INNER JOIN	(
+
+				SELECT	X.NO_INV
+						, X.ACC_NO
+						, GL.[Name] AS ACC_NAME
+						, X.ITEM_CAT
+						, IC.[Description] AS ITEM_CAT_DESC
+						, SUM(X.AMOUNT_OTHERS) AS AMOUNT_OTHERS
+						, SUM(X.AMOUNT_FGOODS) AS AMOUNT_FGOODS
+						, SUM(X.AMOUNT_DCOST) AS AMOUNT_DCOST
+						, SUM(X.AMOUNT_PEMBELIAN) AS AMOUNT_PEMBELIAN
+						, SUM(X.AMOUNT_PEMBELIAN_IC) AS AMOUNT_PEMBELIAN_IC
+						, SUM(X.AMOUNT_UM) AS AMOUNT_UM
+						, (SUM(X.AMOUNT_OTHERS) + SUM(X.AMOUNT_FGOODS) + SUM(X.AMOUNT_DCOST) + SUM(X.AMOUNT_PEMBELIAN) + SUM(X.AMOUNT_PEMBELIAN_IC) + SUM(X.AMOUNT_UM)) AS DPP
+	 					, SUM(X.AMOUNT_PPN) AS AMOUNT_PPN
+	 					, (SUM(X.AMOUNT_OTHERS) + SUM(X.AMOUNT_FGOODS) + SUM(X.AMOUNT_DCOST) + SUM(X.AMOUNT_PEMBELIAN) + SUM(X.AMOUNT_PEMBELIAN_IC) + SUM(X.AMOUNT_UM) + SUM(X.AMOUNT_PPN)) AS TOTAL
+				FROM	(
+							SELECT	GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+											GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_OTHERS
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_FGOODS
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_DCOST
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN_IC
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_UM
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PPN
+							FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+							GROUP BY GLE.[Document No_], GLE.[Global Dimension 2 Code], GLE.[G_L Account No_]
+							UNION ALL
+							SELECT	GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+											GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_OTHERS
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_FGOODS
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_DCOST
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN_IC
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_UM
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PPN
+							FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+							GROUP BY GLE.[Document No_], GLE.[Global Dimension 2 Code], GLE.[G_L Account No_]
+						) X
+				LEFT JOIN [dbo].[BC_AUTOJAYA$G_L Account] GL ON GL.[No_] = X.ACC_NO
+				LEFT JOIN [dbo].[BC_AUTOJAYA$Item Category] IC ON IC.[Code] = X.ITEM_CAT
+				GROUP BY X.NO_INV, X.ACC_NO, GL.[Name], X.ITEM_CAT, IC.[Description]
+			) DTL ON DTL.NO_INV = HDR.NO_INV
+WHERE	DTL.TOTAL <> 0 AND
+		(HDR.TGL_INV >= $P{TglFrom} AND HDR.TGL_INV <= $P{TglUpto})
+UNION ALL
+SELECT	  0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, SUM(GE.[Amount]) AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('116.199.00' , '116.199.01')
+		AND GE.[Posting Date] <= $P{TglUpto}
+UNION ALL
+SELECT	  0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, SUM(XXX.AMOUNT) AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,CASE	WHEN OGR.NO_GR =  'ADJ-SEPT 5' THEN 'Others'
+							WHEN OGR.NO_GR =  'GRAT160626' THEN 'GR'
+							ELSE 'GR'
+					 END AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_GR
+					,CASE	WHEN OGR.NO_GR =  'ADJ-SEPT 5' THEN CAST('2015-09-29' AS datetime)
+							WHEN OGR.NO_GR =  'GRAT160626' THEN CAST('2016-10-31' AS datetime)
+							ELSE PRH.[Posting Date]
+					 END AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								,ROUND(SUM(X.AMOUNT),0) AS AMOUNT
+						FROM	(
+									SELECT	[Document No_] AS NO_GR
+											,SUM([Amount]) * -1 AS AMOUNT
+									FROM [dbo].[BC_AUTOJAYA$G_L Entry]
+									WHERE [G_L Account No_] = '210.111.00'
+											AND [Source Code] = 'INVTPCOST'
+											AND [Document No_] LIKE 'G%'
+									GROUP BY [Document No_]
+									UNION ALL
+									SELECT 'ADJ-SEPT 5' AS NO_GR, -303670172 AS AMOUNT_GR
+									UNION ALL
+									SELECT 'GRAT160626' AS NO_GR,  -16920000 AS AMOUNT_GR
+									UNION ALL
+									SELECT	X.NO_GR
+											, SUM(X.AMOUNT_GR) * -1 AS AMOUNT_GR
+									FROM	(
+												SELECT	PIL.[Document No_] AS NO_INV
+														, PIL.[Receipt No_] AS NO_GR
+														, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT_GR
+												FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PIL
+												LEFT JOIN	(
+																SELECT	PRL.[Document No_] AS GR_NO
+																		, PRL.[Line No_] AS GR_LINE
+																		, PRL.[Unit Cost (LCY)] AS HARGA_SAT
+																FROM [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Line] PRL
+																WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+															) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+												WHERE	PIL.[Receipt No_] <> ''
+														AND PIL.[Document No_] IN	(
+																						SELECT DISTINCT [Document No_]
+																						FROM [dbo].[BC_AUTOJAYA$G_L Entry]
+																						WHERE [G_L Account No_] = '210.111.00'
+																								AND [Source Code] = 'INVTPCOST'
+																								AND [Document No_] LIKE 'P%'
+																								AND [Posting Date] <= $P{TglUpto}
+																					)
+												GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+											) X
+									GROUP BY X.NO_GR
+								) X
+						GROUP BY X.NO_GR
+					) OGR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			WHERE OGR.AMOUNT <> 0
+			UNION ALL
+			SELECT	'AUTOJAYA' AS COMPANY
+					,'Invoice' AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_INV AS NO_GR
+					,PIH.[Posting Date] AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								, X.NO_INV
+								, SUM(X.AMOUNT) * -1 AS AMOUNT
+						FROM	(
+									SELECT	PIL.[Document No_] AS NO_INV
+											, PIL.[Receipt No_] AS NO_GR
+											, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT
+									FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PIL
+									LEFT JOIN	(
+													SELECT	PRL.[Document No_] AS GR_NO
+															, PRL.[Line No_] AS GR_LINE
+															, PRL.[Unit Cost (LCY)] AS HARGA_SAT
+													FROM [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Line] PRL
+													WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+												) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+									WHERE	PIL.[Receipt No_] <> ''
+											AND PIL.[Document No_] IN	(
+																			SELECT DISTINCT [Document No_]
+																			FROM [dbo].[BC_AUTOJAYA$G_L Entry]
+																			WHERE [G_L Account No_] = '210.111.00'
+																					AND [Source Code] = 'INVTPCOST'
+																					AND [Document No_] LIKE 'P%'
+																					AND [Posting Date] <= $P{TglUpto}
+																		)
+									GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+								) X
+						GROUP BY X.NO_GR, X.NO_INV
+					) OGR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = OGR.NO_INV
+			WHERE PRH.[Posting Date] > $P{TglUpto}
+		) XXX
+WHERE XXX.TGL_RCV <= $P{TglUpto}
+UNION ALL
+SELECT    0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, SUM(GE.[Amount]) AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('500.110.00','600.110.00','500.111.00')
+		AND (GE.[Posting Date] >= $P{TglFrom} AND GE.[Posting Date] <= $P{TglUpto})
+UNION ALL
+SELECT   0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, SUM(GE.[Amount]) * -1 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('600.110.00')
+		AND (GE.[Posting Date] >= $P{TglFrom} AND GE.[Posting Date] <= $P{TglUpto})
+UNION ALL
+SELECT   0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, SUM(GLE.[Amount]) AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+WHERE
+			GLE.[G_L Account No_] NOT IN ('116.199.00' , '116.199.01', '500.110.00') and
+			GLE.[Transaction No_] IN (
+										SELECT DISTINCT GE.[Transaction No_]
+										FROM [dbo].[BC_AUTOJAYA$G_L Entry] GE
+										WHERE	GE.[G_L Account No_] IN ('116.199.00' )
+												and (GE.[Posting Date] <= $P{TglUpto}   and GE.[Posting Date] >= $P{TglFrom})
+												and SUBSTRING(GE.[Document No_], 1,4) not in   ('GRAN',
+																								'GRAS',
+																								'GRAT',
+																								'PCAT',
+																								'PCAS',
+																								'PCAN',
+																								'PPCM',
+																								'PIAN',
+																								'PIAS',
+																								'PIAT'
+																								)
+									 )
+UNION ALL
+SELECT  0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, SUM(GLE.[Amount]) AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] NOT IN ('500.110.00', '510.200.00') and
+		GLE.[Transaction No_] IN (
+										SELECT DISTINCT GE.[Transaction No_]
+										FROM [dbo].[BC_AUTOJAYA$G_L Entry] GE
+										WHERE	GE.[G_L Account No_] IN ('500.110.00')
+												and (GE.[Posting Date] <= $P{TglUpto} and GE.[Posting Date] >= $P{TglFrom})
+												and [Source Code] IN ('GENJNL', 'REVERSAL')
+								  )
+		) X
+WHERE $P{Company} = 'AUTOJAYA'
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		, ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) AS AMT_FGOODS_AWAL_LEDGER
+		, ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0) AS AMT_FGOODS_AWAL_BF
+		, (ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) AS AMT_FGOODS_AWAL_FINAL
+		, ROUND(SUM(X.AMT_PEMBELIAN),0) AS AMT_PEMBELIAN
+		, ((ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) + ROUND(SUM(X.AMT_PEMBELIAN),0)) AS AMT_AVAILABLE_STOCK
+		, ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) AS AMT_FGOODS_AKHIR_LEDGER
+		, ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0) AS AMT_FGOODS_AKHIR_BF
+		, (ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0)) AS AMT_FGOODS_AKHIR_FINAL
+		,	(
+				((ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) + ROUND(SUM(X.AMT_PEMBELIAN),0)) -
+				(ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0))
+			) AS COGS_FORMULA_TAX
+		, ROUND(SUM(X.AMT_COGS_PNL),0) AS AMT_COGS_PNL
+		, ROUND(SUM(X.AMT_REBATE),0) AS AMT_REBATE
+		, ROUND(SUM(X.AMT_WO_MS),0) AS AMT_WO_MS
+		, ROUND(SUM(X.AMT_COGS_CORRECTION),0) AS AMT_COGS_CORRECTION
+		, (ROUND(SUM(X.AMT_COGS_PNL),0) + ROUND(SUM(X.AMT_REBATE),0) + ROUND(SUM(X.AMT_WO_MS),0) + ROUND(SUM(X.AMT_COGS_CORRECTION),0)) AS COGS_REAL_FINAL
+		,	(
+				(
+					((ROUND(SUM(X.AMT_FGOODS_AWAL_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AWAL_BF),0)) + ROUND(SUM(X.AMT_PEMBELIAN),0)) -
+					(ROUND(SUM(X.AMT_FGOODS_AKHIR_LEDGER),0) - ROUND(SUM(X.AMT_FGOODS_AKHIR_BF),0))
+				) -
+				(ROUND(SUM(X.AMT_COGS_PNL),0) + ROUND(SUM(X.AMT_REBATE),0) + ROUND(SUM(X.AMT_WO_MS),0) + ROUND(SUM(X.AMT_COGS_CORRECTION),0))
+			) AS SELISIH
+FROM	(
+SELECT	SUM(GE.[Amount]) AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_SOLUSI$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('116.199.00' , '116.199.01')
+		AND GE.[Posting Date] < $P{TglFrom}
+UNION ALL
+SELECT	  0 AS AMT_FGOODS_AWAL_LEDGER
+		, SUM(XXX.AMOUNT) AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM	(
+			SELECT	'SOLUSI' AS COMPANY
+					,'GR' AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_GR
+					,CASE	WHEN OGR.NO_GR =  'GRST160366' THEN CAST('2016-06-27' AS datetime)
+							WHEN OGR.NO_GR =  'GRST160732' THEN CAST('2016-12-20' AS datetime)
+							WHEN OGR.NO_GR =  'GRST150006' THEN CAST('2015-05-06' AS datetime)
+							WHEN OGR.NO_GR =  'GRST150034' THEN CAST('2015-06-26' AS datetime)
+							ELSE PRH.[Posting Date]
+					 END AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								,ROUND(SUM(X.AMOUNT),0) AS AMOUNT
+						FROM	(
+									SELECT	[Document No_] AS NO_GR
+											,SUM([Amount]) * -1 AS AMOUNT
+									FROM [dbo].[BC_SOLUSI$G_L Entry]
+									WHERE [G_L Account No_] = '210.111.00'
+											AND [Source Code] = 'INVTPCOST'
+											AND [Document No_] LIKE 'G%'
+									GROUP BY [Document No_]
+									UNION ALL
+									SELECT  'GRST160366' AS NO_GR
+											, 5200000 AS AMOUNT_GR
+									UNION ALL
+									SELECT  'GRST160732' AS NO_GR
+											, -8151300 AS AMOUNT_GR
+									UNION ALL
+									SELECT  'GRST150006' AS NO_GR
+											, -1000000 AS AMOUNT_GR
+									UNION ALL
+									SELECT  'GRST150034' AS NO_GR
+											, -140000 AS AMOUNT_GR
+									UNION ALL
+									SELECT	X.NO_GR
+											, SUM(X.AMOUNT_GR) * -1 AS AMOUNT_GR
+									FROM	(
+												SELECT	PIL.[Document No_] AS NO_INV
+														, PIL.[Receipt No_] AS NO_GR
+														, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT_GR
+												FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PIL
+												LEFT JOIN	(
+																SELECT	PRL.[Document No_] AS GR_NO
+																		, PRL.[Line No_] AS GR_LINE
+																		, CASE WHEN PRL.[Document No_] IN ('GRST190734', 'GRST190733') AND  PRL.[Line No_] = 30000 THEN 0 ELSE
+																				PRL.[Unit Cost (LCY)]
+																		  END AS HARGA_SAT
+																FROM [dbo].[BC_SOLUSI$Purch_ Rcpt_ Line] PRL
+																WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+															) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+												WHERE	PIL.[Receipt No_] <> ''
+														AND PIL.[Document No_] IN	(
+																						SELECT DISTINCT [Document No_]
+																						FROM [dbo].[BC_SOLUSI$G_L Entry]
+																						WHERE [G_L Account No_] = '210.111.00'
+																								AND [Source Code] = 'INVTPCOST'
+																								AND [Document No_] LIKE 'P%'
+																								AND [Posting Date] < $P{TglFrom}
+																					)
+												GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+											) X
+									GROUP BY X.NO_GR
+								) X
+						GROUP BY X.NO_GR
+					) OGR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			WHERE OGR.AMOUNT <> 0
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,'Invoice' AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_INV AS NO_GR
+					,PIH.[Posting Date] AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								, X.NO_INV
+								, SUM(X.AMOUNT) * -1 AS AMOUNT
+						FROM	(
+									SELECT	PIL.[Document No_] AS NO_INV
+											, PIL.[Receipt No_] AS NO_GR
+											, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT
+									FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PIL
+									LEFT JOIN	(
+													SELECT	PRL.[Document No_] AS GR_NO
+															, PRL.[Line No_] AS GR_LINE
+															, CASE WHEN PRL.[Document No_] IN ('GRST190734', 'GRST190733') AND  PRL.[Line No_] = 30000 THEN 0 ELSE
+																	PRL.[Unit Cost (LCY)]
+															  END AS HARGA_SAT
+													FROM [dbo].[BC_SOLUSI$Purch_ Rcpt_ Line] PRL
+													WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+												) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+									WHERE	PIL.[Receipt No_] <> ''
+											AND PIL.[Document No_] IN	(
+																			SELECT DISTINCT [Document No_]
+																			FROM [dbo].[BC_SOLUSI$G_L Entry]
+																			WHERE [G_L Account No_] = '210.111.00'
+																					AND [Source Code] = 'INVTPCOST'
+																					AND [Document No_] LIKE 'P%'
+																					AND [Posting Date] < $P{TglFrom}
+																		)
+									GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+								) X
+						GROUP BY X.NO_GR, X.NO_INV
+					) OGR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = OGR.NO_INV
+			WHERE PRH.[Posting Date] >= $P{TglFrom}
+		) XXX
+WHERE XXX.TGL_RCV < $P{TglFrom}
+UNION ALL
+SELECT	0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, SUM(DTL.AMOUNT_FGOODS) + SUM(DTL.AMOUNT_DCOST) + SUM(DTL.AMOUNT_PEMBELIAN) + SUM(DTL.AMOUNT_PEMBELIAN_IC) AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM	(
+			SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'INVOICE UM' ELSE 'INVOICE' END AS REG
+					, MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+					, GLE.[Document No_] AS NO_INV
+					, PIH.[Posting Date] AS TGL_INV
+					, '' AS NO_INV_CANCEL
+					, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+					, PIH.[Pay-to Name] AS NAMA_SUPP
+					, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+					, PIH.[Vendor Tax Invoice No_] AS NO_FP
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+							GLE.[Amount] ELSE 0
+						  END ) AS AMT_PPN
+			FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+			INNER JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+			WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+			GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_],
+					 PIH.[Vendor Tax Invoice No_], PIH.[Posting Date]
+			UNION ALL
+			SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
+					, MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+					, GLE.[Document No_] AS NO_INV
+					, CIH.[Posting Date] AS TGL_INV
+					, CIH.[Applies-to Doc_ No_]  AS NO_INV_CANCEL
+					, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+					, CIH.[Pay-to Name] AS NAMA_SUPP
+					, '' AS NO_INV_SUPP
+					, CIH.[Vendor Tax Invoice No_] AS NO_FP
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+							GLE.[Amount] ELSE 0
+						  END ) AS AMT_PPN
+			FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+			INNER JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+			WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+			GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_],
+					 CIH.[Applies-to Doc_ No_] , CIH.[Posting Date]
+		) HDR
+INNER JOIN	(
+
+				SELECT	X.NO_INV
+						, X.ACC_NO
+						, GL.[Name] AS ACC_NAME
+						, X.ITEM_CAT
+						, IC.[Description] AS ITEM_CAT_DESC
+						, SUM(X.AMOUNT_OTHERS) AS AMOUNT_OTHERS
+						, SUM(X.AMOUNT_FGOODS) AS AMOUNT_FGOODS
+						, SUM(X.AMOUNT_DCOST) AS AMOUNT_DCOST
+						, SUM(X.AMOUNT_PEMBELIAN) AS AMOUNT_PEMBELIAN
+						, SUM(X.AMOUNT_PEMBELIAN_IC) AS AMOUNT_PEMBELIAN_IC
+						, SUM(X.AMOUNT_UM) AS AMOUNT_UM
+						, (SUM(X.AMOUNT_OTHERS) + SUM(X.AMOUNT_FGOODS) + SUM(X.AMOUNT_DCOST) + SUM(X.AMOUNT_PEMBELIAN) + SUM(X.AMOUNT_PEMBELIAN_IC) + SUM(X.AMOUNT_UM)) AS DPP
+	 					, SUM(X.AMOUNT_PPN) AS AMOUNT_PPN
+	 					, (SUM(X.AMOUNT_OTHERS) + SUM(X.AMOUNT_FGOODS) + SUM(X.AMOUNT_DCOST) + SUM(X.AMOUNT_PEMBELIAN) + SUM(X.AMOUNT_PEMBELIAN_IC) + SUM(X.AMOUNT_UM) + SUM(X.AMOUNT_PPN)) AS TOTAL
+				FROM	(
+							SELECT	GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+											GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_OTHERS
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_FGOODS
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_DCOST
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN_IC
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_UM
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PPN
+							FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+							GROUP BY GLE.[Document No_], GLE.[Global Dimension 2 Code], GLE.[G_L Account No_]
+							UNION ALL
+							SELECT	GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+											GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_OTHERS
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_FGOODS
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_DCOST
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PEMBELIAN_IC
+									, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_UM
+	 								, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 									GLE.[Amount] ELSE 0
+	 								  END ) AS AMOUNT_PPN
+							FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+							GROUP BY GLE.[Document No_], GLE.[Global Dimension 2 Code], GLE.[G_L Account No_]
+						) X
+				LEFT JOIN [dbo].[BC_SOLUSI$G_L Account] GL ON GL.[No_] = X.ACC_NO
+				LEFT JOIN [dbo].[BC_AUTOJAYA$Item Category] IC ON IC.[Code] = X.ITEM_CAT
+				GROUP BY X.NO_INV, X.ACC_NO, GL.[Name], X.ITEM_CAT, IC.[Description]
+			) DTL ON DTL.NO_INV = HDR.NO_INV
+WHERE	DTL.TOTAL <> 0 AND
+		(HDR.TGL_INV >= $P{TglFrom} AND HDR.TGL_INV <= $P{TglUpto})
+UNION ALL
+SELECT	  0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, SUM(GE.[Amount]) AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_SOLUSI$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('116.199.00' , '116.199.01')
+		AND GE.[Posting Date] <= $P{TglUpto}
+UNION ALL
+SELECT	  0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, SUM(XXX.AMOUNT) AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM	(
+			SELECT	'SOLUSI' AS COMPANY
+					,'GR' AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_GR
+					,CASE	WHEN OGR.NO_GR =  'GRST160366' THEN CAST('2016-06-27' AS datetime)
+							WHEN OGR.NO_GR =  'GRST160732' THEN CAST('2016-12-20' AS datetime)
+							WHEN OGR.NO_GR =  'GRST150006' THEN CAST('2015-05-06' AS datetime)
+							WHEN OGR.NO_GR =  'GRST150034' THEN CAST('2015-06-26' AS datetime)
+							ELSE PRH.[Posting Date]
+					 END AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								,ROUND(SUM(X.AMOUNT),0) AS AMOUNT
+						FROM	(
+									SELECT	[Document No_] AS NO_GR
+											,SUM([Amount]) * -1 AS AMOUNT
+									FROM [dbo].[BC_SOLUSI$G_L Entry]
+									WHERE [G_L Account No_] = '210.111.00'
+											AND [Source Code] = 'INVTPCOST'
+											AND [Document No_] LIKE 'G%'
+									GROUP BY [Document No_]
+									UNION ALL
+									SELECT  'GRST160366' AS NO_GR
+											, 5200000 AS AMOUNT_GR
+									UNION ALL
+									SELECT  'GRST160732' AS NO_GR
+											, -8151300 AS AMOUNT_GR
+									UNION ALL
+									SELECT  'GRST150006' AS NO_GR
+											, -1000000 AS AMOUNT_GR
+									UNION ALL
+									SELECT  'GRST150034' AS NO_GR
+											, -140000 AS AMOUNT_GR
+									UNION ALL
+									SELECT	X.NO_GR
+											, SUM(X.AMOUNT_GR) * -1 AS AMOUNT_GR
+									FROM	(
+												SELECT	PIL.[Document No_] AS NO_INV
+														, PIL.[Receipt No_] AS NO_GR
+														, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT_GR
+												FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PIL
+												LEFT JOIN	(
+																SELECT	PRL.[Document No_] AS GR_NO
+																		, PRL.[Line No_] AS GR_LINE
+																		, CASE WHEN PRL.[Document No_] IN ('GRST190734', 'GRST190733') AND  PRL.[Line No_] = 30000 THEN 0 ELSE
+																				PRL.[Unit Cost (LCY)]
+																		  END AS HARGA_SAT
+																FROM [dbo].[BC_SOLUSI$Purch_ Rcpt_ Line] PRL
+																WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+															) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+												WHERE	PIL.[Receipt No_] <> ''
+														AND PIL.[Document No_] IN	(
+																						SELECT DISTINCT [Document No_]
+																						FROM [dbo].[BC_SOLUSI$G_L Entry]
+																						WHERE [G_L Account No_] = '210.111.00'
+																								AND [Source Code] = 'INVTPCOST'
+																								AND [Document No_] LIKE 'P%'
+																								AND [Posting Date] <= $P{TglUpto}
+																					)
+												GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+											) X
+									GROUP BY X.NO_GR
+								) X
+						GROUP BY X.NO_GR
+					) OGR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			WHERE OGR.AMOUNT <> 0
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,'Invoice' AS JNS_DOK
+					,POH.[No_] AS NO_PO
+					,POH.[Order Date] AS TGL_PO
+					,POH.[Pay-to Vendor No_] AS VENDOR_NO
+					,POH.[Pay-to Name] AS VENDOR_NAME
+					,OGR.NO_INV AS NO_GR
+					,PIH.[Posting Date] AS TGL_RCV
+					,ROUND(OGR.AMOUNT,0) AS AMOUNT
+			FROM	(
+						SELECT	X.NO_GR
+								, X.NO_INV
+								, SUM(X.AMOUNT) * -1 AS AMOUNT
+						FROM	(
+									SELECT	PIL.[Document No_] AS NO_INV
+											, PIL.[Receipt No_] AS NO_GR
+											, SUM(PIL.[Quantity] * ISNULL(POL.HARGA_SAT,0)) AS AMOUNT
+									FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PIL
+									LEFT JOIN	(
+													SELECT	PRL.[Document No_] AS GR_NO
+															, PRL.[Line No_] AS GR_LINE
+															, CASE WHEN PRL.[Document No_] IN ('GRST190734', 'GRST190733') AND  PRL.[Line No_] = 30000 THEN 0 ELSE
+																	PRL.[Unit Cost (LCY)]
+															  END AS HARGA_SAT
+													FROM [dbo].[BC_SOLUSI$Purch_ Rcpt_ Line] PRL
+													WHERE PRL.[Unit Cost (LCY)] <> 0 AND PRL.[Type] = 2
+												) POL ON POL.GR_NO = PIL.[Receipt No_] AND POL.GR_LINE = PIL.[Receipt Line No_]
+									WHERE	PIL.[Receipt No_] <> ''
+											AND PIL.[Document No_] IN	(
+																			SELECT DISTINCT [Document No_]
+																			FROM [dbo].[BC_SOLUSI$G_L Entry]
+																			WHERE [G_L Account No_] = '210.111.00'
+																					AND [Source Code] = 'INVTPCOST'
+																					AND [Document No_] LIKE 'P%'
+																					AND [Posting Date] <= $P{TglUpto}
+																		)
+									GROUP BY PIL.[Document No_], PIL.[Receipt No_]
+								) X
+						GROUP BY X.NO_GR, X.NO_INV
+					) OGR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = OGR.NO_GR
+			LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] POH ON POH.[No_] = PRH.[Order No_]  AND POH.[Document Type] = 1
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = OGR.NO_INV
+			WHERE PRH.[Posting Date] > $P{TglUpto}
+		) XXX
+WHERE XXX.TGL_RCV <= $P{TglUpto}
+UNION ALL
+SELECT    0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, SUM(GE.[Amount]) AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_SOLUSI$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('500.110.00','600.110.00','500.111.00')
+		AND (GE.[Posting Date] >= $P{TglFrom} AND GE.[Posting Date] <= $P{TglUpto})
+UNION ALL
+SELECT   0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, SUM(GE.[Amount]) * -1 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_SOLUSI$G_L Entry] GE
+WHERE	GE.[G_L Account No_] IN ('600.110.00')
+		AND (GE.[Posting Date] >= $P{TglFrom} AND GE.[Posting Date] <= $P{TglUpto})
+UNION ALL
+SELECT   0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, SUM(GLE.[Amount]) AS AMT_WO_MS
+		, 0 AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+WHERE
+			GLE.[G_L Account No_] NOT IN ('116.199.00' , '116.199.01', '500.110.00') and
+			GLE.[Transaction No_] IN (
+										SELECT DISTINCT GE.[Transaction No_]
+										FROM [dbo].[BC_SOLUSI$G_L Entry] GE
+										WHERE	GE.[G_L Account No_] IN ('116.199.00')
+												and (GE.[Posting Date] <= $P{TglUpto}   and GE.[Posting Date] >= $P{TglFrom})
+												and SUBSTRING(GE.[Document No_], 1,4) not in   ('GRSN',
+																								'GRSS',
+																								'GRST',
+																								'PCST',
+																								'PCSS',
+																								'PCSN',
+																								'PPCM',
+																								'PISN',
+																								'PISS',
+																								'PIST'
+																								)
+									 )
+UNION ALL
+SELECT  0 AS AMT_FGOODS_AWAL_LEDGER
+		, 0 AS AMT_FGOODS_AWAL_BF
+		, 0 AS AMT_PEMBELIAN
+		, 0 AS AMT_FGOODS_AKHIR_LEDGER
+		, 0 AS AMT_FGOODS_AKHIR_BF
+		, 0 AS AMT_COGS_PNL
+		, 0 AS AMT_REBATE
+		, 0 AS AMT_WO_MS
+		, SUM(GLE.[Amount]) AS AMT_COGS_CORRECTION
+FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] NOT IN ('500.110.00', '510.200.00') and
+		GLE.[Transaction No_] IN (
+										SELECT DISTINCT GE.[Transaction No_]
+										FROM [dbo].[BC_SOLUSI$G_L Entry] GE
+										WHERE	GE.[G_L Account No_] IN ('500.110.00')
+												and (GE.[Posting Date] <= $P{TglUpto} and GE.[Posting Date] >= $P{TglFrom})
+												and [Source Code] IN ('GENJNL', 'REVERSAL')
+								  )
+		) X
+WHERE $P{Company} = 'SOLUSI'
+		) XX
+WHERE XX.COMPANY = $P{Company}]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="AMT_FGOODS_AWAL_LEDGER" class="java.math.BigDecimal"/>
+	<field name="AMT_FGOODS_AWAL_BF" class="java.math.BigDecimal"/>
+	<field name="AMT_FGOODS_AWAL_FINAL" class="java.math.BigDecimal"/>
+	<field name="AMT_PEMBELIAN" class="java.math.BigDecimal"/>
+	<field name="AMT_AVAILABLE_STOCK" class="java.math.BigDecimal"/>
+	<field name="AMT_FGOODS_AKHIR_LEDGER" class="java.math.BigDecimal"/>
+	<field name="AMT_FGOODS_AKHIR_BF" class="java.math.BigDecimal"/>
+	<field name="AMT_FGOODS_AKHIR_FINAL" class="java.math.BigDecimal"/>
+	<field name="COGS_FORMULA_TAX" class="java.math.BigDecimal"/>
+	<field name="AMT_COGS_PNL" class="java.math.BigDecimal"/>
+	<field name="AMT_REBATE" class="java.math.BigDecimal"/>
+	<field name="AMT_WO_MS" class="java.math.BigDecimal"/>
+	<field name="AMT_COGS_CORRECTION" class="java.math.BigDecimal"/>
+	<field name="COGS_REAL_FINAL" class="java.math.BigDecimal"/>
+	<field name="SELISIH" class="java.math.BigDecimal"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="84" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="148" y="56" width="191" height="14" uuid="48585bdb-7da3-41b6-a457-c994cab22a69"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="28" y="0" width="120" height="14" uuid="43a6dcc2-fef5-4bf1-8718-05990aadc700"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01047)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="14" width="120" height="14" uuid="30262786-5aed-461f-9665-59bc42e0b675"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="14" width="191" height="14" uuid="85684ee3-fcdc-465d-8b0b-6f7a2d9251c3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="56" width="120" height="14" uuid="89caf794-234d-44ca-83ff-2caa43db1f14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="28" width="120" height="14" uuid="72efa51c-884f-4ad6-85cd-6c2f10e87291"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="148" y="28" width="191" height="14" uuid="a6fe5d0e-6000-412d-aed8-317bcf54e40b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="28" y="42" width="120" height="14" uuid="7d24d505-3226-4f93-91f9-94967e5fa107"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="70" width="120" height="14" uuid="c4217391-52c6-4872-ad64-398fe7af1be4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="229" y="42" width="110" height="14" uuid="cee20623-5977-468d-b417-28c887c64f40"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="207" y="42" width="22" height="14" uuid="d620c7ce-a788-4b95-936c-943957cfb50d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="148" y="42" width="59" height="14" uuid="c7f64460-f07d-44e3-9c1d-e11f5e446659"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="28" width="23" height="14" uuid="65e15459-371a-4491-9594-538a1a8f3636"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="42" width="23" height="14" uuid="d793723c-247d-421a-88bb-2b0d2f54e1dc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="14" width="23" height="14" uuid="ec0498fd-42da-4a06-b739-a1eabf33e233"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="56" width="23" height="14" uuid="465366b5-65d0-402d-ac1e-4d807c681719"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="70" width="23" height="14" uuid="a4cc5e3a-e3e3-49e2-bd5b-cdb4fdc19090"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="0" width="23" height="14" uuid="ba4c9e76-9f6d-469b-b2a5-506650d8931e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="0" width="191" height="14" uuid="ab28b399-ef6b-4687-990f-d2e2028ed2a7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[COGS vs Pembelian]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="294">
+			<staticText>
+				<reportElement x="5" y="0" width="23" height="14" uuid="bddda8c2-a57f-4baf-ab4c-2825eaca9623"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(A)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="0" width="120" height="14" uuid="3663c9bc-9c83-4716-97b5-38e31472384e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Persediaan Awal per.]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="148" y="0" width="59" height="14" uuid="01bb3031-c8df-4f9b-a270-eef06b5ad93b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="207" y="0" width="22" height="14" uuid="26662e48-535e-4f54-b281-18ba603f2458"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="0" width="110" height="14" uuid="adb9563f-61e2-4e5e-bb64-70e8508eb3c3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Ledger]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="14" width="110" height="14" uuid="863c0179-f294-403d-8bb4-e3be57edecfd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Belum Faktur]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="28" width="110" height="14" uuid="52579720-7a49-4bad-85d2-3ee16555655f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Final]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="84" width="120" height="14" uuid="8ce65e53-6305-437e-9fa0-fda52318c57f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Available Stock For Sales ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="14" width="22" height="14" uuid="e8a7ad28-2b7f-4bc9-bc45-e491d0c9efdf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="14" width="23" height="14" uuid="668be52e-2f9b-40c6-9084-cc2156a2a7d1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="28" width="120" height="14" uuid="f57c505b-ff0d-4d7e-8d9d-317070720231"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="28" width="22" height="14" uuid="ec4acc3c-fbd0-46ec-956a-26841d37fb22"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="28" width="23" height="14" uuid="9e2eb2d4-9ab2-41cb-b724-d3ac958af44d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="14" width="59" height="14" uuid="1999134c-7e79-41e9-ae47-a895e294bc50"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="28" width="59" height="14" uuid="94b98d33-9468-4aa5-a8e6-97e66912c094"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="14" width="120" height="14" uuid="1866baab-47b5-4f31-b23a-b2ed39b59c25"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="42" width="23" height="14" uuid="3a4ac40a-bf1d-47cb-8fbf-176842c6d7cf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="42" width="59" height="14" uuid="7cad947f-389f-4073-9808-9d39d56f23b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="42" width="120" height="14" uuid="8e872677-f8df-4f29-a980-6e0793bc2dbd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="42" width="22" height="14" uuid="d724371b-4fb8-4b2f-ab18-677207af295b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="42" width="110" height="14" uuid="00b3653f-1707-4132-a640-7e2b3facecf0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="56" width="120" height="14" uuid="76579516-8534-48e4-ac29-6f6c68bf8042"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pembelian]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="148" y="56" width="59" height="14" uuid="68d0f184-315c-4831-b485-1d615d200f28"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="207" y="56" width="22" height="14" uuid="4bffca10-1f90-4f53-979e-88693b594bad"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="56" width="23" height="14" uuid="dcc4d8f3-7208-41a0-b886-6a92d0cc6a4b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(B)]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="229" y="56" width="110" height="14" uuid="1b189f09-f7ac-403f-923f-b0edac3f7cbe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="70" width="23" height="14" uuid="c9997d7a-79e3-488e-99c3-7e586e9fb94a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="70" width="59" height="14" uuid="3078a685-03e2-43ef-a72f-b1f34811b923"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="70" width="110" height="14" uuid="a0811cea-29d2-484d-abfd-2c3db6af9d91"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="70" width="22" height="14" uuid="f0b4ac9c-db35-4ba3-b5b6-2849de5508f1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="70" width="120" height="14" uuid="910f0a95-acd4-46c0-8c7c-d6e07d42dcab"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="84" width="23" height="14" uuid="f9968c4a-c003-4a7c-bac8-bbe73ca12f62"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(C)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="84" width="59" height="14" uuid="68d3f8f7-eb50-4805-ae6e-ab3aadc192d4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[( (A) + (B) )]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="84" width="22" height="14" uuid="2a29eeaa-b7a1-4166-81e1-1d4cc761e47f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="84" width="110" height="14" uuid="49d0a8e2-16f2-4050-a7c4-66c97acaad85"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="98" width="23" height="14" uuid="d6f02fc1-f924-427a-b795-659f38a83173"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="98" width="120" height="14" uuid="d6a22b78-421f-46de-969c-f1d8a1499210"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="98" width="59" height="14" uuid="92abb3d8-fc8f-457a-9efe-43608d2885fa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="98" width="22" height="14" uuid="f234e0e3-02e7-4423-bb7a-494eb33bde88"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="98" width="110" height="14" uuid="2f74ba34-5245-4566-b490-576b579288d8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="140" width="23" height="14" uuid="4bb1a67e-388f-405a-b64b-d8a282d379de"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="140" width="120" height="14" uuid="f2c8527f-404c-40ae-8ab9-20dfd77c6475"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="154" width="23" height="14" uuid="a9af4c8c-d18c-4f1c-8c5d-56d840cac12d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="112" width="120" height="14" uuid="b0bd6300-ce9c-4e1b-9572-a66565d0e7f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Persediaan Akhir per.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="112" width="22" height="14" uuid="a6243afa-c646-46ae-a9b3-740fa75205c6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="126" width="120" height="14" uuid="a6add098-7ed7-4f30-bee0-bf898e6deb29"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="126" width="110" height="14" uuid="437eb9b4-05ff-4113-91bf-95d302679dde"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Belum Faktur]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="126" width="22" height="14" uuid="789f1347-f701-4a47-bd11-c6cf964b2784"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="112" width="110" height="14" uuid="e9f781ad-6da4-4b62-9e46-53850fc61b80"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Ledger]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="140" width="59" height="14" uuid="09fcd046-489a-416c-b9fd-2c8aaefc6274"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="154" width="59" height="14" uuid="373f8339-1eb4-4730-8474-19305db08071"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="154" width="110" height="14" uuid="a572f208-69d3-4c4f-ae0c-d40707772e6e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="140" width="110" height="14" uuid="1a910ed0-a633-460a-bc31-44115df3393d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Final]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="154" width="120" height="14" uuid="1b734b8c-02b2-4ec1-ac5a-be950d9db92b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="126" width="59" height="14" uuid="930b5a5d-ad8e-40db-80dd-fda1004b3b58"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="126" width="23" height="14" uuid="1c14c3e2-8cfd-4ac5-b1bd-fb9fc1ed3655"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="140" width="22" height="14" uuid="47495d4c-516f-4297-9442-90896c4be150"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="154" width="22" height="14" uuid="f1d805e5-4890-42e2-a928-cb356180066b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="112" width="23" height="14" uuid="f42386fd-3012-47d0-83c7-a1f77be21722"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(D)]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="148" y="112" width="59" height="14" uuid="123f4ab4-2fc1-48ec-b943-f7b6e22def1a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="148" y="168" width="59" height="14" uuid="7d87abe5-e295-47af-b3f1-3c6e597d8686"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[( (C) - (D) )]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="168" width="110" height="14" uuid="f8a7fe08-3f18-4fbe-a640-858cc29edafe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="168" width="23" height="14" uuid="9bb6fa1d-6f56-4c71-94bf-e45fd2dd069b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(E)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="168" width="22" height="14" uuid="54e8ce22-dff4-4f06-b78e-103ab6d9c016"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="168" width="120" height="14" uuid="dacd6b80-ef53-4be7-a97b-05474cc8b20f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[COGS Formula Tax]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="182" width="110" height="14" uuid="f66d83bf-a37f-4896-bd60-b7b1c214cf74"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="182" width="22" height="14" uuid="e5a5e1d9-9f96-4373-bf23-438219a0b4d6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="182" width="59" height="14" uuid="95f189c8-2a37-4632-a0a9-2d53ec73e033"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="182" width="120" height="14" uuid="77b08c6a-9579-4280-857a-db6627d08b6f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="182" width="23" height="14" uuid="0becb606-4907-4e4b-aa3b-dfe5bb22b261"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="196" width="110" height="14" uuid="35ae5639-887e-4f72-b1d3-f08effc818aa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[P/L NAV]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="196" width="120" height="14" uuid="6f0b7ae7-3b8f-4e19-bc25-dab5674203c1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[COGS Real]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="196" width="59" height="14" uuid="6f245dae-3680-46fd-bb12-a7d5194eac1a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="196" width="22" height="14" uuid="abd9fda8-3648-4b55-957f-ab249385c6f2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="196" width="23" height="14" uuid="cc34ce53-8ad0-4dc5-92af-8f892d787269"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(F)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="224" width="23" height="14" uuid="fb9e353c-de36-4e8a-8e93-e42cc8b477d6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="224" width="120" height="14" uuid="2cac773f-0c67-4786-a27a-b3654140f9b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="238" width="23" height="14" uuid="50c1f105-aa79-4bb1-a049-cf0198c64e9a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="210" width="120" height="14" uuid="d82d7ca3-3524-4f52-ab88-2489043708cb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="210" width="110" height="14" uuid="f77e16a8-4e1b-4a88-ad9f-83fd4c1313c2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Rebate]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="210" width="22" height="14" uuid="dedd12af-4e7b-4fb1-a95a-49585ae506d6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="224" width="59" height="14" uuid="f65d1a01-4080-41c8-a869-7dc6b65f952e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="238" width="59" height="14" uuid="2c278627-c5af-4b2c-aaca-246568031105"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="238" width="110" height="14" uuid="d077b1a5-17bb-4ee2-b707-c428eb34dbec"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Other COGS Correction]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="224" width="110" height="14" uuid="7ac9d6f0-1c18-4907-b7b7-aa923b7a62fe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Write-off/Material Supp.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="210" width="59" height="14" uuid="c657576a-7bef-43a0-bd5b-eab74238cb20"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="238" width="120" height="14" uuid="f9b78197-e2bb-4cf0-a61e-b0ec556e38b5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="210" width="23" height="14" uuid="29c7ce91-c977-4e31-9d5e-f704e90244bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="224" width="22" height="14" uuid="8901dfa1-6ef0-4420-a882-b99ca568e235"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="238" width="22" height="14" uuid="ae2a6351-2487-4153-afa8-797690c9b031"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="252" width="120" height="14" uuid="e5365854-5d3c-49b2-9761-a00e5ef45cfc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="252" width="22" height="14" uuid="ff9aac6b-2c07-47be-b0d4-fe0a6fdbe176"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="252" width="23" height="14" uuid="38738cc3-49da-400b-9e14-ca64948626d5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="252" width="59" height="14" uuid="85d0acfb-a2c8-4ff7-9a64-cbf07bfa414c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="252" width="110" height="14" uuid="8e365e49-c372-4ec6-8ed2-d9b048991a76"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Final]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="229" y="280" width="110" height="14" uuid="3ae73d93-024c-4c0c-a86d-4c7d513ae81f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="280" width="120" height="14" uuid="0e71e778-50fd-42be-add6-83d6eabd1de2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Selisih]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="280" width="59" height="14" uuid="5eaaa7d8-3023-4f3e-b08c-722de71d6dcc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[( (E) - (F) )]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="280" width="22" height="14" uuid="4039a14f-2f6c-478e-a6a3-623fc9b1daa7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="280" width="23" height="14" uuid="2aeb5035-3702-43e2-aee6-f353a1d06a98"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(G)]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="6818b153-9b32-4658-b670-11f530a6c815"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_FGOODS_AWAL_LEDGER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="14" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="6094e8f9-692e-4491-ab5e-f0d3ca962636"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_FGOODS_AWAL_BF}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="28" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="a36c277d-caa5-45f7-ae31-f8c02d497243"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_FGOODS_AWAL_FINAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="56" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="13fb501d-9f10-495d-a920-77f43c9f9849"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_PEMBELIAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="84" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="58b8bbbb-e78d-44b0-b840-0735848dce32"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_AVAILABLE_STOCK}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="112" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="50118333-0a2a-4a32-ba0a-75765f7b20ff"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_FGOODS_AKHIR_LEDGER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="126" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="79786308-b010-4139-89a7-00f81ab45556"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_FGOODS_AKHIR_BF}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="140" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="4f771592-b3a8-4394-8d45-679430da53e7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_FGOODS_AKHIR_FINAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="168" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9f0a623e-573c-4154-b90c-37f75070c14c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COGS_FORMULA_TAX}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="196" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="969bec43-30a6-4000-8d1f-8d36f33582f6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_COGS_PNL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="210" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="b7a228fe-7177-43bb-9536-7a9cc3f0e63d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_REBATE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="224" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9226ad4b-4be9-40c9-8d2d-f622c7834f5f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_WO_MS}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="339" y="238" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="4d138fc1-95c1-4c53-aad5-bdc9a1ad7204"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_COGS_CORRECTION}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="252" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="3b87d10a-2cd9-493b-bf6e-42aaa51b50ff"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COGS_REAL_FINAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="439" y="280" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="491c5bee-2101-46c0-966f-8e03117efb10"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELISIH}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="229" y="266" width="110" height="14" uuid="09dc302c-e43a-45c4-98a3-53707484d806"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="266" width="23" height="14" uuid="14e65526-3025-4651-85f7-db6b4c667f92"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="148" y="266" width="59" height="14" uuid="a301c4b7-d1c6-48d8-a489-c32db9640c56"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="207" y="266" width="22" height="14" uuid="2c81b4ff-3a38-4339-bb7e-8b129e90ed45"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="266" width="120" height="14" uuid="7317337b-41bf-4a5e-9046-45ed2d267a88"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="0" width="100" height="14" uuid="42d65845-a6e5-4668-a461-ce2ed47909bd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="14" width="100" height="14" uuid="387080b9-906d-4d08-9235-aaf2066403fa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="28" width="100" height="14" uuid="68c0719d-d877-4de8-b81c-c80414161a60"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="42" width="100" height="14" uuid="d4e03dee-262e-4774-a980-b0097a21a022"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="56" width="100" height="14" uuid="4cca672c-78d0-494a-b963-02bdc18ad8eb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="70" width="100" height="14" uuid="4f50b32c-0b42-42d5-881a-d542d6583996"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="42" width="100" height="14" uuid="10dfb4bc-72ff-4eed-a8f3-8579d0bc174b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="70" width="100" height="14" uuid="f4bdeb00-bfdb-4db5-8fac-199cd1ed22b1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="84" width="100" height="14" uuid="d3fac6a9-770a-4f7c-94fa-457b778d62a9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="98" width="100" height="14" uuid="f1be3689-451f-4048-966a-2e1de50ec7f7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="126" width="100" height="14" uuid="8865a43a-7e10-4a0f-9b06-6f8a756f8fbd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="112" width="100" height="14" uuid="99ac1ce2-855c-4c39-84e3-fd041b9d76c8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="98" width="100" height="14" uuid="3b9f753a-26e6-47d2-9cf0-53c48866ffeb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="140" width="100" height="14" uuid="aaf86d66-5089-4d7a-a87e-805e00de30f4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="154" width="100" height="14" uuid="661ca664-01c5-48f0-b03c-e6bae451ca54"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="154" width="100" height="14" uuid="a104781b-2dba-464e-8daa-99d3061954c8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="168" width="100" height="14" uuid="41eef212-a958-4c20-bccd-f257ecc73222"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="182" width="100" height="14" uuid="a1f6c22d-2f6f-4032-99ac-81f55fc41b76"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="182" width="100" height="14" uuid="bb3ac01d-8659-4e3b-96e9-0a1429842498"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="196" width="100" height="14" uuid="6354b26a-0bce-4c43-97f0-aa763472a442"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="210" width="100" height="14" uuid="ddbb60c6-7fea-43a7-a181-a43981adf42f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="224" width="100" height="14" uuid="c1689307-9640-4eca-a7d7-332bd53fb694"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="252" width="100" height="14" uuid="423c59b0-7d19-4a4e-aa61-034db567b2b7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="266" width="100" height="14" uuid="5dfce0a8-3408-4184-981f-f3bbaa00729b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="266" width="100" height="14" uuid="6533197d-0fe6-4153-92b2-05782c35c42d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="339" y="280" width="100" height="14" uuid="96ff8fe5-19f0-4023-b5a4-35fa16554d51"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="439" y="238" width="100" height="14" uuid="aa4a46db-90b2-47df-87df-6861eba91e56"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<noData>
+		<band height="41">
+			<staticText>
+				<reportElement x="13" y="12" width="204" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

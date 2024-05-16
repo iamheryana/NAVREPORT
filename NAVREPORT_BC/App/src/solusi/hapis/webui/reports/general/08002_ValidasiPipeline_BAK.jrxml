@@ -1,0 +1,918 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="08002_ValidasiPipeline" language="groovy" pageWidth="4050" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="4010" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.6105100000000236"/>
+	<property name="ireport.x" value="5245"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Sales" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.COMPANY
+		,XX.BSO_NO
+		,XX.CUST_NO
+		,XX.CUST_NAME
+		,XX.SPV_BY
+		,XX.SALES_PRINCIPAL
+		,XX.NAMA_APPLIKASI
+		,XX.NAMA_PROJECT
+		,XX.SIZE_POTENSIAL
+		,XX.SALES_CODE
+		,XX.CABANG
+		,XX.JML_TAHUN
+		,XX.DIM_APPLICATION
+		,XX.DIM_SECTOR
+		,XX.DIM_SALESMAN
+		,XX.DIM_BRANCHES
+		,XX.ITEM
+		,XX.TIPE
+		,XX.MODEL_PRODUCT
+		,XX.PN_PRODUCT
+		,XX.QTY
+		,XX.UNIT_PRICE
+		,XX.EXP_PO
+		,XX.DIM_PRINCIPAL
+		,XX.SALAH_01 + XX.SALAH_02 + XX.SALAH_03 + XX.SALAH_04 + XX.SALAH_05 +
+		 XX.SALAH_06 + XX.SALAH_07 + XX.SALAH_08 + XX.SALAH_09 + XX.SALAH_10 AS KESALAHAN
+FROM	(
+SELECT	X.COMPANY
+		,X.BSO_NO
+		,X.CUST_NO
+		,X.CUST_NAME
+		,X.SPV_BY
+		,X.SALES_PRINCIPAL
+		,X.NAMA_APPLIKASI
+		,X.NAMA_PROJECT
+		,X.SIZE_POTENSIAL
+		,X.SALES_CODE
+		,X.CABANG
+		,X.JML_TAHUN
+		,X.DIM_APPLICATION
+		,X.DIM_SECTOR
+		,X.DIM_SALESMAN
+		,X.DIM_BRANCHES
+		,X.TIPE
+		,X.ITEM
+		,X.MODEL_PRODUCT
+		,X.PN_PRODUCT
+		,X.QTY
+		,X.UNIT_PRICE
+		,X.EXP_PO
+		,X.DIM_PRINCIPAL
+		, CASE	WHEN X.CUST_NAME IS NULL OR X.CUST_NAME = '' THEN 'Nama Customer Tidak Diisi; '  ELSE '' END AS SALAH_01
+		, CASE	WHEN X.SPV_BY NOT IN	(
+											SELECT [Code]
+											FROM [dbo].[AUTOJAYA$Salesperson_Purchaser]
+										) THEN 'Supervised By Salah; ' ELSE '' END AS SALAH_02
+		, CASE	WHEN X.SIZE_POTENSIAL NOT IN ('A', 'H', 'M', 'L') THEN 'Potensi Project Salah; ' ELSE '' END AS SALAH_03
+		, CASE	WHEN X.SALES_CODE IS NULL OR X.SALES_CODE = '' THEN 'Kode Sales Tidak Diisi; ' ELSE '' END AS SALAH_04
+		, CASE	WHEN X.CABANG IS NULL OR X.CABANG = '' THEN 'Cabang Tidak Diisi; ' ELSE '' END AS SALAH_05
+		, CASE	WHEN X.DIM_SECTOR IS NULL OR X.DIM_SECTOR = '' THEN 'Dimension SECTOR Tidak Diisi; ' ELSE '' END AS SALAH_06
+		, CASE	WHEN X.DIM_SALESMAN IS NULL OR X.DIM_SALESMAN = '' THEN 'Dimension SALESMAN Tidak Diisi; ' ELSE '' END AS SALAH_07
+		, CASE	WHEN X.DIM_BRANCHES IS NULL OR X.DIM_BRANCHES = '' THEN 'Dimension BRANCHES Tidak Diisi; ' ELSE '' END AS SALAH_08
+		, CASE	WHEN X.EXP_PO < getdate() THEN 'Tanggal Perkiraan Realisasi Sudah Lewat; ' ELSE '' END AS SALAH_09
+		, CASE	WHEN X.DIM_PRINCIPAL IS NULL OR X.DIM_PRINCIPAL = '' THEN 'Dimension PRINCIPAL untuk Item Tidak Diisi; ' ELSE '' END AS SALAH_10
+FROM	(
+SELECT	CASE WHEN SOH.[No_ Series] = 'SBOM' THEN 'AJ' ELSE 'SP' END AS COMPANY
+		,SOH.[No_] AS BSO_NO
+		,SOH.[Sell-to Customer No_] AS CUST_NO
+		,SOH.[Sell-to Customer Name] AS CUST_NAME
+		,SOH.[Sell-to County] AS SPV_BY
+		,SOH.[Sell-to Contact] AS SALES_PRINCIPAL
+		,SOH.[Your Reference] AS NAMA_APPLIKASI
+		,SOH.[External Document No_] AS NAMA_PROJECT
+		,SOH.[Posting Description] AS SIZE_POTENSIAL
+		,SOH.[Salesperson Code] AS SALES_CODE
+		,SOH.[Responsibility Center] AS CABANG
+		,SOH.[Payment Discount _] AS JML_TAHUN
+		,DIMH.DIM_APPLICATION
+		,DIMH.DIM_SECTOR
+		,DIMH.DIM_SALESMAN
+		,DIMH.DIM_BRANCHES
+		,SOL.Type AS TIPE
+		,SOL.[No_] AS ITEM
+		,SOL.[Description] AS MODEL_PRODUCT
+		,SOL.[Description 2] AS PN_PRODUCT
+		,SOL.[Quantity] AS QTY
+		,SOL.[Unit Price] AS UNIT_PRICE
+		,SOL.[Shipment Date] AS EXP_PO
+		,DIMD.DIM_PRINCIPAL
+FROM [dbo].[AUTOJAYA$Sales Header] SOH
+INNER JOIN [dbo].[AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+LEFT JOIN	(
+				SELECT X.[Dimension Set ID]
+						,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_APPLICATION
+						,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_SECTOR
+						,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_SALESMAN
+						,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_BRANCHES
+				FROM [dbo].[AUTOJAYA$Dimension Set Entry] X
+				GROUP BY [Dimension Set ID]
+			) DIMH ON DIMH.[Dimension Set ID] = SOH.[Dimension Set ID]
+LEFT JOIN	(
+				SELECT X.[Dimension Set ID]
+						,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+				FROM [dbo].[AUTOJAYA$Dimension Set Entry] X
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+WHERE SOH.[No_ Series] IN ('SBOM', 'SBOMS')
+		AND SOL.Type <> 0
+		) X
+		) XX
+WHERE XX.SALES_CODE = $P{Sales} OR $P{Sales} = 'ALL']]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="BSO_NO" class="java.lang.String"/>
+	<field name="CUST_NO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="SPV_BY" class="java.lang.String"/>
+	<field name="SALES_PRINCIPAL" class="java.lang.String"/>
+	<field name="NAMA_APPLIKASI" class="java.lang.String"/>
+	<field name="NAMA_PROJECT" class="java.lang.String"/>
+	<field name="SIZE_POTENSIAL" class="java.lang.String"/>
+	<field name="SALES_CODE" class="java.lang.String"/>
+	<field name="CABANG" class="java.lang.String"/>
+	<field name="JML_TAHUN" class="java.math.BigDecimal"/>
+	<field name="DIM_APPLICATION" class="java.lang.String"/>
+	<field name="DIM_SECTOR" class="java.lang.String"/>
+	<field name="DIM_SALESMAN" class="java.lang.String"/>
+	<field name="DIM_BRANCHES" class="java.lang.String"/>
+	<field name="ITEM" class="java.lang.String"/>
+	<field name="TIPE" class="java.lang.Integer"/>
+	<field name="MODEL_PRODUCT" class="java.lang.String"/>
+	<field name="PN_PRODUCT" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="UNIT_PRICE" class="java.math.BigDecimal"/>
+	<field name="EXP_PO" class="java.sql.Timestamp"/>
+	<field name="DIM_PRINCIPAL" class="java.lang.String"/>
+	<field name="KESALAHAN" class="java.lang.String"/>
+	<sortField name="CABANG"/>
+	<sortField name="SALES_CODE"/>
+	<sortField name="BSO_NO"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="98" splitType="Stretch">
+			<staticText>
+				<reportElement x="50" y="0" width="100" height="14" uuid="19af8fd1-8dc2-4eba-a85a-be94171f3c91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Validasi Pipeline]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="56" width="100" height="14" uuid="168aa3a7-29fb-4223-b820-fea66cb4a62a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="14" width="100" height="14" uuid="1eb28282-4167-4bea-843d-9c16018c8b14"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="42" width="100" height="14" uuid="573e3976-00c8-48ab-b708-0b0f6a0c90d2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Cetak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="56" width="75" height="14" uuid="78ad1d9c-84ef-46df-906e-cb1a10dcf69e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="14" width="75" height="14" uuid="0fd46586-4cd1-482a-ba8c-b56355eacc31"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="75" height="14" uuid="c2640151-a5f8-4325-a152-fdfb034f5b80"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="50" height="14" uuid="4abeb50a-26ad-4bb0-bad4-2c9aa7a300ea"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="50" height="14" uuid="845911ee-6de8-4236-b2bc-98f3f4f59bc9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="50" height="14" uuid="b9b289f7-2310-485e-8a51-f467945fbaa2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="50" height="14" uuid="baeee26b-a4d5-44ec-92a7-292419ce14f6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(08002)]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="150" y="42" width="375" height="14" uuid="33d99bcf-b109-489b-b2e1-477357e18ee8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="50" height="14" uuid="7a0c66c6-514b-4089-a1bd-eea39f7fe628"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="28" width="100" height="14" uuid="c4a5c0f9-4b6a-4a45-ad2c-10db9c89d6b4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="50" height="14" uuid="7de3e060-f9e4-4346-8b55-6adf8d7789ed"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="84" width="100" height="14" uuid="89bc40a3-6575-4a41-97d0-4fbadf989690"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. BSO Pipeline]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="84" width="75" height="14" uuid="82da9369-316f-42bc-aee9-111ffd31afe7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cust. Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="84" width="300" height="14" uuid="813179ed-a485-4f49-9ce8-c358dd6babee"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cust. Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="575" y="84" width="50" height="14" uuid="6914b3a9-6b79-4022-9073-7689d24e4377"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Supervise]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="525" y="84" width="50" height="14" uuid="d3d94db4-cf2e-47e6-884f-cb16f6ca01e0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="625" y="84" width="50" height="14" uuid="5118e35f-b35b-4ec5-875d-243d434a6abf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cabang]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="84" width="150" height="14" uuid="3e293b81-3e88-4ae5-a6a3-3528d65b026e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales Principal (Contact)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="825" y="84" width="200" height="14" uuid="def434bf-8fc3-46c5-a592-4d27a00f9fca"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Aplikasi (Your Reference)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1025" y="84" width="250" height="14" uuid="8d5cb600-c81e-4d23-9ac0-d2bb2c35f98b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Project (External Document No)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1275" y="84" width="125" height="14" uuid="afbef7d7-0687-4a6a-bd96-5653e8af0002"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Potensial (Posting Description)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1400" y="84" width="150" height="14" uuid="22cfa9ee-de92-463e-9ec7-a6162e6a7dc7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Installment/Thn (Payment Discount %)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1550" y="84" width="100" height="14" uuid="d3a0f3ea-43e7-45ed-9e2b-20edca45a140"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimensi APPLICATION]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1650" y="84" width="100" height="14" uuid="307eb96f-2702-43e4-82c5-82dd5c75e111"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimensi SECTOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1750" y="84" width="100" height="14" uuid="e82a9de0-0d55-4bc4-a35a-24f9ed2122fc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimensi SALESMAN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1850" y="84" width="100" height="14" uuid="62c44760-9086-4faf-b7b8-483944c3162e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimensi BRANCHES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1950" y="84" width="150" height="14" uuid="27b751df-f911-48ba-ac41-604537bc9efa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2100" y="84" width="350" height="14" uuid="70fe96ab-37f0-4957-a462-e514b5a57552"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Model Product (Description)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2450" y="84" width="350" height="14" uuid="37944eda-e2ed-46fb-a711-cc537c5469d9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PN Product (Description 2)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2800" y="84" width="50" height="14" uuid="3e5e3df3-1d6c-45f5-9335-36a7f9ee8a1c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2850" y="84" width="100" height="14" uuid="03008b52-511f-4bf9-bd36-5e7157ad872d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Harga Satuan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="2950" y="84" width="75" height="14" uuid="a5a8c6e0-a009-461c-9567-a6f75d8f4504"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Estimasi PO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3025" y="84" width="100" height="14" uuid="ac0ae3ac-aa14-4ef0-b881-09da9e900387"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dimensi PRINCIPAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3125" y="84" width="885" height="14" uuid="fec55d97-214d-454a-b9c2-e1bbf88d6ccc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kesalahan]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="28" width="75" height="14" uuid="ba4622d7-1a61-4608-aa14-9c0e4fce7f3f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Sales}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="50" height="14" uuid="929733ee-cd8c-4275-a048-b797aa5936fe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="70" width="75" height="14" uuid="b4bb1c81-b745-4290-974e-6b9944a0664f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="70" width="100" height="14" uuid="4ee9dec5-5f18-4a23-b5e5-7696ba60fdb3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<printWhenExpression><![CDATA[$F{KESALAHAN}.equals( "" )==true]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="b0efdc85-333b-4e46-a86e-51d80ad90e8e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="50" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="52e7ac59-c651-4d4b-97c1-f58a98804442"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BSO_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="2e9214fb-35a0-4477-8a29-7b1aba104c94"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="ddbc612f-3522-443c-b650-c736e5e43d10"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="575" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="cd1b0dfb-3772-4b5a-bbd4-3c7374565e6d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SPV_BY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="675" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="7f07f829-a365-4cc5-900d-bffc08cd76b7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="825" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="a865d379-c54b-4c68-9765-da3c831a4c8f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_APPLIKASI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1025" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="99eaed42-3ed3-4de8-af96-a1e2d3d86aa7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PROJECT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1275" y="0" width="125" height="14" isPrintWhenDetailOverflows="true" uuid="641d6449-8bd4-4cef-81f2-0247210de7fe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SIZE_POTENSIAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="3d001ade-d073-40bf-b6fe-464cc3a454b9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="625" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="17389015-903a-44d7-b198-dc9c8e742a1b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1400" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="3dcb7834-7c11-4231-a5a0-9d09acdeeecd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_TAHUN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1550" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="dcaba708-12a8-4ec7-87a8-97a954b2efa1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_APPLICATION}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1650" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="4b678606-a0dc-4e41-801c-7d63a277cb36"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SECTOR}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1750" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="f550d455-4024-4f2c-82ad-05055ce8cff4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SALESMAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1850" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="3061338a-1474-4e3d-8938-b17f32cf83c6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_BRANCHES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1950" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="c673d4bc-d623-4111-8883-cff474e6a9d1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="2100" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" uuid="efec9666-d454-440d-8050-79670fd14925"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MODEL_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="2450" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" uuid="b5f4fb3e-7dfe-4d6b-854c-fc0b4153a0f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PN_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="2800" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="ad1f87d3-0fdf-4987-934b-723b567c55cf"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="2850" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="0124a8ba-4773-4ff5-bc96-e19c299e1f4b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UNIT_PRICE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="2950" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="5b9e111c-76ec-431e-87f0-1f59e253d8c9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXP_PO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="3025" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="6131167d-e616-4a9a-a735-3ce8a51ec47b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="3125" y="0" width="885" height="14" isPrintWhenDetailOverflows="true" uuid="c8b52464-751e-46a2-b18e-e3f05728c111"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KESALAHAN}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{KESALAHAN}.equals( "" )==false]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="e8eed884-ddc3-4a12-8f36-1684e9dbb39a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="50" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="ae722226-c0af-47a4-9c2f-547c117a30ef"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BSO_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="5b04ab71-7c40-45f0-8beb-eea724d53d38"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="7f85026a-5049-4ab0-9a3e-1ce34b071269"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="575" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="ea6ca440-9c22-4e95-8a61-00d056f7999a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SPV_BY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="675" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="8f66bed1-bcfe-4cf0-ba6e-aeb3605563ea"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="825" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="b372334c-2d0e-43d1-b832-93892877d2f6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_APPLIKASI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1025" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="b6a917c0-c05c-41ed-bf05-d890de3dbf01"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PROJECT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1275" y="0" width="125" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="b3364d98-c118-4d9e-9324-bf4404becef0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SIZE_POTENSIAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="8206d3e9-36bf-46be-be9b-f2bf0c7266eb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="625" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="e7885469-2351-4cfb-b2d5-54996309025e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1400" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="43687452-6a88-4a86-9cad-abfc8fcd89be"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_TAHUN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1550" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="78e2c469-e958-4997-9a83-06d4e9702afb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_APPLICATION}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1650" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="b4be110c-3dde-42d5-8141-9b32ab59cf86"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SECTOR}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1750" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="2bf16bf6-1259-49c2-a1fc-6a106b132e8e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SALESMAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1850" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="641c2587-0946-47ab-928c-27b1bfafda1a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_BRANCHES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1950" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="9d34d0c0-ffcb-4327-8225-4bedd21721e1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="2100" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="cb89eee4-8b27-40f7-9669-3674bddd467d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MODEL_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="2450" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="fe8ba2c8-9ea6-430f-b188-15a4388b1303"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PN_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="2800" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="e5b442a6-ff25-4ede-adcb-6d99705a7e6f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="2850" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="7092ebf3-a81e-4546-823b-9c11d19bdbb1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UNIT_PRICE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="2950" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="8994e092-6c30-49c2-b726-56ba742fd001"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXP_PO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="3025" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="cc8351f8-9e5a-47bd-a139-5281bec0ef96"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="3125" y="0" width="885" height="14" isPrintWhenDetailOverflows="true" forecolor="#FF0000" uuid="4b1aa6b5-fd0e-48b8-8788-c020495cca14"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KESALAHAN}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="84">
+			<staticText>
+				<reportElement x="0" y="70" width="50" height="14" uuid="4abbc198-4104-464d-a9b5-30d118718b9f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="70" width="175" height="14" uuid="6cb8954b-856a-4937-b36c-1a9460837de0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="50" height="14" uuid="81609d46-2a86-4dd8-bc5f-f31b95ef8ba1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="28" width="75" height="14" uuid="ae0199bd-57ad-4bf2-91ba-107a962638c1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Sales}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="50" height="14" uuid="e5922459-28f1-4d85-ab33-7e9259ff4149"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="14" width="75" height="14" uuid="be22bc15-8e8e-44c5-998a-5eeae85ea904"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="14" width="100" height="14" uuid="9a6e30cf-1678-4720-b1b8-ccd8cc453170"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="0" width="100" height="14" uuid="1fa4b89a-c84b-4531-b6fe-2595d44910f8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Validasi Pipeline]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="56" width="75" height="14" uuid="f7830a9a-e597-4bf7-9eaa-3949969b9eac"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="42" width="100" height="14" uuid="554ba0ea-5bbe-45c5-b29e-197b0c7bb63b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Cetak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="56" width="100" height="14" uuid="0adf97f5-8b0c-4180-91f6-9ed1baf408b1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="150" y="42" width="375" height="14" uuid="eda496e9-7794-4418-900e-a06478d40012"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="50" height="14" uuid="87b65c7b-384d-44a4-bdfd-dc40ca60a3b3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(08002)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="50" height="14" uuid="0b19b873-01f1-42e0-8d56-f49461b1abae"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="28" width="100" height="14" uuid="335f9733-d646-43ae-832f-f9fb9255da34"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="50" height="14" uuid="a66903de-0a0e-4489-84d3-577062896b4d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="75" height="14" uuid="2d6de9f1-398b-4660-98fb-1b8ebd83f546"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

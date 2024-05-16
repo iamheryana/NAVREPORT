@@ -1,0 +1,2637 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04061_LapGrossSalesMargin" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.4641000000000233"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="PeriodeFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="PeriodeUpto" class="java.util.Date"/>
+	<parameter name="Cabang" class="java.lang.String"/>
+	<parameter name="PeriodeFromAwalTahun" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ParamValue" class="java.math.BigDecimal"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["D:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	'A' AS MAIN_GRP
+		, XIX.GROUP_NO
+		, XIX.GROUP_DESC
+		, ROUND((XIX.UPTO_PREV_MONTH / 1000000),2) AS UPTO_PREV_MONTH
+		, ROUND((XIX.CURR_MONTH / 1000000),2) AS CURR_MONTH
+		, ROUND((XIX.UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.CURR_MONTH / 1000000),2) UPTO_CURR_MONTH
+		, ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2) AS HIT_UPTO_PREV_MONTH
+		, ROUND((XIX.HIT_CURR_MONTH / 1000000),2) AS HIT_CURR_MONTH
+		, ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2) HIT_UPTO_CURR_MONTH
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN ROUND((XIX.UPTO_PREV_MONTH / 1000000),2) ELSE 0 END AS UPTO_PREV_MONTH_SALES
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN ROUND((XIX.CURR_MONTH / 1000000),2) ELSE 0 END AS CURR_MONTH_SALES
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN (ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)) ELSE 0 END AS UPTO_CURR_MONTH_SALES
+FROM	(
+SELECT	XXX.GROUP_NO
+		, XXX.GROUP_DESC
+		, SUM(XXX.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(XXX.CURR_MONTH) AS CURR_MONTH
+		, CASE	WHEN XXX.GROUP_NO = 1 THEN SUM(XXX.UPTO_PREV_MONTH)
+				WHEN XXX.GROUP_NO = 2 THEN SUM(XXX.UPTO_PREV_MONTH) * -1
+				WHEN XXX.GROUP_NO = 3 THEN SUM(XXX.UPTO_PREV_MONTH)
+				ELSE 0 END AS HIT_UPTO_PREV_MONTH
+		, CASE	WHEN XXX.GROUP_NO = 1 THEN SUM(XXX.CURR_MONTH)
+				WHEN XXX.GROUP_NO = 2 THEN SUM(XXX.CURR_MONTH) * -1
+				WHEN XXX.GROUP_NO = 3 THEN SUM(XXX.CURR_MONTH)
+				ELSE 0 END AS HIT_CURR_MONTH
+FROM	(
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+		GLE.[G_L Account No_] <> '400.110.04' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+UNION ALL
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+		($P{Cabang} = '10' OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		,SUM(ASCY.AMOUNT) * -1 AS UPTO_PREV_MONTH
+		, 0 AS CURR_MONTH
+FROM (
+		SELECT	OUM.ITEM_CAT
+				,OUM.AMOUNT
+		FROM	(
+					SELECT	UM.ITEM_CAT
+							,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+								CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+								SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+							END
+							END	 AS AMOUNT
+					FROM	(
+								SELECT	DIMS.ITEM_CAT
+										,DIMS.BRANCHES
+										,SIH.[Posting Date] AS TGL_UM
+										,SIH.[No_] AS NO_UM
+										,SIH.[External Document No_] AS NO_PO_CUST
+										,SIH.[Bill-to Customer No_] AS CUST_NO
+										,SIH.[Bill-to Name] AS CUST_NAME
+										,SIH.[Prepayment Order No_] AS NO_SO
+										, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+								FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT	DIM.DIM_ID
+														,MAX(DIM.BRANCHES) AS BRANCHES
+														,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+														,MAX(DIM.SALESMAN) AS SALESMAN
+												FROM	(
+															SELECT [Dimension Set ID] AS DIM_ID
+																  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+															FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+														) DIM
+												GROUP BY DIM.DIM_ID
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+								LEFT JOIN	(
+												SELECT CLE.[Entry No_]
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+												FROM [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+												LEFT JOIN [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+												WHERE CLE.[Document Type] IN (2,3)
+												AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+													(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+											) CM ON CM.NO_UM = GLE.[Document No_]
+								LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+								WHERE GLE.[G_L Account No_] = '400.110.03'
+									  AND GLE.[Document No_] LIKE 'UM%'
+									  AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom}) ))
+									  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+									  AND (SIH.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND SIH.[Posting Date]<= DATEADD(DAY,-1,$P{PeriodeFrom}))
+								GROUP BY DIMS.ITEM_CAT,
+										 DIMS.BRANCHES,
+										 SIH.[Posting Date]
+										,SIH.[No_]
+										,SIH.[External Document No_]
+										,SIH.[Bill-to Customer No_]
+										,SIH.[Bill-to Name]
+										,SIH.[Prepayment Order No_]
+							) UM
+					LEFT JOIN	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_] AS NO_SO
+											,MAX(SIH.[Posting Date]) AS TGL_INV
+											,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] NOT LIKE 'UM%'
+										  AND GLE.[Posting Date] <=  DATEADD(DAY,-1,$P{PeriodeFrom})
+									GROUP BY DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_]
+								) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+				) OUM
+		WHERE OUM.AMOUNT > 0
+	 ) ASCY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 0 AS UPTO_PREV_MONTH
+		, SUM(ASCY.AMOUNT) * -1 AS CURR_MONTH
+FROM (
+		SELECT	OUM.ITEM_CAT
+				,OUM.AMOUNT
+		FROM	(
+					SELECT	UM.ITEM_CAT
+							,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+								CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+								SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+							END
+							END	 AS AMOUNT
+					FROM	(
+								SELECT	DIMS.ITEM_CAT
+										,DIMS.BRANCHES
+										,SIH.[Posting Date] AS TGL_UM
+										,SIH.[No_] AS NO_UM
+										,SIH.[External Document No_] AS NO_PO_CUST
+										,SIH.[Bill-to Customer No_] AS CUST_NO
+										,SIH.[Bill-to Name] AS CUST_NAME
+										,SIH.[Prepayment Order No_] AS NO_SO
+										, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+								FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT	DIM.DIM_ID
+														,MAX(DIM.BRANCHES) AS BRANCHES
+														,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+														,MAX(DIM.SALESMAN) AS SALESMAN
+												FROM	(
+															SELECT [Dimension Set ID] AS DIM_ID
+																  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+															FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+														) DIM
+												GROUP BY DIM.DIM_ID
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+								LEFT JOIN	(
+												SELECT CLE.[Entry No_]
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+												FROM [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+												LEFT JOIN [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+												WHERE CLE.[Document Type] IN (2,3)
+												AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+													(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+											) CM ON CM.NO_UM = GLE.[Document No_]
+								LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+								WHERE GLE.[G_L Account No_] = '400.110.03'
+									  AND GLE.[Document No_] LIKE 'UM%'
+									  AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > $P{PeriodeUpto} ))
+									  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+									  AND (SIH.[Posting Date] >= $P{PeriodeFrom} AND SIH.[Posting Date]<= $P{PeriodeUpto})
+								GROUP BY DIMS.ITEM_CAT,
+										 DIMS.BRANCHES,
+										 SIH.[Posting Date]
+										,SIH.[No_]
+										,SIH.[External Document No_]
+										,SIH.[Bill-to Customer No_]
+										,SIH.[Bill-to Name]
+										,SIH.[Prepayment Order No_]
+							) UM
+					LEFT JOIN	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_] AS NO_SO
+											,MAX(SIH.[Posting Date]) AS TGL_INV
+											,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] NOT LIKE 'UM%'
+										  AND GLE.[Posting Date] <=  $P{PeriodeUpto}
+									GROUP BY DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_]
+								) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+				) OUM
+		WHERE OUM.AMOUNT > 0
+	 ) ASCY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 0 AS UPTO_PREV_MONTH
+		, SUM(CMLM.AMOUNT) * -1 AS CURR_MONTH
+FROM	(
+			SELECT	DIMS.ITEM_CAT
+					,DIMS.BRANCHES
+					,CMH.[Posting Date] AS TGL_CM
+					,CMH.[No_] AS NO_CM
+					,CMH.[External Document No_] AS NO_PO_CUST
+					,CMH.[Bill-to Customer No_] AS CUST_NO
+					,CMH.[Bill-to Name] AS CUST_NAME
+					,CMH.[Prepayment Order No_] AS NO_SO
+					, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT	DIM.DIM_ID
+									,MAX(DIM.BRANCHES) AS BRANCHES
+									,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+									,MAX(DIM.SALESMAN) AS SALESMAN
+							FROM	(
+										SELECT [Dimension Set ID] AS DIM_ID
+												,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+												,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+												,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+										FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+									) DIM
+							GROUP BY DIM.DIM_ID
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			INNER JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = GLE.[Document No_]
+			LEFT JOIN	(
+							SELECT CLE.[Entry No_]
+									, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+									, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+							FROM [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+							LEFT JOIN [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+							WHERE CLE.[Document Type] IN (2,3)
+							AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+								(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+						) UM ON UM.NO_CM = GLE.[Document No_]
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = UM.NO_UM
+			WHERE GLE.[G_L Account No_] = '400.110.03'
+					AND GLE.[Document No_] NOT LIKE 'UM%'
+					AND (CMH.[Posting Date] >= $P{PeriodeFrom} AND CMH.[Posting Date]<= $P{PeriodeUpto})
+					AND (SIH.[Posting Date] < $P{PeriodeFrom})
+			GROUP BY	DIMS.ITEM_CAT
+						,DIMS.BRANCHES
+						,CMH.[Posting Date]
+						,CMH.[No_]
+						,CMH.[External Document No_]
+						,CMH.[Bill-to Customer No_]
+						,CMH.[Bill-to Name]
+						,CMH.[Prepayment Order No_]
+		) CMLM
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(ASPY.AMOUNT) AS UPTO_PREV_MONTH
+		, 0 AS CURR_MONTH
+FROM	(
+			SELECT	OUM.ITEM_CAT
+					,OUM.AMOUNT
+			FROM	(
+						SELECT	UM.ITEM_CAT
+								, CASE WHEN ISNULL(INV.AMOUNT,0) =  0 THEN 0 ELSE
+									CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN
+										UM.AMOUNT ELSE SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+									END
+								  END AS AMOUNT
+						FROM	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Posting Date] AS TGL_UM
+											,SIH.[No_] AS NO_UM
+											,SIH.[External Document No_] AS NO_PO_CUST
+											,SIH.[Bill-to Customer No_] AS CUST_NO
+											,SIH.[Bill-to Name] AS CUST_NAME
+											,SIH.[Prepayment Order No_] AS NO_SO
+											, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									LEFT JOIN	(
+													SELECT CLE.[Entry No_]
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+													FROM [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+													LEFT JOIN [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+													WHERE CLE.[Document Type] IN (2,3)
+													AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+														(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+												) CM ON CM.NO_UM = GLE.[Document No_]
+									LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] LIKE 'UM%'
+										  AND CM.NO_CM IS NULL
+										  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+										  AND (SIH.[Posting Date] < $P{PeriodeFromAwalTahun} )
+									GROUP BY DIMS.ITEM_CAT,
+											 DIMS.BRANCHES,
+											 SIH.[Posting Date]
+											,SIH.[No_]
+											,SIH.[External Document No_]
+											,SIH.[Bill-to Customer No_]
+											,SIH.[Bill-to Name]
+											,SIH.[Prepayment Order No_]
+								) UM
+						LEFT JOIN	(
+										SELECT	DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_] AS NO_SO
+												,MAX(SIH.[Posting Date]) AS TGL_INV
+												,SUM(GLE.[Amount]) AS AMOUNT
+										FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+										LEFT JOIN	(
+														SELECT	DIM.DIM_ID
+																,MAX(DIM.BRANCHES) AS BRANCHES
+																,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																,MAX(DIM.SALESMAN) AS SALESMAN
+														FROM	(
+																	SELECT [Dimension Set ID] AS DIM_ID
+																		  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																		  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																		  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																	FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+																) DIM
+														GROUP BY DIM.DIM_ID
+													) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+										LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+										WHERE GLE.[G_L Account No_] = '400.110.03'
+											  AND GLE.[Document No_] NOT LIKE 'UM%'
+											  AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}))
+										GROUP BY DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_]
+									) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+					) OUM
+			WHERE OUM.AMOUNT > 0
+		) ASPY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 0 AS UPTO_PREV_MONTH
+		, SUM(ASPY.AMOUNT) AS CURR_MONTH
+FROM	(
+			SELECT	OUM.ITEM_CAT
+					,OUM.AMOUNT
+			FROM	(
+						SELECT	UM.ITEM_CAT
+								, CASE WHEN ISNULL(INV.AMOUNT,0) =  0 THEN 0 ELSE
+									CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN
+										UM.AMOUNT ELSE SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+									END
+								  END AS AMOUNT
+						FROM	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Posting Date] AS TGL_UM
+											,SIH.[No_] AS NO_UM
+											,SIH.[External Document No_] AS NO_PO_CUST
+											,SIH.[Bill-to Customer No_] AS CUST_NO
+											,SIH.[Bill-to Name] AS CUST_NAME
+											,SIH.[Prepayment Order No_] AS NO_SO
+											, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									LEFT JOIN	(
+													SELECT CLE.[Entry No_]
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+													FROM [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+													LEFT JOIN [dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+													WHERE CLE.[Document Type] IN (2,3)
+													AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+														(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+												) CM ON CM.NO_UM = GLE.[Document No_]
+									LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] LIKE 'UM%'
+										  AND CM.NO_CM IS NULL
+										  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+										  AND (SIH.[Posting Date] < $P{PeriodeFrom})
+									GROUP BY DIMS.ITEM_CAT,
+											 DIMS.BRANCHES,
+											 SIH.[Posting Date]
+											,SIH.[No_]
+											,SIH.[External Document No_]
+											,SIH.[Bill-to Customer No_]
+											,SIH.[Bill-to Name]
+											,SIH.[Prepayment Order No_]
+								) UM
+						LEFT JOIN	(
+										SELECT	DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_] AS NO_SO
+												,MAX(SIH.[Posting Date]) AS TGL_INV
+												,SUM(GLE.[Amount]) AS AMOUNT
+										FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+										LEFT JOIN	(
+														SELECT	DIM.DIM_ID
+																,MAX(DIM.BRANCHES) AS BRANCHES
+																,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																,MAX(DIM.SALESMAN) AS SALESMAN
+														FROM	(
+																	SELECT [Dimension Set ID] AS DIM_ID
+																		  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																		  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																		  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																	FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+																) DIM
+														GROUP BY DIM.DIM_ID
+													) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+										LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+										WHERE GLE.[G_L Account No_] = '400.110.03'
+											  AND GLE.[Document No_] NOT LIKE 'UM%'
+											  AND (GLE.[Posting Date] >= $P{PeriodeFrom} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+										GROUP BY DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_]
+									) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+					) OUM
+			WHERE OUM.AMOUNT > 0
+		) ASPY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[AJ-ADJ$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+		GLE.[G_L Account No_] <> '400.110.04' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+		($P{Cabang} = '10' OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+					,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+					,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+					, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND GLE.[Document No_] <> '9SIAT200197'
+					AND GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <=   $P{PeriodeUpto}
+			UNION ALL
+			SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+					,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+					,'SLS-0303' AS SORT_SLS
+					, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <=   $P{PeriodeUpto}
+		) SLC
+WHERE $P{Cabang} = 'ALL' OR $P{Cabang} = '10'
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[SOLUSI$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[SOLUSI$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+		GLE.[G_L Account No_] <> '400.110.04' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+UNION ALL
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[SOLUSI$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+		($P{Cabang} = '10' OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(ASCY.AMOUNT) * -1 AS UPTO_PREV_MONTH
+		, 0 AS CURR_MONTH
+FROM (
+		SELECT	OUM.ITEM_CAT
+				,OUM.AMOUNT
+		FROM	(
+					SELECT	UM.ITEM_CAT
+							,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+								CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+								SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+							END
+							END	 AS AMOUNT
+					FROM	(
+								SELECT	DIMS.ITEM_CAT
+										,DIMS.BRANCHES
+										,SIH.[Posting Date] AS TGL_UM
+										,SIH.[No_] AS NO_UM
+										,SIH.[External Document No_] AS NO_PO_CUST
+										,SIH.[Bill-to Customer No_] AS CUST_NO
+										,SIH.[Bill-to Name] AS CUST_NAME
+										,SIH.[Prepayment Order No_] AS NO_SO
+										, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+								FROM [dbo].[SOLUSI$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT	DIM.DIM_ID
+														,MAX(DIM.BRANCHES) AS BRANCHES
+														,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+														,MAX(DIM.SALESMAN) AS SALESMAN
+												FROM	(
+															SELECT [Dimension Set ID] AS DIM_ID
+																  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+															FROM [dbo].[SOLUSI$Dimension Set Entry]
+														) DIM
+												GROUP BY DIM.DIM_ID
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+								LEFT JOIN	(
+												SELECT CLE.[Entry No_]
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+												FROM [dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+												LEFT JOIN [dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+												WHERE CLE.[Document Type] IN (2,3)
+												AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+													(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+											) CM ON CM.NO_UM = GLE.[Document No_]
+								LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+								WHERE GLE.[G_L Account No_] = '400.110.03'
+									  AND GLE.[Document No_] LIKE 'UM%'
+									  AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom}) ))
+									  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+									  AND (SIH.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND SIH.[Posting Date]<= DATEADD(DAY,-1,$P{PeriodeFrom}))
+								GROUP BY DIMS.ITEM_CAT,
+										 DIMS.BRANCHES,
+										 SIH.[Posting Date]
+										,SIH.[No_]
+										,SIH.[External Document No_]
+										,SIH.[Bill-to Customer No_]
+										,SIH.[Bill-to Name]
+										,SIH.[Prepayment Order No_]
+							) UM
+					LEFT JOIN	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_] AS NO_SO
+											,MAX(SIH.[Posting Date]) AS TGL_INV
+											,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[SOLUSI$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[SOLUSI$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] NOT LIKE 'UM%'
+										  AND GLE.[Posting Date] <=  DATEADD(DAY,-1,$P{PeriodeFrom})
+									GROUP BY DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_]
+								) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+				) OUM
+		WHERE OUM.AMOUNT > 0
+	 ) ASCY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 0 AS UPTO_PREV_MONTH
+		, SUM(ASCY.AMOUNT) * -1 AS CURR_MONTH
+FROM (
+		SELECT	OUM.ITEM_CAT
+				,OUM.AMOUNT
+		FROM	(
+					SELECT	UM.ITEM_CAT
+							,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+								CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+								SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+							END
+							END	 AS AMOUNT
+					FROM	(
+								SELECT	DIMS.ITEM_CAT
+										,DIMS.BRANCHES
+										,SIH.[Posting Date] AS TGL_UM
+										,SIH.[No_] AS NO_UM
+										,SIH.[External Document No_] AS NO_PO_CUST
+										,SIH.[Bill-to Customer No_] AS CUST_NO
+										,SIH.[Bill-to Name] AS CUST_NAME
+										,SIH.[Prepayment Order No_] AS NO_SO
+										, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+								FROM [dbo].[SOLUSI$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT	DIM.DIM_ID
+														,MAX(DIM.BRANCHES) AS BRANCHES
+														,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+														,MAX(DIM.SALESMAN) AS SALESMAN
+												FROM	(
+															SELECT [Dimension Set ID] AS DIM_ID
+																  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+															FROM [dbo].[SOLUSI$Dimension Set Entry]
+														) DIM
+												GROUP BY DIM.DIM_ID
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+								LEFT JOIN	(
+												SELECT CLE.[Entry No_]
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+												FROM [dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+												LEFT JOIN [dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+												WHERE CLE.[Document Type] IN (2,3)
+												AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+													(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+											) CM ON CM.NO_UM = GLE.[Document No_]
+								LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+								WHERE GLE.[G_L Account No_] = '400.110.03'
+									  AND GLE.[Document No_] LIKE 'UM%'
+									  AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > $P{PeriodeUpto} ))
+									  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+									  AND (SIH.[Posting Date] >= $P{PeriodeFrom} AND SIH.[Posting Date]<= $P{PeriodeUpto})
+								GROUP BY DIMS.ITEM_CAT,
+										 DIMS.BRANCHES,
+										 SIH.[Posting Date]
+										,SIH.[No_]
+										,SIH.[External Document No_]
+										,SIH.[Bill-to Customer No_]
+										,SIH.[Bill-to Name]
+										,SIH.[Prepayment Order No_]
+							) UM
+					LEFT JOIN	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_] AS NO_SO
+											,MAX(SIH.[Posting Date]) AS TGL_INV
+											,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[SOLUSI$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[SOLUSI$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] NOT LIKE 'UM%'
+										  AND GLE.[Posting Date] <=  $P{PeriodeUpto}
+									GROUP BY DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_]
+								) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+				) OUM
+		WHERE OUM.AMOUNT > 0
+	 ) ASCY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 0 AS UPTO_PREV_MONTH
+		, SUM(CMLM.AMOUNT) * -1 AS CURR_MONTH
+FROM	(
+			SELECT	DIMS.ITEM_CAT
+					,DIMS.BRANCHES
+					,CMH.[Posting Date] AS TGL_CM
+					,CMH.[No_] AS NO_CM
+					,CMH.[External Document No_] AS NO_PO_CUST
+					,CMH.[Bill-to Customer No_] AS CUST_NO
+					,CMH.[Bill-to Name] AS CUST_NAME
+					,CMH.[Prepayment Order No_] AS NO_SO
+					, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+			FROM [dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT	DIM.DIM_ID
+									,MAX(DIM.BRANCHES) AS BRANCHES
+									,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+									,MAX(DIM.SALESMAN) AS SALESMAN
+							FROM	(
+										SELECT [Dimension Set ID] AS DIM_ID
+												,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+												,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+												,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+										FROM [dbo].[SOLUSI$Dimension Set Entry]
+									) DIM
+							GROUP BY DIM.DIM_ID
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			INNER JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = GLE.[Document No_]
+			LEFT JOIN	(
+							SELECT CLE.[Entry No_]
+									, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+									, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+							FROM [dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+							LEFT JOIN [dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+							WHERE CLE.[Document Type] IN (2,3)
+							AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+								(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+						) UM ON UM.NO_CM = GLE.[Document No_]
+			LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = UM.NO_UM
+			WHERE GLE.[G_L Account No_] = '400.110.03'
+					AND GLE.[Document No_] NOT LIKE 'UM%'
+					AND (CMH.[Posting Date] >= $P{PeriodeFrom} AND CMH.[Posting Date]<= $P{PeriodeUpto})
+					AND (SIH.[Posting Date] < $P{PeriodeFrom})
+			GROUP BY	DIMS.ITEM_CAT
+						,DIMS.BRANCHES
+						,CMH.[Posting Date]
+						,CMH.[No_]
+						,CMH.[External Document No_]
+						,CMH.[Bill-to Customer No_]
+						,CMH.[Bill-to Name]
+						,CMH.[Prepayment Order No_]
+		) CMLM
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(ASPY.AMOUNT) AS UPTO_PREV_MONTH
+		, 0 AS CURR_MONTH
+FROM	(
+			SELECT	OUM.ITEM_CAT
+					,OUM.AMOUNT
+			FROM	(
+						SELECT	UM.ITEM_CAT
+								, CASE WHEN ISNULL(INV.AMOUNT,0) =  0 THEN 0 ELSE
+									CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN
+										UM.AMOUNT ELSE SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+									END
+								  END AS AMOUNT
+						FROM	(
+									SELECT	CASE WHEN SIH.[No_] = 'UMSS190005' THEN 'HW01' ELSE DIMS.ITEM_CAT END AS ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Posting Date] AS TGL_UM
+											,SIH.[No_] AS NO_UM
+											,SIH.[External Document No_] AS NO_PO_CUST
+											,SIH.[Bill-to Customer No_] AS CUST_NO
+											,SIH.[Bill-to Name] AS CUST_NAME
+											,SIH.[Prepayment Order No_] AS NO_SO
+											, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+									FROM [dbo].[SOLUSI$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[SOLUSI$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									LEFT JOIN	(
+													SELECT CLE.[Entry No_]
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+													FROM [dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+													LEFT JOIN [dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+													WHERE CLE.[Document Type] IN (2,3)
+													AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+														(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+												) CM ON CM.NO_UM = GLE.[Document No_]
+									LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] LIKE 'UM%'
+										  AND CM.NO_CM IS NULL
+										  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+										  AND (SIH.[Posting Date] < $P{PeriodeFromAwalTahun} )
+									GROUP BY DIMS.ITEM_CAT,
+											 DIMS.BRANCHES,
+											 SIH.[Posting Date]
+											,SIH.[No_]
+											,SIH.[External Document No_]
+											,SIH.[Bill-to Customer No_]
+											,SIH.[Bill-to Name]
+											,SIH.[Prepayment Order No_]
+								) UM
+						LEFT JOIN	(
+										SELECT	DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_] AS NO_SO
+												,MAX(SIH.[Posting Date]) AS TGL_INV
+												,SUM(GLE.[Amount]) AS AMOUNT
+										FROM [dbo].[SOLUSI$G_L Entry] GLE
+										LEFT JOIN	(
+														SELECT	DIM.DIM_ID
+																,MAX(DIM.BRANCHES) AS BRANCHES
+																,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																,MAX(DIM.SALESMAN) AS SALESMAN
+														FROM	(
+																	SELECT [Dimension Set ID] AS DIM_ID
+																		  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																		  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																		  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																	FROM [dbo].[SOLUSI$Dimension Set Entry]
+																) DIM
+														GROUP BY DIM.DIM_ID
+													) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+										LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+										WHERE GLE.[G_L Account No_] = '400.110.03'
+											  AND GLE.[Document No_] NOT LIKE 'UM%'
+											  AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}))
+										GROUP BY DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_]
+									) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+					) OUM
+			WHERE OUM.AMOUNT > 0
+		) ASPY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 0 AS UPTO_PREV_MONTH
+		, SUM(ASPY.AMOUNT) AS CURR_MONTH
+FROM	(
+			SELECT	OUM.ITEM_CAT
+					,OUM.AMOUNT
+			FROM	(
+						SELECT	UM.ITEM_CAT
+								, CASE WHEN ISNULL(INV.AMOUNT,0) =  0 THEN 0 ELSE
+									CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN
+										UM.AMOUNT ELSE SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+									END
+								  END AS AMOUNT
+						FROM	(
+									SELECT	CASE WHEN SIH.[No_] = 'UMSS190005' THEN 'HW01' ELSE DIMS.ITEM_CAT END AS ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Posting Date] AS TGL_UM
+											,SIH.[No_] AS NO_UM
+											,SIH.[External Document No_] AS NO_PO_CUST
+											,SIH.[Bill-to Customer No_] AS CUST_NO
+											,SIH.[Bill-to Name] AS CUST_NAME
+											,SIH.[Prepayment Order No_] AS NO_SO
+											, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+									FROM [dbo].[SOLUSI$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.SALESMAN) AS SALESMAN
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																	  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																	  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																	  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																FROM [dbo].[SOLUSI$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									LEFT JOIN	(
+													SELECT CLE.[Entry No_]
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+															, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+													FROM [dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+													LEFT JOIN [dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+													WHERE CLE.[Document Type] IN (2,3)
+													AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+														(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+												) CM ON CM.NO_UM = GLE.[Document No_]
+									LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+										  AND GLE.[Document No_] LIKE 'UM%'
+										  AND CM.NO_CM IS NULL
+										  AND (DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+										  AND (SIH.[Posting Date] < $P{PeriodeFrom})
+									GROUP BY DIMS.ITEM_CAT,
+											 DIMS.BRANCHES,
+											 SIH.[Posting Date]
+											,SIH.[No_]
+											,SIH.[External Document No_]
+											,SIH.[Bill-to Customer No_]
+											,SIH.[Bill-to Name]
+											,SIH.[Prepayment Order No_]
+								) UM
+						LEFT JOIN	(
+										SELECT	DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_] AS NO_SO
+												,MAX(SIH.[Posting Date]) AS TGL_INV
+												,SUM(GLE.[Amount]) AS AMOUNT
+										FROM [dbo].[SOLUSI$G_L Entry] GLE
+										LEFT JOIN	(
+														SELECT	DIM.DIM_ID
+																,MAX(DIM.BRANCHES) AS BRANCHES
+																,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																,MAX(DIM.SALESMAN) AS SALESMAN
+														FROM	(
+																	SELECT [Dimension Set ID] AS DIM_ID
+																		  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																		  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																		  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																	FROM [dbo].[SOLUSI$Dimension Set Entry]
+																) DIM
+														GROUP BY DIM.DIM_ID
+													) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+										LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+										WHERE GLE.[G_L Account No_] = '400.110.03'
+											  AND GLE.[Document No_] NOT LIKE 'UM%'
+											  AND (GLE.[Posting Date] >= $P{PeriodeFrom} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+										GROUP BY DIMS.ITEM_CAT
+												,DIMS.BRANCHES
+												,SIH.[Order No_]
+									) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+					) OUM
+			WHERE OUM.AMOUNT > 0
+		) ASPY
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[SP-ADJ$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[SP-ADJ$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+		GLE.[G_L Account No_] <> '400.110.04' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[SP-ADJ$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+		($P{Cabang} = '10' OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+					,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+					,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+					, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[SOLUSI$G_L Entry] GLE
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <= $P{PeriodeUpto})
+			UNION ALL
+			SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+					,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+					,'SLS-0303' AS SORT_SLS
+					, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[SP-ADJ$G_L Entry] GLE
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND GLE.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND GLE.[Posting Date] <= $P{PeriodeUpto}
+		) SLC
+WHERE $P{Cabang} = 'ALL' OR $P{Cabang} = '10'
+UNION ALL
+SELECT	 2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(DOC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(DOC.UPTO_CURR_MONTH) - SUM(DOC.UPTO_PREV_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	 SUM(DII.AMOUNT) * -1 AS UPTO_PREV_MONTH
+					, 0 AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[AUTOJAYA$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM	(
+									SELECT GLE.[Posting Date] AS TGL_SJ
+										  ,GLE.[Document No_] AS NO_SJ
+										  ,GLE.[Global Dimension 1 Code] AS CABANG
+										  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+										  ,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									INNER JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_]= '500.110.00'
+											AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+									GROUP BY GLE.[Posting Date], GLE.[Document No_]
+											,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+								) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[AUTOJAYA$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+						)
+					)
+					AND (	DII.NO_INVOICE IS NULL
+							OR
+							SIH3.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+						)
+					AND (DII.TGL_SJ >= $P{PeriodeFromAwalTahun}   AND DII.TGL_SJ <= DATEADD(DAY,-1,$P{PeriodeFrom}))
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+			UNION ALL
+			SELECT	0 AS UPTO_PREV_MONTH
+					, SUM(DII.AMOUNT) * -1 AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[AUTOJAYA$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM	(
+									SELECT GLE.[Posting Date] AS TGL_SJ
+										  ,GLE.[Document No_] AS NO_SJ
+										  ,GLE.[Global Dimension 1 Code] AS CABANG
+										  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+										  ,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									INNER JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_]= '500.110.00'
+											AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+									GROUP BY GLE.[Posting Date], GLE.[Document No_]
+											,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+								) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[AUTOJAYA$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > $P{PeriodeUpto}
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > $P{PeriodeUpto}
+						)
+					)
+					AND (	DII.NO_INVOICE IS NULL
+							OR
+							SIH3.[Posting Date] > $P{PeriodeUpto}
+						)
+					AND (DII.TGL_SJ >= $P{PeriodeFromAwalTahun}  AND DII.TGL_SJ <= $P{PeriodeUpto})
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+		) DOC
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(DOP.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(DOP.UPTO_CURR_MONTH) - SUM(DOP.UPTO_PREV_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	SUM(DII.AMOUNT) AS UPTO_PREV_MONTH
+					, 0 AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[AUTOJAYA$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM	(
+									SELECT GLE.[Posting Date] AS TGL_SJ
+										  ,GLE.[Document No_] AS NO_SJ
+										  ,GLE.[Global Dimension 1 Code] AS CABANG
+										  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+										  ,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									INNER JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_]= '500.110.00'
+											AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+									GROUP BY GLE.[Posting Date], GLE.[Document No_]
+											,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+								) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[AUTOJAYA$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+						)
+					)
+					AND (SIH3.[Posting Date] >= $P{PeriodeFromAwalTahun}   AND SIH3.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) )
+					AND (DII.TGL_SJ < $P{PeriodeFromAwalTahun} )
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+			UNION ALL
+			SELECT	0 AS UPTO_PREV_MONTH
+					, SUM(DII.AMOUNT) AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[AUTOJAYA$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM	(
+									SELECT GLE.[Posting Date] AS TGL_SJ
+										  ,GLE.[Document No_] AS NO_SJ
+										  ,GLE.[Global Dimension 1 Code] AS CABANG
+										  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+										  ,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+									INNER JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_]= '500.110.00'
+											AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+									GROUP BY GLE.[Posting Date], GLE.[Document No_]
+											,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+								) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[AUTOJAYA$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[AUTOJAYA$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > $P{PeriodeUpto}
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > $P{PeriodeUpto}
+						)
+					)
+					AND (SIH3.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND SIH3.[Posting Date] <= $P{PeriodeUpto} )
+					AND (DII.TGL_SJ < $P{PeriodeFromAwalTahun})
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+		) DOP
+UNION ALL
+SELECT	 2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[AJ-ADJ$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+							WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+					END AS GRUP_TITLE
+					,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+					,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+					,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+					,CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					,CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT	DIM.DIM_ID
+									,MAX(DIM.BRANCHES) AS BRANCHES
+									,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+									,MAX(DIM.SALESMAN) AS SALESMAN
+							FROM	(
+										SELECT [Dimension Set ID] AS DIM_ID
+											  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+											  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+											  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+										FROM [dbo].[AUTOJAYA$Dimension Set Entry]
+									) DIM
+							GROUP BY DIM.DIM_ID
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND GLE.[Document No_] <> '9SIAT200197'
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+			UNION ALL
+			SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+							WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+					END AS GRUP_TITLE
+					,CASE WHEN GLE.[Description] LIKE 'FA%' THEN '1. COGS FA' ELSE '2. COGS INTERCOY' END AS SALES_TITLE
+					,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+					,'SLS-0403' AS SORT_SLS
+					, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT	DIM.DIM_ID
+									,MAX(DIM.BRANCHES) AS BRANCHES
+									,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+									,MAX(DIM.SALESMAN) AS SALESMAN
+							FROM	(
+										SELECT [Dimension Set ID] AS DIM_ID
+											  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+											  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+											  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+										FROM [dbo].[AJ-ADJ$Dimension Set Entry]
+									) DIM
+							GROUP BY DIM.DIM_ID
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+		) SLC
+WHERE $P{Cabang} = 'ALL' OR $P{Cabang} = '10'
+UNION ALL
+SELECT	 2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[SOLUSI$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[SOLUSI$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(DOC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(DOC.UPTO_CURR_MONTH) - SUM(DOC.UPTO_PREV_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	SUM(DII.AMOUNT) * -1 AS UPTO_PREV_MONTH
+					, 0 AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[SOLUSI$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM	(
+									SELECT GLE.[Posting Date] AS TGL_SJ
+										  ,GLE.[Document No_] AS NO_SJ
+										  ,GLE.[Global Dimension 1 Code] AS CABANG
+										  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+										  ,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[SOLUSI$G_L Entry] GLE
+									INNER JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_]= '500.110.00'
+											AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+									GROUP BY GLE.[Posting Date], GLE.[Document No_]
+											,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+								) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[SOLUSI$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[SOLUSI$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+						)
+					)
+					AND (	DII.NO_INVOICE IS NULL
+							OR
+							SIH3.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+						)
+					AND (DII.TGL_SJ >= $P{PeriodeFromAwalTahun}   AND DII.TGL_SJ <= DATEADD(DAY,-1,$P{PeriodeFrom}))
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+			UNION ALL
+			SELECT	0 AS UPTO_PREV_MONTH
+					, SUM(DII.AMOUNT) * -1 AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[SOLUSI$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM	(
+									SELECT GLE.[Posting Date] AS TGL_SJ
+										  ,GLE.[Document No_] AS NO_SJ
+										  ,GLE.[Global Dimension 1 Code] AS CABANG
+										  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+										  ,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[SOLUSI$G_L Entry] GLE
+									INNER JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_]= '500.110.00'
+											AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+									GROUP BY GLE.[Posting Date], GLE.[Document No_]
+											,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+								) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[SOLUSI$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[SOLUSI$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > $P{PeriodeUpto}
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > $P{PeriodeUpto}
+						)
+					)
+					AND (	DII.NO_INVOICE IS NULL
+							OR
+							SIH3.[Posting Date] > $P{PeriodeUpto}
+						)
+					AND (DII.TGL_SJ >= $P{PeriodeFromAwalTahun}  AND DII.TGL_SJ <= $P{PeriodeUpto})
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+		) DOC
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(DOP.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(DOP.UPTO_CURR_MONTH) - SUM(DOP.UPTO_PREV_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	SUM(DII.AMOUNT) AS UPTO_PREV_MONTH
+					, 0 AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[SOLUSI$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM
+						(
+							SELECT GLE.[Posting Date] AS TGL_SJ
+								  ,GLE.[Document No_] AS NO_SJ
+								  ,GLE.[Global Dimension 1 Code] AS CABANG
+								  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+								  ,SUM(GLE.[Amount]) AS AMOUNT
+							FROM [dbo].[SOLUSI$G_L Entry] GLE
+							INNER JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_]= '500.110.00'
+									AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+							GROUP BY GLE.[Posting Date], GLE.[Document No_]
+									,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+						) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[SOLUSI$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[SOLUSI$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > DATEADD(DAY,-1,$P{PeriodeFrom})
+						)
+					)
+					AND (SIH3.[Posting Date] >= $P{PeriodeFromAwalTahun}   AND SIH3.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) )
+					AND (DII.TGL_SJ < $P{PeriodeFromAwalTahun} )
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+			UNION ALL
+			SELECT	0 AS UPTO_PREV_MONTH
+					, SUM(DII.AMOUNT) AS UPTO_CURR_MONTH
+			FROM	(
+						SELECT	DOO.TGL_SJ
+								,DOO.NO_SJ
+								,DOO.CABANG
+								,DOO.CATEGORY
+								,DOO.AMOUNT
+								,CASE WHEN DOI.NO_INVOICE IS NULL AND
+									(
+										SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+										FROM [dbo].[SOLUSI$Sales Shipment Line] SHL
+										WHERE SHL.[Document No_] = DOO.NO_SJ
+										GROUP BY SHL.[Document No_]
+									) = 'Y' THEN
+									(
+										SELECT MAX(IOO.NO_INV)
+										FROM	(
+													SELECT
+															DISTINCT SIH.[No_] AS NO_INV,
+															SIH.[Posting Date] AS TGL_INV,
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+													INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												)IOO
+										WHERE IOO.NO_DO  = DOO.NO_SJ AND
+											  IOO.TGL_INV < DOO.TGL_SJ
+									) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+								,DOI.TGL_INV
+						FROM
+						(
+							SELECT GLE.[Posting Date] AS TGL_SJ
+								  ,GLE.[Document No_] AS NO_SJ
+								  ,GLE.[Global Dimension 1 Code] AS CABANG
+								  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+								  ,SUM(GLE.[Amount]) AS AMOUNT
+							FROM [dbo].[SOLUSI$G_L Entry] GLE
+							INNER JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_]= '500.110.00'
+									AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+							GROUP BY GLE.[Posting Date], GLE.[Document No_]
+									,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+						) DOO
+						LEFT JOIN	(
+										SELECT	XXX.NO_SJ
+												,XXX.TGL_INV
+												,MAX(ISJ.[No_]) AS NO_INVOICE
+										FROM
+												(
+													SELECT DO.[No_] AS NO_SJ
+															, MIN(ISJ2.TGL_INV) AS TGL_INV
+													FROM [dbo].[SOLUSI$Sales Shipment Header] DO
+													LEFT JOIN (
+																SELECT	SIH2.[Posting Date] AS TGL_INV
+																		,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																		,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+																FROM [dbo].[SOLUSI$Sales Invoice Header] SIH2
+																INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+																LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+																WHERE SIL2.[Type] = 2
+															  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+													GROUP BY DO.[No_]
+												) XXX
+										LEFT JOIN	(
+														SELECT
+																SIH.[No_],
+																SIH.[Posting Date],
+																CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+														FROM [dbo].[SOLUSI$Sales Invoice Header] SIH
+														INNER JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+														LEFT JOIN [dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+														WHERE SIL.[Type] = 2
+													) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+										GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+									) DOI ON DOI.NO_SJ = DOO.NO_SJ
+						LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+						WHERE	DOO.AMOUNT <> 0 AND
+								(
+									CRM.[No_] IS NULL OR
+									(	CRM.[No_] IS NOT NULL AND
+										CRM.[Posting Date] > $P{PeriodeUpto}
+									)
+								)
+					) DII
+			LEFT JOIN [dbo].[SOLUSI$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+			LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+			WHERE	(
+						CRM2.[No_] IS NULL OR
+						(	CRM2.[No_] IS NOT NULL AND
+							CRM2.[Posting Date] > $P{PeriodeUpto}
+						)
+					)
+					AND (SIH3.[Posting Date] >= $P{PeriodeFromAwalTahun}  AND SIH3.[Posting Date] <= $P{PeriodeUpto} )
+					AND (DII.TGL_SJ < $P{PeriodeFromAwalTahun})
+					AND (DII.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+		) DOP
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+FROM [dbo].[SP-ADJ$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT	DIM.DIM_ID
+						,MAX(DIM.BRANCHES) AS BRANCHES
+						,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+						,MAX(DIM.SALESMAN) AS SALESMAN
+				FROM	(
+							SELECT [Dimension Set ID] AS DIM_ID
+								  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+								  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+								  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+							FROM [dbo].[SP-ADJ$Dimension Set Entry]
+						) DIM
+				GROUP BY DIM.DIM_ID
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+		DIMS.ITEM_CAT <> '' AND
+		(DIMS.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	2 AS GROUP_NO
+		, 'COGS' AS GROUP_DESC
+		, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+		, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+FROM	(
+			SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+							WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+					END AS GRUP_TITLE
+					,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+					,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+					,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+					,CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					,CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT	DIM.DIM_ID
+									,MAX(DIM.BRANCHES) AS BRANCHES
+									,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+									,MAX(DIM.SALESMAN) AS SALESMAN
+							FROM	(
+										SELECT [Dimension Set ID] AS DIM_ID
+											  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+											  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+											  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+										FROM [dbo].[SOLUSI$Dimension Set Entry]
+									) DIM
+							GROUP BY DIM.DIM_ID
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+			UNION ALL
+			SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+							WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+							WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+							WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+					END AS GRUP_TITLE
+					,CASE WHEN GLE.[Description] LIKE 'FA%' THEN '1. COGS FA' ELSE '2. COGS INTERCOY' END AS SALES_TITLE
+					,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+					,'SLS-0403' AS SORT_SLS
+					, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+					, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+			FROM [dbo].[SP-ADJ$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT	DIM.DIM_ID
+									,MAX(DIM.BRANCHES) AS BRANCHES
+									,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+									,MAX(DIM.SALESMAN) AS SALESMAN
+							FROM	(
+										SELECT [Dimension Set ID] AS DIM_ID
+											  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+											  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+											  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+										FROM [dbo].[SP-ADJ$Dimension Set Entry]
+									) DIM
+							GROUP BY DIM.DIM_ID
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <=  $P{PeriodeUpto})
+		) SLC
+WHERE $P{Cabang} = 'ALL' OR $P{Cabang} = '10'
+UNION ALL
+SELECT	3 AS GROUP_NO
+		, 'REBATE' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '600.110.00'
+		AND (GLE.[Global Dimension 1 Code] = $P{Cabang} OR $P{Cabang} = 'ALL')
+		AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	3 AS GROUP_NO
+		, 'REBATE' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '600.110.00'
+		AND (GLE.[Global Dimension 1 Code] = $P{Cabang} OR $P{Cabang} = 'ALL')
+		AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	3 AS GROUP_NO
+		, 'REBATE' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+FROM [dbo].[SOLUSI$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] IN ( '600.110.00', '600.120.00')
+		AND (GLE.[Global Dimension 1 Code] = $P{Cabang} OR $P{Cabang} = 'ALL')
+		AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+UNION ALL
+SELECT	3 AS GROUP_NO
+		, 'REBATE' AS GROUP_DESC
+		, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+		, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+FROM [dbo].[SP-ADJ$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] IN ( '600.110.00', '600.120.00')
+		AND (GLE.[Global Dimension 1 Code] = $P{Cabang} OR $P{Cabang} = 'ALL')
+		AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+		) XXX
+GROUP BY XXX.GROUP_NO
+		, XXX.GROUP_DESC
+		) XIX
+UNION ALL
+SELECT	'B' AS MAIN_GRP
+		, 1 AS GROUP_NO
+		, 'EXCHANGE GAIN/(LOSS)' AS GROUP_DESC
+		, ROUND((SUM(X.UPTO_PREV_MONTH)/1000000),2) AS UPTO_PREV_MONTH
+		, ROUND((SUM(X.CURR_MONTH)/1000000),2) AS CURR_MONTH
+		, ROUND((SUM(X.UPTO_PREV_MONTH)/1000000),2)  + ROUND((SUM(X.CURR_MONTH)/1000000),2) AS UPTO_CURR_MONTH
+		, 0 AS HIT_UPTO_PREV_MONTH
+		, 0 AS HIT_CURR_MONTH
+		, 0 AS HIT_UPTO_CURR_MONTH
+		, 0 AS UPTO_PREV_MONTH_SALES
+		, 0 AS CURR_MONTH_SALES
+		, 0 AS UPTO_CURR_MONTH_SALES
+FROM	(
+			SELECT
+					SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+					, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN  [dbo].[AUTOJAYA$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+			WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+			GROUP BY [G_L Account No_],GLA.[Name]
+			UNION ALL
+			SELECT
+					SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1 ELSE 0 END) AS UPTO_PREV_MONTH
+					, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+			FROM [dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN  [dbo].[SOLUSI$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+			WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+			GROUP BY [G_L Account No_],GLA.[Name]
+			UNION ALL
+			SELECT
+					SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+					, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+			FROM [dbo].[AJ-ADJ$G_L Entry] GLE
+			LEFT JOIN  [dbo].[AJ-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+			WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+			GROUP BY [G_L Account No_],GLA.[Name]
+			UNION ALL
+			SELECT
+					SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1 ELSE 0 END) AS UPTO_PREV_MONTH
+					, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,$P{PeriodeFrom}) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+			FROM [dbo].[SP-ADJ$G_L Entry] GLE
+			LEFT JOIN  [dbo].[SP-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+			WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+					AND (GLE.[Posting Date] >= $P{PeriodeFromAwalTahun} AND GLE.[Posting Date] <= $P{PeriodeUpto})
+			GROUP BY [G_L Account No_],GLA.[Name]
+		) X]]>
+	</queryString>
+	<field name="MAIN_GRP" class="java.lang.String"/>
+	<field name="GROUP_NO" class="java.lang.Integer"/>
+	<field name="GROUP_DESC" class="java.lang.String"/>
+	<field name="UPTO_PREV_MONTH" class="java.math.BigDecimal"/>
+	<field name="CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="UPTO_CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="HIT_UPTO_PREV_MONTH" class="java.math.BigDecimal"/>
+	<field name="HIT_CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="HIT_UPTO_CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="UPTO_PREV_MONTH_SALES" class="java.math.BigDecimal"/>
+	<field name="CURR_MONTH_SALES" class="java.math.BigDecimal"/>
+	<field name="UPTO_CURR_MONTH_SALES" class="java.math.BigDecimal"/>
+	<sortField name="MAIN_GRP"/>
+	<sortField name="GROUP_NO"/>
+	<variable name="UPTO_PREV_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_PREV_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="UPTO_CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="HIT_UPTO_PREV_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_UPTO_PREV_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="HIT_CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="HIT_UPTO_CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_UPTO_CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="UPTO_PREV_MONTH_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_PREV_MONTH_SALES}]]></variableExpression>
+	</variable>
+	<variable name="CURR_MONTH_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{CURR_MONTH_SALES}]]></variableExpression>
+	</variable>
+	<variable name="UPTO_CURR_MONTH_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_CURR_MONTH_SALES}]]></variableExpression>
+	</variable>
+	<variable name="pcnUptoPrevMonth" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{UPTO_PREV_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_UPTO_PREV_MONTH_1}/$V{UPTO_PREV_MONTH_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{UPTO_PREV_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_UPTO_PREV_MONTH_1}/$V{UPTO_PREV_MONTH_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="pcnCurrMonth" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{CURR_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_CURR_MONTH_1}/$V{CURR_MONTH_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{CURR_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_CURR_MONTH_1}/$V{CURR_MONTH_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="pcnUptoCurrMonth" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{UPTO_CURR_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_UPTO_CURR_MONTH_1}/$V{UPTO_CURR_MONTH_SALES_1}) )]]></variableExpression>
+	</variable>
+	<group name="MainGrp">
+		<groupExpression><![CDATA[$F{MAIN_GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{MAIN_GRP}.equals( "A" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="300" y="14" width="80" height="14" uuid="70b1d2e9-c2af-42a4-be49-aca0f41c2cc3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PERIOD]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="0" width="80" height="14" uuid="4a90d668-a012-48ac-ab6f-4acf7e50ce32"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[UPTO PREV. ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="380" y="14" width="80" height="14" uuid="0aca4400-1100-4b2e-84fd-67738869dd66"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PERIOD]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="380" y="0" width="80" height="14" uuid="5c5c339a-1bfa-41b3-b5a7-71fcf875e4d4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[CURRENT]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="460" y="14" width="80" height="14" uuid="f537b66f-001f-428a-9991-7dbd669ee8b9"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PERIOD]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="460" y="0" width="80" height="14" uuid="97ed5944-2704-4f50-853d-3186745a295d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[UPTO CURR.]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="56">
+				<printWhenExpression><![CDATA[$F{MAIN_GRP}.equals( "A" ) == true]]></printWhenExpression>
+				<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="300" y="14" width="80" height="14" uuid="fab5e47e-8b01-45ad-9a8e-00766c1be6ed"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_UPTO_PREV_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="380" y="14" width="80" height="14" uuid="009a6c07-033a-47e8-b343-133435db6375"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_CURR_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="460" y="14" width="80" height="14" uuid="7a37ad4d-b935-42a1-90ff-82c47e295a6b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_UPTO_CURR_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00%" isBlankWhenNull="true">
+					<reportElement x="300" y="28" width="80" height="14" uuid="02021e85-3331-4311-a0ec-e9e249bdcb12"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnUptoPrevMonth}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00%">
+					<reportElement x="380" y="28" width="80" height="14" uuid="81e0eaa0-e40f-4680-9c1b-6eacade6242e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnCurrMonth}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00%">
+					<reportElement x="460" y="28" width="80" height="14" uuid="793f30a5-d58b-468d-ba9b-78334365632b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnUptoCurrMonth}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="19ee85cd-8b05-4ff2-90d6-3743eba33901"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[GROSS MARGIN]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="300" height="14" uuid="aa394d13-1d72-4e56-b540-e60a657322b1"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="0" width="80" height="14" uuid="357a3dc8-e476-418a-9db1-ddb255c97ff4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="380" y="0" width="80" height="14" uuid="1f263b6b-c14e-483d-964e-be5328d674fa"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="460" y="0" width="80" height="14" uuid="7998c0cc-2dd9-4eef-9e7a-4db54b343ebf"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="300" height="14" uuid="264d3818-6746-45ec-ba2e-f77e99af6854"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="42" width="300" height="14" uuid="2bf052d3-3c68-4e57-89a3-504a14dd3b91"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{MAIN_GRP}.equals( "B" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="908ab5cb-7019-43a9-b419-a56e197ba4c7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="300" height="14" uuid="7619d42e-6433-42ab-913f-61035451c10e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="126" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="300" y="56" width="160" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="300" height="14" uuid="2416e567-b590-46cd-b14e-f9281133ba81"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak Pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="b3e39015-60b7-4554-84b0-56f951c68c37"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04061) Gross Sales Margin]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="300" height="14" uuid="4eb2c989-0b8b-464e-9e93-b047e47ba9df"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Current Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="300" height="14" uuid="c2958fed-a0e5-405b-876d-a86598f384bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="460" y="28" width="80" height="14" uuid="e2c01df6-3d02-4a09-835c-4f47a195324f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="300" height="14" uuid="632771e1-0b93-4533-acf6-3b301e7923bc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Customer dgn Amount >= :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="300" y="28" width="80" height="14" uuid="d4fbb64b-cadc-4a25-a1cd-46de3274b7fe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="f5ed5cd0-3c95-4cf4-9f5f-f0e2afb510a4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="300" height="14" uuid="0b6206ef-38a4-44ca-bc50-82b09bac0760"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Amount in Million (1,000,000 IDR)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="300" height="14" uuid="144c7558-ecba-4c1c-bd05-cc755f25dd5a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="28" width="80" height="14" uuid="44804861-3a07-40ed-b72d-086a3ad01d14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="42" width="80" height="14" uuid="ad3ced75-1d46-4b76-aa96-2ac9bd1cc073"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{ParamValue}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="300" height="14" uuid="7ad8a806-dfff-4d13-9bdb-44d4c8d28b5f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="300" height="14" uuid="ac6d2840-d809-4498-8238-869b81fa1258"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{GROUP_DESC}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="80" height="14" uuid="67957301-b8a6-4200-8cad-84c2a2e3e4f1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UPTO_PREV_MONTH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="380" y="0" width="80" height="14" uuid="dbe3544d-bf21-4200-96b4-5e97ef98e05c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CURR_MONTH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="460" y="0" width="80" height="14" uuid="53ab1c9f-0168-4b95-92ae-8d9dafb155d9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UPTO_CURR_MONTH}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="25" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="642" height="25" uuid="973fba6d-82ba-414c-9f53-2bc62001fa60"/>
+				<subreportParameter name="PeriodeFrom">
+					<subreportParameterExpression><![CDATA[$P{PeriodeFrom}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="PeriodeUpto">
+					<subreportParameterExpression><![CDATA[$P{PeriodeUpto}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Cabang">
+					<subreportParameterExpression><![CDATA[$P{Cabang}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="ParamValue">
+					<subreportParameterExpression><![CDATA[$P{ParamValue}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="PeriodeFromAwalTahun">
+					<subreportParameterExpression><![CDATA[$P{PeriodeFromAwalTahun}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "04061_LapGrossSalesMargin_SUB.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+</jasperReport>

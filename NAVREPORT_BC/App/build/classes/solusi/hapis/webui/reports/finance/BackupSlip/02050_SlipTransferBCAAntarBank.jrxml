@@ -1,0 +1,995 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02050_SlipTransferBCAAntarBank" language="groovy" pageWidth="612" pageHeight="510" whenNoDataType="NoDataSection" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.4641000000000497"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="2147"/>
+	<parameter name="T03CsId" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JenisCetak" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	XOX.*
+		, (XOX.JML_DIKIRIM_IDR + XOX.PROVISI_IDR + XOX.BIAYA_CHARGE_IDR) AS JUMLAH
+		, '# '+FORMAT((XOX.JML_DIKIRIM_IDR + XOX.PROVISI_IDR + XOX.BIAYA_CHARGE_IDR),'#,###')+ ' #' AS JUMLAH_DI_CEK
+		, (SELECT [NavBI].[dbo].terbilang( (XOX.JML_DIKIRIM_IDR + XOX.PROVISI_IDR + XOX.BIAYA_CHARGE_IDR))) AS TERBILANG
+		, (XOX.JML_DIKIRIM_IDR + XOX.PROVISI_IDR + XOX.BIAYA_CHARGE_IDR) AS SUMBER_DANA_CEK
+		, '# '+ XOX.BANK_CURR + ' '+ FORMAT((XOX.JML_DIKIRIM_VAL + XOX.PROVISI_VAL + XOX.BIAYA_CHARGE_VAL),'#,###.00')+ ' #' AS JUMLAH_DI_CEK_VAL
+		, (SELECT [NavBI].[dbo].terbilang_2( (XOX.JML_DIKIRIM_VAL + XOX.PROVISI_VAL + XOX.BIAYA_CHARGE_VAL), XOX.BANK_CURR)) AS TERBILANG_VAL
+
+FROM	(
+			SELECT	XO.*
+					, CASE WHEN XO.JENIS_TRANS = 'USD-USD' THEN (XO.AMOUNT - (XO.[PROVISI_USD_TO_USD]+XO.[CHARGE_USD_TO_USD]))
+							WHEN XO.JENIS_TRANS = 'IDR-USD' THEN ((XO.AMOUNT - (XO.[PROVISI_IDR_TO_USD]*XO.[KURS]) - XO.[CHARGE_IDR_TO_USD]) / XO.[KURS])
+							WHEN XO.JENIS_TRANS = 'IDR-USD BCA' THEN (XO.AMOUNT /  XO.[KURS])
+							ELSE 0
+						END AS JML_DIKIRIM_VAL
+					, CASE	WHEN XO.JENIS_TRANS = 'USD-USD' THEN ROUND(((XO.AMOUNT - (XO.[PROVISI_USD_TO_USD]+XO.[CHARGE_USD_TO_USD])) * XO.[KURS]),0)
+							WHEN XO.JENIS_TRANS = 'IDR-USD' THEN (XO.AMOUNT - (XO.[PROVISI_IDR_TO_USD]*XO.[KURS]) - XO.[CHARGE_IDR_TO_USD])
+							WHEN XO.JENIS_TRANS = 'IDR-USD BCA' THEN XO.AMOUNT
+							WHEN XO.JENIS_TRANS = 'IDR-IDR NON BCA' THEN XO.AMOUNT - (CASE WHEN XO.AMOUNT < 500000000 THEN XO.[PROVISI_IDR_TO_IDR_NONBCA_BAWAH] ELSE XO.[PROVISI_IDR_TO_IDR_NONBCA_ATAS] END)
+							WHEN XO.JENIS_TRANS = 'IDR-IDR BCA' THEN XO.AMOUNT
+							WHEN XO.JENIS_TRANS = 'CASH' THEN XO.AMOUNT
+							ELSE 0
+						END AS JML_DIKIRIM_IDR
+					, CASE	WHEN XO.JENIS_TRANS = 'USD-USD' THEN XO.[PROVISI_USD_TO_USD]
+							WHEN XO.JENIS_TRANS = 'IDR-USD' THEN XO.[PROVISI_IDR_TO_USD]
+							WHEN XO.JENIS_TRANS = 'IDR-USD BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR NON BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR BCA' THEN 0
+							ELSE 0
+						END AS PROVISI_VAL
+					, CASE	WHEN XO.JENIS_TRANS = 'USD-USD' THEN (XO.[PROVISI_USD_TO_USD] * XO.[KURS])
+							WHEN XO.JENIS_TRANS = 'IDR-USD' THEN (XO.[PROVISI_IDR_TO_USD] * XO.[KURS])
+							WHEN XO.JENIS_TRANS = 'IDR-USD BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR NON BCA' THEN (CASE WHEN XO.AMOUNT < 500000000 THEN XO.[PROVISI_IDR_TO_IDR_NONBCA_BAWAH] ELSE XO.[PROVISI_IDR_TO_IDR_NONBCA_ATAS] END)
+							WHEN XO.JENIS_TRANS = 'IDR-IDR BCA' THEN 0
+							ELSE 0
+						END AS PROVISI_IDR
+					, CASE	WHEN XO.JENIS_TRANS = 'USD-USD' THEN XO.[CHARGE_USD_TO_USD]
+							WHEN XO.JENIS_TRANS = 'IDR-USD' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-USD BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR NON BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR BCA' THEN 0
+							ELSE 0
+						END AS BIAYA_CHARGE_VAL
+					, CASE	WHEN XO.JENIS_TRANS = 'USD-USD' THEN (XO.[CHARGE_USD_TO_USD] * XO.[KURS])
+							WHEN XO.JENIS_TRANS = 'IDR-USD' THEN XO.[CHARGE_IDR_TO_USD]
+							WHEN XO.JENIS_TRANS = 'IDR-USD BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR NON BCA' THEN 0
+							WHEN XO.JENIS_TRANS = 'IDR-IDR BCA' THEN 0
+							ELSE 0
+						END AS BIAYA_CHARGE_IDR
+			FROM	(
+						SELECT	X.*
+								,	CASE WHEN X.TIPE_TRANS = 'CASH' THEN 'CASH' ELSE
+										CASE WHEN X.BANK_CURR = 'USD' THEN
+											CASE WHEN X.TRANS_CURR ='USD' THEN 'USD-USD' ELSE 'NON' END
+										ELSE
+											CASE WHEN X.BANK_CURR = 'IDR' THEN
+												CASE WHEN X.TRANS_CURR ='USD' THEN
+													CASE WHEN X.NAMA_BANK = 'BCA' THEN 'IDR-USD BCA' ELSE'IDR-USD' END
+												ELSE
+													CASE WHEN X.TRANS_CURR = 'IDR' THEN
+														CASE WHEN X.NAMA_BANK = 'BCA' THEN 'IDR-IDR BCA'
+														ELSE
+															'IDR-IDR NON BCA'
+														END
+													ELSE
+														'NON'
+													END
+												END
+											ELSE
+												'NON'
+											END
+										END
+									 END AS JENIS_TRANS
+						FROM	(
+									SELECT	T03.[T03_CS_ID]
+											, SUBSTRING(CONVERT(varchar, TRS.TGL_TRANS, 105),1,2) COLLATE Latin1_General_CI_AS AS TGL
+											, SUBSTRING(CONVERT(varchar, TRS.TGL_TRANS, 105),4,2) COLLATE Latin1_General_CI_AS AS BULAN
+											, SUBSTRING(CONVERT(varchar, TRS.TGL_TRANS, 105),7,4) COLLATE Latin1_General_CI_AS AS TAHUN
+											, SUBSTRING(CONVERT(varchar, TRS.TGL_TRANS, 105),9,2) COLLATE Latin1_General_CI_AS AS TAHUN_2D
+											, CONVERT(varchar, TRS.TGL_TRANS, 105) COLLATE Latin1_General_CI_AS AS TGL_TRANS
+											, T03.[COMPANY]
+											, T03.[NO_VOUCHER] AS VOUCHER_NO
+											, TRS.BANK_CODE
+											, TRS.BANK_CURR
+											, TRS.BANK_ACC_NO
+											, TRS.NAMA_PENGIRIM
+											, TRS.NO_ID
+											, TRS.ALAMAT_BARIS1
+											, TRS.ALAMAT_BARIS2
+											, TRS.KOTA
+											, TRS.KODE_POS
+											, TRS.PHONE_NO
+											, P01.NAMA_PIC
+											, P01.HP_PIC
+											, T03.[NO_CHEQUE] AS CHEQUE_NO
+											, T03.[BERITA]
+											, T03.JENIS_TRANS AS TIPE_TRANS
+											, CASE  WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.TRANS_CURR
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.[VALUTA_TRANS] COLLATE Latin1_General_CI_AS
+													ELSE 'IDR' END AS TRANS_CURR
+											, CASE  WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.NO_REK_PENERIMA
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.NO_REK_PENERIMA COLLATE Latin1_General_CI_AS
+													ELSE '' END AS NO_REK_PENERIMA
+											, CASE WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.NAMA_PENERIMA ELSE T03.NAMA_PENERIMA COLLATE Latin1_General_CI_AS END AS NAMA_PENERIMA
+											, CASE  WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.ALAMAT_PENERIMA1
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.ALAMAT_PENERIMA1 COLLATE Latin1_General_CI_AS
+													ELSE '' END AS ALAMAT_PENERIMA1
+											, CASE WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.ALAMAT_PENERIMA2
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.ALAMAT_PENERIMA2 COLLATE Latin1_General_CI_AS
+													ELSE '' END AS ALAMAT_PENERIMA2
+											, CASE WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.COUNTRY_PENERIMA
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.COUNTRY_PENERIMA COLLATE Latin1_General_CI_AS
+													ELSE '' END AS COUNTRY_PENERIMA
+											, CASE	WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.NAMA_BANK
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.NAMA_BANK COLLATE Latin1_General_CI_AS
+													ELSE '' END AS NAMA_BANK
+											, CASE	WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.ALAMAT_BANK1
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.ALAMAT_BANK1 COLLATE Latin1_General_CI_AS
+													ELSE '' END AS ALAMAT_BANK1
+											, CASE	WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.ALAMAT_BANK2
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.ALAMAT_BANK2 COLLATE Latin1_General_CI_AS
+													ELSE '' END AS ALAMAT_BANK2
+											, CASE	WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.COUNTRY_BANK
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.COUNTRY_BANK COLLATE Latin1_General_CI_AS
+													ELSE '' END AS COUNTRY_BANK
+											, CASE	WHEN T03.JENIS_TRANS = 'VR-NAV' THEN TRS.SWIFT_CODE
+													WHEN T03.JENIS_TRANS = 'VR-NNAV' THEN T03.SWIFT_CODE COLLATE Latin1_General_CI_AS
+													ELSE '' END AS SWIFT_CODE
+											, T03.[KURS]
+											, TRS.AMOUNT
+											, P01.[PROVISI_USD_TO_USD]
+											, P01.[CHARGE_USD_TO_USD]
+											, P01.[PROVISI_IDR_TO_USD]
+											, P01.[CHARGE_IDR_TO_USD]
+											, P01.[PROVISI_IDR_TO_IDR_NONBCA_BAWAH]
+											, P01.[PROVISI_IDR_TO_IDR_NONBCA_ATAS]
+									FROM [NavBI].[dbo].[T03_CETAK_SLIP] T03
+									LEFT JOIN  [NavBI].[dbo].[P01_BIAYA_TRANS] P01 ON P01.KODE = '01'
+									INNER JOIN	(
+													SELECT	'AUTOJAYA' AS COMPANY
+															, BA.TGL_TRANS
+															, BA.VOUCHER_NO
+															, BA.BANK_CODE
+															, CASE WHEN BACC.[Currency Code] = '' THEN 'IDR' ELSE BACC.[Currency Code] END AS BANK_CURR
+															, BACC.[Bank Account No_] AS BANK_ACC_NO
+															, SUBSTRING(CI.[Name], LEN(CI.[Name])-1,2) + '. '+SUBSTRING(CI.[Name], 1, LEN(CI.[Name])-4) AS NAMA_PENGIRIM
+															, CI.[VAT Registration No_] AS NO_ID
+															, CI.[Address] AS ALAMAT_BARIS1
+															, CI.[Address 2] AS ALAMAT_BARIS2
+															, SUBSTRING(CI.[County], LEN(CI.[County])-6,7) AS KOTA
+															, CI.[Post Code] AS KODE_POS
+															, CI.[Phone No_] AS PHONE_NO
+															, CASE WHEN VR.TRANS_CURR = '' THEN 'IDR' ELSE VR.TRANS_CURR END AS TRANS_CURR
+															, VR.NO_REK_PENERIMA
+															, VR.NAMA_PENERIMA
+															, VR.ALAMAT_PENERIMA1
+															, VR.ALAMAT_PENERIMA2
+															, VR.COUNTRY_PENERIMA_ID
+															, VR.COUNTRY_PENERIMA
+															, VR.NAMA_BANK
+															, VR.ALAMAT_BANK1
+															, VR.ALAMAT_BANK2
+															, VR.COUNTRY_BANK_ID
+															, VR.COUNTRY_BANK
+															, VR.SWIFT_CODE
+															, BA.AMOUNT
+													FROM	(
+																SELECT	BAC.TGL_TRANS
+																		, BAC.VOUCHER_NO
+																		, BAC.BANK_CODE
+																		, BAC.AMOUNT
+																FROM	(
+																			SELECT	[Posting Date] AS TGL_TRANS
+																					,[Document No_] AS VOUCHER_NO
+																					,[Account No_] AS BANK_CODE
+																					,SUM([Amount]) * -1 AS AMOUNT
+																			FROM [dbo].[AUTOJAYA$Gen_ Journal Line]
+																			WHERE 	[Account Type] = 3 AND
+																					[Journal Template Name] ='PAYMENT'
+																			GROUP BY [Document No_], [Account No_], [Posting Date]
+																			UNION ALL
+																			SELECT	[Posting Date] AS TGL_TRANS
+																					,[Document No_] AS VOUCHER_NO
+																					,[Bank Account No_] AS BANK_CODE
+																					,[Amount] * -1 AS AMOUNT
+																			FROM [dbo].[AUTOJAYA$Bank Account Ledger Entry]
+																		) BAC
+															) BA
+													LEFT JOIN	(
+																	SELECT	VTR.VOUCHER_NO
+																			, VTR.TRANS_CURR
+																			, VTR.NO_REK_PENERIMA
+																			, VTR.NAMA_PENERIMA
+																			, VTR.ALAMAT_PENERIMA1
+																			, VTR.ALAMAT_PENERIMA2
+																			, VTR.COUNTRY_PENERIMA_ID
+																			, CRP.[Name] AS COUNTRY_PENERIMA
+																			, VTR.NAMA_BANK
+																			, VTR.ALAMAT_BANK1
+																			, VTR.ALAMAT_BANK2
+																			, VTR.COUNTRY_BANK_ID
+																			, CRB.[Name] AS COUNTRY_BANK
+																			, VTR.SWIFT_CODE
+																	FROM	(
+																				SELECT	VT.VOUCHER_NO
+																						, VT.CURR_CODE AS TRANS_CURR
+																						,	CASE WHEN VBA.[Code] = 'IDR' THEN
+																								VBA.[Bank Account No_]
+																							ELSE
+																								VBA.[Bank Account No_] + ' ('+VBA.[Code]+')'
+																							END AS NO_REK_PENERIMA
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Name] ELSE VEN.[Name] END NAMA_PENERIMA
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Address] ELSE VEN.[Address] END ALAMAT_PENERIMA1
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Address 2] ELSE VEN.[Address 2] END ALAMAT_PENERIMA2
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Country_Region Code] ELSE VEN.[Country_Region Code] END COUNTRY_PENERIMA_ID
+																						, VBA.[Name] AS NAMA_BANK
+																						, VBA.[Address] AS ALAMAT_BANK1
+																						, VBA.[Address 2] AS ALAMAT_BANK2
+																						, VBA.[Country_Region Code] AS COUNTRY_BANK_ID
+																						, 'SWIFTCODE : '+VBA.[SWIFT Code] AS SWIFT_CODE
+																				FROM	(
+																							SELECT	[Document No_] AS VOUCHER_NO
+																									, MAX([Account No_]) AS SUPP_CODE
+																									, MAX([Currency Code]) AS CURR_CODE
+																							FROM	[dbo].[AUTOJAYA$Gen_ Journal Line]
+																							WHERE 	[Account Type] = 2 AND
+																									[Journal Template Name] ='PAYMENT' AND
+																									[Account No_] <> ''
+																							GROUP BY [Document No_]
+																							UNION ALL
+																							SELECT	[Document No_] AS VOUCHER_NO
+																									,MAX([Vendor No_]) AS SUPP_CODE
+																									,MAX([Currency Code]) AS CURR_CODE
+																							FROM [dbo].[AUTOJAYA$Vendor Ledger Entry]
+																							WHERE [Document Type] IN (0,1)
+																							GROUP BY [Document No_]
+																						) VT
+																				LEFT JOIN [dbo].[AUTOJAYA$Vendor Bank Account] VON ON VON.[Vendor No_] = VT.SUPP_CODE AND VON.Code = (VT.SUPP_CODE+'-'+CASE WHEN VT.CURR_CODE='' THEN 'IDR' ELSE VT.CURR_CODE END)
+																				LEFT JOIN [dbo].[AUTOJAYA$Vendor] VEN ON VEN.[No_] = VT.SUPP_CODE
+																				LEFT JOIN [dbo].[AUTOJAYA$Vendor Bank Account] VBA ON VBA.[Vendor No_] = VT.SUPP_CODE AND VBA.[Code] = CASE WHEN VT.CURR_CODE='' THEN 'IDR' ELSE VT.CURR_CODE END
+																			) VTR
+																	LEFT JOIN [dbo].[AUTOJAYA$Country_Region] CRP ON CRP.[Code] = VTR.COUNTRY_PENERIMA_ID
+																	LEFT JOIN [dbo].[AUTOJAYA$Country_Region] CRB ON CRB.[Code] = VTR.COUNTRY_BANK_ID
+																) VR ON VR.VOUCHER_NO = BA.VOUCHER_NO
+													LEFT JOIN [dbo].[AUTOJAYA$Bank Account] BACC ON BACC.[No_] = BA.BANK_CODE
+													LEFT JOIN [dbo].[AUTOJAYA$Company Information] CI ON 1=1
+													UNION ALL
+													SELECT	'SOLUSI' AS COMPANY
+															, BA.TGL_TRANS
+															, BA.VOUCHER_NO
+															, BA.BANK_CODE
+															, CASE WHEN BACC.[Currency Code] = '' THEN 'IDR' ELSE BACC.[Currency Code] END AS BANK_CURR
+															, BACC.[Bank Account No_] AS BANK_ACC_NO
+															, SUBSTRING(CI.[Name], LEN(CI.[Name])-1,2) + '. '+SUBSTRING(CI.[Name], 1, LEN(CI.[Name])-4) AS NAMA_PENGIRIM
+															, CI.[VAT Registration No_] AS NO_ID
+															, CI.[Address] AS ALAMAT_BARIS1
+															, CI.[Address 2] AS ALAMAT_BARIS2
+															, SUBSTRING(CI.[County], LEN(CI.[County])-6,7) AS KOTA
+															, CI.[Post Code] AS KODE_POS
+															, CI.[Phone No_] AS PHONE_NO
+															, CASE WHEN VR.TRANS_CURR = '' THEN 'IDR' ELSE VR.TRANS_CURR END AS TRANS_CURR
+															, VR.NO_REK_PENERIMA
+															, VR.NAMA_PENERIMA
+															, VR.ALAMAT_PENERIMA1
+															, VR.ALAMAT_PENERIMA2
+															, VR.COUNTRY_PENERIMA_ID
+															, VR.COUNTRY_PENERIMA
+															, VR.NAMA_BANK
+															, VR.ALAMAT_BANK1
+															, VR.ALAMAT_BANK2
+															, VR.COUNTRY_BANK_ID
+															, VR.COUNTRY_BANK
+															, VR.SWIFT_CODE
+															, BA.AMOUNT
+													FROM	(
+																SELECT	BAC.TGL_TRANS
+																		, BAC.VOUCHER_NO
+																		, BAC.BANK_CODE
+																		, BAC.AMOUNT
+																FROM	(
+																			SELECT	[Posting Date] AS TGL_TRANS
+																					,[Document No_] AS VOUCHER_NO
+																					,[Account No_] AS BANK_CODE
+																					,SUM([Amount]) * -1 AS AMOUNT
+																			FROM [dbo].[SOLUSI$Gen_ Journal Line]
+																			WHERE 	[Account Type] = 3 AND
+																					[Journal Template Name] ='PAYMENT'
+																			GROUP BY [Document No_], [Account No_], [Posting Date]
+																			UNION ALL
+																			SELECT	[Posting Date] AS TGL_TRANS
+																					,[Document No_] AS VOUCHER_NO
+																					,[Bank Account No_] AS BANK_CODE
+																					,[Amount] * -1 AS AMOUNT
+																			FROM [dbo].[SOLUSI$Bank Account Ledger Entry]
+																		) BAC
+															) BA
+													LEFT JOIN	(
+																	SELECT	VTR.VOUCHER_NO
+																			, VTR.TRANS_CURR
+																			, VTR.NO_REK_PENERIMA
+																			, VTR.NAMA_PENERIMA
+																			, VTR.ALAMAT_PENERIMA1
+																			, VTR.ALAMAT_PENERIMA2
+																			, VTR.COUNTRY_PENERIMA_ID
+																			, CRP.[Name] AS COUNTRY_PENERIMA
+																			, VTR.NAMA_BANK
+																			, VTR.ALAMAT_BANK1
+																			, VTR.ALAMAT_BANK2
+																			, VTR.COUNTRY_BANK_ID
+																			, CRB.[Name] AS COUNTRY_BANK
+																			, VTR.SWIFT_CODE
+																	FROM	(
+																				SELECT	VT.VOUCHER_NO
+																						, VT.CURR_CODE AS TRANS_CURR
+																						,	CASE WHEN VBA.[Code] = 'IDR' THEN
+																								VBA.[Bank Account No_]
+																							ELSE
+																								VBA.[Bank Account No_] + ' ('+VBA.[Code]+')'
+																							END AS NO_REK_PENERIMA
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Name] ELSE VEN.[Name] END NAMA_PENERIMA
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Address] ELSE VEN.[Address] END ALAMAT_PENERIMA1
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Address 2] ELSE VEN.[Address 2] END ALAMAT_PENERIMA2
+																						, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Country_Region Code] ELSE VEN.[Country_Region Code] END COUNTRY_PENERIMA_ID
+																						, VBA.[Name] AS NAMA_BANK
+																						, VBA.[Address] AS ALAMAT_BANK1
+																						, VBA.[Address 2] AS ALAMAT_BANK2
+																						, VBA.[Country_Region Code] AS COUNTRY_BANK_ID
+																						, 'SWIFTCODE : '+VBA.[SWIFT Code] AS SWIFT_CODE
+																				FROM	(
+																							SELECT	[Document No_] AS VOUCHER_NO
+																									, MAX([Account No_]) AS SUPP_CODE
+																									, MAX([Currency Code]) AS CURR_CODE
+																							FROM	[dbo].[SOLUSI$Gen_ Journal Line]
+																							WHERE 	[Account Type] = 2 AND
+																									[Journal Template Name] ='PAYMENT' AND
+																									[Account No_] <> ''
+																							GROUP BY [Document No_]
+																							UNION ALL
+																							SELECT	[Document No_] AS VOUCHER_NO
+																									,MAX([Vendor No_]) AS SUPP_CODE
+																									,MAX([Currency Code]) AS CURR_CODE
+																							FROM [dbo].[SOLUSI$Vendor Ledger Entry]
+																							WHERE [Document Type] IN (0,1)
+																							GROUP BY [Document No_]
+																						) VT
+																				LEFT JOIN [dbo].[AUTOJAYA$Vendor Bank Account] VON ON VON.[Vendor No_] = VT.SUPP_CODE AND VON.Code = (VT.SUPP_CODE+'-'+CASE WHEN VT.CURR_CODE='' THEN 'IDR' ELSE VT.CURR_CODE END)
+																				LEFT JOIN [dbo].[AUTOJAYA$Vendor] VEN ON VEN.[No_] = VT.SUPP_CODE
+																				LEFT JOIN [dbo].[AUTOJAYA$Vendor Bank Account] VBA ON VBA.[Vendor No_] = VT.SUPP_CODE AND VBA.[Code] = CASE WHEN VT.CURR_CODE='' THEN 'IDR' ELSE VT.CURR_CODE END
+																			) VTR
+																	LEFT JOIN [dbo].[AUTOJAYA$Country_Region] CRP ON CRP.[Code] = VTR.COUNTRY_PENERIMA_ID
+																	LEFT JOIN [dbo].[AUTOJAYA$Country_Region] CRB ON CRB.[Code] = VTR.COUNTRY_BANK_ID
+																) VR ON VR.VOUCHER_NO = BA.VOUCHER_NO
+													LEFT JOIN [dbo].[SOLUSI$Bank Account] BACC ON BACC.[No_] = BA.BANK_CODE
+													LEFT JOIN [dbo].[SOLUSI$Company Information] CI ON 1=1
+												) TRS ON TRS.COMPANY = T03.COMPANY AND TRS.VOUCHER_NO = T03.NO_VOUCHER  COLLATE Latin1_General_CI_AS
+								) X
+					) XO
+		) XOX
+WHERE XOX.T03_CS_ID =  $P{T03CsId}]]>
+	</queryString>
+	<field name="T03_CS_ID" class="java.lang.Long"/>
+	<field name="TGL" class="java.lang.String"/>
+	<field name="BULAN" class="java.lang.String"/>
+	<field name="TAHUN" class="java.lang.String"/>
+	<field name="TAHUN_2D" class="java.lang.String"/>
+	<field name="TGL_TRANS" class="java.lang.String"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="VOUCHER_NO" class="java.lang.String"/>
+	<field name="BANK_CODE" class="java.lang.String"/>
+	<field name="BANK_CURR" class="java.lang.String"/>
+	<field name="BANK_ACC_NO" class="java.lang.String"/>
+	<field name="NAMA_PENGIRIM" class="java.lang.String"/>
+	<field name="NO_ID" class="java.lang.String"/>
+	<field name="ALAMAT_BARIS1" class="java.lang.String"/>
+	<field name="ALAMAT_BARIS2" class="java.lang.String"/>
+	<field name="KOTA" class="java.lang.String"/>
+	<field name="KODE_POS" class="java.lang.String"/>
+	<field name="PHONE_NO" class="java.lang.String"/>
+	<field name="NAMA_PIC" class="java.lang.String"/>
+	<field name="HP_PIC" class="java.lang.String"/>
+	<field name="CHEQUE_NO" class="java.lang.String"/>
+	<field name="BERITA" class="java.lang.String"/>
+	<field name="TIPE_TRANS" class="java.lang.String"/>
+	<field name="TRANS_CURR" class="java.lang.String"/>
+	<field name="NO_REK_PENERIMA" class="java.lang.String"/>
+	<field name="NAMA_PENERIMA" class="java.lang.String"/>
+	<field name="ALAMAT_PENERIMA1" class="java.lang.String"/>
+	<field name="ALAMAT_PENERIMA2" class="java.lang.String"/>
+	<field name="COUNTRY_PENERIMA" class="java.lang.String"/>
+	<field name="NAMA_BANK" class="java.lang.String"/>
+	<field name="ALAMAT_BANK1" class="java.lang.String"/>
+	<field name="ALAMAT_BANK2" class="java.lang.String"/>
+	<field name="COUNTRY_BANK" class="java.lang.String"/>
+	<field name="SWIFT_CODE" class="java.lang.String"/>
+	<field name="KURS" class="java.math.BigDecimal"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="PROVISI_USD_TO_USD" class="java.math.BigDecimal"/>
+	<field name="CHARGE_USD_TO_USD" class="java.math.BigDecimal"/>
+	<field name="PROVISI_IDR_TO_USD" class="java.math.BigDecimal"/>
+	<field name="CHARGE_IDR_TO_USD" class="java.math.BigDecimal"/>
+	<field name="PROVISI_IDR_TO_IDR_NONBCA_BAWAH" class="java.math.BigDecimal"/>
+	<field name="PROVISI_IDR_TO_IDR_NONBCA_ATAS" class="java.math.BigDecimal"/>
+	<field name="JENIS_TRANS" class="java.lang.String"/>
+	<field name="JML_DIKIRIM_VAL" class="java.math.BigDecimal"/>
+	<field name="JML_DIKIRIM_IDR" class="java.math.BigDecimal"/>
+	<field name="PROVISI_VAL" class="java.math.BigDecimal"/>
+	<field name="PROVISI_IDR" class="java.math.BigDecimal"/>
+	<field name="BIAYA_CHARGE_VAL" class="java.math.BigDecimal"/>
+	<field name="BIAYA_CHARGE_IDR" class="java.math.BigDecimal"/>
+	<field name="JUMLAH" class="java.math.BigDecimal"/>
+	<field name="JUMLAH_DI_CEK" class="java.lang.String"/>
+	<field name="TERBILANG" class="java.lang.String"/>
+	<field name="SUMBER_DANA_CEK" class="java.math.BigDecimal"/>
+	<field name="JUMLAH_DI_CEK_VAL" class="java.lang.String"/>
+	<field name="TERBILANG_VAL" class="java.lang.String"/>
+	<variable name="valDikirim" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $F{JENIS_TRANS}.equals( "IDR-USD" ) ? $F{JML_DIKIRIM_IDR}/$F{KURS} : $F{JML_DIKIRIM_VAL} )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $F{JENIS_TRANS}.equals( "IDR-USD" ) ? $F{JML_DIKIRIM_IDR}/$F{KURS} : $F{JML_DIKIRIM_VAL} )]]></initialValueExpression>
+	</variable>
+	<detail>
+		<band height="510">
+			<printWhenExpression><![CDATA[(
+	$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+	$F{JENIS_TRANS}.equals( "IDR-USD" ) == true ||
+	$F{JENIS_TRANS}.equals( "IDR-IDR NON BCA" ) == true
+) &&
+$P{JenisCetak}.equals( "SLIP" ) == true]]></printWhenExpression>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="341" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="b51e22ac-1667-4da0-8351-9499ff665138"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK_ACC_NO}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="101" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="7055d445-9e47-47c5-a493-fdb25b4d602c"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_REK_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="102" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="50a2a49e-14c7-48d5-a01f-40c37d390947"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_BANK}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="115" width="215" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="b450b32d-6b3a-436e-a6cc-ac302ab00afe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="129" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="1d3038f6-af85-4126-b7d7-49800c497a27"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_PENERIMA1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="143" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="6a635779-5228-40b5-8229-26261aae9b24"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_PENERIMA2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="196" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="26b925fb-0f58-4dcc-a942-b48018039c52"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COUNTRY_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="116" width="215" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="9b840aec-5c41-4265-8301-48db53a2a167"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_BANK1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="130" width="215" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="49a09f16-2e57-401e-ada4-54edf5c31bf3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_BANK2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="159" width="215" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="9fe0f88e-e483-4b20-bdb6-14a16843749e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COUNTRY_BANK}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="173" width="215" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="bc877cf4-3fb0-4f0e-920e-2c4365faba8c"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SWIFT_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="233" width="180" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="db8d50c9-d234-4458-878f-e70e835b7d0d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PENGIRIM}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="244" width="180" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="ef9dcbd9-ed1d-4aec-ac02-559c416acd6a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ID}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="255" width="180" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="c708457f-5e6c-44f6-8350-a0b56ff383fe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_BARIS2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="266" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="9a95503e-2ca1-43c8-95d5-779b16c9f943"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PIC}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="280" width="96" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="8d087cbd-5d62-43f7-b69a-c63687b517d6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{HP_PIC}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="211" y="280" width="84" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="631dabd9-5f0e-43f4-b040-13a70ac23a96"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PHONE_NO}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="115" y="294" width="96" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="1d6f59cb-19c7-405f-8593-49ed71b9e0bc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KOTA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="211" y="294" width="84" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="7b7ee595-f006-4acd-ae5e-e9f6a708cdf3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KODE_POS}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="35" y="472" width="308" height="28" isPrintWhenDetailOverflows="true" uuid="22d9e0f6-ff81-4f67-b74d-b0516eaddd59"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TERBILANG}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="110" y="422" width="26" height="11" isPrintWhenDetailOverflows="true" uuid="ec04c1b9-9106-4ff4-8d27-542664246e64">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+$F{JENIS_TRANS}.equals( "IDR-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[USD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="110" y="433" width="26" height="11" isPrintWhenDetailOverflows="true" uuid="58dd7ce8-e16a-4b55-8ea7-3330fd9acb3f">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+$F{JENIS_TRANS}.equals( "IDR-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[USD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="110" y="444" width="26" height="11" isPrintWhenDetailOverflows="true" uuid="c7f1dff1-dc37-4ccd-bd4a-1a9f8c7ba620">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[USD]]></text>
+			</staticText>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="136" y="433" width="80" height="11" isPrintWhenDetailOverflows="true" uuid="9fbadc08-c1dc-4a65-a7d5-01ca090265e9">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+$F{JENIS_TRANS}.equals( "IDR-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PROVISI_VAL}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="136" y="444" width="80" height="11" isPrintWhenDetailOverflows="true" uuid="fa8af52a-2b8e-4fff-81f2-a92a28d03e36">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BIAYA_CHARGE_VAL}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="216" y="422" width="42" height="11" isPrintWhenDetailOverflows="true" uuid="a5646377-af7f-45f2-8ace-ec66139712d3">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+$F{JENIS_TRANS}.equals( "IDR-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KURS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="216" y="433" width="42" height="11" isPrintWhenDetailOverflows="true" uuid="001b2e2b-44f0-479b-8431-ec6c17ea2411">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+$F{JENIS_TRANS}.equals( "IDR-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KURS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="216" y="444" width="42" height="11" isPrintWhenDetailOverflows="true" uuid="6e875fd2-f954-4d47-ad75-966470ef87ae">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KURS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="258" y="422" width="80" height="11" isPrintWhenDetailOverflows="true" uuid="33567d33-247a-4010-aca3-5e9aba49109f"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_DIKIRIM_IDR}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="258" y="433" width="80" height="11" isPrintWhenDetailOverflows="true" uuid="c2737199-7812-40a9-90f5-20b81b111549"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PROVISI_IDR}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="258" y="444" width="80" height="11" isPrintWhenDetailOverflows="true" uuid="bdc97a1b-7953-4ac8-b051-2745b4b2f428"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BIAYA_CHARGE_IDR}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="258" y="455" width="80" height="11" isPrintWhenDetailOverflows="true" uuid="424938b9-5296-46df-97f2-78f2207d0ae0"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="314" y="321" width="14" height="14" isPrintWhenDetailOverflows="true" uuid="dc8b3fde-446c-475b-b66d-6359a8ece3dd">
+					<printWhenExpression><![CDATA[$F{CHEQUE_NO} != null && $F{CHEQUE_NO}.equals( "" )== false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[X]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="420" y="321" width="60" height="14" isPrintWhenDetailOverflows="true" uuid="1d926de2-a442-4feb-89e3-448e12bf9c8d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CHEQUE_NO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="480" y="321" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ab3bcd11-f69a-4cce-9d33-65ef474ea2a3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="257" width="180" height="14" isPrintWhenDetailOverflows="true" uuid="c6bd2078-ebe7-4811-8a5e-281f6fd35f88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BERITA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="88" y="68" width="28" height="14" isPrintWhenDetailOverflows="true" uuid="8dccfbea-b751-49f7-b797-7d1349f5dd98"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="126" y="68" width="28" height="14" isPrintWhenDetailOverflows="true" uuid="2397a580-005d-4771-8153-e85afb823c21"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BULAN}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="163" y="68" width="28" height="14" isPrintWhenDetailOverflows="true" uuid="ee1ab0a8-0eb7-475e-8573-c86059cde8ba"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TAHUN_2D}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="136" y="422" width="80" height="11" uuid="c8be7a8b-7a39-4b1b-9570-93ee78377f2b">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true ||
+$F{JENIS_TRANS}.equals( "IDR-USD" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{valDikirim}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="283">
+			<printWhenExpression><![CDATA[(
+    $F{JENIS_TRANS}.equals( "IDR-IDR BCA" ) == true ||
+    $F{JENIS_TRANS}.equals( "IDR-USD BCA" ) == true
+)
+&&
+$P{JenisCetak}.equals( "SLIP" ) == true]]></printWhenExpression>
+			<textField isBlankWhenNull="true">
+				<reportElement x="126" y="79" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="b938f43e-dce4-4f11-b0f8-3c77998b630c"/>
+				<textElement verticalAlignment="Top">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_REK_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="126" y="93" width="180" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="3a4dc96c-4806-45af-8b79-92734c91c787"/>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="130" y="144" width="180" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="0a3557f8-9989-4250-8d19-a185d53c6a5e"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT_BARIS2}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="130" y="133" width="180" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="6f96d922-fab8-497e-ae8d-09a65d450cd3"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PENGIRIM}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="225" y="155" width="84" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="fba1f348-8f62-44d4-a4d3-fcb466a25035"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PHONE_NO}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="225" y="166" width="84" height="11" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="049548da-69a0-4b81-b1db-ac9c70c44a66"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK_ACC_NO}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="310" y="108" width="85" height="11" isPrintWhenDetailOverflows="true" uuid="a40c720b-a75c-4776-980d-c9c5a6ade31d"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CHEQUE_NO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="479" y="108" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="51e63ae5-1bad-46d7-83d9-dc870357eb0b"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="340" y="199" width="215" height="28" isPrintWhenDetailOverflows="true" uuid="120d91d8-0805-4962-99f8-ab9227d7ec89"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TERBILANG}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="130" y="219" width="180" height="14" isPrintWhenDetailOverflows="true" uuid="5bbf1609-0514-46ef-9eb9-2efe69d4828b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BERITA}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="450" y="49" width="20" height="14" isPrintWhenDetailOverflows="true" uuid="4acd633d-a4f7-4acf-bbe1-e9a4345235e9"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="480" y="49" width="20" height="14" isPrintWhenDetailOverflows="true" uuid="a9b74223-4198-4cab-92c0-108617430962"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BULAN}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="510" y="49" width="45" height="14" isPrintWhenDetailOverflows="true" uuid="b00827f6-186b-4279-ab7f-db394a59a919"/>
+				<textElement textAlignment="Justified" verticalAlignment="Top">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TAHUN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="470" y="49" width="10" height="14" isPrintWhenDetailOverflows="true" uuid="4d4fd097-e04f-47ca-972b-cf88032aecb8">
+					<printWhenExpression><![CDATA[$F{CHEQUE_NO} != null && $F{CHEQUE_NO}.equals( "" )== false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="49" width="10" height="14" isPrintWhenDetailOverflows="true" uuid="031d8baa-edc5-4ebe-b149-40115c165e2e">
+					<printWhenExpression><![CDATA[$F{CHEQUE_NO} != null && $F{CHEQUE_NO}.equals( "" )== false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="395" y="108" width="42" height="11" uuid="a5d1224b-1153-433e-bf4b-f79e944d1897">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "IDR-USD BCA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{valDikirim}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="437" y="108" width="42" height="11" isPrintWhenDetailOverflows="true" uuid="94d5a209-6019-4259-9d24-e6be4382eeb6">
+					<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "IDR-USD BCA" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KURS}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="510">
+			<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == false &&
+$P{JenisCetak}.equals( "CEK" ) == true]]></printWhenExpression>
+			<textField isBlankWhenNull="true">
+				<reportElement x="300" y="20" width="80" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="92c3061a-16e9-4b1d-8cb8-31e4d4a6f357"/>
+				<textElement textAlignment="Right">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KOTA}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="380" y="20" width="10" height="14" isPrintWhenDetailOverflows="true" uuid="a2454762-98fa-49ac-9b56-030a2fc8e0dc">
+					<printWhenExpression><![CDATA[$F{CHEQUE_NO} != null && $F{CHEQUE_NO}.equals( "" )== false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[,]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="390" y="20" width="98" height="14" uuid="5ff9740d-2b0c-4a13-9732-b12180ba44bc"/>
+				<textElement>
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_TRANS}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="150" y="49" width="287" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="940f0cb9-55c7-43b6-b2f3-96893abb41fd"/>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="false" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="136" y="72" width="200" height="43" isPrintWhenDetailOverflows="true" uuid="2da71394-305a-4a1c-8305-df04a470136f"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TERBILANG}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="336" y="88" width="114" height="14" isPrintWhenDetailOverflows="true" uuid="521fc40e-0d35-4604-9a1a-b4d87999bdbf"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH_DI_CEK}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="510">
+			<printWhenExpression><![CDATA[$F{JENIS_TRANS}.equals( "USD-USD" ) == true &&
+$P{JenisCetak}.equals( "CEK" ) == true]]></printWhenExpression>
+			<textField isBlankWhenNull="true">
+				<reportElement x="81" y="72" width="370" height="28" isPrintWhenDetailOverflows="true" uuid="faca83b0-1134-4b67-aa6b-df85806d92ea"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TERBILANG_VAL}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="256" y="56" width="195" height="14" isPrintWhenDetailOverflows="true" uuid="923c2f9c-4b2a-456b-b7b1-b1f562672be2"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH_DI_CEK_VAL}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="333" y="102" width="80" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="9d1c51dd-9016-4773-b920-eebcbdeaaa43"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KOTA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="420" y="102" width="20" height="14" isPrintWhenDetailOverflows="true" uuid="6f89de63-106c-463c-9f33-b971ac7ec490"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="473" y="102" width="28" height="14" isPrintWhenDetailOverflows="true" uuid="701ff639-1deb-44a2-a2f9-06c5872dd452"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TAHUN_2D}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="447" y="102" width="20" height="14" isPrintWhenDetailOverflows="true" uuid="fdb607e5-44a4-430c-ae06-f736d56b0adc"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BULAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="413" y="102" width="7" height="14" isPrintWhenDetailOverflows="true" uuid="12984f3a-ee02-4643-b3ce-f0cc6ac4008d">
+					<printWhenExpression><![CDATA[$F{CHEQUE_NO} != null && $F{CHEQUE_NO}.equals( "" )== false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="102" width="7" height="14" isPrintWhenDetailOverflows="true" uuid="4e8ba5b0-58b9-47dd-aa40-e4c18b68c420">
+					<printWhenExpression><![CDATA[$F{CHEQUE_NO} != null && $F{CHEQUE_NO}.equals( "" )== false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

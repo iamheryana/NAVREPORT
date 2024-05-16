@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Pembelian" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="6b02489c-e53f-4196-a292-d51f4a430724">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="StatusPpn" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT X.*
+FROM	(
+SELECT	PIPC.NO_INV
+		,PIPC.AMOUNT
+		,PIPC.VAT_AMOUNT
+		,CASE WHEN PIPC.VAT_AMOUNT <> 0 THEN 'PPN' ELSE 'NONPPN'END AS STATUS_PPN
+		,ISNULL(PIH.[No_],PCH.[Applies-to Doc_ No_])  AS SORT_NO_PI
+		,ISNULL(PIH.[Posting Date],PCH.[Posting Date]) AS TGL_INV
+		,ISNULL(PIH.[Pay-to Vendor No_], PCH.[Pay-to Vendor No_]) AS KODE_SUPP
+		,ISNULL(PIH.[Pay-to Name], PCH.[Pay-to Name]) AS NAMA_SUPP
+		,ISNULL(PIH.[Vendor Invoice No_], NULL) AS NO_INV_SUPP
+		,ISNULL(PIH.[Vendor Tax Invoice No_],PCH.[Vendor Tax Invoice No_]) AS NO_FP
+FROM
+	(
+		SELECT GLE.[Document No_] AS NO_INV
+				,GLE.[Posting Date] AS TGL_INV
+				,SUM(GLE.[Amount]) AS AMOUNT
+				,SUM(ISNULL(GLE.[VAT Amount],0)) AS VAT_AMOUNT
+		FROM [AUTOJAYA].[dbo].[SOLUSI$G_L Entry] GLE
+		WHERE GLE.[G_L Account No_] IN ('510.100.00', '510.100.01')
+		GROUP BY GLE.[Document No_], GLE.[Posting Date]
+	) PIPC
+
+LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = PIPC.NO_INV
+LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Cr_ Memo Hdr_] PCH ON PCH.[No_] = PIPC.NO_INV
+WHERE (PIH.[No_] IS NOT NULL OR PCH.[No_] IS NOT NULL)
+		AND PIPC.AMOUNT <> 0
+) X
+WHERE X.STATUS_PPN = $P{StatusPpn}]]>
+	</queryString>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="VAT_AMOUNT" class="java.math.BigDecimal"/>
+	<field name="STATUS_PPN" class="java.lang.String"/>
+	<field name="SORT_NO_PI" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="KODE_SUPP" class="java.lang.String"/>
+	<field name="NAMA_SUPP" class="java.lang.String"/>
+	<field name="NO_INV_SUPP" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="79" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="61" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="125" splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

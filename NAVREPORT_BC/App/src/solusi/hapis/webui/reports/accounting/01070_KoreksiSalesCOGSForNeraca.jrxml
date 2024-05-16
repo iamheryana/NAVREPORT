@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01070_KoreksiSalesCOGSForNeraca" language="groovy" pageWidth="750" pageHeight="845" whenNoDataType="NoDataSection" columnWidth="750" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.6105100000000026"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="ProsesId" class="java.lang.String"/>
+	<parameter name="YearPeriode" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.JENIS_AMOUNT
+		,SUM(X.AMOUNT_AJ_LY) AS AMOUNT_AJ_LY
+		,SUM(X.AMOUNT_SP_LY) AS AMOUNT_SP_LY
+		,SUM(X.AMOUNT_AJ) AS AMOUNT_AJ
+		,SUM(X.AMOUNT_SP) AS AMOUNT_SP
+FROM	(
+			SELECT '1-Accured Sales' AS JENIS_AMOUNT
+					, 0 AS AMOUNT_AJ_LY
+					, 0 AS AMOUNT_SP_LY
+					, 0 AS AMOUNT_AJ
+					, 0 AS AMOUNT_SP
+			UNION ALL
+			SELECT '2-Accured COGS' AS JENIS_AMOUNT
+					, 0 AS AMOUNT_AJ_LY
+					, 0 AS AMOUNT_SP_LY
+					, 0 AS AMOUNT_AJ
+					, 0 AS AMOUNT_SP
+			UNION ALL
+			SELECT '3-Koreksi Intercoy Sales' AS JENIS_AMOUNT
+					, 0 AS AMOUNT_AJ_LY
+					, 0 AS AMOUNT_SP_LY
+					, 0 AS AMOUNT_AJ
+					, 0 AS AMOUNT_SP
+			UNION ALL
+			SELECT '4-Koreksi Intercoy COGS' AS JENIS_AMOUNT
+					, 0 AS AMOUNT_AJ_LY
+					, 0 AS AMOUNT_SP_LY
+					, 0 AS AMOUNT_AJ
+					, 0 AS AMOUNT_SP
+			UNION ALL
+			SELECT '5-Hutang Intercoy' AS JENIS_AMOUNT
+					, 0 AS AMOUNT_AJ_LY
+					, 0 AS AMOUNT_SP_LY
+					, 0 AS AMOUNT_AJ
+					, 0 AS AMOUNT_SP
+			UNION ALL
+			SELECT	CASE	WHEN JENIS_AMOUNT = 'Accured Sales' THEN '1-Accured Sales'
+							WHEN JENIS_AMOUNT = 'Accured COGS' THEN '2-Accured COGS'
+							WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' THEN '3-Koreksi Intercoy Sales'
+							WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' THEN '4-Koreksi Intercoy COGS'
+							WHEN JENIS_AMOUNT = 'Hutang Intercoy' THEN '5-Hutang Intercoy'
+							ELSE '' END AS JENIS_AMOUNT
+					, SUM(CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END) AS AMOUNT_AJ_LY
+					, SUM(CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END) AS AMOUNT_SP_LY
+					, 0 AS AMOUNT_AJ
+					, 0 AS AMOUNT_SP
+			FROM [dbo].[TEMP09_SALES_COGS_PNL]
+			WHERE	PROSES_ID = $P{ProsesId} AND
+					TAHUN < $P{YearPeriode}
+			GROUP BY JENIS_AMOUNT
+			UNION ALL
+			SELECT	CASE	WHEN JENIS_AMOUNT = 'Accured Sales' THEN '1-Accured Sales'
+							WHEN JENIS_AMOUNT = 'Accured COGS' THEN '2-Accured COGS'
+							WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' THEN '3-Koreksi Intercoy Sales'
+							WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' THEN '4-Koreksi Intercoy COGS'
+							WHEN JENIS_AMOUNT = 'Hutang Intercoy' THEN '5-Hutang Intercoy'
+							ELSE '' END AS JENIS_AMOUNT
+					, 0 AS AMOUNT_AJ_LY
+					, 0 AS AMOUNT_SP_LY
+					, SUM(CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END) AS AMOUNT_AJ
+					, SUM(CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END) AS AMOUNT_SP
+			FROM [dbo].[TEMP09_SALES_COGS_PNL]
+			WHERE	PROSES_ID = $P{ProsesId} AND
+					TAHUN = $P{YearPeriode}
+			GROUP BY JENIS_AMOUNT
+	) X
+GROUP BY X.JENIS_AMOUNT]]>
+	</queryString>
+	<field name="JENIS_AMOUNT" class="java.lang.String"/>
+	<field name="AMOUNT_AJ_LY" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_SP_LY" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_AJ" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_SP" class="java.math.BigDecimal"/>
+	<sortField name="JENIS_AMOUNT"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="28" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="350" height="14" uuid="6691be1a-f78e-4c2d-a555-884d130e5708"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01070) Report Bantuan untuk Neraca ambil Koreksi Sales dan COGS dari PNL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="350" height="14" uuid="a91336a2-d65f-4abc-bc72-820eae1d5c2e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Koreksi]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="550" y="14" width="100" height="14" uuid="d0aa016c-352e-42fd-a3d6-49bef946dc9d"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount AJ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="14" width="100" height="14" uuid="573a1247-8a89-4e68-aa57-544e60080840"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount SP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="350" y="14" width="100" height="14" uuid="43029ffb-1e10-4602-bea9-3f533dfc2a1f"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount AJ - Last Year]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="450" y="14" width="100" height="14" uuid="c22e5c52-ba4c-40fb-a700-a1d5d356a947"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount SP- Last Year]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="550" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="14b45518-7878-449d-9b92-d54054f4f187"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_AJ}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="650" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="af7cf7ef-701c-4769-958b-1a2a6782c29f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_SP}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="350" height="14" uuid="7e96fe96-6c7f-4b9d-8953-7c6787403941"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JENIS_AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="350" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="d056f545-413b-427d-8cea-77613d3ec520"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_AJ_LY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="450" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="d42ca42a-6dd1-468a-b5d1-dd40e1fc0542"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_SP_LY}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="28">
+			<staticText>
+				<reportElement x="0" y="0" width="350" height="14" uuid="25e0b71e-6ad6-4748-930e-0430b740bccd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01070) Report Bantuan untuk Neraca ambil Koreksi Sales dan COGS dari PNL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="350" height="14" uuid="b807a911-2747-40c6-bf16-e8f0333290b8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

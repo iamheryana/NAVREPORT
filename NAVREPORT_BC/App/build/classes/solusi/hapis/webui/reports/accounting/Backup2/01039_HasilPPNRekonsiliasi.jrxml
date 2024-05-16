@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01039_HasilPPNRekonsiliasi" language="groovy" pageWidth="1250" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1210" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a53b757b-d6fd-4d62-bcbe-9cbdffa89d2f">
+	<property name="ireport.zoom" value="1.3310000000000064"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="229"/>
+	<parameter name="prosesId" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	XX.groupid
+	,XX.nama_cust
+	,XX.no_faktur_pajak_ori
+	, XX.tanggal
+	, XX.masa
+	, XX.tahun
+	, XX.status
+	, XX.dpp
+	, XX.ppn
+	, XX.referansi
+	, XX.status_approval
+	, XX.no_invoice
+	, XX.no_credit_memo
+	, SUM(XX.ada_selisih) OVER (PARTITION BY 1) AS ada_selisih
+	, substring(MAX(XX.masa_pajak) OVER (PARTITION BY 1) from 1 for 4) as tahun_pajak
+	, substring(MAX(XX.masa_pajak) OVER (PARTITION BY 1) from 5 for 2) as masa_pajak
+FROM	(
+SELECT	X.groupid
+	,X.nama_cust
+	,X.no_faktur_pajak_ori
+	,X.tanggal
+	,X.masa
+	,X.tahun
+	,X.status
+	,CAST(X.dpp AS numeric) as dpp
+	,CAST(X.ppn AS numeric) as ppn
+	,X.referansi
+	,X.status_approval
+	,X.no_invoice
+	,X.no_credit_memo
+	, 1 AS ada_selisih
+	,null as masa_pajak
+FROM	(
+		SELECT 	'eFaktur yang TIDAK ADA di NAV' as groupid
+			,efk.nama_cust
+			, efk.no_faktur_pajak_ori
+			, efk.tanggal
+			, efk.masa
+			, efk.tahun
+			, efk.status
+			, efk.dpp
+			, efk.ppn
+			, efk.referansi
+			, efk.status_approval
+			, null as no_invoice
+			, null as no_credit_memo
+		FROM tmp04efaktur efk
+		LEFT JOIN (
+				SELECT no_invoice, no_faktur_pajak, ppn
+				FROM tmp05navfaktur
+				WHERE tipe_dok = 'INVOICE' AND
+					no_credit_memo = '' AND
+					proses_id = $P{prosesId}
+			  ) naf ON naf.no_faktur_pajak = efk.no_faktur_pajak AND naf.ppn = efk.ppn
+		WHERE 	efk.status IN ('Normal', 'Normal-Pengganti') AND
+			naf.no_invoice is null AND
+			efk.proses_id = $P{prosesId}
+		UNION ALL
+		SELECT 	'NAV yang TIDAK ADA di eFaktur' as groupid
+			, naf.cust_name as nama_cust
+			, naf.no_faktur_pajak_ori
+			, naf.tgl_invoice as tanggal
+			, null as masa
+			, null as tahun
+			, naf.tipe_dok as status
+			, naf.dpp
+			, naf.ppn
+			, null as referansi
+			, null as status_approval
+			, naf.no_invoice
+			, naf.no_credit_memo
+		FROM tmp05navfaktur naf
+		LEFT JOIN (
+				SELECT  no_faktur_pajak, ppn
+				FROM tmp04efaktur
+				WHERE 	status IN ('Normal', 'Normal-Pengganti')  AND
+					proses_id = $P{prosesId}
+			  ) efk ON naf.no_faktur_pajak = efk.no_faktur_pajak AND naf.ppn = efk.ppn
+		WHERE 	naf.tipe_dok = 'INVOICE' AND
+			naf.no_credit_memo = '' AND
+			naf.ppn <> '0' AND
+			efk.no_faktur_pajak IS NULL AND
+			naf.proses_id = $P{prosesId}
+	) X
+UNION ALL
+SELECT	'HASIL REKONSILIASI : TIDAK ADA SELISIH' as groupid
+	,null as nama_cust
+	,null as no_faktur_pajak_ori
+	,null as tanggal
+	,null as masa
+	,null as tahun
+	,null as status
+	,null as dpp
+	,null as ppn
+	,null as referansi
+	,null as status_approval
+	,null as no_invoice
+	,null as no_credit_memo
+	,0 AS ada_selisih
+	, (
+		SELECT 	max(tahun||masa)
+		FROM tmp04efaktur
+		WHERE 	proses_id = $P{prosesId}
+	  ) AS masa_pajak
+	) XX]]>
+	</queryString>
+	<field name="groupid" class="java.lang.String"/>
+	<field name="nama_cust" class="java.lang.String"/>
+	<field name="no_faktur_pajak_ori" class="java.lang.String"/>
+	<field name="tanggal" class="java.lang.String"/>
+	<field name="masa" class="java.lang.String"/>
+	<field name="tahun" class="java.lang.String"/>
+	<field name="status" class="java.lang.String"/>
+	<field name="dpp" class="java.math.BigDecimal"/>
+	<field name="ppn" class="java.math.BigDecimal"/>
+	<field name="referansi" class="java.lang.String"/>
+	<field name="status_approval" class="java.lang.String"/>
+	<field name="no_invoice" class="java.lang.String"/>
+	<field name="no_credit_memo" class="java.lang.String"/>
+	<field name="ada_selisih" class="java.lang.Long"/>
+	<field name="tahun_pajak" class="java.lang.String"/>
+	<field name="masa_pajak" class="java.lang.String"/>
+	<sortField name="groupid"/>
+	<group name="Kelompok">
+		<groupExpression><![CDATA[$F{groupid}]]></groupExpression>
+		<groupHeader>
+			<band height="43">
+				<printWhenExpression><![CDATA[$F{groupid}.equals( "eFaktur yang TIDAK ADA di NAV" )]]></printWhenExpression>
+				<textField>
+					<reportElement x="10" y="1" width="269" height="14" uuid="8514c89f-adbc-4ddc-9f76-15f3ec70daa4"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{groupid}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="10" y="15" width="269" height="14" uuid="cd51c34f-228b-46f3-8a6f-7d2302af5425"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="10" y="29" width="269" height="14" uuid="8799c8cf-5263-48b3-8641-df9569314605"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Nama Customer]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="279" y="29" width="154" height="14" uuid="61864db6-a956-4d35-b47d-8d780d93e4a5"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Tanggal Faktur Pajak]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="433" y="29" width="94" height="14" uuid="2fe45ce9-4911-486c-b548-d52a09dc3d42"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[No. Faktur Pajak]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="527" y="29" width="27" height="14" uuid="0751f220-7adc-406c-a503-9372d89e5f0f"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Masa]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="554" y="29" width="36" height="14" uuid="c20b11f7-0f2d-4507-a73a-460743bfbb61"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Tahun]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="590" y="29" width="78" height="14" uuid="7809b75e-5062-4cce-8c76-a022c4a34991"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Status]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="668" y="29" width="88" height="14" uuid="b537dc81-aeab-4478-ba42-5fc0b130a800"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[DPP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="756" y="29" width="63" height="14" uuid="e725b5be-2d97-40b2-82dc-322fd366d7ed"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[PPN]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="819" y="29" width="231" height="14" uuid="25e3e13e-ab97-4566-bc81-8f995a98c57a"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Referensi]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1050" y="29" width="147" height="14" uuid="5907e118-4b3f-4409-8847-58a464f5e2a2"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Status Approval]]></text>
+				</staticText>
+			</band>
+			<band height="42">
+				<printWhenExpression><![CDATA[$F{groupid}.equals( "NAV yang TIDAK ADA di eFaktur" )]]></printWhenExpression>
+				<textField>
+					<reportElement x="10" y="0" width="269" height="14" uuid="16b27682-7c36-455d-bc4e-59f3e3282a6d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{groupid}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="10" y="14" width="269" height="14" uuid="2f56409e-0a63-4099-b853-f7dc89f0bbf3"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="10" y="28" width="269" height="14" uuid="5d1b69e4-493e-4796-b6ce-ecc11b5e4b12"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Nama Customer]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="590" y="28" width="78" height="14" uuid="83b3ef40-5a7f-4056-8a60-8ef38485799e"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Tipe]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="668" y="28" width="88" height="14" uuid="aedb97b7-579c-4b1e-b70f-c312f09a9c66"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[DPP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="554" y="28" width="36" height="14" uuid="c3ec25c9-51ee-4441-8aec-bd4e7606ab42"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1050" y="28" width="147" height="14" uuid="0be675e8-c623-4abc-87ff-5f75b21c294d"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[No. Credit Memo]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="819" y="28" width="231" height="14" uuid="e18c9359-3212-46b4-8551-92b490f520a7"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[No. Invoice]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="279" y="28" width="154" height="14" uuid="842bfb65-60d2-40d7-8837-7bbfbabb81db"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Tanggal Invoice]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="527" y="28" width="27" height="14" uuid="78887c06-486c-4e67-ad58-bfa15a5c3bee"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="433" y="28" width="94" height="14" uuid="10e097f5-6007-4f82-8355-e1e3bbfa0b74"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[No. Faktur Pajak]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="756" y="28" width="63" height="14" uuid="d4c887a3-4554-4641-90f3-fe20fa8c39cd"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[PPN]]></text>
+				</staticText>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{groupid}.equals( "HASIL REKONSILIASI : TIDAK ADA SELISIH" ) &&
+$F{ada_selisih} == 0]]></printWhenExpression>
+				<textField>
+					<reportElement x="10" y="14" width="269" height="14" uuid="464f6e55-ecea-441b-aa6a-178da36f6ec4"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{groupid}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="10" y="0" width="269" height="14" uuid="142df0d1-779f-4d20-ac51-0d4928c5d7e1"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="43">
+				<staticText>
+					<reportElement x="10" y="1" width="269" height="14" uuid="6481217c-021e-47c2-9ca4-903334deb6e0"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="10" y="15" width="269" height="14" uuid="20ee5e67-640c-4e2a-b61c-0478c7863b1e"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="10" y="29" width="269" height="14" uuid="b7074746-2a24-41c2-b89b-f098ce431240"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="85" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="1" width="269" height="14" uuid="5973bfcc-7356-4510-8ed1-8c6482852f97"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[(01039) Hasil Rekonsilisasi - PPN Keluaran]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="15" width="269" height="14" uuid="55e0fd73-1ee1-43de-ab73-78ce353a0951"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="57" width="74" height="14" uuid="832e6156-4de8-40f7-9a87-4196180ff680"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Diproses pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="84" y="57" width="195" height="14" uuid="0f78518e-b886-4141-9fca-def3574dcddf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="10" y="71" width="269" height="14" uuid="81edb555-cdaf-493d-8d7e-b35744bd08ba"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="29" width="74" height="14" uuid="1ac9f359-1271-4392-9575-96d566590e34"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Masa Pajak s/d]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="158" y="43" width="121" height="14" uuid="38b04d26-9696-4e9c-b388-ce8ee4b7564d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tahun_pajak}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="158" y="29" width="121" height="14" uuid="c5ae044d-71f3-496c-8489-da0fa7fe09d7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{masa_pajak}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="84" y="29" width="74" height="14" uuid="da0e6cb3-4efe-4fe2-ad35-6a4a8dad8cbf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bulan :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="43" width="74" height="14" uuid="1448f9b0-ed65-4e0b-a0c2-d383f53ace57"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="43" width="74" height="14" uuid="d636452e-c356-449c-9d9e-29ec34ec7ed2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<printWhenExpression><![CDATA[$F{groupid}.equals( "eFaktur yang TIDAK ADA di NAV" )]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="10" y="1" width="269" height="14" uuid="f1e10aba-b6cc-472f-8865-6bf1afdbab67"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nama_cust}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="433" y="1" width="94" height="14" uuid="5cc31440-0915-4d1f-b88f-d84741776718"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{no_faktur_pajak_ori}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="279" y="1" width="154" height="14" uuid="9726fe74-774e-4267-aa02-e0132f95dad8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tanggal}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="527" y="1" width="27" height="14" uuid="f0a90b1d-3895-4568-965a-d450bd5935f5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{masa}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="554" y="1" width="36" height="14" uuid="2036f724-dce3-4c57-8c56-37dfdad6d617"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tahun}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="590" y="1" width="78" height="14" uuid="8d47d83e-4896-4c58-b085-3d1f4888f548"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="668" y="1" width="88" height="14" uuid="64449788-fae4-4c64-b8f8-3aa142ee25fe"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dpp}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="756" y="1" width="63" height="14" uuid="b9792cef-6438-4536-a0e0-3f03cd10022d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ppn}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="819" y="1" width="231" height="14" uuid="8623d521-fc8b-4923-b464-055cd696183e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{referansi}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1050" y="1" width="147" height="14" uuid="306cd927-aefe-40ce-8a39-90967cc52ea6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status_approval}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="15">
+			<printWhenExpression><![CDATA[$F{groupid}.equals( "NAV yang TIDAK ADA di eFaktur" )]]></printWhenExpression>
+			<textField>
+				<reportElement x="279" y="1" width="154" height="14" uuid="f8cc4954-1094-4a8a-81f1-23a1e865ab21"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tanggal}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="819" y="1" width="231" height="14" uuid="2139c2d2-a919-4dcb-b802-0f3e16a359f0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{no_invoice}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="590" y="1" width="78" height="14" uuid="564d7d56-983c-433d-b508-75ec86526c26"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1050" y="1" width="147" height="14" uuid="70f33219-a222-4071-805f-e1cc24edb88e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{no_credit_memo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="10" y="1" width="269" height="14" uuid="d3047478-1a70-4472-a1fa-dae670f57a69"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{nama_cust}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="433" y="1" width="94" height="14" uuid="89787647-df1c-4980-b0a0-13c1221e85cc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{no_faktur_pajak_ori}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="668" y="1" width="88" height="14" uuid="7578fd56-c5fa-4cc3-b5c3-bdc7d0044679"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dpp}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="756" y="1" width="63" height="14" uuid="e33013d9-e3bc-4832-bf61-c773bb746176"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ppn}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="554" y="1" width="36" height="14" uuid="63cc69c2-a5fe-4400-8464-2b1f5e7572c1"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="527" y="1" width="27" height="14" uuid="07c6eb24-a171-49eb-bb0a-cf1481863f9d"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<noData>
+		<band height="98">
+			<staticText>
+				<reportElement x="10" y="84" width="269" height="14" uuid="54d4ae4b-15cb-4eaf-8dbe-d27d6b749a4b"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="56" width="74" height="14" uuid="34e71b78-9eb9-4b95-b205-2d0e029fb2ab"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Diproses pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="70" width="269" height="14" uuid="3da855ec-b602-4a20-9901-e55ef761a994"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="0" width="269" height="14" uuid="988e82ea-f226-44fc-903e-6ec645c75f8f"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[(01039) Hasil Rekonsilisasi - PPN Keluaran]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="42" width="74" height="14" uuid="82eb189b-2251-4a12-9c9b-e68775f12d73"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="84" y="56" width="195" height="14" uuid="e5f22c50-d3db-4c61-b7c5-b4fa055d5761"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="84" y="28" width="74" height="14" uuid="cca17e28-1eec-4062-aec3-8d2a836aeb02"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bulan :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="28" width="74" height="14" uuid="d420ad4c-5caf-447c-ac71-b8a3acc67af7"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Masa Pajak s/d]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="158" y="28" width="121" height="14" uuid="8b166b6c-585a-4ce1-932b-6f7c80d60150"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{masa_pajak}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="10" y="14" width="269" height="14" uuid="639a0063-5d5d-44b6-b78d-6576a9961847"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="158" y="42" width="121" height="14" uuid="26aadb7d-5e74-4b2a-b1ad-4424805c0242"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tahun_pajak}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="84" y="42" width="74" height="14" uuid="28bed2c3-dad1-4407-a275-451c7e7511a6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

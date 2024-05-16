@@ -1,0 +1,16 @@
+
+CREATE OR REPLACE FUNCTION public.fn_substrstringflag (in posisi int4) RETURNS varchar AS
+$BODY$ 
+
+DECLARE BALIKAN VARCHAR(1); 
+
+BEGIN
+SELECT SUBSTR(StringFlag,POSISI,1)
+INTO BALIKAN 
+FROM FZ2FLDA LIMIT 1;
+RETURN (BALIKAN); 
+END ; 
+
+$BODY$
+LANGUAGE 'plpgsql'
+GO

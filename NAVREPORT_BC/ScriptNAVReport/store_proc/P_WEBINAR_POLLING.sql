@@ -1,0 +1,98 @@
+USE [NavBI]
+GO
+
+/****** Object:  StoredProcedure [dbo].[P_WEBINAR_POLLING]    Script Date: 12-10-2020 2:55:01 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE PROCEDURE [dbo].[P_WEBINAR_POLLING] 
+	@ProsesId  nvarchar(100) ,   
+	@UserId  nvarchar(15) 
+AS   
+BEGIN
+	DECLARE @T05Id bigint;
+	DECLARE @T08Id bigint;
+	DECLARE @PollingWebinarSudahAda int;
+	-- 
+	SET @T05Id =  ISNULL( (	SELECT MAX([T05_ID]) 
+							FROM [dbo].[T05_WEBINAR_EVENT] 
+							WHERE [WEBINAR_ID] =	(
+														SELECT MAX(WEBINAR_ID)
+														FROM [dbo].[TEMP04_WEBINAR_POLLING]
+														WHERE PROSES_ID = @ProsesId
+													)) ,0);
+	IF @T05Id = 0 
+		BEGIN
+			DELETE FROM [dbo].[TEMP04_WEBINAR_POLLING] WHERE [PROSES_ID] = @ProsesId;
+			--
+			INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'WEBINAR ID BELUM DI UPLOAD', GETDATE());
+			RETURN  ;
+		END
+	ELSE
+		BEGIN
+			SET @PollingWebinarSudahAda =	ISNULL((
+														SELECT CASE WHEN COUNT(T11.T11_ID) >= 1  THEN 1 ELSE 0 END
+														FROM [dbo].[T11_WEBINAR_POLLING] T11
+														WHERE T11.T05_ID = @T05Id
+													), 0);
+			IF @PollingWebinarSudahAda = 1
+				BEGIN
+					DELETE FROM [dbo].[TEMP03_WEBINAR_FEEDBACK] WHERE [PROSES_ID] = @ProsesId;
+					--
+					INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'POLLING WEBINAR ID SUDAH PERNAH DI UPLOAD SEBELUMNYA', GETDATE());
+					RETURN  ;
+				END;
+			ELSE
+				BEGIN			
+					DECLARE @DataSudahMasuk int = 0;
+					--
+					INSERT INTO [dbo].[T11_WEBINAR_POLLING]
+							   ([T05_ID], [SESI], [NAMA_LENGKAP], [EMAIL], [WAKTU_ISI]
+							   ,[QST_01], [QST_02], [QST_03], [QST_04], [QST_05]
+							   ,[QST_06], [QST_07], [QST_08], [QST_09], [QST_10] 
+							   ,[QST_11], [QST_12], [QST_13], [QST_14], [QST_15]
+							   ,[ANS_01], [ANS_02], [ANS_03], [ANS_04], [ANS_05]
+							   ,[ANS_06], [ANS_07], [ANS_08], [ANS_09], [ANS_10] 
+							   ,[ANS_11], [ANS_12], [ANS_13], [ANS_14], [ANS_15]
+							   ,[VERSION], [CREATED_BY], [CREATED_ON], [UPDATED_BY], [UPDATED_ON])
+					SELECT	@T05Id, TM04.SESI, TM04.NAMA_LENGKAP, TM04.EMAIL,TM04. WAKTU_ISI
+							, TM04.KOLOM_01, TM04.KOLOM_03, TM04.KOLOM_05, TM04.KOLOM_07, TM04.KOLOM_09
+							, TM04.KOLOM_11, TM04.KOLOM_13, TM04.KOLOM_15, TM04.KOLOM_17, TM04.KOLOM_19     
+							, TM04.KOLOM_21, TM04.KOLOM_23, TM04.KOLOM_25, TM04.KOLOM_27, TM04.KOLOM_29
+							, TM04.KOLOM_02, TM04.KOLOM_04, TM04.KOLOM_06, TM04.KOLOM_08, TM04.KOLOM_10
+							, TM04.KOLOM_12, TM04.KOLOM_14, TM04.KOLOM_16, TM04.KOLOM_18, TM04.KOLOM_20
+							, TM04.KOLOM_22, TM04.KOLOM_24, TM04.KOLOM_26, TM04.KOLOM_28, TM04.KOLOM_30		
+							, 1, @UserId, GETDATE(), @UserId, GETDATE() 
+					FROM [dbo].[TEMP04_WEBINAR_POLLING] TM04
+					INNER JOIN [dbo].[T06_WEBINAR_ATTENDEE] T06 ON T06.EMAIL = TM04.EMAIL AND T06.T05_ID = @T05Id AND T06.ATTENDED = 'Yes'
+					WHERE TM04.PROSES_ID  = @ProsesId;
+					-------------------------------------------------------------------------------------
+					DELETE FROM [dbo].[TEMP04_WEBINAR_POLLING] WHERE [PROSES_ID] = @ProsesId;
+					--
+					SELECT @DataSudahMasuk = COUNT(T11_ID)
+					FROM [dbo].[T11_WEBINAR_POLLING]
+					WHERE T05_ID = @T05Id;
+					--
+					IF @DataSudahMasuk = 0 
+						BEGIN
+							INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'TIDAK ADA DATA YANG BERHASIL DI SIMPAN', GETDATE());
+							RETURN ;
+						END
+					ELSE
+						BEGIN
+							INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'DATA BERHASIL DI SIMPAN', GETDATE());
+							RETURN ;
+						END;
+					--
+				END;
+			--
+		END;
+END;
+GO
+
+

@@ -1,0 +1,590 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MinimunLevelStock" language="groovy" pageWidth="1000" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="960" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
+	<property name="ireport.zoom" value="1.6105100000000048"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[-- Bisa beda dengan Stock Avl. Karena untuk yang ini Reserve atas SO Booking dan TO  tidak diambil
+SELECT IT.ITEM_NO
+		,DTL.DESCRIPTIONS
+		,DTL.STOCK_OH
+		,DTL.ON_ORDER
+		,DTL.OTP_READY
+		,DTL.ON_ORDER_OTP
+		,DTL.TOTAL_AVAILABLE
+		,IT.MIN_STOCK
+		,IT.MAX_STOCK
+		,CASE WHEN DTL.TOTAL_AVAILABLE < IT.MIN_STOCK THEN IT.MAX_STOCK - DTL.TOTAL_AVAILABLE ELSE 0 END AS NEED_TO_PURCHASE
+		,CASE WHEN DTL.TOTAL_AVAILABLE > IT.MAX_STOCK THEN DTL.TOTAL_AVAILABLE - IT.MAX_STOCK ELSE 0 END AS OVER_STOCK
+FROM	(
+			SELECT ITM.ITEM_NO
+					,MAX(ITM.MIN_STOCK) AS MIN_STOCK
+					,MAX(ITM.MAX_STOCK) AS MAX_STOCK
+			FROM
+					(
+						SELECT [Item No_] AS ITEM_NO
+							  ,[Reorder Point] AS MIN_STOCK
+							  ,[Maximum Inventory] AS MAX_STOCK
+						FROM [AUTOJAYA].[dbo].[AUTOJAYA$Stockkeeping Unit]
+						WHERE [Location Code] = 'HO-TD'
+						UNION ALL
+						SELECT [Item No_] AS ITEM_NO
+							  ,[Reorder Point] AS MIN_STOCK
+							  ,[Maximum Inventory] AS MAX_STOCK
+						FROM [AUTOJAYA].[dbo].[SOLUSI$Stockkeeping Unit]
+						WHERE [Location Code] = 'HO-TD'
+					) ITM
+			GROUP BY ITM.ITEM_NO
+		) IT
+INNER JOIN	(
+				SELECT
+						XX.ITEM_NO
+						,XX.DESCRIPTIONS
+						,XX.STOCK_OH
+						,XX.ON_ORDER
+						,XX.OTP_READY
+						,XX.ON_ORDER_OTP
+						,XX.TOTAL_AVAILABLE
+				FROM	(
+							SELECT
+									X.ITEM_NO
+									,MAX(X.DESCRIPTIONS) AS DESCRIPTIONS
+									,SUM(X.STOCK_OH) AS STOCK_OH
+									,SUM(X.ON_ORDER) AS ON_ORDER
+									,SUM(X.OTP_READY) AS OTP_READY
+									,SUM(X.ON_ORDER_OTP) AS ON_ORDER_OTP
+									,(SUM(X.STOCK_OH) + SUM(X.ON_ORDER) + SUM(X.OTP_READY) + SUM(X.ON_ORDER_OTP)) AS TOTAL_AVAILABLE
+							FROM	(
+										SELECT	STKG.ITEM_NO
+												, ITM.[Description] AS DESCRIPTIONS
+												, STKG.LOC_CODE
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.STOCK_OH - STKG.RSRV_OH
+												  ELSE 0
+												  END AS STOCK_OH
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.ON_ORDER - STKG.RSRV_ON_ORDER
+												  ELSE 0
+												  END AS ON_ORDER
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.OTP_READY - STKG.RSRV_OTP_READY
+												  ELSE 0
+												  END AS OTP_READY
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.ON_ORDER_OTP - STKG.RSRV_ON_ORDER_OTP
+												  ELSE 0
+												  END AS ON_ORDER_OTP
+										FROM	(
+													SELECT STK.ITEM_NO
+															, STK.LOC_CODE
+															, SUM(STK.STOCK_OH) AS STOCK_OH
+															, SUM(STK.ON_ORDER) AS ON_ORDER
+															, SUM(STK.ON_ORDER_OTP) AS ON_ORDER_OTP
+															, SUM(STK.OTP_READY) AS OTP_READY
+															, SUM(STK.RSRV_OH) AS RSRV_OH
+															, SUM(STK.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+															, SUM(STK.RSRV_ON_ORDER_OTP) AS RSRV_ON_ORDER_OTP
+															, SUM(STK.RSRV_OTP_READY) AS RSRV_OTP_READY
+													FROM (
+															SELECT
+																	[Item No_] AS ITEM_NO
+																	,[Location Code] AS LOC_CODE
+																	,SUM([Quantity]) AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, 0 AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry]
+															GROUP BY [Item No_],[Location Code]
+															UNION ALL
+															SELECT POD.[No_] AS ITEM_NO
+																	,POD.[Location Code] AS LOC_CODE
+																	, 0 AS STOCK_OH
+																	,SUM(POD.[Outstanding Qty_ (Base)]) AS ON_ORDER
+																	, 0 AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+															INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+															WHERE POH.[Document Type] = 1 AND
+																SUBSTRING( POH.[No_], 5, 1) <> 'P' AND
+																POD.[Type] = 2
+															GROUP BY POD.[No_], POD.[Location Code]
+															UNION ALL
+															SELECT	BPO.ITEM_NO
+																	,BPO.LOC_CODE
+																	, 0 AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, SUM(BPO.ON_ORDER) AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM	(
+																		SELECT	POD.[No_] AS ITEM_NO
+																				,POD.[Location Code] AS LOC_CODE
+																				,POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) AS ON_ORDER
+																		FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+																		INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+																		LEFT JOIN	(
+																						SELECT	PD.[Blanket Order No_] AS NO_BPO
+																							,PD.[Blanket Order Line No_] AS NO_BPO_LINE
+																							,SUM(PD.[Quantity (Base)]) AS QTY_PO
+																						FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] PH
+																						INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+																						WHERE PH.[Document Type] = 1 AND
+																							  PD.[Blanket Order No_] <> ''
+																						GROUP BY PD.[Blanket Order No_], PD.[Blanket Order Line No_]
+																					) POO ON POO.NO_BPO = POD.[Document No_] AND POO.NO_BPO_LINE = POD.[Line No_]
+																		WHERE POH.[Document Type] = 4 AND
+																					SUBSTRING( POH.[No_], 6, 1) = 'P' AND
+																					POD.[Type] = 2
+																	) BPO
+															GROUP BY BPO.ITEM_NO, BPO.LOC_CODE
+															UNION ALL
+															SELECT	OTP.ITEM_NO
+																	,OTP.LOC_CODE
+																	, 0 AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, SUM(OTP.ON_ORDER_OTP) AS ON_ORDER_OTP
+																	, SUM(OTP.OTP_READY) AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM	(
+																		SELECT POD.[No_] AS ITEM_NO
+																				,POD.[Location Code] AS LOC_CODE
+																				, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
+																				, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
+																		FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+																		INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+																		WHERE POH.[Document Type] = 1 AND
+																			SUBSTRING( POH.[No_], 5, 1) = 'P' AND
+																			POD.[Type] = 2
+																	) OTP
+															GROUP BY OTP.ITEM_NO, OTP.LOC_CODE
+															UNION ALL
+															SELECT	RSV.ITEM_NO
+																	, RSV.LOC_CODE
+																	, 0 AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, 0 AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, SUM(RSV.RSRV_OH) AS RSRV_OH
+																	, SUM(RSV.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+																	, SUM(RSV.RSRV_ON_ORDER_OTP) AS RSRV_ON_ORDER_OTP
+																	, SUM(RSV.RSRV_OTP_READY) AS RSRV_OTP_READY
+															FROM	(
+																		SELECT  PO.[Item No_] AS ITEM_NO
+																				, PO.[Location Code] AS LOC_CODE
+																				, CASE WHEN PO.[Source ID] = '' THEN PO.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+																				, CASE WHEN SUBSTRING(PO.[Source ID], 5, 1) <> 'P' AND PO.[Source ID] <> '' THEN PO.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+																				, CASE WHEN SUBSTRING(PO.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  PO.[Quantity (Base)] ELSE 0 END AS RSRV_OTP_READY
+																				, CASE WHEN SUBSTRING(PO.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  PO.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
+																		FROM [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] PO
+																		LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] SO ON PO.[Entry No_] = SO.[Entry No_] AND SO.[Positive] = 0
+																		LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Header] SOH ON SOH.[No_] = SO.[Source ID]
+																		LEFT JOIN	(
+																						SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
+																						FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line]
+																						GROUP BY [Document No_], [Line No_]
+																					) PUR ON PUR.[Document No_] = PO.[Source ID] AND PUR.[Line No_] = PO.[Source Ref_ No_]
+																		WHERE PO.[Reservation Status] = 0 AND
+																			  PO.[Positive] = 1 AND
+																			  SUBSTRING(PO.[Source ID], 1, 2) <> 'TO' AND
+																			  (SOH.[External Document No_] NOT LIKE 'BOOKING%' OR SOH.[External Document No_] <> '')
+																	) RSV
+															GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+														 ) STK
+													GROUP BY STK.ITEM_NO, STK.LOC_CODE
+												)STKG
+										LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+										WHERE ITM.[Inventory Value Zero] = 0
+										UNION ALL
+										SELECT	STKG.ITEM_NO
+												, ITM.[Description] AS DESCRIPTIONS
+												, STKG.LOC_CODE
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.STOCK_OH - STKG.RSRV_OH
+												  ELSE 0
+												  END AS STOCK_OH
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.ON_ORDER - STKG.RSRV_ON_ORDER
+												  ELSE 0
+												  END AS ON_ORDER
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.OTP_READY - STKG.RSRV_OTP_READY
+												  ELSE 0
+												  END AS OTP_READY
+												, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD', '') THEN
+													STKG.ON_ORDER_OTP - STKG.RSRV_ON_ORDER_OTP
+												  ELSE 0
+												  END AS ON_ORDER_OTP
+										FROM	(
+													SELECT STK.ITEM_NO
+															, STK.LOC_CODE
+															, SUM(STK.STOCK_OH) AS STOCK_OH
+															, SUM(STK.ON_ORDER) AS ON_ORDER
+															, SUM(STK.ON_ORDER_OTP) AS ON_ORDER_OTP
+															, SUM(STK.OTP_READY) AS OTP_READY
+															, SUM(STK.RSRV_OH) AS RSRV_OH
+															, SUM(STK.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+															, SUM(STK.RSRV_ON_ORDER_OTP) AS RSRV_ON_ORDER_OTP
+															, SUM(STK.RSRV_OTP_READY) AS RSRV_OTP_READY
+													FROM (
+															SELECT
+																	[Item No_] AS ITEM_NO
+																	,[Location Code] AS LOC_CODE
+																	,SUM([Quantity]) AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, 0 AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry]
+															GROUP BY [Item No_],[Location Code]
+															UNION ALL
+															SELECT POD.[No_] AS ITEM_NO
+																	,POD.[Location Code] AS LOC_CODE
+																	, 0 AS STOCK_OH
+																	,SUM(POD.[Outstanding Qty_ (Base)]) AS ON_ORDER
+																	, 0 AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] POH
+															INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+															WHERE POH.[Document Type] = 1 AND
+																SUBSTRING( POH.[No_], 5, 1) <> 'P' AND
+																POD.[Type] = 2
+															GROUP BY POD.[No_], POD.[Location Code]
+															UNION ALL
+															SELECT	BPO.ITEM_NO
+																	,BPO.LOC_CODE
+																	, 0 AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, SUM(BPO.ON_ORDER) AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM	(
+																		SELECT	POD.[No_] AS ITEM_NO
+																				,POD.[Location Code] AS LOC_CODE
+																				,POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) AS ON_ORDER
+																		FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] POH
+																		INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+																		LEFT JOIN	(
+																						SELECT	PD.[Blanket Order No_] AS NO_BPO
+																							,PD.[Blanket Order Line No_] AS NO_BPO_LINE
+																							,SUM(PD.[Quantity (Base)]) AS QTY_PO
+																						FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] PH
+																						INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+																						WHERE PH.[Document Type] = 1 AND
+																							  PD.[Blanket Order No_] <> ''
+																						GROUP BY PD.[Blanket Order No_], PD.[Blanket Order Line No_]
+																					) POO ON POO.NO_BPO = POD.[Document No_] AND POO.NO_BPO_LINE = POD.[Line No_]
+																		WHERE POH.[Document Type] = 4 AND
+																					SUBSTRING( POH.[No_], 6, 1) = 'P' AND
+																					POD.[Type] = 2
+																	) BPO
+															GROUP BY BPO.ITEM_NO, BPO.LOC_CODE
+															UNION ALL
+															SELECT	OTP.ITEM_NO
+																	,OTP.LOC_CODE
+																	, 0 AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, SUM(OTP.ON_ORDER_OTP) AS ON_ORDER_OTP
+																	, SUM(OTP.OTP_READY) AS OTP_READY
+																	, 0 AS RSRV_OH
+																	, 0 AS RSRV_ON_ORDER
+																	, 0 AS RSRV_ON_ORDER_OTP
+																	, 0 AS RSRV_OTP_READY
+															FROM	(
+																		SELECT POD.[No_] AS ITEM_NO
+																				,POD.[Location Code] AS LOC_CODE
+																				, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
+																				, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
+																		FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] POH
+																		INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+																		WHERE POH.[Document Type] = 1 AND
+																			SUBSTRING( POH.[No_], 5, 1) = 'P' AND
+																			POD.[Type] = 2
+																	) OTP
+															GROUP BY OTP.ITEM_NO, OTP.LOC_CODE
+															UNION ALL
+															SELECT	RSV.ITEM_NO
+																	, RSV.LOC_CODE
+																	, 0 AS STOCK_OH
+																	, 0 AS ON_ORDER
+																	, 0 AS ON_ORDER_OTP
+																	, 0 AS OTP_READY
+																	, SUM(RSV.RSRV_OH) AS RSRV_OH
+																	, SUM(RSV.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+																	, SUM(RSV.RSRV_ON_ORDER_OTP) AS RSRV_ON_ORDER_OTP
+																	, SUM(RSV.RSRV_OTP_READY) AS RSRV_OTP_READY
+															FROM	(
+																		SELECT  PO.[Item No_] AS ITEM_NO
+																				, PO.[Location Code] AS LOC_CODE
+																				, CASE WHEN PO.[Source ID] = '' THEN PO.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+																				, CASE WHEN SUBSTRING(PO.[Source ID], 5, 1) <> 'P' AND PO.[Source ID] <> '' THEN PO.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+																				, CASE WHEN SUBSTRING(PO.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  PO.[Quantity (Base)] ELSE 0 END AS RSRV_OTP_READY
+																				, CASE WHEN SUBSTRING(PO.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  PO.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
+																		FROM [AUTOJAYA].[dbo].[SOLUSI$Reservation Entry] PO
+																		LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Reservation Entry] SO ON PO.[Entry No_] = SO.[Entry No_] AND SO.[Positive] = 0
+																		LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Header] SOH ON SOH.[No_] = SO.[Source ID]
+																		LEFT JOIN	(
+																						SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
+																						FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Line]
+																						GROUP BY [Document No_], [Line No_]
+																					) PUR ON PUR.[Document No_] = PO.[Source ID] AND PUR.[Line No_] = PO.[Source Ref_ No_]
+																		WHERE PO.[Reservation Status] = 0 AND
+																			  PO.[Positive] = 1 AND
+																			  SUBSTRING(PO.[Source ID], 1, 2) <> 'TO' AND
+																			  (SOH.[External Document No_] NOT LIKE 'BOOKING%' OR SOH.[External Document No_] <> '')
+																	) RSV
+															GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+														 ) STK
+													GROUP BY STK.ITEM_NO, STK.LOC_CODE
+												)STKG
+										LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+										WHERE ITM.[Inventory Value Zero] = 0
+									) X
+							GROUP BY X.ITEM_NO
+						) XX
+			) DTL ON DTL.ITEM_NO = IT.ITEM_NO]]>
+	</queryString>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="DESCRIPTIONS" class="java.lang.String"/>
+	<field name="STOCK_OH" class="java.math.BigDecimal"/>
+	<field name="ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="OTP_READY" class="java.math.BigDecimal"/>
+	<field name="ON_ORDER_OTP" class="java.math.BigDecimal"/>
+	<field name="TOTAL_AVAILABLE" class="java.math.BigDecimal"/>
+	<field name="MIN_STOCK" class="java.math.BigDecimal"/>
+	<field name="MAX_STOCK" class="java.math.BigDecimal"/>
+	<field name="NEED_TO_PURCHASE" class="java.math.BigDecimal"/>
+	<field name="OVER_STOCK" class="java.math.BigDecimal"/>
+	<sortField name="ITEM_NO"/>
+	<title>
+		<band height="61" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="107" y="19" width="236" height="14" uuid="a77530c2-aca8-4a5f-ba9d-6bc253a4a908"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="343" y="47" width="68" height="14" uuid="285e9226-e796-40ae-9f42-e89d9932c8e9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[On Hand]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="411" y="47" width="68" height="14" uuid="4da72918-c362-4571-8b66-40c51784e155"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[On Order Stock]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="547" y="47" width="68" height="14" uuid="c0121364-3217-4b82-9f87-ac5bdb1c4fb5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[On Order OTP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="479" y="47" width="68" height="14" uuid="66f055aa-19a8-44dc-9b0d-c00b5c4117a8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[OTP Ready]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="615" y="47" width="68" height="14" uuid="69cd59de-285c-4192-bfb4-55f1ba983c18"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Total Available]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="683" y="47" width="68" height="14" uuid="11104a59-722c-425f-b457-80447b2f83e0"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Min. Stock]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="751" y="47" width="68" height="14" uuid="cfa98c08-340c-4912-89e4-195d99bcd836"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Max. Stock]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="47" width="100" height="14" uuid="865719f9-380c-4ea3-8e2f-bca1e068422e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item No]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="47" width="236" height="14" uuid="705abf60-1bca-486f-9217-5a93c7646cc8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Description]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="5" width="336" height="14" uuid="71025b29-f428-457a-918c-be5890f8beda"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Minimum Level Stock]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="19" width="100" height="14" uuid="fa00254d-4134-4d79-ac0d-7c846287d0a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="33" width="236" height="14" uuid="a10ea578-f70b-43e4-8e61-176a2b3ceaa3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="33" width="100" height="14" uuid="b11f2ff9-b7db-4f13-9b78-d073060fb9b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="819" y="47" width="68" height="14" uuid="11144f65-660e-4a0c-bbc1-64791a4e6733"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Need to Purchase]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="887" y="47" width="68" height="14" uuid="7babf6b2-e9a0-47f0-859e-fffe84684919"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Over Stock]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="7" y="0" width="100" height="14" uuid="b32934ef-6872-4319-a235-94e4fc5dbe82"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_NO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="343" y="0" width="68" height="14" uuid="8d85d825-063a-44cc-abb0-0ae1b92b27b7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{STOCK_OH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="615" y="0" width="68" height="14" uuid="277f62d9-2c2b-45ba-baad-ff649b92dfb1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL_AVAILABLE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="107" y="0" width="236" height="14" uuid="beff0ced-4b03-46e0-b589-3726f6e22d31"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DESCRIPTIONS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="411" y="0" width="68" height="14" uuid="afaf0fb1-e59d-498e-accf-97ed5d4d46a0"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="479" y="0" width="68" height="14" uuid="b69004a3-0f74-4aec-acf7-83d41553caff"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OTP_READY}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="547" y="0" width="68" height="14" uuid="f671ad78-4a20-448d-8882-79f570944d2a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ON_ORDER_OTP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="683" y="0" width="68" height="14" uuid="518c6deb-f0b8-48bf-861a-8a8c82c611f9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MIN_STOCK}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,####" isBlankWhenNull="true">
+				<reportElement x="751" y="0" width="68" height="14" uuid="54fdd8b0-8a19-431f-b90c-9bc7e0846d88"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MAX_STOCK}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="819" y="0" width="68" height="14" uuid="edc0fd1f-28bc-4461-8464-aca326ed56c0"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NEED_TO_PURCHASE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="887" y="0" width="68" height="14" uuid="2a3b79ef-5c22-4831-abda-cc31c70726db"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OVER_STOCK}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="11" y="17" width="204" height="14" uuid="b33fc35d-b608-4759-9a89-2a1ad4befafe"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

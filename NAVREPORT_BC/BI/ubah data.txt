@@ -1,0 +1,125 @@
+GO  
+-- Declare the variables to store the values returned by FETCH.  
+DECLARE 
+	@Company nvarchar(8),
+	@DocumentNo nvarchar(20),
+	@LineNo int,
+	@BranchCode nvarchar(10),
+	@BranchName nvarchar(10),
+	@ProductCode nvarchar(20),
+	@Product nvarchar(50),
+	@PrincipalCode  nvarchar(20),
+	@Principal nvarchar(50),
+	@ItemCatCode  nvarchar(20),
+	@ItemCat nvarchar(50),
+	@ApplicationCode  nvarchar(20),
+	@Application nvarchar(50),
+	@ProjectCode  nvarchar(20),
+	@Project nvarchar(50),
+	@SectorIndustryCode  nvarchar(20),
+	@SectorIndustry nvarchar(50),
+	@SalesmanCode  nvarchar(20),
+	@Salesman nvarchar(50);  
+
+DECLARE contact_cursor CURSOR FOR  
+SELECT REV.[COMPANY]
+      ,REV.[DOCUMENT_NO]
+      ,REV.[LINE_NO]
+      ,DIM.[BRANCH_CODE]
+      ,DIM.[BRANCH_NAME]
+      ,DIM.[PRODUCT_CODE]
+      ,DIM.[PRODUCT]
+      ,DIM.[PRINCIPAL_CODE]
+      ,DIM.[PRINCIPAL]
+      ,DIM.[ITEM_CAT_CODE]
+      ,DIM.[ITEM_CAT]
+      ,DIM.[APPLICATIONS_CODE]
+      ,DIM.[APPLICATIONS]
+      ,DIM.[PROJECT_CODE]
+      ,DIM.[PROJECT]
+      ,DIM.[SECTOR_INDUSTRY_CODE]
+      ,DIM.[SECTOR_INDUSTRY]
+      ,DIM.[SALESMAN_CODE]
+      ,DIM.[SALESMAN]
+FROM [NavBI].[dbo].[T_SALES_REV] REV
+LEFT JOIN [NavBI].[dbo].[M_DIMENSION] DIM ON DIM.[COMPANY] = REV.[COMPANY] AND DIM.[DIMENSION_ID] = REV.[DIMENSION_ID];
+
+OPEN contact_cursor;  
+
+-- Perform the first fetch and store the values in variables.  
+-- Note: The variables are in the same order as the columns  
+-- in the SELECT statement.   
+
+FETCH NEXT FROM contact_cursor  
+INTO
+	@Company,
+	@DocumentNo,
+	@LineNo,
+	@BranchCode,
+	@BranchName,
+	@ProductCode,
+	@Product,
+	@PrincipalCode,
+	@Principal,
+	@ItemCatCode,
+	@ItemCat,
+	@ApplicationCode,
+	@Application,
+	@ProjectCode,
+	@Project,
+	@SectorIndustryCode,
+	@SectorIndustry,
+	@SalesmanCode,
+	@Salesman;  
+-- Check @@FETCH_STATUS to see if there are any more rows to fetch.  
+WHILE @@FETCH_STATUS = 0  
+BEGIN  
+
+   -- Concatenate and display the current values in the variables.  
+   UPDATE [NavBI].[dbo].[T_SALES_REV] SET
+		[BRANCH_CODE] = @BranchCode
+		,[BRANCH_NAME] = @BranchName
+		,[PRODUCT_CODE] = @ProductCode
+		,[PRODUCT] = @Product
+		,[PRINCIPAL_CODE] = @PrincipalCode
+		,[PRINCIPAL] = @Principal
+		,[ITEM_CAT_CODE] = @ItemCatCode
+		,[ITEM_CAT] = @ItemCat
+		,[APPLICATIONS_CODE] = @ApplicationCode
+		,[APPLICATIONS] = @Application
+		,[PROJECT_CODE] = @ProjectCode
+		,[PROJECT] = @Project
+		,[SECTOR_INDUSTRY_CODE] = @SectorIndustryCode
+		,[SECTOR_INDUSTRY] = @SectorIndustry
+		,[SALESMAN_CODE] = @SalesmanCode
+		,[SALESMAN] = @Salesman
+	WHERE	[COMPANY] = @Company AND [DOCUMENT_NO] = @DocumentNo AND [LINE_NO] = @LineNo;   
+   
+
+   -- This is executed as long as the previous fetch succeeds.  
+   FETCH NEXT FROM contact_cursor  
+	INTO
+		@Company,
+		@DocumentNo,
+		@LineNo,
+		@BranchCode,
+		@BranchName,
+		@ProductCode,
+		@Product,
+		@PrincipalCode,
+		@Principal,
+		@ItemCatCode,
+		@ItemCat,
+		@ApplicationCode,
+		@Application,
+		@ProjectCode,
+		@Project,
+		@SectorIndustryCode,
+		@SectorIndustry,
+		@SalesmanCode,
+		@Salesman;  
+END  
+
+CLOSE contact_cursor;  
+DEALLOCATE contact_cursor;  
+GO  

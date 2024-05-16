@@ -1,0 +1,1824 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_SALES_COGS_CORRECTION_3BAK]    Script Date: 07-02-2023 4:56:56 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[P_SALES_COGS_CORRECTION_3BAK] 
+	@ProsesId  nvarchar(100) ,  
+	@Cabang  nvarchar(15),
+	@PeriodeFrom  datetime , 
+	@PeriodeUpto  datetime , 	
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	DECLARE @TglInvFrom DATETIME = CAST(@PeriodeFrom AS DATETIME);
+	DECLARE @TglInvUpto DATETIME = CAST(@PeriodeUpto AS DATETIME);
+	--
+	IF @Action = 'CETAK'
+	BEGIN
+		INSERT INTO [dbo].[TEMP10_SALES_COGS_CORRECTION]
+				   ([GRUP_SC]
+				   ,[SUB_GRUP_SC]
+				   ,[SUB_GRUP_TITLE]
+				   ,[TITLE]
+				   ,[SORT_SLS]
+				   ,[AMOUNT_AJ]
+				   ,[AMOUNT_SP]
+				   ,[PROSES_ID]
+				   ,[SOURCE_FROM])
+		SELECT	X.GRUP_SC
+				,X.SUB_GRUP_SC
+				,X.SUB_GRUP_TITLE
+				,X.TITLE
+				,X.SORT_SLS
+				,X.AMOUNT_AJ
+				,X.AMOUNT_SP
+				,@ProsesId AS PROSES_ID
+				,X.SOURCE_FROM
+		FROM	(
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN 'Sales - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN 'Sales - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN 'Sales - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN 'Sales - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN 'Sales - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN 'Sales - MANAGE SERVICE'
+							END AS TITLE
+							,'SLS-00' AS SORT_SLS
+							,SUM(GLE.[Amount]) * -1 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,'7. Sales - LAINNYA' AS SUB_GRUP_TITLE
+							,'Sales - LAINNYA' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							,SUM(GLE.[Amount]) * -1 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN ASCY.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN ASCY.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN ASCY.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN ASCY.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN ASCY.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN ASCY.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(-) Accured Sales Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							,SUM(ASCY.AMOUNT) * -1 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM (
+							SELECT	OUM.ITEM_CAT
+									,OUM.AMOUNT
+							FROM	(
+										SELECT	UM.ITEM_CAT
+												,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+													CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+													SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+												END
+												END	 AS AMOUNT
+										FROM	(
+													SELECT	DIMS.ITEM_CAT
+															,DIMS.BRANCHES
+															,SIH.[Posting Date] AS TGL_UM
+															,SIH.[No_] AS NO_UM
+															,SIH.[External Document No_] AS NO_PO_CUST
+															,SIH.[Bill-to Customer No_] AS CUST_NO
+															,SIH.[Bill-to Name] AS CUST_NAME
+															,SIH.[Prepayment Order No_] AS NO_SO
+															, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+													FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+													LEFT JOIN	(
+																	SELECT	DIM.DIM_ID
+																			,MAX(DIM.BRANCHES) AS BRANCHES
+																			,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																			,MAX(DIM.SALESMAN) AS SALESMAN
+																	FROM	(
+																				SELECT [Dimension Set ID] AS DIM_ID
+																					  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																					  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																					  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																				FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+																			) DIM
+																	GROUP BY DIM.DIM_ID
+																) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+													LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+													LEFT JOIN	(
+																	SELECT CLE.[Entry No_]
+																			, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+																			, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+																	FROM [ACS].[dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+																	LEFT JOIN [ACS].[dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+																	WHERE CLE.[Document Type] IN (2,3)
+																	AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+																		(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+																) CM ON CM.NO_UM = GLE.[Document No_]
+													LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+													WHERE GLE.[G_L Account No_] = '400.110.03'
+														  AND GLE.[Document No_] LIKE 'UM%'
+														  AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > @TglInvUpto ))
+														  AND (DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL')
+														  AND (SIH.[Posting Date] >= @TglInvFrom AND SIH.[Posting Date]<= @TglInvUpto)
+													GROUP BY DIMS.ITEM_CAT,
+															 DIMS.BRANCHES,
+															 SIH.[Posting Date]
+															,SIH.[No_]
+															,SIH.[External Document No_]
+															,SIH.[Bill-to Customer No_]
+															,SIH.[Bill-to Name]
+															,SIH.[Prepayment Order No_]
+												) UM
+										LEFT JOIN	(
+														SELECT	DIMS.ITEM_CAT
+																,DIMS.BRANCHES
+																,SIH.[Order No_] AS NO_SO
+																,MAX(SIH.[Posting Date]) AS TGL_INV
+																,SUM(GLE.[Amount]) AS AMOUNT
+														FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+														LEFT JOIN	(
+																		SELECT	DIM.DIM_ID
+																				,MAX(DIM.BRANCHES) AS BRANCHES
+																				,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																				,MAX(DIM.SALESMAN) AS SALESMAN
+																		FROM	(
+																					SELECT [Dimension Set ID] AS DIM_ID
+																						  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																						  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																						  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																					FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+																				) DIM
+																		GROUP BY DIM.DIM_ID
+																	) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+														LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+														WHERE GLE.[G_L Account No_] = '400.110.03'
+															  AND GLE.[Document No_] NOT LIKE 'UM%'
+															  AND GLE.[Posting Date] <=  @TglInvUpto
+														GROUP BY DIMS.ITEM_CAT
+																,DIMS.BRANCHES
+																,SIH.[Order No_]
+													) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+									) OUM
+							WHERE OUM.AMOUNT > 0
+						 ) ASCY
+					GROUP BY ASCY.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN ASPY.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN ASPY.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN ASPY.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN ASPY.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN ASPY.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN ASPY.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(+) Accured Sales Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							,SUM(ASPY.AMOUNT)  AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM	(
+								SELECT	OUM.ITEM_CAT
+										,OUM.AMOUNT
+								FROM	(
+											SELECT	UM.ITEM_CAT
+													, CASE WHEN ISNULL(INV.AMOUNT,0) =  0 THEN 0 ELSE
+														CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN
+															UM.AMOUNT ELSE SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+														END
+													  END AS AMOUNT
+											FROM	(
+														SELECT	DIMS.ITEM_CAT
+																,DIMS.BRANCHES
+																,SIH.[Posting Date] AS TGL_UM
+																,SIH.[No_] AS NO_UM
+																,SIH.[External Document No_] AS NO_PO_CUST
+																,SIH.[Bill-to Customer No_] AS CUST_NO
+																,SIH.[Bill-to Name] AS CUST_NAME
+																,SIH.[Prepayment Order No_] AS NO_SO
+																, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+														FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+														LEFT JOIN	(
+																		SELECT	DIM.DIM_ID
+																				,MAX(DIM.BRANCHES) AS BRANCHES
+																				,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																				,MAX(DIM.SALESMAN) AS SALESMAN
+																		FROM	(
+																					SELECT [Dimension Set ID] AS DIM_ID
+																						  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																						  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																						  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																					FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+																				) DIM
+																		GROUP BY DIM.DIM_ID
+																	) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+														LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+														LEFT JOIN	(
+																		SELECT CLE.[Entry No_]
+																				, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+																				, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+																		FROM [ACS].[dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+																		LEFT JOIN [ACS].[dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+																		WHERE CLE.[Document Type] IN (2,3)
+																		AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+																			(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+																	) CM ON CM.NO_UM = GLE.[Document No_]
+														LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+														WHERE GLE.[G_L Account No_] = '400.110.03'
+															  AND GLE.[Document No_] LIKE 'UM%'
+															  AND CM.NO_CM IS NULL
+															  AND (DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL')
+															  AND (SIH.[Posting Date] < @TglInvFrom)
+														GROUP BY DIMS.ITEM_CAT,
+																 DIMS.BRANCHES,
+																 SIH.[Posting Date]
+																,SIH.[No_]
+																,SIH.[External Document No_]
+																,SIH.[Bill-to Customer No_]
+																,SIH.[Bill-to Name]
+																,SIH.[Prepayment Order No_]
+													) UM
+											LEFT JOIN	(
+															SELECT	DIMS.ITEM_CAT
+																	,DIMS.BRANCHES
+																	,SIH.[Order No_] AS NO_SO
+																	,MAX(SIH.[Posting Date]) AS TGL_INV
+																	,SUM(GLE.[Amount]) AS AMOUNT
+															FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+															LEFT JOIN	(
+																			SELECT	DIM.DIM_ID
+																					,MAX(DIM.BRANCHES) AS BRANCHES
+																					,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																					,MAX(DIM.SALESMAN) AS SALESMAN
+																			FROM	(
+																						SELECT [Dimension Set ID] AS DIM_ID
+																							  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																							  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																							  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																						FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+																					) DIM
+																			GROUP BY DIM.DIM_ID
+																		) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+															LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+															WHERE GLE.[G_L Account No_] = '400.110.03'
+																  AND GLE.[Document No_] NOT LIKE 'UM%'
+																  AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+															GROUP BY DIMS.ITEM_CAT
+																	,DIMS.BRANCHES
+																	,SIH.[Order No_]
+														) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+										) OUM
+								WHERE OUM.AMOUNT > 0
+							) ASPY
+					GROUP BY ASPY.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							 END AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							,SUM(GLE.[Amount]) * -1 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AJ-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,'7. Sales - LAINNYA' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							,SUM(GLE.[Amount]) * -1 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AJ-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'02-SALES CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, SUM(SLC.[Amount]) AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM	(
+								SELECT	CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+										, GLE.[Amount]
+										, GLE.[Global Dimension 1 Code] AS BRANCHES
+								FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Document No_] <> '9SIAT200197'
+										AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto
+							) SLC
+					WHERE (SLC.BRANCHES = @Cabang OR @Cabang = 'ALL')
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'02-SALES CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, SUM(SLC.[Amount]) AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AJ-ADJ' AS SOURCE_FROM
+					FROM	(
+								SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0303' AS SORT_SLS
+										, GLE.[Amount]
+								FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto
+							) SLC
+					WHERE @Cabang = 'ALL' OR @Cabang = '10'
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN 'Sales - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN 'Sales - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN 'Sales - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN 'Sales - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN 'Sales - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN 'Sales - MANAGE SERVICE'
+							END AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(GLE.[Amount]) * -1 AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,'7. Sales - LAINNYA' AS SUB_GRUP_TITLE
+							,'Sales - LAINNYA' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(GLE.[Amount]) * -1 AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN ASCY.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN ASCY.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN ASCY.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN ASCY.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN ASCY.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN ASCY.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(-) Accured Sales Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							,0 AS AMOUNT_AJ
+							,SUM(ASCY.AMOUNT) * -1 AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM (
+							SELECT	OUM.ITEM_CAT
+									,OUM.AMOUNT
+							FROM	(
+										SELECT	UM.ITEM_CAT
+												,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+													CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+													SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+												END
+												END	 AS AMOUNT
+										FROM	(
+													SELECT	DIMS.ITEM_CAT
+															,DIMS.BRANCHES
+															,SIH.[Posting Date] AS TGL_UM
+															,SIH.[No_] AS NO_UM
+															,SIH.[External Document No_] AS NO_PO_CUST
+															,SIH.[Bill-to Customer No_] AS CUST_NO
+															,SIH.[Bill-to Name] AS CUST_NAME
+															,SIH.[Prepayment Order No_] AS NO_SO
+															, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+													FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+													LEFT JOIN	(
+																	SELECT	DIM.DIM_ID
+																			,MAX(DIM.BRANCHES) AS BRANCHES
+																			,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																			,MAX(DIM.SALESMAN) AS SALESMAN
+																	FROM	(
+																				SELECT [Dimension Set ID] AS DIM_ID
+																					  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																					  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																					  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																				FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+																			) DIM
+																	GROUP BY DIM.DIM_ID
+																) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+													LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+													LEFT JOIN	(
+																	SELECT CLE.[Entry No_]
+																			, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+																			, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+																	FROM [ACS].[dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+																	LEFT JOIN [ACS].[dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+																	WHERE CLE.[Document Type] IN (2,3)
+																	AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+																		(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+																) CM ON CM.NO_UM = GLE.[Document No_]
+													LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+													WHERE GLE.[G_L Account No_] = '400.110.03'
+														  AND GLE.[Document No_] LIKE 'UM%'
+														  AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > @TglInvUpto ))
+														  AND (DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL')
+														  AND (SIH.[Posting Date] >= @TglInvFrom AND SIH.[Posting Date]<= @TglInvUpto)
+													GROUP BY DIMS.ITEM_CAT,
+															 DIMS.BRANCHES,
+															 SIH.[Posting Date]
+															,SIH.[No_]
+															,SIH.[External Document No_]
+															,SIH.[Bill-to Customer No_]
+															,SIH.[Bill-to Name]
+															,SIH.[Prepayment Order No_]
+												) UM
+										LEFT JOIN	(
+														SELECT	DIMS.ITEM_CAT
+																,DIMS.BRANCHES
+																,SIH.[Order No_] AS NO_SO
+																,MAX(SIH.[Posting Date]) AS TGL_INV
+																,SUM(GLE.[Amount]) AS AMOUNT
+														FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+														LEFT JOIN	(
+																		SELECT	DIM.DIM_ID
+																				,MAX(DIM.BRANCHES) AS BRANCHES
+																				,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																				,MAX(DIM.SALESMAN) AS SALESMAN
+																		FROM	(
+																					SELECT [Dimension Set ID] AS DIM_ID
+																						  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																						  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																						  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																					FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+																				) DIM
+																		GROUP BY DIM.DIM_ID
+																	) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+														LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+														WHERE GLE.[G_L Account No_] = '400.110.03'
+															  AND GLE.[Document No_] NOT LIKE 'UM%'
+															  AND GLE.[Posting Date] <=  @TglInvUpto
+														GROUP BY DIMS.ITEM_CAT
+																,DIMS.BRANCHES
+																,SIH.[Order No_]
+													) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+									) OUM
+							WHERE OUM.AMOUNT > 0
+						 ) ASCY
+					GROUP BY ASCY.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN ASPY.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN ASPY.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN ASPY.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN ASPY.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN ASPY.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN ASPY.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(+) Accured Sales Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(ASPY.AMOUNT) AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM	(
+								SELECT	OUM.ITEM_CAT
+										,OUM.AMOUNT
+								FROM	(
+											SELECT	UM.ITEM_CAT
+													, CASE WHEN ISNULL(INV.AMOUNT,0) =  0 THEN 0 ELSE
+														CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN
+															UM.AMOUNT ELSE SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+														END
+													  END AS AMOUNT
+											FROM	(
+														SELECT	CASE WHEN SIH.[No_] = 'UMSS190005' THEN 'HW01' ELSE DIMS.ITEM_CAT END AS ITEM_CAT
+																,DIMS.BRANCHES
+																,SIH.[Posting Date] AS TGL_UM
+																,SIH.[No_] AS NO_UM
+																,SIH.[External Document No_] AS NO_PO_CUST
+																,SIH.[Bill-to Customer No_] AS CUST_NO
+																,SIH.[Bill-to Name] AS CUST_NAME
+																,SIH.[Prepayment Order No_] AS NO_SO
+																, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+														FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+														LEFT JOIN	(
+																		SELECT	DIM.DIM_ID
+																				,MAX(DIM.BRANCHES) AS BRANCHES
+																				,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																				,MAX(DIM.SALESMAN) AS SALESMAN
+																		FROM	(
+																					SELECT [Dimension Set ID] AS DIM_ID
+																						  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																						  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																						  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																					FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+																				) DIM
+																		GROUP BY DIM.DIM_ID
+																	) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+														LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+														LEFT JOIN	(
+																		SELECT CLE.[Entry No_]
+																				, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+																				, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+																		FROM [ACS].[dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+																		LEFT JOIN [ACS].[dbo].[SOLUSI$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+																		WHERE CLE.[Document Type] IN (2,3)
+																		AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+																			(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+																	) CM ON CM.NO_UM = GLE.[Document No_]
+														LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+														WHERE GLE.[G_L Account No_] = '400.110.03'
+															  AND GLE.[Document No_] LIKE 'UM%'
+															  AND CM.NO_CM IS NULL
+															  AND (DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL')
+															  AND (SIH.[Posting Date] < @TglInvFrom)
+														GROUP BY DIMS.ITEM_CAT,
+																 DIMS.BRANCHES,
+																 SIH.[Posting Date]
+																,SIH.[No_]
+																,SIH.[External Document No_]
+																,SIH.[Bill-to Customer No_]
+																,SIH.[Bill-to Name]
+																,SIH.[Prepayment Order No_]
+													) UM
+											LEFT JOIN	(
+															SELECT	DIMS.ITEM_CAT
+																	,DIMS.BRANCHES
+																	,SIH.[Order No_] AS NO_SO
+																	,MAX(SIH.[Posting Date]) AS TGL_INV
+																	,SUM(GLE.[Amount]) AS AMOUNT
+															FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+															LEFT JOIN	(
+																			SELECT	DIM.DIM_ID
+																					,MAX(DIM.BRANCHES) AS BRANCHES
+																					,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+																					,MAX(DIM.SALESMAN) AS SALESMAN
+																			FROM	(
+																						SELECT [Dimension Set ID] AS DIM_ID
+																							  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																							  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																							  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+																						FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+																					) DIM
+																			GROUP BY DIM.DIM_ID
+																		) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+															LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+															WHERE GLE.[G_L Account No_] = '400.110.03'
+																  AND GLE.[Document No_] NOT LIKE 'UM%'
+																  AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+															GROUP BY DIMS.ITEM_CAT
+																	,DIMS.BRANCHES
+																	,SIH.[Order No_]
+														) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+										) OUM
+								WHERE OUM.AMOUNT > 0
+							) ASPY
+					GROUP BY ASPY.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. Sales - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. Sales - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. Sales - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. Sales - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. Sales - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. Sales - MANAGE SERVICE'
+							 END AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(GLE.[Amount]) * -1 AS AMOUNT_SP
+							,'SP-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'01-SALES' AS SUB_GRUP_SC
+							,'7. Sales - LAINNYA' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(GLE.[Amount]) * -1 AS AMOUNT_SP
+							,'SP-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'02-SALES CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(SLC.[Amount]) AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM	(
+								SELECT	CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+										, GLE.[Amount]
+										, GLE.[Global Dimension 1 Code] AS BRANCHES
+								FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+							) SLC
+					WHERE (SLC.BRANCHES = @Cabang OR @Cabang = 'ALL')
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+					UNION ALL
+					SELECT	'01-SALES' AS GRUP_SC
+							,'02-SALES CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(SLC.[Amount]) AS AMOUNT_SP
+							,'SP-ADJ' AS SOURCE_FROM
+					FROM	(
+								SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0303' AS SORT_SLS
+										, GLE.[Amount]
+								FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto
+							) SLC
+					WHERE @Cabang = 'ALL' OR @Cabang = '10'
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'1. COGS - HARDWARE' AS SUB_GRUP_TITLE
+							,'COGS - HARDWARE' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'1. COGS - HARDWARE' AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'1. COGS - HARDWARE' AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'1. COGS - HARDWARE' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'2. COGS - 3rd PARTY SOFTWARE' AS SUB_GRUP_TITLE
+							,'COGS - 3rd PARTY SOFTWARE' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'2. COGS - 3rd PARTY SOFTWARE' AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'2. COGS - 3rd PARTY SOFTWARE' AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'2. COGS - 3rd PARTY SOFTWARE' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'3. COGS - OWN SOFTWARE' AS SUB_GRUP_TITLE
+							,'COGS - OWN SOFTWARE' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'3. COGS - OWN SOFTWARE' AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'3. COGS - OWN SOFTWARE' AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'3. COGS - OWN SOFTWARE' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'4. COGS - TECHNOLOGY SERVICE' AS SUB_GRUP_TITLE
+							,'COGS - TECHNOLOGY SERVICE' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'4. COGS - TECHNOLOGY SERVICE' AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'4. COGS - TECHNOLOGY SERVICE' AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'4. COGS - TECHNOLOGY SERVICE' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'5. COGS - HARDWARE SERVICE' AS SUB_GRUP_TITLE
+							,'COGS - HARDWARE SERVICE' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'5. COGS - HARDWARE SERVICE' AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'5. COGS - HARDWARE SERVICE' AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'5. COGS - HARDWARE SERVICE' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'6. COGS - MANAGE SERVICE' AS SUB_GRUP_TITLE
+							,'COGS - MANAGE SERVICE' AS TITLE
+							,'SLS-00' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'6. COGS - MANAGE SERVICE' AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'6. COGS - MANAGE SERVICE' AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'6. COGS - MANAGE SERVICE' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							,'1. COGS FA' AS SUB_GRUP_TITLE
+							,'(-) COGS FA' AS TITLE
+							,'SLS-0401' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							,'2. COGS INTERCOY' AS SUB_GRUP_TITLE
+							,'(-) COGS INTERCOY' AS TITLE
+							,'SLS-0402' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT  '02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							,'3. Others COGS Adjustment' AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-0403' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'' AS SOURCE_FROM
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN 'COGS - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN 'COGS - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN 'COGS - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN 'COGS - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN 'COGS - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN 'COGS - MANAGE SERVICE'
+							END AS TITLE
+							,'SLS-00' AS SORT_SLS
+							,SUM(GLE.[Amount]) AS AMOUNT_AJ
+							,0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DII.CATEGORY = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DII.CATEGORY = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DII.CATEGORY = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DII.CATEGORY = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DII.CATEGORY = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DII.CATEGORY = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							,SUM(DII.AMOUNT) * -1 AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM
+					(
+					SELECT	DOO.TGL_SJ
+							,DOO.NO_SJ
+							,DOO.CABANG
+							,DOO.CATEGORY
+							,DOO.AMOUNT
+							,CASE WHEN DOI.NO_INVOICE IS NULL AND
+								(
+									SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+									FROM [ACS].[dbo].[AUTOJAYA$Sales Shipment Line] SHL
+									WHERE SHL.[Document No_] = DOO.NO_SJ
+									GROUP BY SHL.[Document No_]
+								) = 'Y' THEN
+								(
+									SELECT MAX(IOO.NO_INV)
+									FROM	(
+												SELECT
+														DISTINCT SIH.[No_] AS NO_INV,
+														SIH.[Posting Date] AS TGL_INV,
+														CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+												FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH
+												INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+												LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+												WHERE SIL.[Type] = 2
+											)IOO
+									WHERE IOO.NO_DO  = DOO.NO_SJ AND
+										  IOO.TGL_INV < DOO.TGL_SJ
+								) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+							,DOI.TGL_INV
+					FROM
+					(
+						SELECT GLE.[Posting Date] AS TGL_SJ
+							  ,GLE.[Document No_] AS NO_SJ
+							  ,GLE.[Global Dimension 1 Code] AS CABANG
+							  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+							  ,SUM(GLE.[Amount]) AS AMOUNT
+						FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+						INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+						WHERE GLE.[G_L Account No_]= '500.110.00'
+								AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+						GROUP BY GLE.[Posting Date], GLE.[Document No_]
+								,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+					) DOO
+					LEFT JOIN	(
+									SELECT	XXX.NO_SJ
+											,XXX.TGL_INV
+											,MAX(ISJ.[No_]) AS NO_INVOICE
+									FROM
+											(
+												SELECT DO.[No_] AS NO_SJ
+														, MIN(ISJ2.TGL_INV) AS TGL_INV
+												FROM [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DO
+												LEFT JOIN (
+															SELECT	SIH2.[Posting Date] AS TGL_INV
+																	,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																	,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+															FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH2
+															INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+															LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+															WHERE SIL2.[Type] = 2
+														  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+												GROUP BY DO.[No_]
+											) XXX
+									LEFT JOIN	(
+													SELECT
+															SIH.[No_],
+															SIH.[Posting Date],
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH
+													INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+									GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+								) DOI ON DOI.NO_SJ = DOO.NO_SJ
+					LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+					WHERE	DOO.AMOUNT <> 0 AND
+							(
+								CRM.[No_] IS NULL OR
+								(	CRM.[No_] IS NOT NULL AND
+									CRM.[Posting Date] >  @TglInvUpto
+								)
+							)
+					) DII
+					LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+					LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+					WHERE	(
+								CRM2.[No_] IS NULL OR
+								(	CRM2.[No_] IS NOT NULL AND
+									CRM2.[Posting Date] > @TglInvUpto
+								)
+							)
+							AND (	DII.NO_INVOICE IS NULL
+									OR
+									SIH3.[Posting Date] > @TglInvUpto
+								)
+							AND (DII.TGL_SJ >= @TglInvFrom  AND DII.TGL_SJ <= @TglInvUpto)
+							AND (DII.CABANG = @Cabang OR @Cabang = 'ALL')
+					GROUP BY DII.CATEGORY
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DII.CATEGORY = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DII.CATEGORY = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DII.CATEGORY = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DII.CATEGORY = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DII.CATEGORY = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DII.CATEGORY = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							,SUM(DII.AMOUNT) AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM
+					(
+					SELECT	DOO.TGL_SJ
+							,DOO.NO_SJ
+							,DOO.CABANG
+							,DOO.CATEGORY
+							,DOO.AMOUNT
+							,CASE WHEN DOI.NO_INVOICE IS NULL AND
+								(
+									SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+									FROM [ACS].[dbo].[AUTOJAYA$Sales Shipment Line] SHL
+									WHERE SHL.[Document No_] = DOO.NO_SJ
+									GROUP BY SHL.[Document No_]
+								) = 'Y' THEN
+								(
+									SELECT MAX(IOO.NO_INV)
+									FROM	(
+												SELECT
+														DISTINCT SIH.[No_] AS NO_INV,
+														SIH.[Posting Date] AS TGL_INV,
+														CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+												FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH
+												INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+												LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+												WHERE SIL.[Type] = 2
+											)IOO
+									WHERE IOO.NO_DO  = DOO.NO_SJ AND
+										  IOO.TGL_INV < DOO.TGL_SJ
+								) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+							,DOI.TGL_INV
+					FROM
+					(
+						SELECT GLE.[Posting Date] AS TGL_SJ
+							  ,GLE.[Document No_] AS NO_SJ
+							  ,GLE.[Global Dimension 1 Code] AS CABANG
+							  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+							  ,SUM(GLE.[Amount]) AS AMOUNT
+						FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+						INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+						WHERE GLE.[G_L Account No_]= '500.110.00'
+								AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+						GROUP BY GLE.[Posting Date], GLE.[Document No_]
+								,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+					) DOO
+					LEFT JOIN	(
+									SELECT	XXX.NO_SJ
+											,XXX.TGL_INV
+											,MAX(ISJ.[No_]) AS NO_INVOICE
+									FROM
+											(
+												SELECT DO.[No_] AS NO_SJ
+														, MIN(ISJ2.TGL_INV) AS TGL_INV
+												FROM [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DO
+												LEFT JOIN (
+															SELECT	SIH2.[Posting Date] AS TGL_INV
+																	,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																	,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+															FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH2
+															INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+															LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+															WHERE SIL2.[Type] = 2
+														  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+												GROUP BY DO.[No_]
+											) XXX
+									LEFT JOIN	(
+													SELECT
+															SIH.[No_],
+															SIH.[Posting Date],
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH
+													INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+									GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+								) DOI ON DOI.NO_SJ = DOO.NO_SJ
+					LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+					WHERE	DOO.AMOUNT <> 0 AND
+							(
+								CRM.[No_] IS NULL OR
+								(	CRM.[No_] IS NOT NULL AND
+									CRM.[Posting Date] > @TglInvUpto
+								)
+							)
+					) DII
+					LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+					LEFT JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+					WHERE	(
+								CRM2.[No_] IS NULL OR
+								(	CRM2.[No_] IS NOT NULL AND
+									CRM2.[Posting Date] > @TglInvUpto
+								)
+							)
+							AND (SIH3.[Posting Date] >= @TglInvFrom  AND SIH3.[Posting Date] <= @TglInvUpto )
+							AND (DII.TGL_SJ < @TglInvFrom)
+							AND (DII.CABANG = @Cabang OR @Cabang = 'ALL')
+					GROUP BY DII.CATEGORY
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'7. Rebate' AS SUB_GRUP_TITLE
+							,'Rebate' AS TITLE
+							,'SLS-04' AS SORT_SLS
+							,ISNULL(SUM(GLE.[Amount]),0) AS AMOUNT_AJ
+							,0 AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] = '600.110.00'
+							AND (GLE.[Global Dimension 1 Code] = @Cabang OR @Cabang = 'ALL')
+							AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'7. Rebate' AS SUB_GRUP_TITLE
+							,'Rebate' AS TITLE
+							,'SLS-04' AS SORT_SLS
+							,ISNULL(SUM(GLE.[Amount]),0) AS AMOUNT_AJ
+							,0 AS AMOUNT_SP
+							,'AJ-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] = '600.110.00'
+							AND (GLE.[Global Dimension 1 Code] = @Cabang OR @Cabang = 'ALL')
+							AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							 END AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							,SUM(GLE.[Amount]) AS AMOUNT_AJ
+							, 0 AS AMOUNT_SP
+							,'AJ-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, CASE WHEN  SLC.SALES_TITLE = '1. COGS FA' THEN SUM(SLC.[Amount]) ELSE 0 END AS AMOUNT_AJ
+							, CASE WHEN  SLC.SALES_TITLE = '1. COGS FA' THEN 0 ELSE SUM(SLC.[Amount]) END AS AMOUNT_SP
+							,'AUTOJAYA' AS SOURCE_FROM
+					FROM	(
+								SELECT	CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+										, GLE.[Amount]
+										, GLE.[Global Dimension 1 Code] AS BRANCHES
+								FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Document No_] <> '9SIAT200197'
+										AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+							) SLC
+					WHERE (SLC.BRANCHES = @Cabang OR @Cabang = 'ALL')
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, CASE WHEN SLC.AMT_COM = 'AJ' THEN SUM(SLC.[Amount]) ELSE 0 END AS AMOUNT_AJ
+							, CASE WHEN SLC.AMT_COM = 'SP' THEN SUM(SLC.[Amount]) ELSE 0 END AS AMOUNT_SP
+							,'AJ-ADJ' AS SOURCE_FROM
+					FROM	(
+								SELECT	'3. Others COGS Adjustment' AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0403' AS SORT_SLS
+										, CASE WHEN GLE.[Description] LIKE 'FA%' THEN 'AJ' ELSE 'SP' END AS AMT_COM
+										, GLE.[Amount]
+								FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+							) SLC
+					WHERE @Cabang = 'ALL' OR @Cabang = '10'
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS, SLC.AMT_COM
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN 'COGS - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN 'COGS - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN 'COGS - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN 'COGS - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN 'COGS - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN 'COGS - MANAGE SERVICE'
+							END AS TITLE
+							,'SLS-00' AS SORT_SLS
+							,0 AS AMOUNT_AJ
+							,SUM(GLE.[Amount]) AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DII.CATEGORY = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DII.CATEGORY = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DII.CATEGORY = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DII.CATEGORY = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DII.CATEGORY = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DII.CATEGORY = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(-) Accured COGS Current Year' AS TITLE
+							,'SLS-02' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(DII.AMOUNT) * -1  AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM
+					(
+					SELECT	DOO.TGL_SJ
+							,DOO.NO_SJ
+							,DOO.CABANG
+							,DOO.CATEGORY
+							,DOO.AMOUNT
+							,CASE WHEN DOI.NO_INVOICE IS NULL AND
+								(
+									SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+									FROM [ACS].[dbo].[SOLUSI$Sales Shipment Line] SHL
+									WHERE SHL.[Document No_] = DOO.NO_SJ
+									GROUP BY SHL.[Document No_]
+								) = 'Y' THEN
+								(
+									SELECT MAX(IOO.NO_INV)
+									FROM	(
+												SELECT
+														DISTINCT SIH.[No_] AS NO_INV,
+														SIH.[Posting Date] AS TGL_INV,
+														CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+												FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH
+												INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+												LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+												WHERE SIL.[Type] = 2
+											)IOO
+									WHERE IOO.NO_DO  = DOO.NO_SJ AND
+										  IOO.TGL_INV < DOO.TGL_SJ
+								) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+							,DOI.TGL_INV
+					FROM
+					(
+						SELECT GLE.[Posting Date] AS TGL_SJ
+							  ,GLE.[Document No_] AS NO_SJ
+							  ,GLE.[Global Dimension 1 Code] AS CABANG
+							  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+							  ,SUM(GLE.[Amount]) AS AMOUNT
+						FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+						INNER JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+						WHERE GLE.[G_L Account No_]= '500.110.00'
+								AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+						GROUP BY GLE.[Posting Date], GLE.[Document No_]
+								,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+					) DOO
+					LEFT JOIN	(
+									SELECT	XXX.NO_SJ
+											,XXX.TGL_INV
+											,MAX(ISJ.[No_]) AS NO_INVOICE
+									FROM
+											(
+												SELECT DO.[No_] AS NO_SJ
+														, MIN(ISJ2.TGL_INV) AS TGL_INV
+												FROM [ACS].[dbo].[SOLUSI$Sales Shipment Header] DO
+												LEFT JOIN (
+															SELECT	SIH2.[Posting Date] AS TGL_INV
+																	,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																	,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+															FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH2
+															INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+															LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+															WHERE SIL2.[Type] = 2
+														  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+												GROUP BY DO.[No_]
+											) XXX
+									LEFT JOIN	(
+													SELECT
+															SIH.[No_],
+															SIH.[Posting Date],
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH
+													INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+									GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+								) DOI ON DOI.NO_SJ = DOO.NO_SJ
+					LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+					WHERE	DOO.AMOUNT <> 0 AND
+							(
+								CRM.[No_] IS NULL OR
+								(	CRM.[No_] IS NOT NULL AND
+									CRM.[Posting Date] > @TglInvUpto
+								)
+							)
+					) DII
+					LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+					LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+					WHERE	(
+								CRM2.[No_] IS NULL OR
+								(	CRM2.[No_] IS NOT NULL AND
+									CRM2.[Posting Date] > @TglInvUpto
+								)
+							)
+							AND (	DII.NO_INVOICE IS NULL
+									OR
+									SIH3.[Posting Date] > @TglInvUpto
+								)
+							AND (DII.TGL_SJ >= @TglInvFrom  AND DII.TGL_SJ <= @TglInvUpto)
+							AND (DII.CABANG = @Cabang OR @Cabang = 'ALL')
+					GROUP BY DII.CATEGORY
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DII.CATEGORY = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DII.CATEGORY = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DII.CATEGORY = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DII.CATEGORY = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DII.CATEGORY = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DII.CATEGORY = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							END AS SUB_GRUP_TITLE
+							,'(+) Accured COGS Previous Year' AS TITLE
+							,'SLS-01' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(DII.AMOUNT) AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM
+					(
+					SELECT	DOO.TGL_SJ
+							,DOO.NO_SJ
+							,DOO.CABANG
+							,DOO.CATEGORY
+							,DOO.AMOUNT
+							,CASE WHEN DOI.NO_INVOICE IS NULL AND
+								(
+									SELECT CASE WHEN SUM(SHL.[Quantity]) = SUM(SHL.[Quantity Invoiced]) THEN 'Y' ELSE 'N' END AS INV
+									FROM [ACS].[dbo].[SOLUSI$Sales Shipment Line] SHL
+									WHERE SHL.[Document No_] = DOO.NO_SJ
+									GROUP BY SHL.[Document No_]
+								) = 'Y' THEN
+								(
+									SELECT MAX(IOO.NO_INV)
+									FROM	(
+												SELECT
+														DISTINCT SIH.[No_] AS NO_INV,
+														SIH.[Posting Date] AS TGL_INV,
+														CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+												FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH
+												INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+												LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+												WHERE SIL.[Type] = 2
+											)IOO
+									WHERE IOO.NO_DO  = DOO.NO_SJ AND
+										  IOO.TGL_INV < DOO.TGL_SJ
+								) ELSE DOI.NO_INVOICE END AS NO_INVOICE
+							,DOI.TGL_INV
+					FROM
+					(
+						SELECT GLE.[Posting Date] AS TGL_SJ
+							  ,GLE.[Document No_] AS NO_SJ
+							  ,GLE.[Global Dimension 1 Code] AS CABANG
+							  ,GLE.[Global Dimension 2 Code] AS CATEGORY
+							  ,SUM(GLE.[Amount]) AS AMOUNT
+						FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+						INNER JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[No_] = GLE.[Document No_]
+						WHERE GLE.[G_L Account No_]= '500.110.00'
+								AND DOA.[Bill-to Customer No_] NOT IN ('SOPE001', 'AUJA001', 'AUJA002')
+						GROUP BY GLE.[Posting Date], GLE.[Document No_]
+								,GLE.[Global Dimension 1 Code] ,GLE.[Global Dimension 2 Code]
+					) DOO
+					LEFT JOIN	(
+									SELECT	XXX.NO_SJ
+											,XXX.TGL_INV
+											,MAX(ISJ.[No_]) AS NO_INVOICE
+									FROM
+											(
+												SELECT DO.[No_] AS NO_SJ
+														, MIN(ISJ2.TGL_INV) AS TGL_INV
+												FROM [ACS].[dbo].[SOLUSI$Sales Shipment Header] DO
+												LEFT JOIN (
+															SELECT	SIH2.[Posting Date] AS TGL_INV
+																	,CONVERT(VARCHAR(6), SIH2.[Posting Date], 112) AS PERIODE_INV
+																	,CASE WHEN SIL2.[Shipment No_] <> '' THEN SIL2.[Shipment No_] ELSE DOA2.[No_] END AS NO_DO
+															FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH2
+															INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL2 ON SIL2.[Document No_] = SIH2.[No_]
+															LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA2 ON DOA2.[Order No_] = SIH2.[Order No_]
+															WHERE SIL2.[Type] = 2
+														  ) ISJ2 ON ISJ2.NO_DO  = DO.[No_] AND ISJ2.PERIODE_INV >= CONVERT(VARCHAR(6), DO.[Posting Date], 112)
+												GROUP BY DO.[No_]
+											) XXX
+									LEFT JOIN	(
+													SELECT
+															SIH.[No_],
+															SIH.[Posting Date],
+															CASE WHEN SIL.[Shipment No_] <> '' THEN SIL.[Shipment No_] ELSE DOA.[No_] END AS NO_DO
+													FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH
+													INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+													LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Shipment Header] DOA ON DOA.[Order No_] = SIH.[Order No_]
+													WHERE SIL.[Type] = 2
+												) ISJ ON ISJ.NO_DO = XXX.NO_SJ AND ISJ.[Posting Date] = XXX.TGL_INV
+									GROUP BY  XXX.NO_SJ, XXX.TGL_INV
+								) DOI ON DOI.NO_SJ = DOO.NO_SJ
+					LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = DOI.NO_INVOICE
+					WHERE DOO.AMOUNT <> 0 AND
+							(
+								CRM.[No_] IS NULL OR
+								(	CRM.[No_] IS NOT NULL AND
+									CRM.[Posting Date] > @TglInvUpto
+								)
+							)
+					) DII
+					LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH3 ON SIH3.[No_] = DII.NO_INVOICE
+					LEFT JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRM2 ON CRM2.[Applies-to Doc_ No_] = DII.NO_INVOICE
+					WHERE	(
+								CRM2.[No_] IS NULL OR
+								(	CRM2.[No_] IS NOT NULL AND
+									CRM2.[Posting Date] > @TglInvUpto
+								)
+							)
+							AND (SIH3.[Posting Date] >= @TglInvFrom  AND SIH3.[Posting Date] <= @TglInvUpto )
+							AND (DII.TGL_SJ < @TglInvFrom)
+							AND (DII.CABANG = @Cabang OR @Cabang = 'ALL')
+					GROUP BY DII.CATEGORY
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'7. Rebate' AS SUB_GRUP_TITLE
+							,'Rebate' AS TITLE
+							,'SLS-04' AS SORT_SLS
+							,0 AS AMOUNT_AJ
+							,ISNULL(SUM(GLE.[Amount]),0) AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] IN ( '600.110.00', '600.120.00')
+							AND (GLE.[Global Dimension 1 Code] = @Cabang OR @Cabang = 'ALL')
+							AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,'7. Rebate' AS SUB_GRUP_TITLE
+							,'Rebate' AS TITLE
+							,'SLS-04' AS SORT_SLS
+							,0 AS AMOUNT_AJ
+							,ISNULL(SUM(GLE.[Amount]),0) AS AMOUNT_SP
+							,'SP-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] IN ( '600.110.00', '600.120.00')
+							AND (GLE.[Global Dimension 1 Code] = @Cabang OR @Cabang = 'ALL')
+							AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'01-COGS' AS SUB_GRUP_SC
+							,CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. COGS - HARDWARE'
+									WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. COGS - 3rd PARTY SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. COGS - OWN SOFTWARE'
+									WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. COGS - TECHNOLOGY SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. COGS - HARDWARE SERVICE'
+									WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. COGS - MANAGE SERVICE'
+							 END AS SUB_GRUP_TITLE
+							,'(-/+) Others Management Adjustment' AS TITLE
+							,'SLS-03' AS SORT_SLS
+							, 0 AS AMOUNT_AJ
+							, SUM(GLE.[Amount]) AS AMOUNT_SP
+							,'SP-ADJ' AS SOURCE_FROM
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT	DIM.DIM_ID
+											,MAX(DIM.BRANCHES) AS BRANCHES
+											,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+											,MAX(DIM.SALESMAN) AS SALESMAN
+									FROM	(
+												SELECT [Dimension Set ID] AS DIM_ID
+													  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+													  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+													  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+												FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+											) DIM
+									GROUP BY DIM.DIM_ID
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = @Cabang OR @Cabang = 'ALL') AND
+							(GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <= @TglInvUpto)
+					GROUP BY DIMS.ITEM_CAT
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, CASE WHEN  SLC.SALES_TITLE = '1. COGS FA' THEN 0 ELSE SUM(SLC.[Amount]) END AS AMOUNT_AJ
+							, CASE WHEN  SLC.SALES_TITLE = '1. COGS FA' THEN SUM(SLC.[Amount]) ELSE 0 END AS AMOUNT_SP
+							,'SOLUSI' AS SOURCE_FROM
+					FROM	(
+								SELECT	CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+										, GLE.[Amount]
+										, GLE.[Global Dimension 1 Code] AS BRANCHES
+								FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+							) SLC
+					WHERE (SLC.BRANCHES = @Cabang OR @Cabang = 'ALL')
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS
+					UNION ALL
+					SELECT	'02-COGS' AS GRUP_SC
+							,'02-COGS CORRECTION' AS SUB_GRUP_SC
+							, SLC.SALES_TITLE AS SUB_GRUP_TITLE
+							, SLC.SALES_TITLE2 AS TITLE
+							, SLC.SORT_SLS
+							, CASE WHEN SLC.AMT_COM = 'AJ' THEN SUM(SLC.[Amount]) ELSE 0 END AS AMOUNT_AJ
+							, CASE WHEN SLC.AMT_COM = 'SP' THEN SUM(SLC.[Amount]) ELSE 0 END AS AMOUNT_SP
+							,'SP-ADJ' AS SOURCE_FROM
+					FROM	(
+								SELECT	'3. Others COGS Adjustment' AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0403' AS SORT_SLS
+										, CASE WHEN GLE.[Description] LIKE 'FA%' THEN 'SP' ELSE 'AJ' END AS AMT_COM
+										, GLE.[Amount]
+								FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto)
+							) SLC
+					WHERE @Cabang = 'ALL' OR @Cabang = '10'
+					GROUP BY SLC.SALES_TITLE, SLC.SALES_TITLE2, SLC.SORT_SLS, SLC.AMT_COM
+				) X;		
+		RETURN  ;
+	END;
+	--
+	IF @Action = 'DELETE' 
+	BEGIN
+		DELETE FROM [dbo].[TEMP10_SALES_COGS_CORRECTION]
+		WHERE [PROSES_ID] = @ProsesId;
+		--
+		RETURN  ;
+	END;
+END;

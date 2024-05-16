@@ -1,0 +1,50 @@
+-- Function: p_download_invoice_lunas_satindo(character varying)
+
+-- DROP FUNCTION p_download_invoice_lunas_satindo(character varying);
+
+CREATE OR REPLACE FUNCTION p_download_invoice_lunas_satindo(processid character varying)
+  RETURNS character varying AS
+$BODY$ 
+--
+DECLARE hasil  VARCHAR(300);  
+DECLARE jmlInv  INTEGER;
+--
+BEGIN 
+
+	--
+	SELECT COUNT(tmp07.no_invoice) INTO jmlInv
+	FROM tmp07invoicesatindo tmp07
+	LEFT JOIN t06rekapkomisisatindo t06 ON t06.no_invoice =  tmp07.no_invoice AND t06.company =  tmp07.company
+	WHERE 	tmp07.proses_id = processId AND
+		t06.no_invoice IS NULL;
+	--
+	INSERT INTO t06rekapkomisisatindo (
+						company, reg, sales , no_invoice, tgl_invoice,
+						no_fp, no_po_cust, sell_to_code, sell_to_name,
+						bill_to_code, bill_to_name, nilai_invoice, tgl_lunas,
+						no_lunas, no_item, item_desc, qty, harga,
+						amount_komisi, flag_komisi,
+						version, created_by, created_on, updated_by, updated_on
+					)
+	SELECT	tmp07.company, tmp07.reg, tmp07.sales , tmp07.no_invoice, tmp07.tgl_invoice,
+		tmp07.no_fp, tmp07.no_po_cust, tmp07.sell_to_code, tmp07.sell_to_name,
+		tmp07.bill_to_code, tmp07.bill_to_name, tmp07.nilai_invoice, tmp07.tgl_lunas,
+		tmp07.no_lunas, tmp07.no_item, tmp07.item_desc, tmp07.qty, tmp07.harga,	
+		0 as amount_komisi, 'N' as flag_komisi, 		
+		1 as version, 'AUTO' as created_by, current_timestamp as created_on, 'AUTO' as updated_by, current_timestamp as updated_on
+	FROM tmp07invoicesatindo tmp07
+	LEFT JOIN t06rekapkomisisatindo t06 ON t06.no_invoice =  tmp07.no_invoice AND t06.company =  tmp07.company
+	WHERE 	tmp07.proses_id = processId AND
+		t06.no_invoice IS NULL;
+	--
+	--
+	DELETE FROM tmp07invoicesatindo 
+	WHERE proses_id = processId ;
+	--
+	hasil := 'Telah terdownload '||jmlInv||' Baris Data'; 
+	RETURN hasil;
+--
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;

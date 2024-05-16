@@ -1,0 +1,484 @@
+CREATE TABLE t01managementadj
+(
+  t01_id serial	NOT NULL,
+  tanggal	date NOT NULL,
+  cabang	character varying(2) NOT NULL,
+  sales		character varying(3) NOT NULL,
+  keterangan	character varying(30),
+  amount_hw01	numeric(12,0) DEFAULT 0,
+  amount_ps02	numeric(12,0) DEFAULT 0,
+  amount_ps03	numeric(12,0) DEFAULT 0,
+  amount_ps04	numeric(12,0) DEFAULT 0,
+  amount_ps05	numeric(12,0) DEFAULT 0,
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT t01_id PRIMARY KEY (t01_id )
+);
+
+
+ALTER TABLE t01managementadj ADD COLUMN amount_ps01 numeric(12,0) DEFAULT 0;
+
+-- DROP FUNCTION l_t01managementadj(date, date);
+
+CREATE OR REPLACE FUNCTION l_t01managementadj(IN l_tglfr date, IN l_tglto date)
+  RETURNS TABLE(OutTanggal date, OutCabang character varying, OutSales character varying, OutKeterangan character varying, 
+		OutAmountHw01 numeric, OutAmountPs01 numeric, OutAmountPs02 numeric, OutAmountPs03 numeric, OutAmountPs04 numeric, OutAmountPs05 numeric
+		) AS
+$BODY$ 
+BEGIN
+	RETURN QUERY 
+	SELECT t01.tanggal as OutTanggal,
+		(CASE	WHEN t01.cabang='10' THEN '10-JAKARTA'
+			WHEN t01.cabang='15' THEN '15-SURABAYA'
+			WHEN t01.cabang='16' THEN '16-CIKARANG'
+			WHEN t01.cabang='17' THEN '17-SEMARANG'
+			WHEN t01.cabang='19' THEN '19-BALI'
+		ELSE '10-JAKARTA'
+		END)::varchar(20) as OutCabang,
+		t01.sales as OutSales, 
+		t01.keterangan as OutKeterangan, 
+		t01.amount_hw01 as OutAmountHw01,
+		t01.amount_ps01 as OutAmountPs01,
+		t01.amount_ps02 as OutAmountPs02,
+		t01.amount_ps03 as OutAmountPs03,
+		t01.amount_ps04 as OutAmountPs04,
+		t01.amount_ps05 as OutAmountPs05
+	FROM t01managementadj t01
+	WHERE (t01.tanggal BETWEEN l_tglfr AND l_tglto); 
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100
+  ROWS 1000;
+
+
+
+
+CREATE TABLE tmp01rebate
+(
+  tmp01_id serial	NOT NULL,
+  tanggal character varying(100),
+  no_invoice character varying(100),
+  no_po character varying(100),
+  item_no character varying(100),
+  item_desc character varying(100),
+  qty character varying(100),
+  keterangan character varying(100),
+  amount character varying(100),
+  proses_id character varying(100),
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT tmp01_id PRIMARY KEY (tmp01_id )
+);
+
+-- DROP FUNCTION l_tmp01rebate(character varying);
+
+CREATE OR REPLACE FUNCTION l_tmp01rebate (IN l_proses_id character varying)
+  RETURNS TABLE(OutTanggal character varying, OutNoInvoice character varying, OutNoPo character varying, OutItemNo character varying, 
+		OutItemDesc character varying, OutQty numeric, OutKeterangan character varying, OutAmount numeric
+		) AS
+$BODY$ 
+BEGIN
+	RETURN QUERY 
+	SELECT 	MAX(tanggal) AS OutTanggal,
+		no_invoice As OutNoInvoice,
+		MAX(no_po) AS  OutNoPo,
+		item_no as OutItemNo,
+		MAX(item_desc) AS  OutItemDesc,
+		SUM(TO_NUMBER(qty,'9999999999999999.99')) AS  OutQty,
+		MAX(keterangan) AS  OutKeterangan,
+		SUM(TO_NUMBER(amount,'9999999999999999.99')) AS OutAmount
+	FROM tmp01rebate
+	WHERE proses_id = l_proses_id
+	GROUP BY no_invoice, item_no; 
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100
+  ROWS 1000;
+
+
+
+
+CREATE TABLE tmp02kertaskerja
+(
+  tmp02_id serial NOT NULL,
+  item_no character varying(100),
+  item_desc character varying(100),
+  item_cat character varying(100),
+  item_cat_desc character varying(100),
+  product_grp character varying(100),
+  product_grp_desc character varying(100),
+  posisi character varying(100),
+  uom character varying(100),
+  qty character varying(100),
+  proses_id character varying(100),
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT tmp02_id PRIMARY KEY (tmp02_id)
+);
+
+
+CREATE TABLE tmp03hasilopname
+(
+  tmp03_id serial NOT NULL,
+  item_no character varying(100),
+  lokasi character varying(100),
+  qty character varying(100),
+  waktu character varying(100),
+  prefix character varying(100),
+  terminal character varying(100),
+  proses_id character varying(100),
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT tmp03_id PRIMARY KEY (tmp03_id)
+);
+
+DROP TABLE tmp04efaktur;
+
+CREATE TABLE tmp04efaktur
+(
+  tmp04_id serial NOT NULL,
+  nama_cust character varying(100),
+  no_faktur_pajak character varying(100),
+  no_faktur_pajak_ori character varying(100),
+  tanggal character varying(100),
+  masa character varying(100),
+  tahun character varying(100),
+  status character varying(100),
+  dpp character varying(100),
+  ppn character varying(100),
+  referansi character varying(100),
+  status_approval character varying(100),
+  proses_id character varying(100),
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT tmp04_id PRIMARY KEY (tmp04_id)
+);
+
+
+
+DROP TABLE tmp05navfaktur;
+
+CREATE TABLE tmp05navfaktur
+(
+  tmp05_id serial NOT NULL,
+  tgl_invoice character varying(100),
+  no_invoice character varying(100),
+  no_credit_memo character varying(100),
+  tipe_dok character varying(100),
+  cust_name character varying(100),
+  no_faktur_pajak character varying(100),
+  no_faktur_pajak_ori character varying(100),
+  dpp character varying(100),
+  ppn character varying(100),
+  no_invoice_cancel character varying(100),
+  tgl_invoice_cancel character varying(100),
+  no_faktur_pajak_cancel character varying(100),
+  proses_id character varying(100),
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT tmp05_id PRIMARY KEY (tmp05_id)
+);
+
+
+drop table t02rekapcosting;
+CREATE TABLE t02rekapcosting
+(
+	t02_id serial	NOT NULL,
+	company		character varying(10) NOT NULL,
+	sales		character varying(10),
+	no_so		character varying(20),
+	tgl_so		date,
+	customer	character varying(100),
+	no_po_cust	character varying(50),
+	amount		numeric(15,2),
+	no_invoice	character varying(20),
+	tgl_invoice	date,
+	tgl_lunas	date,
+	pcn_komisi	numeric(20,15),
+	amount_komisi	numeric(15,2),
+	tgl_byr_komisi	date,
+	flag_komisi	character varying(1),
+	pcn_tqs		numeric(5,2),
+	amount_tqs	numeric(15,2),
+	tgl_byr_tqs	date,
+	flag_tqs	character varying(1),
+	version 	integer,
+	created_by 	character varying(15),
+	created_on 	timestamp without time zone,
+	updated_by 	character varying(15),
+	updated_on 	timestamp without time zone,
+	CONSTRAINT t02_id PRIMARY KEY (t02_id )
+);
+
+drop table tmp7lastinvoice;
+CREATE TABLE tmp07lastinvoice
+(
+	register	character varying(10),
+	no_invoice	character varying(20),
+	CONSTRAINT register_pk PRIMARY KEY (register)
+);
+
+
+drop table tmp06invoicelunas;
+CREATE TABLE tmp06invoicelunas
+(
+	tmp06_id serial NOT NULL,
+	company		character varying(10),
+	reg		character varying(10),
+	sales		character varying(10),
+	sales_name	character varying(100),
+	no_so		character varying(20),
+	tgl_so		date,
+	customer	character varying(100),
+	no_po_cust	character varying(50),
+	amount		numeric(15,2),
+	no_invoice	character varying(20),
+	tgl_invoice	date,
+	tgl_lunas	date,
+	proses_id 	character varying(100),
+	version integer,
+	created_by character varying(15),
+	created_on timestamp without time zone,
+	updated_by character varying(15),
+	updated_on timestamp without time zone,
+	CONSTRAINT tmp06_id PRIMARY KEY (tmp06_id)
+);
+
+
+CREATE TABLE t03salesperson
+(
+	t03_id serial	NOT NULL,
+	nik		character varying(10),
+	sales		character varying(10),
+	sales_name	character varying(100),	
+	version 	integer,
+	created_by 	character varying(15),
+	created_on 	timestamp without time zone,
+	updated_by 	character varying(15),
+	updated_on 	timestamp without time zone,
+	CONSTRAINT t03_id PRIMARY KEY (t03_id ),
+	CONSTRAINT sales_uk UNIQUE (sales)	
+);
+
+CREATE TABLE t04paramKomisi
+(
+  kode character varying(2),
+  finance character varying(100),
+  finance2 character varying(100),
+  spv_finance character varying(100),
+  bod character varying(100),	
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT kode PRIMARY KEY (kode)
+);
+
+
+ALTER TABLE t03salesperson ADD COLUMN target numeric(15,2);
+ALTER TABLE t03salesperson ALTER COLUMN target SET DEFAULT 0;
+
+
+update t03salesperson set target = 0;
+
+ALTER TABLE t02rekapcosting ADD COLUMN masa_komisi character varying(2);
+
+ALTER TABLE t02rekapcosting ADD COLUMN tahun_komisi character varying(4);
+
+update t02rekapcosting set
+masa_komisi = to_char(tgl_byr_komisi, 'MM'),
+tahun_komisi = to_char(tgl_byr_komisi, 'YYYY');
+
+ALTER TABLE t02rekapcosting DROP COLUMN tgl_byr_komisi ;
+
+ALTER TABLE t02rekapcosting ADD COLUMN masa_tqs character varying(2);
+
+ALTER TABLE t02rekapcosting ADD COLUMN tahun_tqs character varying(4);
+
+update t02rekapcosting set
+masa_tqs = to_char(tgl_byr_tqs, 'MM'),
+tahun_tqs = to_char(tgl_byr_tqs, 'YYYY');
+
+ALTER TABLE t02rekapcosting DROP COLUMN tgl_byr_tqs ;
+
+drop table t05periodeCosting;
+CREATE TABLE t05periodeCosting
+(
+	t05_id serial	NOT NULL,
+	masa		character varying(2),
+	tahun		character varying(4),
+	close_komisi	character varying(1),
+	close_tqs	character varying(1),
+	version 	integer,
+	created_by 	character varying(15),
+	created_on 	timestamp without time zone,
+	updated_by 	character varying(15),
+	updated_on 	timestamp without time zone,
+	CONSTRAINT t05_id PRIMARY KEY (t05_id ),
+	UNIQUE (masa, tahun)
+);
+
+
+-- Not Yet Deploy
+UPDATE t03salesperson SET 
+spv = 'ARH' 
+WHERE spv = 'ARIYANTO HARTANTO';
+UPDATE t03salesperson SET 
+spv = 'HRW' 
+WHERE spv = 'HERU WAHYUDI';
+UPDATE t03salesperson SET 
+spv = 'BDL' 
+WHERE spv = 'BOEDIJANTO';
+UPDATE t03salesperson SET 
+spv = 'NKW' 
+WHERE spv = 'NUNING KUSTIAWITA';
+UPDATE t03salesperson SET 
+spv = 'ADW' 
+WHERE spv = 'ADRIAN DEWANTORO';
+
+ALTER TABLE t02rekapcosting ADD COLUMN no_bso character varying(20);
+ALTER TABLE tmp06invoicelunas ADD COLUMN no_bso character varying(20);
+
+
+drop table t05downloadinvoice;
+CREATE TABLE t05downloadinvoice
+(
+	no_invoice	character varying(20),
+	CONSTRAINT t05_pk PRIMARY KEY (no_invoice )
+);
+
+INSERT INTO t05downloadinvoice
+SELECT DISTINCT NO_INVOICE FROM t02rekapcosting;
+
+
+
+
+CREATE TABLE t06rekapkomisisatindo
+(
+  t06_id serial NOT NULL,
+  company character varying(10) NOT NULL,
+  reg character varying(10),
+  sales character varying(10),
+  no_invoice character varying(20),
+  tgl_invoice date,
+  no_fp character varying(20),
+  no_po_cust character varying(50),
+  sell_to_code character varying(20),
+  sell_to_name character varying(100),
+  bill_to_code character varying(20),
+  bill_to_name character varying(100),
+  nilai_invoice numeric(15,2),
+  tgl_lunas date,
+  no_lunas character varying(20),
+  no_item character varying(20),
+  item_desc character varying(100),
+  qty numeric(15,0),
+  harga numeric(15,2),
+  amount_komisi numeric(15,2),
+  masa_komisi character varying(2),
+  tahun_komisi character varying(4),
+  flag_komisi character varying(1),
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT t06_id PRIMARY KEY (t06_id)
+);
+
+
+CREATE TABLE tmp07invoicesatindo
+(
+	tmp07_id serial	NOT NULL,
+	company		character varying(10) NOT NULL,
+	reg		character varying(10),
+	sales		character varying(10),
+	no_invoice	character varying(20),
+	tgl_invoice	date,
+	no_fp		character varying(20),
+	no_po_cust	character varying(50),
+	sell_to_code	character varying(20),	
+	sell_to_name	character varying(100),
+	bill_to_code	character varying(20),	
+	bill_to_name	character varying(100),
+	nilai_invoice	numeric(15,2),
+	tgl_lunas	date,
+	no_lunas	character varying(20),
+	no_item		character varying(20),
+	item_desc	character varying(100),	
+	qty 		numeric(15,0),
+	harga		numeric(15,2),
+	proses_id 	character varying(100),
+	version 	integer,
+	created_by 	character varying(15),
+	created_on 	timestamp without time zone,
+	updated_by 	character varying(15),
+	updated_on 	timestamp without time zone,
+	CONSTRAINT tmp07_id PRIMARY KEY (tmp07_id )
+);
+
+
+
+
+CREATE TABLE t07itemsatindo
+(
+	t07_id serial		NOT NULL,
+	tgl_berlaku		date,
+	no_item			character varying(20),
+	sat_amount_komisi	numeric(15,2),
+	sat_amount_bns		numeric(15,2),
+	idmr_amount_komisi	numeric(15,2),
+	idmr_amount_bns		numeric(15,2),
+	version 		integer,
+	created_by 		character varying(15),
+	created_on 		timestamp without time zone,
+	updated_by 		character varying(15),
+	updated_on 		timestamp without time zone,
+	CONSTRAINT t07_id PRIMARY KEY (t07_id ),
+	UNIQUE (tgl_berlaku, no_item)
+);
+
+
+ALTER TABLE t03salesperson ADD COLUMN periode_resign date;
+
+
+
+
+CREATE TABLE t08targetsales
+(
+  t08_id serial NOT NULL ,
+  tahun	character varying(4),
+  target numeric(15,2) DEFAULT 0,   
+  t03_id integer,
+  version integer,
+  created_by character varying(15),
+  created_on timestamp without time zone,
+  updated_by character varying(15),
+  updated_on timestamp without time zone,
+  CONSTRAINT t08_id PRIMARY KEY (t08_id),
+  CONSTRAINT t08_fk1 FOREIGN KEY (t03_id)
+      REFERENCES t03salesperson (t03_id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE CASCADE,      
+  UNIQUE (t03_id, tahun)
+);

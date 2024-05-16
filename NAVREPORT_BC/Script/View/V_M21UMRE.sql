@@ -1,0 +1,3 @@
+
+CREATE OR REPLACE VIEW public.v_m21umreASSELECT DISTINCT m21umre.daerah FROM m21umre;
+GO

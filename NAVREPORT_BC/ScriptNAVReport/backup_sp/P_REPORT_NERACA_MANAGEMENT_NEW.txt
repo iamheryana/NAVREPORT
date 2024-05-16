@@ -1,0 +1,848 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_REPORT_NERACA_MANAGEMENT_NEW]    Script Date: 07-02-2023 4:48:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER PROCEDURE [dbo].[P_REPORT_NERACA_MANAGEMENT_NEW] 
+	@ProsesId  nvarchar(100) ,  
+	@PeriodeFrom  datetime , 
+	@PeriodeUpto  datetime , 	
+	@Cabang  nvarchar(15),
+	@Pembagi DECIMAL(38,20),
+	@UserId nvarchar(15) ,
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	--
+	IF @Action = 'CETAK'
+	BEGIN
+		DECLARE @TglInvFrom DATETIME = CAST(@PeriodeFrom AS DATETIME);
+		DECLARE @TglInvUpto DATETIME = CAST(@PeriodeUpto AS DATETIME);
+		--
+		DECLARE	@YearPeriode int = DATEPART(YEAR, @TglInvUpto);  
+		DECLARE	@MonthPeriode int = DATEPART(MONTH, @TglInvUpto);      
+		--
+		DECLARE @TglInvFromLY DATETIME = DATEADD(YEAR, -1, @TglInvFrom);
+		DECLARE @TglInvUptoLY DATETIME = DATEADD(DAY, -1, @TglInvFrom);
+		--
+		DECLARE @Amount_AJ DECIMAL(38,20) = 0;
+		DECLARE @Amount_AJ_ADJ DECIMAL(38,20) = 0;
+		DECLARE @Amount_SP DECIMAL(38,20) = 0;
+		DECLARE @Amount_SP_ADJ DECIMAL(38,20) = 0;
+		DECLARE @Amount_AJ_PM DECIMAL(38,20) = 0;
+		DECLARE @Amount_AJ_ADJ_PM DECIMAL(38,20) = 0;
+		DECLARE @Amount_SP_PM DECIMAL(38,20) = 0;
+		DECLARE @Amount_SP_ADJ_PM DECIMAL(38,20) = 0;
+		DECLARE @Amount_AJ_LY DECIMAL(38,20) = 0;
+		DECLARE @Amount_AJ_ADJ_LY DECIMAL(38,20) = 0;
+		DECLARE @Amount_SP_LY DECIMAL(38,20) = 0;
+		DECLARE @Amount_SP_ADJ_LY DECIMAL(38,20) = 0;
+		--
+		DECLARE @Amount_1 DECIMAL(38,20) = 0;
+		DECLARE @Amount_2 DECIMAL(38,20) = 0;
+		DECLARE @Amount_3 DECIMAL(38,20) = 0;
+		DECLARE @Amount_4 DECIMAL(38,20) = 0;
+		DECLARE @Amount_5 DECIMAL(38,20) = 0;
+		DECLARE @Amount_6 DECIMAL(38,20) = 0;
+		--
+		DECLARE @ReportDesc VARCHAR(80);
+		--
+		DECLARE @ShowAmount tinyint;
+		--
+		DECLARE @LineNo int;
+		DECLARE @RowNo VARCHAR(10);
+		DECLARE @DescRow VARCHAR(80);
+		DECLARE @TotalingALLCompany VARCHAR(1000);
+		DECLARE @TotalingAJ VARCHAR(250);
+		DECLARE @TotalingAJ_ADJ VARCHAR(250);
+		DECLARE @TotalingSP VARCHAR(250);
+		DECLARE @TotalingSP_ADJ VARCHAR(250);
+		DECLARE @TotalingType int;
+		DECLARE @DimBranch VARCHAR(250);
+		DECLARE @DimItemCategory VARCHAR(250);	
+		DECLARE @Bold tinyint;
+		DECLARE @Italic tinyint;
+		DECLARE @Underline tinyint;
+		DECLARE @ShowOppSign tinyint;
+		DECLARE @DoubleUnderline tinyint;
+		--
+		DECLARE @inSTR as varchar(250); 
+		DECLARE @outSTRFrom as varchar(20); 
+		DECLARE @outSTRUpto as varchar(20);
+		--
+		EXEC [P_GET_PNL_FOR_NERACA_NEW]  @ProsesId, @YearPeriode, @MonthPeriode, @Cabang, @Pembagi, @UserId,  'CETAK';
+		--
+		DECLARE @AccuredSalesAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @AccuredSalesSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @AccuredSalesAJ DECIMAL(38,20) = 0;
+		DECLARE @AccuredSalesSP DECIMAL(38,20) = 0;
+		--
+		DECLARE @AccuredCOGSAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @AccuredCOGSSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @AccuredCOGSAJ DECIMAL(38,20) = 0;
+		DECLARE @AccuredCOGSSP DECIMAL(38,20) = 0;
+		--
+		DECLARE @KoreksiIntercoySalesAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @KoreksiIntercoySalesSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @KoreksiIntercoySalesAJ DECIMAL(38,20) = 0;
+		DECLARE @KoreksiIntercoySalesSP DECIMAL(38,20) = 0;	
+		--
+		DECLARE @KoreksiIntercoyCOGSAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @KoreksiIntercoyCOGSSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @KoreksiIntercoyCOGSAJ DECIMAL(38,20) = 0;
+		DECLARE @KoreksiIntercoyCOGSSP DECIMAL(38,20) = 0;
+		--
+		DECLARE @HutangIC_AJLastYear DECIMAL(38,20) = 0;
+		DECLARE @HutangIC_SPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @HutangIC_AJ DECIMAL(38,20) = 0;
+		DECLARE @HutangIC_SP DECIMAL(38,20) = 0;
+		--
+		SELECT	  @AccuredSalesAJLastYear = SUM(X.AMT_ACCRUED_SALES_AJ_LY) 
+				, @AccuredSalesSPLastYear = SUM(X.AMT_ACCRUED_SALES_SP_LY) 
+				, @AccuredCOGSAJLastYear = SUM(X.AMT_ACCRUED_COGS_AJ_LY) 
+				, @AccuredCOGSSPLastYear = SUM(X.AMT_ACCRUED_COGS_SP_LY) 
+				, @KoreksiIntercoySalesAJLastYear = SUM(X.AMT_KOR_IC_SALES_AJ_LY)
+				, @KoreksiIntercoySalesSPLastYear = SUM(X.AMT_KOR_IC_SALES_SP_LY)
+				, @KoreksiIntercoyCOGSAJLastYear  = SUM(X.AMT_KOR_IC_COGS_AJ_LY)
+				, @KoreksiIntercoyCOGSSPLastYear = SUM(X.AMT_KOR_IC_COGS_SP_LY)
+				, @HutangIC_AJLastYear = SUM(X.AMT_HUTANG_IC_AJ_LY)
+				, @HutangIC_SPLastYear = SUM(X.AMT_HUTANG_IC_SP_LY)
+				, @AccuredSalesAJ = SUM(X.AMT_ACCRUED_SALES_AJ)
+				, @AccuredSalesSP = SUM(X.AMT_ACCRUED_SALES_SP)
+				, @AccuredCOGSAJ = SUM(X.AMT_ACCRUED_COGS_AJ) 
+				, @AccuredCOGSSP = SUM(X.AMT_ACCRUED_COGS_SP) 
+				, @KoreksiIntercoySalesAJ = SUM(X.AMT_KOR_IC_SALES_AJ) 
+				, @KoreksiIntercoySalesSP = SUM(X.AMT_KOR_IC_SALES_SP) 
+				, @KoreksiIntercoyCOGSAJ = SUM(X.AMT_KOR_IC_COGS_AJ)
+				, @KoreksiIntercoyCOGSSP = SUM(X.AMT_KOR_IC_COGS_SP)
+				, @HutangIC_AJ = SUM(X.AMT_HUTANG_IC_AJ)
+				, @HutangIC_SP = SUM(X.AMT_HUTANG_IC_SP)
+		FROM	(
+					SELECT    0 AS AMT_ACCRUED_SALES_AJ_LY
+							, 0 AS AMT_ACCRUED_SALES_SP_LY
+							, 0 AS AMT_ACCRUED_COGS_AJ_LY
+							, 0 AS AMT_ACCRUED_COGS_SP_LY
+							, 0 AS AMT_KOR_IC_SALES_AJ_LY
+							, 0 AS AMT_KOR_IC_SALES_SP_LY
+							, 0 AS AMT_KOR_IC_COGS_AJ_LY
+							, 0 AS AMT_KOR_IC_COGS_SP_LY
+							, 0 AS AMT_HUTANG_IC_AJ_LY
+							, 0 AS AMT_HUTANG_IC_SP_LY
+							, 0 AS AMT_ACCRUED_SALES_AJ
+							, 0 AS AMT_ACCRUED_SALES_SP
+							, 0 AS AMT_ACCRUED_COGS_AJ
+							, 0 AS AMT_ACCRUED_COGS_SP
+							, 0 AS AMT_KOR_IC_SALES_AJ
+							, 0 AS AMT_KOR_IC_SALES_SP
+							, 0 AS AMT_KOR_IC_COGS_AJ
+							, 0 AS AMT_KOR_IC_COGS_SP
+							, 0 AS AMT_HUTANG_IC_AJ
+							, 0 AS AMT_HUTANG_IC_SP
+					UNION ALL				
+					SELECT	  CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN < @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN < @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN < @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN < @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN < @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN < @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN < @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN < @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN < @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN < @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN = @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN = @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_SP
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN = @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN = @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_SP
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN = @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN = @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_SP
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN = @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN = @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_SP
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN = @YearPeriode AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN = @YearPeriode AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_SP
+					FROM [dbo].[TEMP09_SALES_COGS_PNL]
+					WHERE	PROSES_ID = @ProsesId AND
+							TAHUN <= @YearPeriode
+			) X;
+		--
+		DECLARE @LYAccuredSalesAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @LYAccuredSalesSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @LYAccuredSalesAJ DECIMAL(38,20) = 0;
+		DECLARE @LYAccuredSalesSP DECIMAL(38,20) = 0;
+		--
+		DECLARE @LYAccuredCOGSAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @LYAccuredCOGSSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @LYAccuredCOGSAJ DECIMAL(38,20) = 0;
+		DECLARE @LYAccuredCOGSSP DECIMAL(38,20) = 0;
+		--
+		DECLARE @LYKoreksiIntercoySalesAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @LYKoreksiIntercoySalesSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @LYKoreksiIntercoySalesAJ DECIMAL(38,20) = 0;
+		DECLARE @LYKoreksiIntercoySalesSP DECIMAL(38,20) = 0;	
+		--
+		DECLARE @LYKoreksiIntercoyCOGSAJLastYear DECIMAL(38,20) = 0;
+		DECLARE @LYKoreksiIntercoyCOGSSPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @LYKoreksiIntercoyCOGSAJ DECIMAL(38,20) = 0;
+		DECLARE @LYKoreksiIntercoyCOGSSP DECIMAL(38,20) = 0;
+		--
+		DECLARE @LYHutangIC_AJLastYear DECIMAL(38,20) = 0;
+		DECLARE @LYHutangIC_SPLastYear DECIMAL(38,20) = 0;		
+		DECLARE @LYHutangIC_AJ DECIMAL(38,20) = 0;
+		DECLARE @LYHutangIC_SP DECIMAL(38,20) = 0;
+		--
+		SELECT	  @LYAccuredSalesAJLastYear = SUM(X.AMT_ACCRUED_SALES_AJ_LY) 
+				, @LYAccuredSalesSPLastYear = SUM(X.AMT_ACCRUED_SALES_SP_LY) 
+				, @LYAccuredCOGSAJLastYear = SUM(X.AMT_ACCRUED_COGS_AJ_LY) 
+				, @LYAccuredCOGSSPLastYear = SUM(X.AMT_ACCRUED_COGS_SP_LY) 
+				, @LYKoreksiIntercoySalesAJLastYear = SUM(X.AMT_KOR_IC_SALES_AJ_LY)
+				, @LYKoreksiIntercoySalesSPLastYear = SUM(X.AMT_KOR_IC_SALES_SP_LY)
+				, @LYKoreksiIntercoyCOGSAJLastYear  = SUM(X.AMT_KOR_IC_COGS_AJ_LY)
+				, @LYKoreksiIntercoyCOGSSPLastYear = SUM(X.AMT_KOR_IC_COGS_SP_LY)
+				, @LYHutangIC_AJLastYear = SUM(X.AMT_HUTANG_IC_AJ_LY)
+				, @LYHutangIC_SPLastYear = SUM(X.AMT_HUTANG_IC_SP_LY)
+				, @LYAccuredSalesAJ = SUM(X.AMT_ACCRUED_SALES_AJ)
+				, @LYAccuredSalesSP = SUM(X.AMT_ACCRUED_SALES_SP)
+				, @LYAccuredCOGSAJ = SUM(X.AMT_ACCRUED_COGS_AJ) 
+				, @LYAccuredCOGSSP = SUM(X.AMT_ACCRUED_COGS_SP) 
+				, @LYKoreksiIntercoySalesAJ = SUM(X.AMT_KOR_IC_SALES_AJ) 
+				, @LYKoreksiIntercoySalesSP = SUM(X.AMT_KOR_IC_SALES_SP) 
+				, @LYKoreksiIntercoyCOGSAJ = SUM(X.AMT_KOR_IC_COGS_AJ)
+				, @LYKoreksiIntercoyCOGSSP = SUM(X.AMT_KOR_IC_COGS_SP)
+				, @LYHutangIC_AJ = SUM(X.AMT_HUTANG_IC_AJ)
+				, @LYHutangIC_SP = SUM(X.AMT_HUTANG_IC_SP)
+		FROM	(
+					SELECT    0 AS AMT_ACCRUED_SALES_AJ_LY
+							, 0 AS AMT_ACCRUED_SALES_SP_LY
+							, 0 AS AMT_ACCRUED_COGS_AJ_LY
+							, 0 AS AMT_ACCRUED_COGS_SP_LY
+							, 0 AS AMT_KOR_IC_SALES_AJ_LY
+							, 0 AS AMT_KOR_IC_SALES_SP_LY
+							, 0 AS AMT_KOR_IC_COGS_AJ_LY
+							, 0 AS AMT_KOR_IC_COGS_SP_LY
+							, 0 AS AMT_HUTANG_IC_AJ_LY
+							, 0 AS AMT_HUTANG_IC_SP_LY
+							, 0 AS AMT_ACCRUED_SALES_AJ
+							, 0 AS AMT_ACCRUED_SALES_SP
+							, 0 AS AMT_ACCRUED_COGS_AJ
+							, 0 AS AMT_ACCRUED_COGS_SP
+							, 0 AS AMT_KOR_IC_SALES_AJ
+							, 0 AS AMT_KOR_IC_SALES_SP
+							, 0 AS AMT_KOR_IC_COGS_AJ
+							, 0 AS AMT_KOR_IC_COGS_SP
+							, 0 AS AMT_HUTANG_IC_AJ
+							, 0 AS AMT_HUTANG_IC_SP
+					UNION ALL				
+					SELECT	  CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_AJ_LY
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN < (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_SP_LY
+							, CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Accured Sales' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_SALES_SP
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Accured COGS' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_ACCRUED_COGS_SP
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy Sales' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_SALES_SP
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Koreksi Intercoy COGS' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_KOR_IC_COGS_SP
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'AUTOJAYA' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_AJ
+							, CASE WHEN JENIS_AMOUNT = 'Hutang Intercoy' AND TAHUN = (@YearPeriode-1) AND COMPANY = 'SOLUSI' THEN AMOUNT ELSE 0 END AS AMT_HUTANG_IC_SP
+					FROM [dbo].[TEMP09_SALES_COGS_PNL]
+					WHERE	PROSES_ID = @ProsesId AND
+							TAHUN <= (@YearPeriode-1)
+			) X;
+		--
+		SET @ReportDesc =	ISNULL( (
+										SELECT MAX([Description])
+										FROM [ACS].[dbo].[AUTOJAYA$Acc_ Schedule Name]
+										WHERE [Name] = 'SOM-BS'
+									),'N/A');
+		--
+		DECLARE reportGenCursor CURSOR FOR 
+			SELECT	AJ.[Line No_]
+					,AJ.[Row No_]
+					,AJ.[Description]
+					,AJ.[Totaling]
+					,	(
+							SELECT MAX([Totaling])
+							FROM [ACS].[dbo].[AJ-ADJ$Acc_ Schedule Line]
+							WHERE	[Schedule Name] =  'SOM-BS' AND
+									[Row No_] = AJ.[Row No_]						
+						) AS [Totaling_AJ_ADJ]
+					,	(
+							SELECT MAX([Totaling])
+							FROM [ACS].[dbo].[SOLUSI$Acc_ Schedule Line]
+							WHERE	[Schedule Name] =  'SOM-BS' AND
+									[Row No_] = AJ.[Row No_]						
+						) AS [Totaling_SP]
+					,	(
+							SELECT MAX([Totaling])
+							FROM [ACS].[dbo].[SP-ADJ$Acc_ Schedule Line]
+							WHERE	[Schedule Name] =  'SOM-BS' AND
+									[Row No_] = AJ.[Row No_]						
+						) AS [Totaling_SP_ADJ]
+					,AJ.[Totaling Type]
+					,AJ.[Dimension 1 Totaling]
+					,AJ.[Dimension 2 Totaling]
+					,AJ.[Bold]
+					,AJ.[Italic]
+					,AJ.[Underline]
+					,AJ.[Show Opposite Sign]
+					,AJ.[Double Underline]
+			FROM [ACS].[dbo].[AUTOJAYA$Acc_ Schedule Line] AJ
+			WHERE AJ.[Schedule Name] =  'SOM-BS';
+		--
+		OPEN reportGenCursor  
+		FETCH NEXT FROM reportGenCursor INTO
+			 @LineNo, @RowNo, @DescRow, @TotalingAJ, @TotalingAJ_ADJ,
+			 @TotalingSP, @TotalingSP_ADJ, @TotalingType,
+			 @DimBranch, @DimItemCategory, @Bold, @Italic, @Underline,
+			 @ShowOppSign, @DoubleUnderline;
+			--			
+			WHILE @@FETCH_STATUS = 0  
+			BEGIN 
+				SET @Amount_1 = 0;
+				SET @Amount_2 = 0;
+				SET @Amount_3 = 0;
+				SET @Amount_4 = 0; 
+				SET @Amount_5 = 0; 
+				SET @Amount_6 = 0; 
+				--
+				SET @Amount_AJ = 0;
+				SET @Amount_AJ_ADJ = 0;
+				SET @Amount_SP = 0;
+				SET @Amount_SP_ADJ = 0;
+				--
+				SET @Amount_AJ_PM = 0;
+				SET @Amount_AJ_ADJ_PM = 0;
+				SET @Amount_SP_PM = 0;
+				SET @Amount_SP_ADJ_PM = 0;
+				--
+				SET @Amount_AJ_LY = 0;
+				SET @Amount_AJ_ADJ_LY = 0;
+				SET @Amount_SP_LY = 0;
+				SET @Amount_SP_ADJ_LY = 0;
+				--
+				IF @DimBranch = '' SET @DimBranch = 'ALL';
+				IF @DimItemCategory = '' SET @DimItemCategory = 'ALL';
+				--
+				SET @DimBranch = REPLACE(@DimBranch, '''', '');
+				SET @DimItemCategory = REPLACE(@DimItemCategory, '''', '');
+				--
+				--
+				DECLARE @iterRumus INT;
+				SET @iterRumus = 1;
+				--
+				WHILE @iterRumus <= 4
+				BEGIN
+					IF  (@iterRumus = 1 AND @TotalingAJ <> '') OR
+						(@iterRumus = 2 AND @TotalingAJ_ADJ <> '') OR
+						(@iterRumus = 3 AND @TotalingSP <> '') OR
+						(@iterRumus = 4 AND @TotalingSP_ADJ <> '')
+					BEGIN
+						-- MENDAPATKAN ACCOUNT FILTERING ==========================================================================
+						IF @iterRumus = 1  SET @inSTR = @TotalingAJ;
+						IF @iterRumus = 2  SET @inSTR = @TotalingAJ_ADJ;
+						IF @iterRumus = 3  SET @inSTR = @TotalingSP;
+						IF @iterRumus = 4  SET @inSTR = @TotalingSP_ADJ;
+						--
+						SET @outSTRFrom = '';
+						SET @outSTRUpto = '';
+						--
+						DECLARE @i INT;
+						DECLARE @ctrTitik INT;
+						DECLARE @ctrUpto INT;
+						SET @i = 0;
+						SET @ctrTitik = 0;
+						SET @ctrUpto = 0;
+						--
+						WHILE @i <= len(@inSTR)
+						BEGIN
+							SET @i = @i + 1;
+							IF  substring(@inSTR, @i, 1) <> ''''
+							BEGIN
+								IF substring(@inSTR, @i, 1) = '|' OR @i = len(@inSTR) + 1
+									BEGIN	
+										IF 	@ctrUpto = 1 
+											BEGIN
+												SET @outSTRFrom =  SUBSTRING(@outSTRFrom,1,LEN(@outSTRFrom)-1);
+												SET @outSTRUpto =  SUBSTRING(@outSTRUpto,2,LEN(@outSTRUpto));
+											END;
+										--
+										IF @i = len(@inSTR) + 1
+											BEGIN
+												IF 	@ctrUpto = 1 
+													SET @outSTRUpto = @outSTRUpto +  substring(@inSTR, @i, 1);
+												ELSE
+													SET @outSTRFrom = @outSTRFrom +  substring(@inSTR, @i, 1);
+											END;
+										--
+										INSERT INTO [dbo].[TEMP16_ACC_RANGE]
+											([PROSES_ID], [LINE_NO], [ACC_FROM], [ACC_UPTO], [COMPANY])
+										VALUES
+											(@ProsesId , @LineNo, @outSTRFrom, @outSTRUpto, @iterRumus);
+										SET @ctrUpto = 0;
+										SET @ctrTitik = 0;
+										SET @outSTRFrom = '';
+										SET @outSTRUpto = '';
+									END;
+								ELSE
+									BEGIN			
+										IF substring(@inSTR, @i, 1) = '.'
+											SET @ctrTitik = @ctrTitik + 1;
+										ELSE
+											SET @ctrTitik = 0;
+
+										IF @ctrTitik <= 1 AND @ctrUpto = 0
+											SET @outSTRFrom = @outSTRFrom +  substring(@inSTR, @i, 1);
+
+										IF @ctrTitik = 2
+											SET @ctrUpto = 1;
+
+										IF @ctrUpto = 1 
+										BEGIN
+											SET @outSTRUpto = @outSTRUpto +  substring(@inSTR, @i, 1);
+										END;
+									END;				
+							END;
+						END;
+						-- ========================================================================================================
+					END;
+					SET @iterRumus = @iterRumus + 1;
+				END;
+				--
+				SET @TotalingALLCompany = @TotalingAJ+@TotalingAJ_ADJ+@TotalingSP+@TotalingSP_ADJ;
+				--
+				IF @TotalingType = 0 AND @TotalingALLCompany <> ''
+				BEGIN
+					-- Autojaya
+					SELECT	@Amount_AJ = ISNULL(ROUND((XX.AMOUNT_AJ / @Pembagi),0),0),
+							@Amount_AJ_LY = ISNULL(ROUND((XX.AMOUNT_AJ_LY / @Pembagi),0),0)
+					FROM	(
+								SELECT	SUM(X.AMOUNT_AJ) AS AMOUNT_AJ
+										, SUM(X.AMOUNT_AJ_LY) AS AMOUNT_AJ_LY
+								FROM	(
+											SELECT	ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+																LEFT JOIN  [ACS].[dbo].[AUTOJAYA$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]																	
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(	
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUpto)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_AJ
+													, ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+																LEFT JOIN  [ACS].[dbo].[AUTOJAYA$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]																	
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFromLY AND GLE.[Posting Date] <=  @TglInvUptoLY) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUptoLY)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_AJ_LY
+											FROM [dbo].[TEMP16_ACC_RANGE] ACR
+											WHERE	ACR.LINE_NO = @LineNo AND
+													ACR.PROSES_ID = @ProsesId AND
+													ACR.COMPANY = 1 
+										) X
+							) XX;
+					--
+					-- Autojaya Adjustment
+					SELECT	@Amount_AJ_ADJ = ISNULL(ROUND((XX.AMOUNT_AJ_ADJ / @Pembagi),0),0),
+							@Amount_AJ_ADJ_LY = ISNULL(ROUND((XX.AMOUNT_AJ_ADJ_LY / @Pembagi),0),0)
+					FROM	(
+								SELECT	SUM(X.AMOUNT_AJ_ADJ) AS AMOUNT_AJ_ADJ
+										, SUM(X.AMOUNT_AJ_ADJ_LY) AS AMOUNT_AJ_ADJ_LY
+								FROM	(
+											SELECT	ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+																LEFT JOIN  [ACS].[dbo].[AJ-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]																	
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(	
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUpto)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_AJ_ADJ
+													, ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+																LEFT JOIN  [ACS].[dbo].[AJ-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]																	
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFromLY AND GLE.[Posting Date] <=  @TglInvUptoLY) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUptoLY)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_AJ_ADJ_LY
+											FROM [dbo].[TEMP16_ACC_RANGE] ACR
+											WHERE	ACR.LINE_NO = @LineNo AND
+													ACR.PROSES_ID = @ProsesId AND
+													ACR.COMPANY = 2 
+										) X
+							) XX;
+					--
+					-- Solusi
+					SELECT	@Amount_SP = ISNULL(ROUND((XX.AMOUNT_SP / @Pembagi),0),0),
+							@Amount_SP_LY = ISNULL(ROUND((XX.AMOUNT_SP_LY / @Pembagi),0),0)
+					FROM	(
+								SELECT	SUM(X.AMOUNT_SP) AS AMOUNT_SP
+										, SUM(X.AMOUNT_SP_LY) AS AMOUNT_SP_LY
+								FROM	(
+											SELECT	ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE		
+																LEFT JOIN  [ACS].[dbo].[SOLUSI$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]															
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(	
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUpto)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_SP
+													, ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE	
+																LEFT JOIN  [ACS].[dbo].[SOLUSI$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]																	
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFromLY AND GLE.[Posting Date] <=  @TglInvUptoLY) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUptoLY)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_SP_LY
+											FROM [dbo].[TEMP16_ACC_RANGE] ACR
+											WHERE	ACR.LINE_NO = @LineNo AND
+													ACR.PROSES_ID = @ProsesId AND
+													ACR.COMPANY = 3 
+										) X
+							) XX;
+					--
+					-- Solusi Adjustment
+					SELECT	@Amount_SP_ADJ = ISNULL(ROUND((XX.AMOUNT_SP_ADJ / @Pembagi),0),0),
+							@Amount_SP_ADJ_LY = ISNULL(ROUND((XX.AMOUNT_SP_ADJ_LY / @Pembagi),0),0)
+					FROM	(
+								SELECT	SUM(X.AMOUNT_SP_ADJ) AS AMOUNT_SP_ADJ
+										, SUM(X.AMOUNT_SP_ADJ_LY) AS AMOUNT_SP_ADJ_LY
+								FROM	(
+											SELECT	ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE		
+																LEFT JOIN  [ACS].[dbo].[SP-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]															
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(	
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFrom AND GLE.[Posting Date] <=  @TglInvUpto) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUpto)
+																		) AND																		
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_SP_ADJ
+													, ISNULL ((
+																SELECT SUM(GLE.Amount) AS AMT	
+																FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE		
+																LEFT JOIN  [ACS].[dbo].[SP-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]																
+																WHERE	(
+																			(ACR.ACC_UPTO = '' AND GLE.[G_L Account No_] =  ACR.ACC_FROM COLLATE Latin1_General_CI_AS )
+																			OR
+																			(ACR.ACC_UPTO <> '' AND GLE.[G_L Account No_] BETWEEN ACR.ACC_FROM COLLATE Latin1_General_CI_AS AND ACR.ACC_UPTO COLLATE Latin1_General_CI_AS)
+																		) AND
+																		(
+																			(GLA.[Income_Balance] = 0 AND GLE.[Posting Date] >= @TglInvFromLY AND GLE.[Posting Date] <=  @TglInvUptoLY) OR
+																			(GLA.[Income_Balance] = 1 AND GLE.[Posting Date] <=  @TglInvUptoLY)
+																		) AND
+																		(	@Cabang = 'ALL' OR 
+																			(@Cabang = '10' AND GLE.[Global Dimension 1 Code] IN ('','10')) OR
+																			(@Cabang NOT IN ('ALL', '10') AND GLE.[Global Dimension 1 Code] = @Cabang)
+																		) AND
+																		(	@DimBranch = 'ALL' OR
+																			GLE.[Global Dimension 1 Code] = @DimBranch) AND
+																		(	@DimItemCategory = 'ALL' OR
+																			GLE.[Global Dimension 2 Code] = @DimItemCategory)
+															),0) AS AMOUNT_SP_ADJ_LY
+											FROM [dbo].[TEMP16_ACC_RANGE] ACR
+											WHERE	ACR.LINE_NO = @LineNo AND
+													ACR.PROSES_ID = @ProsesId AND
+													ACR.COMPANY = 4 
+										) X
+							) XX;
+					--
+					-- Accrued COGS dimasukan ke Inventory
+					IF @RowNo = '1104'
+					BEGIN
+						SET @Amount_1 =  @Amount_AJ_LY + (@Amount_AJ_ADJ_LY - (@LYAccuredCOGSAJ+@LYAccuredCOGSAJLastYear)) +
+										 @Amount_SP_LY + (@Amount_SP_ADJ_LY - (@LYAccuredCOGSSP+@LYAccuredCOGSSPLastYear)) ;
+						SET @Amount_2 = @Amount_AJ + (@Amount_AJ_ADJ - (@AccuredCOGSAJ+@AccuredCOGSAJLastYear));
+						SET @Amount_3 = @Amount_SP + (@Amount_SP_ADJ - (@AccuredCOGSSP+@AccuredCOGSSPLastYear));
+						SET @Amount_4 = @Amount_2 + @Amount_3;
+						SET @Amount_5 = CASE WHEN @Amount_1 <> 0 THEN ((@Amount_4 - @Amount_1) / @Amount_1) * 100.00 ELSE 100.00 END		
+						SET @Amount_6 = 0; 
+					END;
+					--
+					-- HUTANG DAGANG
+					IF @RowNo = '2102'
+					BEGIN
+						SET @Amount_1 =  @Amount_AJ_LY + (@Amount_AJ_ADJ_LY + (@LYHutangIC_AJ+@LYHutangIC_AJLastYear)) +
+										 @Amount_SP_LY + (@Amount_SP_ADJ_LY + (@LYHutangIC_SP+@LYHutangIC_SPLastYear)) ;
+						SET @Amount_2 = @Amount_AJ + (@Amount_AJ_ADJ + (@HutangIC_AJ+@HutangIC_AJLastYear));
+						SET @Amount_3 = @Amount_SP + (@Amount_SP_ADJ + (@HutangIC_SP+@HutangIC_SPLastYear));
+						SET @Amount_4 = @Amount_2 + @Amount_3;
+						SET @Amount_5 = CASE WHEN @Amount_1 <> 0 THEN ((@Amount_4 - @Amount_1) / @Amount_1) * 100.00 ELSE 100.00 END		
+						SET @Amount_6 = 0; 
+					END;
+					--
+					-- Accrued Sales
+					IF @RowNo = '2107'
+					BEGIN
+						SET @Amount_1 =  @Amount_AJ_LY + (@Amount_AJ_ADJ_LY + (@LYAccuredSalesAJ+@LYAccuredSalesAJLastYear)) +
+										 @Amount_SP_LY + (@Amount_SP_ADJ_LY + (@LYAccuredSalesSP+@LYAccuredSalesSPLastYear)) ;
+						SET @Amount_2 = @Amount_AJ + (@Amount_AJ_ADJ + (@AccuredSalesAJ+@AccuredSalesAJLastYear));
+						SET @Amount_3 = @Amount_SP + (@Amount_SP_ADJ + (@AccuredSalesSP+@AccuredSalesSPLastYear));
+						SET @Amount_4 = @Amount_2 + @Amount_3;
+						SET @Amount_5 = CASE WHEN @Amount_1 <> 0 THEN ((@Amount_4 - @Amount_1) / @Amount_1) * 100.00 ELSE 100.00 END		
+						SET @Amount_6 = 0; 
+					END;
+					--
+					-- Retain Earning
+					IF @RowNo = '2302'
+					BEGIN
+						SET @Amount_1 = @Amount_AJ_LY + (@Amount_AJ_ADJ_LY - ((@LYAccuredSalesAJLastYear - @LYAccuredCOGSAJLastYear) + (@LYHutangIC_AJLastYear) + (@LYKoreksiIntercoySalesAJLastYear-@LYKoreksiIntercoyCOGSAJLastYear)))
+										+
+										@Amount_SP_LY + (@Amount_SP_ADJ_LY - ((@LYAccuredSalesSPLastYear - @LYAccuredCOGSSPLastYear) + (@LYHutangIC_SPLastYear) + (@LYKoreksiIntercoySalesSPLastYear-@LYKoreksiIntercoyCOGSSPLastYear)));
+						SET @Amount_2 = @Amount_AJ + (@Amount_AJ_ADJ - ((@AccuredSalesAJLastYear - @AccuredCOGSAJLastYear) + (@HutangIC_AJLastYear) + (@KoreksiIntercoySalesAJLastYear-@KoreksiIntercoyCOGSAJLastYear)));
+						SET @Amount_3 = @Amount_SP + (@Amount_SP_ADJ - ((@AccuredSalesSPLastYear - @AccuredCOGSSPLastYear) + (@HutangIC_SPLastYear) + (@KoreksiIntercoySalesSPLastYear-@KoreksiIntercoyCOGSSPLastYear)));
+						SET @Amount_4 = @Amount_2 + @Amount_3;
+						SET @Amount_5 = CASE WHEN @Amount_1 <> 0 THEN ((@Amount_4 - @Amount_1) / @Amount_1) * 100.00 ELSE 100.00 END		
+						SET @Amount_6 = 0; 
+					END;
+					-- Profit and Sales this Year
+					IF @RowNo = '2303'
+					BEGIN
+						SET @Amount_1 = @Amount_AJ_LY + (@Amount_AJ_ADJ_LY - ((@LYAccuredSalesAJ - @LYAccuredCOGSAJ) + (@LYHutangIC_AJ) + (@LYKoreksiIntercoySalesAJ-@LYKoreksiIntercoyCOGSAJ)))
+										+
+										@Amount_SP_LY + (@Amount_SP_ADJ_LY - ((@LYAccuredSalesSP - @LYAccuredCOGSSP) + (@LYHutangIC_SP) + (@LYKoreksiIntercoySalesSP-@LYKoreksiIntercoyCOGSSP)));
+						SET @Amount_2 = @Amount_AJ + (@Amount_AJ_ADJ - ((@AccuredSalesAJ - @AccuredCOGSAJ) + (@HutangIC_AJ) + (@KoreksiIntercoySalesAJ-@KoreksiIntercoyCOGSAJ)));
+						SET @Amount_3 = @Amount_SP + (@Amount_SP_ADJ - ((@AccuredSalesSP - @AccuredCOGSSP) + (@HutangIC_SP) + (@KoreksiIntercoySalesSP-@KoreksiIntercoyCOGSSP)));
+						SET @Amount_4 = @Amount_2 + @Amount_3;
+						SET @Amount_5 = CASE WHEN @Amount_1 <> 0 THEN ((@Amount_4 - @Amount_1) / @Amount_1) * 100.00 ELSE 100.00 END		
+						SET @Amount_6 = 0; 
+						--
+					END;
+					--
+					IF  @RowNo NOT IN  ('1104', '2102', '2107', '2302', '2303')
+					BEGIN
+						SET @Amount_1 = @Amount_AJ_LY + @Amount_AJ_ADJ_LY + @Amount_SP_LY + @Amount_SP_ADJ_LY;					
+						SET @Amount_2 = @Amount_AJ + @Amount_AJ_ADJ;
+						SET @Amount_3 = @Amount_SP + @Amount_SP_ADJ;
+						SET @Amount_4 = @Amount_AJ + @Amount_AJ_ADJ + @Amount_SP + @Amount_SP_ADJ;
+						SET @Amount_5 = CASE WHEN @Amount_1 <> 0 THEN ((@Amount_4 - @Amount_1) / @Amount_1) * 100.00 ELSE 100.00 END		
+						SET @Amount_6 = 0; 
+					END;
+					--
+				END;
+				--
+				IF @TotalingType = 2
+				BEGIN
+					SELECT	@Amount_1 = ISNULL(SUM(X.AMOUNT_1),0), 
+							@Amount_2 = ISNULL(SUM(X.AMOUNT_2),0), 
+							@Amount_3 = ISNULL(SUM(X.AMOUNT_3),0),
+							@Amount_4 = ISNULL(SUM(X.AMOUNT_4),0),
+							@Amount_5 = ISNULL(SUM(X.AMOUNT_5),0),
+							@Amount_6 = ISNULL(SUM(X.AMOUNT_6),0)
+					FROM	(
+								SELECT	ACR.ACC_FROM
+										, ACR.ACC_UPTO
+										,	ISNULL((
+													SELECT SUM(RPG.[AMOUNT_1]) AS AMT
+													FROM [dbo].[TEMP15_REPORT_GENERATOR] RPG
+													WHERE	(
+																 (ACR.ACC_UPTO = '' AND RPG.[ROW_NO]  =  ACR.ACC_FROM)
+																 OR
+																 (ACR.ACC_UPTO <> '' AND RPG.[ROW_NO] BETWEEN ACR.ACC_FROM AND ACR.ACC_UPTO)
+															) AND
+															RPG.PROSES_ID = @ProsesId
+													), 0) AS AMOUNT_1
+										,	ISNULL((
+													SELECT SUM(RPG.[AMOUNT_2]) AS AMT
+													FROM [dbo].[TEMP15_REPORT_GENERATOR] RPG
+													WHERE	(
+																 (ACR.ACC_UPTO = '' AND RPG.[ROW_NO]  =  ACR.ACC_FROM)
+																 OR
+																 (ACR.ACC_UPTO <> '' AND RPG.[ROW_NO] BETWEEN ACR.ACC_FROM AND ACR.ACC_UPTO)
+															) AND
+															RPG.PROSES_ID = @ProsesId
+													), 0) AS AMOUNT_2
+										,	ISNULL((
+													SELECT SUM(RPG.[AMOUNT_3]) AS AMT
+													FROM [dbo].[TEMP15_REPORT_GENERATOR] RPG
+													WHERE	(
+																 (ACR.ACC_UPTO = '' AND RPG.[ROW_NO]  =  ACR.ACC_FROM)
+																 OR
+																 (ACR.ACC_UPTO <> '' AND RPG.[ROW_NO] BETWEEN ACR.ACC_FROM AND ACR.ACC_UPTO)
+															) AND
+															RPG.PROSES_ID = @ProsesId
+													), 0) AS AMOUNT_3
+										,	ISNULL((
+													SELECT SUM(RPG.[AMOUNT_4]) AS AMT
+													FROM [dbo].[TEMP15_REPORT_GENERATOR] RPG
+													WHERE	(
+																 (ACR.ACC_UPTO = '' AND RPG.[ROW_NO]  =  ACR.ACC_FROM)
+																 OR
+																 (ACR.ACC_UPTO <> '' AND RPG.[ROW_NO] BETWEEN ACR.ACC_FROM AND ACR.ACC_UPTO)
+															) AND
+															RPG.PROSES_ID = @ProsesId
+													), 0) AS AMOUNT_4
+										,	ISNULL((
+													SELECT SUM(RPG.[AMOUNT_5]) AS AMT
+													FROM [dbo].[TEMP15_REPORT_GENERATOR] RPG
+													WHERE	(
+																 (ACR.ACC_UPTO = '' AND RPG.[ROW_NO]  =  ACR.ACC_FROM)
+																 OR
+																 (ACR.ACC_UPTO <> '' AND RPG.[ROW_NO] BETWEEN ACR.ACC_FROM AND ACR.ACC_UPTO)
+															) AND
+															RPG.PROSES_ID = @ProsesId
+													), 0) AS AMOUNT_5
+										,	ISNULL((
+													SELECT SUM(RPG.[AMOUNT_6]) AS AMT
+													FROM [dbo].[TEMP15_REPORT_GENERATOR] RPG
+													WHERE	(
+																 (ACR.ACC_UPTO = '' AND RPG.[ROW_NO]  =  ACR.ACC_FROM)
+																 OR
+																 (ACR.ACC_UPTO <> '' AND RPG.[ROW_NO] BETWEEN ACR.ACC_FROM AND ACR.ACC_UPTO)
+															) AND
+															RPG.PROSES_ID = @ProsesId
+													), 0) AS AMOUNT_6
+								FROM [dbo].[TEMP16_ACC_RANGE] ACR
+								WHERE	ACR.LINE_NO = @LineNo AND
+										ACR.PROSES_ID = @ProsesId AND
+										ACR.COMPANY = 1
+							) X;
+				END;
+				--
+				IF @TotalingALLCompany <> ''
+					SET @ShowAmount = 1
+				ELSE
+					SET @ShowAmount = 0;
+				--
+				INSERT INTO [dbo].[TEMP15_REPORT_GENERATOR]
+						   ([LINE_NO], [REPORT_NAME], [ROW_NO], [DESC_ROW]
+						   ,[AMOUNT_1], [AMOUNT_2], [AMOUNT_3], [AMOUNT_4], [AMOUNT_5], [AMOUNT_6]
+						   ,[Bold], [Italic], [Underline],[Show Opposite Sign], [Double Underline], [SHOW_AMOUNT]
+						   ,[PROSES_ID])
+				VALUES
+						(	@LineNo, @ReportDesc, @RowNo, @DescRow,
+							@Amount_1, @Amount_2, @Amount_3, @Amount_4, @Amount_5, @Amount_6,
+							@Bold, @Italic, @Underline,	@ShowOppSign, @DoubleUnderline, @ShowAmount,
+							@ProsesId
+						);
+				--
+				FETCH NEXT FROM reportGenCursor INTO 
+					@LineNo, @RowNo, @DescRow, @TotalingAJ, @TotalingAJ_ADJ,
+					@TotalingSP, @TotalingSP_ADJ, @TotalingType,
+					@DimBranch, @DimItemCategory, @Bold, @Italic, @Underline,
+					@ShowOppSign, @DoubleUnderline;
+			END; 
+
+		CLOSE reportGenCursor ; 
+		DEALLOCATE reportGenCursor; 
+		--
+		RETURN  ;
+	END;
+	--
+	IF @Action = 'DELETE'
+	BEGIN
+		DELETE FROM [dbo].[TEMP15_REPORT_GENERATOR] WHERE PROSES_ID = @ProsesId;
+		DELETE FROM [dbo].[TEMP16_ACC_RANGE] WHERE PROSES_ID = @ProsesId;
+		DELETE FROM [dbo].[TEMP10_SALES_COGS_CORRECTION] WHERE PROSES_ID = @ProsesId;
+		DELETE FROM [dbo].[TEMP09_SALES_COGS_PNL] WHERE [PROSES_ID] = @ProsesId;
+		--
+		RETURN  ;
+	END;
+END;

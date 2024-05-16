@@ -1,0 +1,896 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03027_SORelesedByDate" language="groovy" pageWidth="1700" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1660" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="2.593742460100032"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="368"/>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JamFrom" class="java.lang.String"/>
+	<parameter name="JamUpto" class="java.lang.String"/>
+	<parameter name="Cabang" class="java.lang.String"/>
+	<parameter name="JenisSO" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SalesFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SalesUpto" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProsesId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.COMPANY
+		, XX.NO_SO
+		, XX.TIPE
+		, XX.CABANG
+		, XX.LOC_CODE
+		, XX.SALES_CODE
+		, XX.SALES_NAME
+		, XX.CUST_CODE
+		, XX.CUST_NAME
+		, XX.ORDER_DATE
+		, XX.STATUS_SO
+		, XX.TERM_OF_PAY
+		, XX.NO_PO_CUST
+		, XX.BSO
+		, XX.AMOUNT_IDR
+		, XX.AMOUNT
+		, XX.EST_REALISASI_REAL
+		, XX.ER_FROM
+		,	CASE WHEN CONVERT(VARCHAR,XX.RELEASED_DATE, 105) = '01-01-1753' THEN
+				XZ.RELEASED_DATE ELSE XX.RELEASED_DATE
+			END AS RELEASED_DATE
+		,	CASE WHEN CONVERT(VARCHAR,XX.RELEASED_DATE, 105) = '01-01-1753' THEN
+				XZ.RELEASED_TIME ELSE XX.RELEASED_TIME
+			END AS RELEASED_TIME
+		,	CASE WHEN CONVERT(VARCHAR,XX.RELEASED_DATE, 105) = '01-01-1753' THEN
+				XZ.RELEASED_BY ELSE XX.RELEASED_BY
+			END AS RELEASED_BY
+FROM	(
+			SELECT	XY.COMPANY
+					, XY.NO_SO
+					, XY.TIPE
+					, XY.CABANG
+					, XY.LOC_CODE
+					, XY.SALES_CODE
+					, XY.SALES_NAME
+					, XY.CUST_CODE
+					, XY.CUST_NAME
+					, XY.ORDER_DATE
+					, XY.STATUS_SO
+					, XY.TERM_OF_PAY
+					, XY.NO_PO_CUST
+					, XY.NO_BSO AS BSO
+					, XY.AMOUNT_IDR
+					, XY.AMOUNT
+					, DATEADD(dd, DATEDIFF(dd, 0, DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),XY.RELEASED_DATE)), 0) AS RELEASED_DATE
+					, LEFT((CONVERT(VARCHAR,DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),XY.RELEASED_DATE), 108)),5) AS RELEASED_TIME
+					, XY.RELEASED_BY
+					, XY.EST_REALISASI_REAL
+					, XY.ER_FROM
+			FROM [dbo].[TEMP20_OUTSTANDING_SO] XY
+			WHERE	XY.PROSES_ID = $P{ProsesId} AND
+					XY.BARIS = 1 AND
+					XY.STATUS_SO = 'RELEASED'
+		) XX
+LEFT JOIN	(
+							SELECT	CLE.[Primary Key Field 2 Value] COLLATE Latin1_General_CI_AS AS NO_SO
+									, DATEADD(dd, DATEDIFF(dd, 0, DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),CLE.[Date and Time])), 0) AS RELEASED_DATE
+									, LEFT((CONVERT(VARCHAR,CLE.[Time], 108)),5) AS RELEASED_TIME
+									, CLE.[User ID] COLLATE Latin1_General_CI_AS AS RELEASED_BY
+							FROM [dbo].[BC_AUTOJAYA$Change Log Entry] CLE
+							INNER JOIN	(
+											SELECT MIN([SRC]+CAST([Entry No_] AS NVARCHAR)) AS [Entry No_]
+													,[Primary Key Field 2 Value]
+											FROM [dbo].[BC_AUTOJAYA$Change Log Entry]
+											WHERE	[Table No_] = 36 AND
+													[Field No_] = 120 AND
+													[New Value] = 1
+											GROUP BY [Primary Key Field 2 Value]
+										) CLA ON CLA.[Entry No_] = CLE.[SRC]+CAST(CLE.[Entry No_] AS NVARCHAR) AND CLA.[Primary Key Field 2 Value] = CLE.[Primary Key Field 2 Value]
+							UNION ALL
+							SELECT	CLE.[Primary Key Field 2 Value] AS NO_SO
+									, DATEADD(dd, DATEDIFF(dd, 0, DATEADD(hour,DATEDIFF (hour, GETUTCDATE(), GETDATE()),CLE.[Date and Time])), 0) AS RELEASED_DATE
+									, LEFT((CONVERT(VARCHAR,CLE.[Time], 108)),5) AS RELEASED_TIME
+									, CLE.[User ID] AS RELEASED_BY
+							FROM [dbo].[BC_SOLUSI$Change Log Entry] CLE
+							INNER JOIN	(
+											SELECT MIN([SRC]+CAST([Entry No_] AS NVARCHAR)) AS [Entry No_]
+													,[Primary Key Field 2 Value]
+											FROM [dbo].[BC_SOLUSI$Change Log Entry]
+											WHERE	[Table No_] = 36 AND
+													[Field No_] = 120 AND
+													[New Value] = 1
+											GROUP BY [Primary Key Field 2 Value]
+										) CLA ON CLA.[Entry No_] = CLE.[SRC]+CAST(CLE.[Entry No_] AS NVARCHAR) AND CLA.[Primary Key Field 2 Value] = CLE.[Primary Key Field 2 Value]
+			) XZ ON XZ.NO_SO = XX.NO_SO
+WHERE	XX.AMOUNT_IDR <> 0 AND
+		(XX.RELEASED_DATE >= $P{TglFrom} AND XX.RELEASED_DATE <= $P{TglUpto}) AND
+		(XX.RELEASED_TIME >= $P{JamFrom} AND XX.RELEASED_TIME <= $P{JamUpto}) AND
+		(XX.CABANG =  $P{Cabang} OR $P{Cabang} = 'ALL') AND
+		(XX.TIPE = $P{JenisSO} OR $P{JenisSO} = 'ALL') AND
+		(XX.SALES_CODE >= $P{SalesFrom} AND XX.SALES_CODE <= $P{SalesUpto}) AND
+		(XX.COMPANY = $P{Company} OR $P{Company} = 'ALL')]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_SO" class="java.lang.String"/>
+	<field name="TIPE" class="java.lang.String"/>
+	<field name="CABANG" class="java.lang.String"/>
+	<field name="LOC_CODE" class="java.lang.String"/>
+	<field name="SALES_CODE" class="java.lang.String"/>
+	<field name="SALES_NAME" class="java.lang.String"/>
+	<field name="CUST_CODE" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="ORDER_DATE" class="java.sql.Timestamp"/>
+	<field name="STATUS_SO" class="java.lang.String"/>
+	<field name="TERM_OF_PAY" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="BSO" class="java.lang.String"/>
+	<field name="AMOUNT_IDR" class="java.math.BigDecimal"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="EST_REALISASI_REAL" class="java.sql.Timestamp"/>
+	<field name="ER_FROM" class="java.lang.String"/>
+	<field name="RELEASED_DATE" class="java.sql.Timestamp"/>
+	<field name="RELEASED_TIME" class="java.lang.String"/>
+	<field name="RELEASED_BY" class="java.lang.String"/>
+	<sortField name="COMPANY"/>
+	<sortField name="CABANG"/>
+	<sortField name="SALES_CODE"/>
+	<sortField name="CUST_CODE"/>
+	<sortField name="RELEASED_DATE"/>
+	<sortField name="RELEASED_TIME"/>
+	<sortField name="ORDER_DATE"/>
+	<sortField name="NO_SO"/>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="154" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="220" y="14" width="60" height="14" uuid="9180950d-51c4-496a-8ae7-5b3e299d89b4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="80" height="14" uuid="19af8fd1-8dc2-4eba-a85a-be94171f3c91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Release Date :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="80" height="14" uuid="b50a35e5-a29d-419b-8526-44c66e9c421e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Release Time :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="80" y="98" width="200" height="14" uuid="625063cd-217b-47d4-8204-a71466c56a88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="98" width="80" height="14" uuid="168aa3a7-29fb-4223-b820-fea66cb4a62a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="655" y="140" width="100" height="14" uuid="3fa2d241-665b-4ae7-a637-82e199b7144a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SO No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="830" y="140" width="180" height="14" uuid="71cd8c30-a8d2-43eb-9a5e-203fcd4d0320"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer PO No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="112" width="60" height="14" uuid="171c49a7-5eff-4a0a-a498-0f6fe0322cea"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="112" width="80" height="14" uuid="228a8d8f-5503-49b4-b00b-8a6335bf5abe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="355" y="140" width="300" height="14" uuid="339a5d0c-b171-48f0-9d68-835350d6c5d5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="755" y="140" width="75" height="14" uuid="f267cd79-16b8-4755-836a-3c31d9bd4fea"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SO Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="80" height="14" uuid="7c83c3ff-1ed3-4ca3-bf69-fac1e3fca29a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1335" y="140" width="50" height="14" uuid="aabe29be-c432-420a-824e-2f8b5623e875"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TOP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="140" width="80" height="14" uuid="d2ef399d-85f8-4bea-a136-60b90d4357d5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="280" y="140" width="75" height="14" uuid="5dcd1341-9c96-429a-a518-b1a8a654508c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="140" width="80" height="14" uuid="9483e424-46c0-4d44-8643-3c3f96650a28"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Branch]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="140" width="60" height="14" uuid="9587e7bd-543c-4606-b90f-82f46e032cbc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="140" width="60" height="14" uuid="2ee0cebe-ae03-443f-9841-26c824ef57f2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Location (Gudang)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="112" width="60" height="14" uuid="f9fc25ba-a79a-4171-836f-7eb7817b6102"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="14" width="60" height="14" uuid="938b7c4e-b9a2-42b5-a945-272a47d2fff4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="80" height="14" uuid="c7eda79e-dcb9-4b51-ab0e-c2877b29ea54"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03027)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="0" width="200" height="14" uuid="9dab7a71-3a9e-459e-8315-ce1b4b30dbfe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Outstanding SO By Released Date ]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="80" y="14" width="80" height="14" uuid="25c468e7-8632-46d4-a3a9-33465b90f75e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1110" y="140" width="75" height="14" uuid="753d2c1a-f4f2-448c-b77a-3969ba92b274"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1010" y="140" width="100" height="14" uuid="c880621a-71ea-4dfb-bcda-f5c156756572"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[BSO No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1560" y="140" width="100" height="14" uuid="1953a0b9-5a47-4cdb-954b-d306a030f9bb"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[DPP]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="28" width="80" height="14" uuid="cb44f0aa-59eb-4fde-847c-20466870c441"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JamFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="28" width="60" height="14" uuid="716170eb-0ada-4fc9-a5b4-98c60ddf2439"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JamUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="160" y="28" width="60" height="14" uuid="5d3ca6f9-848c-46ea-9369-0c6eb8214ff0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1185" y="140" width="50" height="14" uuid="3a9b76b5-af49-43d3-be98-c0f7a6a88fd1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Time]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="126" width="60" height="14" uuid="ae69a8b0-119b-4ef6-9e4c-f47bf3b91100"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="126" width="80" height="14" uuid="15e6ac66-3423-4c0c-b3c3-efdaf98faff2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="126" width="80" height="14" uuid="9f92db69-8342-4eb8-8dca-2bb9dc607424"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="126" width="60" height="14" uuid="a2d6e441-a822-42e2-bcb2-dca828cd5f10"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="280" y="126" width="75" height="14" uuid="d5393dce-8a7c-46c7-beb8-dd12d5897a8c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="355" y="126" width="300" height="14" uuid="36ab2adb-3228-4d27-980a-94d2b41ac5b7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="655" y="126" width="100" height="14" uuid="a56003f6-4f10-4eb7-8abb-4744d931703d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1010" y="126" width="100" height="14" uuid="47dfa5d8-8dd9-4a30-b2e5-4a7ad5170d18"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="755" y="126" width="75" height="14" uuid="d625d26e-6e3c-4acf-8972-8ec968c4a39f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1110" y="126" width="225" height="14" uuid="1f088be6-0746-48cb-b5db-f74eec6a779f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Released]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1235" y="140" width="100" height="14" uuid="ac6fc4fd-2ca9-492e-bb3c-e629f3847b3e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1335" y="126" width="50" height="14" uuid="f2d2f464-ebc7-4862-9200-aa9f6c06f08a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="830" y="126" width="180" height="14" uuid="544be295-880b-40f1-9333-fb3238a2b78b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1560" y="126" width="100" height="14" uuid="1222c1c5-c95b-4ff7-9e95-c0fde1ea6557"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1485" y="140" width="75" height="14" uuid="6da634d0-1cc1-4623-8c6b-c8616113a642"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Exp. Realisasi]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1385" y="140" width="100" height="14" uuid="b74d1b85-623c-4b4c-bc7d-0a9aa8a22dd6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Exp. Realisasi From]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1385" y="126" width="100" height="14" uuid="7be5d2d3-0617-4fe8-8b84-63766daeb19e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1485" y="126" width="75" height="14" uuid="bd53a3ec-1c56-43d1-9aed-e3881ceeb709"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="220" y="42" width="60" height="14" uuid="25000074-7322-4953-8fd1-f7fc32fa9018"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{SalesUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="160" y="42" width="60" height="14" uuid="ce0158a5-2785-4d2c-9d05-c88c019f63c5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="84" width="80" height="14" uuid="6b3d340e-2537-4794-9c38-fc02b6e39f64"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JenisSO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="42" width="80" height="14" uuid="123e1e12-9454-433b-96f2-a04fc85f1525"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="80" height="14" uuid="6bfe3f52-9986-40b2-aeb5-9f6ae0e7be35"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company  :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="70" width="80" height="14" uuid="bd249b09-8f46-449a-83b6-2aaaace91079"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{SalesFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="80" height="14" uuid="e6f9cf8e-b901-4ab6-974a-1c13820a4ca5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="80" height="14" uuid="d5a68fdf-8e3c-4111-965e-e81d46786609"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="80" height="14" uuid="5cd4061c-57d5-482d-b059-52d2d0e0b3da"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="56" width="80" height="14" uuid="8f7c8524-17b7-4f56-a11f-d07eb81e5c4b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="80" y="0" width="80" height="14" uuid="be7cef1e-c324-4bfa-bb17-180b0eabb28c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="220" y="0" width="60" height="14" uuid="a320802b-87dc-407b-9222-c57836fbd8f6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="355" y="0" width="300" height="14" uuid="cb4a7f73-0692-4c89-bef3-d267cb6d40b1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="755" y="0" width="75" height="14" uuid="22fd022f-84b7-4fbd-bf00-a1eac3108f41"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ORDER_DATE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1335" y="0" width="50" height="14" uuid="fcad4040-092a-4f4f-bb4c-a8146f71a37f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TERM_OF_PAY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="830" y="0" width="180" height="14" uuid="57ea0747-f10b-447e-8ba4-e5a94160a92e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="280" y="0" width="75" height="14" uuid="196d61db-2f33-4706-b53c-099759911792"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="655" y="0" width="100" height="14" uuid="72ce6ca8-80f4-4b9e-b1bb-4e89bcb1fb12"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_SO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="80" height="14" uuid="b0c85f81-6326-4557-9841-1a10c52e4a20"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="160" y="0" width="60" height="14" uuid="c1fd5df3-d373-4dcd-9162-d98f7e8b6e00"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LOC_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="1110" y="0" width="75" height="14" uuid="82fdd95f-c953-40e2-a055-3ad265a9c2fd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RELEASED_DATE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1560" y="0" width="100" height="14" uuid="91288cb0-4864-4b7a-bbf2-1a1e70c8e9ac"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1185" y="0" width="50" height="14" uuid="374a01a2-4465-4251-b286-3c5d755a5d0b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RELEASED_TIME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1235" y="0" width="100" height="14" uuid="8953759c-7140-4a35-911d-2624c9ceed42"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RELEASED_BY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1010" y="0" width="100" height="14" uuid="ae8ee87c-8135-4feb-953c-cb2c332d9cf7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BSO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1385" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="630f2d76-b381-4377-aebf-3ac670479ded"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ER_FROM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="1485" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="d76c0bb5-4b15-40a5-9627-d1e634b6ff61"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EST_REALISASI_REAL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="14">
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1560" y="0" width="100" height="14" uuid="7cb77fba-3855-4278-8777-1b916cc439e6"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="140">
+			<staticText>
+				<reportElement x="0" y="126" width="280" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="70" width="80" height="14" uuid="32faa21a-1fd8-4de3-863a-162451ea6be8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{SalesFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="80" height="14" uuid="9d73fca0-3fea-4329-b289-c1d79d6a3b2f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="42" width="80" height="14" uuid="db7c173b-ac2e-4f5b-965f-b63968517377"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="80" y="98" width="200" height="14" uuid="0e4fc394-bd96-469e-b5bc-ee8f04221f85"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="28" width="60" height="14" uuid="39621c8e-2ea0-46f2-a90f-390496280a9c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JamUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="80" height="14" uuid="36abaee7-71eb-40e6-a8f7-68cff6c6101c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Release Time :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="80" height="14" uuid="624940e1-4e3e-49f9-8647-7f8738d3e40c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="80" height="14" uuid="5f464bff-2060-4939-b228-97f77763c28d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="0" width="200" height="14" uuid="b0aed45b-2a88-49ec-b707-cebfea9a7b2f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Outstanding SO By Released Date ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="80" height="14" uuid="0762e977-6cbd-42b5-b887-e84ad1d276d4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Release Date :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="84" width="80" height="14" uuid="1743b4f3-4cfe-4494-b409-4376784310a3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JenisSO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="220" y="14" width="60" height="14" uuid="8df172b6-a9f2-467d-96b9-c9a6f1f9066e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="220" y="112" width="60" height="14" uuid="2f8a2a0b-4d2c-49a5-bcf4-790080107ae7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="28" width="60" height="14" uuid="2c851f2a-2bef-4d70-9c38-d661f644824d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="80" height="14" uuid="2f13d54c-92dc-420e-8ad4-c21fb611fee6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="28" width="80" height="14" uuid="ac66cefe-ca3c-4973-98fd-3a8e9e8c82be"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JamFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="80" height="14" uuid="ff2f7d05-3046-4e7e-a48b-111c354c3eb2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03027)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="80" height="14" uuid="4d74f895-9e2f-4295-b8e2-c426ab6892ce"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company  :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="14" width="60" height="14" uuid="cf4b54a5-09fc-497f-bf96-7f7287a7e250"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="42" width="60" height="14" uuid="703062e5-a4b9-4d2c-a6f5-9e77be8d69e4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="112" width="80" height="14" uuid="4c4be1b1-d7d3-4ae7-8348-bec5ef93f2ca"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="160" y="112" width="60" height="14" uuid="778f7cbd-3dcd-4bf7-9747-e731860fd4b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="80" y="14" width="80" height="14" uuid="fd8a04f7-5a3e-4a63-b14f-1608caf38cf6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="56" width="80" height="14" uuid="26de68e9-485b-419c-8bd2-91efe738e160"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="112" width="80" height="14" uuid="33318de0-35aa-43a3-aef6-95d01e577ad8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="220" y="42" width="60" height="14" uuid="e299422a-e5a4-441c-9458-9a00a4ca234d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{SalesUpto}]]></textFieldExpression>
+			</textField>
+		</band>
+	</noData>
+</jasperReport>

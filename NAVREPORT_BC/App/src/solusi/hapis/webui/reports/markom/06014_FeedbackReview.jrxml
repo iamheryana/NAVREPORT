@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06014_FeedbackReview" language="groovy" pageWidth="2375" pageHeight="590" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2375" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.6105100000000978"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="372"/>
+	<parameter name="T05Id" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="QstId" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="RegisteredEmail" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Sesi" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JnsChart" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	T05.T05_ID
+		, T05.WEBINAR_ID
+		, T05.TOPIC
+		, T05.ACTUAL_START_TIME
+		, T07.QUESTION
+		, T09.ANSWER
+		, COUNT(T09.T08_ID ) AS JML
+FROM [dbo].[T07_FEEDBACK_QST] T07
+INNER JOIN [dbo].[T09_FEEDBACK_ANS] T09 ON T09.T07_ID = T07.T07_ID
+INNER JOIN [dbo].[T08_FEEDBACK_PERSON] T08 ON T08.T08_ID = T09.T08_ID
+INNER JOIN [dbo].[T05_WEBINAR_EVENT] T05 ON T05.T05_ID = T07.T05_ID
+WHERE	T07.T05_ID = $P{T05Id}
+		AND T07.T07_ID = $P{QstId}
+		AND (T08.REGISTERED_ON_ATTANDEE = $P{RegisteredEmail} OR $P{RegisteredEmail}=8)
+GROUP BY T05.T05_ID
+		, T05.WEBINAR_ID
+		, T05.TOPIC
+		, T05.ACTUAL_START_TIME
+		, T07.QUESTION
+		, T09.ANSWER
+UNION ALL
+SELECT	X.T05_ID
+		, X.WEBINAR_ID
+		, X.TOPIC
+		, X.ACTUAL_START_TIME
+		, X.QUESTION
+		, X.ANSWER
+		, COUNT(X.ANSWER ) AS JML
+FROM	(
+			SELECT	T05.T05_ID
+					, T05.WEBINAR_ID
+					, T05.TOPIC
+					, T05.ACTUAL_START_TIME
+					,	CASE	WHEN QST.QST = 1 THEN T11.QST_01
+								WHEN QST.QST = 2 THEN T11.QST_02
+								WHEN QST.QST = 3 THEN T11.QST_03
+								WHEN QST.QST = 4 THEN T11.QST_04
+								WHEN QST.QST = 5 THEN T11.QST_05
+								WHEN QST.QST = 6 THEN T11.QST_06
+								WHEN QST.QST = 7 THEN T11.QST_07
+								WHEN QST.QST = 8 THEN T11.QST_08
+								WHEN QST.QST = 9 THEN T11.QST_09
+								WHEN QST.QST = 10 THEN T11.QST_10
+								WHEN QST.QST = 11 THEN T11.QST_11
+								WHEN QST.QST = 12 THEN T11.QST_12
+								WHEN QST.QST = 13 THEN T11.QST_13
+								WHEN QST.QST = 14 THEN T11.QST_14
+								WHEN QST.QST = 15 THEN T11.QST_15
+								ELSE NULL END AS QUESTION
+					,	CASE	WHEN QST.QST = 1 THEN T11.ANS_01
+								WHEN QST.QST = 2 THEN T11.ANS_02
+								WHEN QST.QST = 3 THEN T11.ANS_03
+								WHEN QST.QST = 4 THEN T11.ANS_04
+								WHEN QST.QST = 5 THEN T11.ANS_05
+								WHEN QST.QST = 6 THEN T11.ANS_06
+								WHEN QST.QST = 7 THEN T11.ANS_07
+								WHEN QST.QST = 8 THEN T11.ANS_08
+								WHEN QST.QST = 9 THEN T11.ANS_09
+								WHEN QST.QST = 10 THEN T11.ANS_10
+								WHEN QST.QST = 11 THEN T11.ANS_11
+								WHEN QST.QST = 12 THEN T11.ANS_12
+								WHEN QST.QST = 13 THEN T11.ANS_13
+								WHEN QST.QST = 14 THEN T11.ANS_14
+								WHEN QST.QST = 15 THEN T11.ANS_15
+								ELSE NULL END AS ANSWER
+			FROM [dbo].[T11_WEBINAR_POLLING] T11
+			INNER JOIN	(
+							SELECT $P{QstId} AS QST
+						) QST ON 1=1
+			INNER JOIN [dbo].[T05_WEBINAR_EVENT] T05 ON T05.T05_ID = T11.T05_ID
+			WHERE	T11.SESI = $P{Sesi}
+					AND T05.T05_ID = $P{T05Id}
+		) X
+WHERE	X.QUESTION IS NOT NULL AND
+		($P{RegisteredEmail}=1 OR $P{RegisteredEmail}=8)
+GROUP BY X.T05_ID
+		, X.WEBINAR_ID
+		, X.TOPIC
+		, X.ACTUAL_START_TIME
+		, X.QUESTION
+		, X.ANSWER]]>
+	</queryString>
+	<field name="T05_ID" class="java.lang.Long"/>
+	<field name="WEBINAR_ID" class="java.lang.String"/>
+	<field name="TOPIC" class="java.lang.String"/>
+	<field name="ACTUAL_START_TIME" class="java.sql.Timestamp"/>
+	<field name="QUESTION" class="java.lang.String"/>
+	<field name="ANSWER" class="java.lang.String"/>
+	<field name="JML" class="java.lang.Integer"/>
+	<variable name="JML_1" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{JML}]]></variableExpression>
+	</variable>
+	<variable name="StatusPeserta" class="java.lang.String">
+		<variableExpression><![CDATA[$P{RegisteredEmail} == 8 ? "ALL / Semua Status" :
+($P{RegisteredEmail} == 1 ? "Confirmed / Terdaftar di Attendee Report" :"To be Confirmed / TIDAK Terdaftar di Attendee Report" )]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{RegisteredEmail} == 8 ? "ALL / Semua Status" :
+($P{RegisteredEmail} == 1 ? "Confirmed / Terdaftar di Attendee Report" :"To be Confirmed / TIDAK Terdaftar di Attendee Report" )]]></initialValueExpression>
+	</variable>
+	<group name="GroupID">
+		<groupExpression><![CDATA[$F{T05_ID}]]></groupExpression>
+		<groupFooter>
+			<band height="28">
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="44ffae67-d859-4c56-a4c2-404bd6baa9c5"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="0" width="200" height="14" uuid="124472d7-1fe0-42ec-80d6-905661f7e86d"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="c11825f0-8a72-4541-b9bc-139d123afe8e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{JML_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="25" height="14" uuid="cc8e3e70-3965-4963-8e47-e42de14a6dcf"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="14" width="200" height="14" uuid="3ff65508-eea0-4936-9cc2-082c429f8650"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="328">
+				<bar3DChart>
+					<chart>
+						<reportElement x="25" y="0" width="500" height="300" uuid="ee95da6b-9811-4d0b-ac55-91b0e01531c4">
+							<printWhenExpression><![CDATA[$P{JnsChart}.equals( "BAR" ) == true]]></printWhenExpression>
+						</reportElement>
+						<chartTitle/>
+						<chartSubtitle/>
+						<chartLegend/>
+					</chart>
+					<categoryDataset>
+						<categorySeries>
+							<seriesExpression><![CDATA[$F{ANSWER}]]></seriesExpression>
+							<categoryExpression><![CDATA[$F{ANSWER}]]></categoryExpression>
+							<valueExpression><![CDATA[$F{JML}]]></valueExpression>
+						</categorySeries>
+					</categoryDataset>
+					<bar3DPlot>
+						<plot/>
+						<itemLabel/>
+						<categoryAxisFormat>
+							<axisFormat/>
+						</categoryAxisFormat>
+						<valueAxisFormat>
+							<axisFormat/>
+						</valueAxisFormat>
+					</bar3DPlot>
+				</bar3DChart>
+				<pie3DChart>
+					<chart>
+						<reportElement x="25" y="0" width="500" height="300" uuid="50569eb0-c88b-4d65-982d-752000b2556c">
+							<printWhenExpression><![CDATA[$P{JnsChart}.equals( "PIE" ) == true]]></printWhenExpression>
+						</reportElement>
+						<chartTitle/>
+						<chartSubtitle/>
+						<chartLegend position="Bottom"/>
+					</chart>
+					<pieDataset>
+						<keyExpression><![CDATA[$F{ANSWER}]]></keyExpression>
+						<valueExpression><![CDATA[$F{JML}]]></valueExpression>
+					</pieDataset>
+					<pie3DPlot labelFormat="{1} ({2})">
+						<plot/>
+						<itemLabel/>
+					</pie3DPlot>
+				</pie3DChart>
+				<staticText>
+					<reportElement x="25" y="300" width="500" height="14" uuid="576c3535-070a-4bfd-98ef-3b1a97d53127"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="300" width="25" height="14" uuid="34c29892-d587-4de5-b101-0de36c903d86"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="314" width="500" height="14" uuid="7471e09b-e1a8-4ffd-be99-c1f22b08c104"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="314" width="25" height="14" uuid="aaa232f2-b16c-4e4f-a909-b3f81e847fea"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<subreport>
+					<reportElement x="0" y="0" width="2375" height="14" uuid="aa8ac5e0-d698-4bd9-b2a9-e71b1c543a25"/>
+					<subreportParameter name="T05Id">
+						<subreportParameterExpression><![CDATA[$P{T05Id}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="RegisteredEmail">
+						<subreportParameterExpression><![CDATA[$P{RegisteredEmail}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="QstId">
+						<subreportParameterExpression><![CDATA[$P{QstId}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="Sesi">
+						<subreportParameterExpression><![CDATA[$P{Sesi}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "06014_01_FeedbackReviewDetail.jasper"]]></subreportExpression>
+				</subreport>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="154">
+			<staticText>
+				<reportElement x="25" y="0" width="200" height="14" uuid="5a0a3b27-2279-4377-8cc0-8a324df8f3c6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="14" width="200" height="14" uuid="9249f65a-0e46-44a9-b551-2097fb3eaddd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(06014) - Feedback / Pooling - Review]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="25" height="14" uuid="3928a9d7-3ac5-424c-8315-ea9d3c25fbed"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="42" width="200" height="14" uuid="c48e7888-c88d-4b1b-9673-e8da8532f032"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Webinar ID :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="42" width="300" height="14" uuid="8ca57028-83b0-4cb0-8236-f74f02a8a6d5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{WEBINAR_ID}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="25" y="56" width="200" height="14" uuid="08bc1423-4987-427c-b957-80adb2f6d443"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Topic :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="56" width="300" height="14" uuid="3c78364d-84fc-48d3-bded-ac1c55e196a7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOPIC}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="25" y="70" width="200" height="14" uuid="1e10a867-1630-4857-84b4-a258932a6d76"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Webinar :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="225" y="70" width="300" height="14" uuid="65e05039-8161-4df5-9db6-9cce002a7a9c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACTUAL_START_TIME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="25" height="14" uuid="bf9ee610-1940-41c2-a833-7ae205639f33"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="25" height="14" uuid="0d57c717-1b7c-492b-9349-357789776797"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="28" width="200" height="14" uuid="77e97c0b-5a25-4d89-8bac-8289cfd9415f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="25" height="14" uuid="9c0cb3fe-3526-4aaa-859a-8d1facef8dbd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="25" height="14" uuid="68dbb254-87ee-43e2-b957-a5b9e82c6813"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="25" height="14" uuid="0a5be149-b1ec-4ba8-8b73-9b61eb995e4c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="225" y="98" width="300" height="42" isPrintWhenDetailOverflows="true" uuid="ed210f01-8b3c-460e-b3a5-9d543cf645ea"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QUESTION}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="25" y="98" width="200" height="14" uuid="55860c4e-2b54-47a5-8206-8b732f4e7aab"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pertanyaan :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="25" height="14" uuid="85e73c34-d96d-4787-a6a6-804551828b30"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="140" width="25" height="14" uuid="3ec3ebe2-4de4-4eeb-a2c0-17bca88e2859"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="140" width="200" height="14" uuid="dbfb908c-a280-43aa-9186-89d428eb96cf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jawaban]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="140" width="300" height="14" uuid="664d4a17-7581-41b1-8f0e-cd7cebe75162"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jumlah Orang yang menjawab]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="84" width="200" height="14" uuid="4daaff37-1b66-400f-9b21-4a5a5de7926c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status Peserta yang mengisi :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="25" height="14" uuid="2fff759e-f2fe-4a86-ab61-88f308320308"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="84" width="300" height="14" uuid="9bca5132-9121-4b28-b885-3d29add263ea"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{StatusPeserta}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="112" width="25" height="14" uuid="08de62b9-a53f-4682-a696-89e4c4ad664f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="112" width="200" height="14" uuid="417704f7-1bf7-40cd-a591-ce5b75e266c7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="126" width="25" height="14" uuid="c0c02aa8-5d70-477c-bbfd-72caf1e1ce2e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="126" width="200" height="14" uuid="1d4a2fc5-e69b-44c0-9df7-0f21d65f164b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="25" y="0" width="200" height="14" uuid="fb245a7d-3d59-45ed-a487-7842f012dc5e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ANSWER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="3dac6058-2428-4f50-a8b4-685f85222db0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="25" height="14" uuid="5edc58bc-1436-4635-a17b-5f0c84723dd4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<noData>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="400" height="14" uuid="defb779b-28e9-4d44-aeea-8d2e3bc4e646"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tidak ada data]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

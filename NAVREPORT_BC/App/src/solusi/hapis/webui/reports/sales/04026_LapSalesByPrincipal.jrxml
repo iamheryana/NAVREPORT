@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04026_LapSalesByPrincipal" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.9487171000000314"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvTo" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Cabang" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProsesId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Principal" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	PRIN.[Name] AS PRINCIPAL
+		,XXX.PRINCIPAL AS PRINCIPAL_CODE
+		,XXX.SCANNER_AMT
+		,XXX.MOBILECOMP_AMT
+		,XXX.PRINTER_AMT
+		,XXX.OTH_AMT
+		,XXX.TTL_AMT
+FROM	(
+			SELECT	SRP.PRINCIPAL
+					,ROUND((SUM(SRP.SCANNER_AMT) / 1000000),2) AS SCANNER_AMT
+					,ROUND((SUM(SRP.MOBILECOMP_AMT) / 1000000),2) AS MOBILECOMP_AMT
+					,ROUND((SUM(SRP.PRINTER_AMT) / 1000000),2) AS PRINTER_AMT
+					,ROUND((SUM(SRP.OTH_AMT) / 1000000),2) AS OTH_AMT
+					,(	ROUND((SUM(SRP.SCANNER_AMT) / 1000000),2) +
+						ROUND((SUM(SRP.MOBILECOMP_AMT) / 1000000),2) +
+						ROUND((SUM(SRP.PRINTER_AMT) / 1000000),2) +
+						ROUND((SUM(SRP.OTH_AMT) / 1000000),2) ) AS TTL_AMT
+			FROM	(
+						SELECT
+								SRV.BRANCHES AS BRANCHES
+								, CASE	WHEN SRV.SALESMAN IN ('NONE', 'LOCAL', 'OTHER') THEN 'LOCAL'
+										WHEN SRV.SALESMAN = 'ARMOR' THEN 'OPGLB'
+										WHEN SRV.SALESMAN = 'ARUBA' THEN 'HP'
+										WHEN SRV.SALESMAN = 'BART' THEN 'OPGLB'
+										WHEN SRV.SALESMAN = 'DATA' THEN 'OPGLB'
+										ELSE SRV.SALESMAN END AS PRINCIPAL
+								, CASE WHEN SRV.ITEM_CAT = 'H001' AND SRV.SALESMAN <> 'ACS' THEN SRV.AMOUNT ELSE 0 END AS SCANNER_AMT
+								, CASE WHEN SRV.ITEM_CAT = 'H002' AND SRV.SALESMAN <> 'ACS' THEN SRV.AMOUNT ELSE 0 END AS MOBILECOMP_AMT
+								, CASE WHEN SRV.ITEM_CAT IN ('H003', 'H013') AND SRV.SALESMAN <> 'ACS' THEN SRV.AMOUNT ELSE 0 END AS PRINTER_AMT
+								, CASE WHEN SRV.ITEM_CAT NOT IN ('H001', 'H002', 'H003', 'H013') OR SRV.SALESMAN = 'ACS' THEN SRV.AMOUNT ELSE 0 END AS OTH_AMT
+						FROM [dbo].[TEMP08_SALES_REVENUE] SRV
+						WHERE	[PROSES_ID] = $P{ProsesId}
+								AND (SRV.BRANCHES = $P{Cabang} OR $P{Cabang} = 'ALL')
+					) SRP
+			GROUP BY SRP.PRINCIPAL
+		) XXX
+LEFT JOIN	(
+				SELECT	PRI.[Code], MAX(PRI.[Name]) AS [Name]
+				FROM	(
+							SELECT [Code]
+								  ,[Name]
+							FROM [dbo].[BC_AUTOJAYA$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT [Code]
+								  ,[Name]
+							FROM [dbo].[BC_SOLUSI$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+						) PRI
+				GROUP BY PRI.[Code]
+			) PRIN ON PRIN.[Code] = XXX.PRINCIPAL
+LEFT JOIN [dbo].[T24_PRINCIPAL_REGIONAL] PRG ON PRG.PRINCIPAL = XXX.PRINCIPAL
+WHERE	XXX.TTL_AMT <> 0
+		AND (
+				$P{Principal} = 'ALL'  OR
+				($P{Principal} = 'REGIONAL' AND PRG.PRINCIPAL IS NOT NULL) OR
+				$P{Principal} = XXX.PRINCIPAL
+			)]]>
+	</queryString>
+	<field name="PRINCIPAL" class="java.lang.String"/>
+	<field name="PRINCIPAL_CODE" class="java.lang.String"/>
+	<field name="SCANNER_AMT" class="java.math.BigDecimal"/>
+	<field name="MOBILECOMP_AMT" class="java.math.BigDecimal"/>
+	<field name="PRINTER_AMT" class="java.math.BigDecimal"/>
+	<field name="OTH_AMT" class="java.math.BigDecimal"/>
+	<field name="TTL_AMT" class="java.math.BigDecimal"/>
+	<sortField name="PRINCIPAL"/>
+	<variable name="SCANNER_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SCANNER_AMT}]]></variableExpression>
+	</variable>
+	<variable name="MOBILECOMP_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{MOBILECOMP_AMT}]]></variableExpression>
+	</variable>
+	<variable name="PRINTER_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PRINTER_AMT}]]></variableExpression>
+	</variable>
+	<variable name="OTH_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{OTH_AMT}]]></variableExpression>
+	</variable>
+	<variable name="TTL_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{TTL_AMT}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="142" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="125" y="14" width="75" height="14" uuid="e983ef99-7a2c-412b-8c04-aa31da3407c1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="225" y="14" width="75" height="14" uuid="a76e333a-f2cb-410c-a1dd-330ea4d1d958"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="125" y="56" width="175" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="127" width="75" height="14" uuid="bc0b5f21-bd58-4128-90d9-0da9bfd247a3"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Scanner]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="125" height="14" uuid="2416e567-b590-46cd-b14e-f9281133ba81"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak Pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="b3e39015-60b7-4554-84b0-56f951c68c37"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04026) Sales by Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="125" height="14" uuid="4eb2c989-0b8b-464e-9e93-b047e47ba9df"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="14" width="25" height="14" uuid="7a7817d3-1ca0-4345-9306-f2cecc43279f"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="300" height="14" uuid="f47a3c22-aad1-4ef8-8762-fa524640460e"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(1) Sales Invoice; (2) Invoice Uang Muka; ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="300" height="14" uuid="c2958fed-a0e5-405b-876d-a86598f384bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="127" width="75" height="14" uuid="6c6cce57-c57c-4342-9b77-8c9fadc74ed4"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobile Comp.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="450" y="127" width="75" height="14" uuid="c5fdc37d-90c1-4742-8fa9-aa49736b5227"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="525" y="127" width="75" height="14" uuid="e51c9a37-5db1-4724-bc01-e5bf4f43cc67"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Others]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="600" y="127" width="75" height="14" uuid="7ab956d5-5315-47fe-80f7-6cf74ec2fc64"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="125" height="14" uuid="4f1445b2-2479-45e7-a824-d495a41be249"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="125" y="28" width="175" height="14" uuid="e3e4a1a6-a797-47b3-a408-fc9ba1fb0396"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="300" height="14" uuid="71b80ee3-f337-4eec-be34-bbbaa484fea6"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Nilai Sales berasal dari :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="127" width="300" height="14" uuid="76233947-bb1b-44fc-b816-c5d813df3222"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Principal (Nilai dalam Jutaan / 1,000,000)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="300" height="14" uuid="a3be37e0-0fdb-45c6-8eca-b26b07017b5b"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(3) Outstanding SO (as per Today)]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="141" width="675" height="1" uuid="d53df1f5-4e61-4933-aa8f-351cb388927b"/>
+			</line>
+			<line>
+				<reportElement x="0" y="126" width="675" height="1" uuid="135487b3-6783-4d37-9c9c-d4020d986ced"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="42" width="125" height="14" uuid="92dd4348-be3e-4ff9-a21e-83a34b570194"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Principal :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="125" y="42" width="175" height="14" uuid="a9b28814-f9d3-44db-b396-df20aba6c8ad"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Principal}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="75" height="14" uuid="b9aec37a-0e93-4915-83cf-a933058455b1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SCANNER_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="375" y="0" width="75" height="14" uuid="f5e8a7ab-26ef-413f-bf5b-e6fbaac92b73"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MOBILECOMP_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="450" y="0" width="75" height="14" uuid="844c1d57-0580-443f-beec-40348fa5b253"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRINTER_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="75" height="14" uuid="49302907-7cd5-47f2-9c36-187ff6914480"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OTH_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="600" y="0" width="75" height="14" uuid="4b6d8e83-af35-4b28-85a6-a5ae30054a6e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TTL_AMT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="300" height="14" uuid="74f940ec-25d6-4b49-a722-652466d0dbbe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRINCIPAL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="15" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="1" width="75" height="14" uuid="9b155c3e-ab1c-4830-aa81-f7d4fee742c3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SCANNER_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="375" y="1" width="75" height="14" uuid="413007cc-583b-48c1-99fb-5737204c171c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{MOBILECOMP_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="450" y="1" width="75" height="14" uuid="a58ed31a-1049-4dbe-96e3-2714a456895a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PRINTER_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="525" y="1" width="75" height="14" uuid="95341f8f-a0ee-40fb-9145-824fd79ef8cf"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{OTH_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="600" y="1" width="75" height="14" uuid="30fb9d7f-6374-46aa-95e7-aaca036c19f1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{TTL_AMT_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="1" width="300" height="14" uuid="9ec53cfe-8a9b-489d-9693-aabe8773e649"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Grand Total]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="0" width="675" height="1" uuid="518dd373-23ff-44fd-8846-efe08fc57d91"/>
+			</line>
+		</band>
+	</summary>
+	<noData>
+		<band height="98">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="225" y="14" width="75" height="14" uuid="72ebc791-167b-43dc-ac2c-6ab69c34bdb1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="125" height="14" uuid="7044c94d-37ea-4848-a48f-ca703d3670ef"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="50e8401d-c659-4f0d-825b-71992df9c46a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04026) Sales by Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="14" width="25" height="14" uuid="a6202012-50cf-4a35-bf0c-3424896bc1a1"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="125" height="14" uuid="b936bc4f-e891-4c93-a025-59d21e26ce9a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak Pada :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="125" y="42" width="175" height="14" uuid="0c30e6b9-dfda-4563-9f01-4fed37028c5f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Principal}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="125" y="28" width="175" height="14" uuid="d3f86276-6e96-416f-964a-fcfd6f8396c7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="125" height="14" uuid="e9ad5548-3b69-495e-820b-a27e2315f424"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="300" height="14" uuid="bcb75ebf-4b36-4881-8c7b-44a875155d9f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="125" y="14" width="75" height="14" uuid="db1e840f-f096-4a7e-bddd-b8708240de84"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="125" y="56" width="175" height="14" uuid="45d09d6e-b3e8-48db-b309-65785cab8262"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="125" height="14" uuid="420fc4a4-554b-45ef-b581-44c9478ffd1a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Principal :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="300" height="14" uuid="9c992319-91b4-4ce0-83e3-481d2f956cd3"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[*** TIDAK ADA DATA***]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

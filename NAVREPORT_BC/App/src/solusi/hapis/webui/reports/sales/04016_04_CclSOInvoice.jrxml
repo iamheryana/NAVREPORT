@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04016_04_CclSOInvoice" language="groovy" pageWidth="275" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="275" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="903a1b17-b3c7-44f4-bb86-8f20a34306d6">
+	<property name="ireport.zoom" value="2.357947691000002"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="NoSO" class="java.lang.String"/>
+	<parameter name="NoPOCust" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.NO_INVOICE
+		, X.TGL_INVOICE
+		, X.AMT
+FROM	(
+			SELECT SIH.[No_] AS NO_INVOICE
+					, SIH.[Posting Date] AS TGL_INVOICE
+					, SUM(SIL.[Amount]) AS AMT
+			FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+			INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+			WHERE	SIH.[Order No_] = $P{NoSO} OR
+					SIH.[Prepayment Order No_] = $P{NoSO}
+			GROUP BY SIH.[No_], SIH.[Posting Date]
+		) X
+WHERE X.AMT > 0
+UNION ALL
+SELECT	X.NO_INVOICE
+		, X.TGL_INVOICE
+		, X.AMT
+FROM	(
+			SELECT SIH.[No_] AS NO_INVOICE
+					, SIH.[Posting Date] AS TGL_INVOICE
+					, SUM(SIL.[Amount]) AS AMT
+			FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+			INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+			WHERE	SIH.[Order No_] = $P{NoSO} OR
+					SIH.[Prepayment Order No_] = $P{NoSO}
+			GROUP BY SIH.[No_], SIH.[Posting Date]
+		) X
+WHERE X.AMT > 0]]>
+	</queryString>
+	<field name="NO_INVOICE" class="java.lang.String"/>
+	<field name="TGL_INVOICE" class="java.sql.Timestamp"/>
+	<field name="AMT" class="java.math.BigDecimal"/>
+	<sortField name="TGL_INVOICE"/>
+	<sortField name="NO_INVOICE" order="Descending"/>
+	<variable name="AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="28" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="fabf99aa-cfec-419d-92d0-f842f58a5bae"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="14" width="75" height="14" uuid="c77d7465-23cf-4914-ac8f-8894c6cbd3dd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="275" height="14" uuid="fc89e7c7-fc87-433b-a9fb-b2bac6015e47"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Invoice Information]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="14" width="100" height="14" uuid="3c96520d-31b9-48ca-9171-ff3d72ccf2b2"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount DPP]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="23055ad5-5465-4461-8320-6f75cc57a259"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INVOICE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="a568e97f-1d0c-4f99-9147-f92fe5b0ce43"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INVOICE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="175" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="5a98faf2-1d5c-4b00-8e56-65b2556fc757"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="28">
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="175" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="8085d72c-e639-436d-b4d5-b4a761f092a8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="0" width="75" height="14" uuid="02f436eb-da64-4156-b502-046556105c7e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="ee069440-b0ed-497e-b8d4-160a307614b0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="c2b19671-3c2b-4acf-813f-826441ef3ddd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</summary>
+	<noData>
+		<band height="42">
+			<staticText>
+				<reportElement x="100" y="14" width="175" height="14" uuid="b22fff98-df3c-47af-b531-c9fef15dd5c4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Belum ada Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="275" height="14" uuid="f4efad48-8f44-43d3-ab8e-456596853236"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="275" height="14" uuid="41e3ef66-8800-4909-80b5-49decfd0c353"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Informasi Invoice]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

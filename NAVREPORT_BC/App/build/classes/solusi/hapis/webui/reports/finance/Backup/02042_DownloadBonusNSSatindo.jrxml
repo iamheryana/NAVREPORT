@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02042_DownloadBonusNSSatindo" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.0000000000000444"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.CUSTOMER AS REG
+		,X.TGL_ORDER
+		,X.NO_ITEM
+		,X.DESC_ITEM
+		,X.QTY
+FROM	(
+			SELECT	CASE WHEN SOH.[No_]  LIKE '8SO%' THEN 'SAT' ELSE 'INDOMARCO' END AS CUSTOMER
+					,SOH.[Order Date] AS TGL_ORDER
+					,SOD.[No_]  AS NO_ITEM
+					,SOD.[Description] AS DESC_ITEM
+					,SOD.[Quantity] AS QTY
+					,SOD.[Line Amount] AS LINE_AMOUNT
+			FROM [dbo].[AUTOJAYA$Sales Header] SOH
+			INNER JOIN [dbo].[AUTOJAYA$Sales Line] SOD ON SOD.[Document No_] = SOH.[No_]
+			WHERE	(SOH.[No_]  LIKE '8SO%' OR SOH.[No_]  LIKE '9SO%') AND
+					SOH.[Document Type] = 1 AND SOD.[Type] = 2 AND
+					SOD.[Unit Price] <> 0
+			UNION ALL
+			SELECT	CASE WHEN SIH.[No_]  LIKE '8SI%' THEN 'SAT' ELSE 'INDOMARCO' END AS CUSTOMER
+
+					,SIH.[Order Date] AS TGL_ORDER
+					,SIL.[No_]  AS NO_ITEM
+					,SIL.[Description] AS DESC_ITEM
+					,SIL.[Quantity] AS QTY
+					,SIL.[Line Amount] AS LINE_AMOUNT
+			FROM [dbo].[AUTOJAYA$Sales Invoice Header]  SIH
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Invoice Line] SIL ON  SIL.[Document No_] = SIH.[No_]
+			LEFT JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+			WHERE (SIH.[No_]  LIKE '8SI%' OR SIH.[No_]  LIKE '9SI%') AND
+					SIL.[Type] = 2 AND CRM.[No_] IS NULL AND
+					SIL.[Unit Price] <> 0
+			UNION ALL
+			SELECT
+					CASE WHEN SOH.[No_]  LIKE '8SO%' THEN 'SAT' ELSE 'INDOMARCO' END AS CUSTOMER
+					,SOH.[Order Date] AS TGL_ORDER
+					,SOD.[No_]  AS NO_ITEM
+					,SOD.[Description] AS DESC_ITEM
+					,SOD.[Quantity] AS QTY
+					,SOD.[Line Amount] AS LINE_AMOUNT
+			FROM [dbo].[SOLUSI$Sales Header] SOH
+			INNER JOIN [dbo].[SOLUSI$Sales Line] SOD ON SOD.[Document No_] = SOH.[No_]
+			WHERE	(SOH.[No_]  LIKE '8SO%' OR SOH.[No_]  LIKE '9SO%') AND
+					SOH.[Document Type] = 1 AND SOD.[Type] = 2 AND
+					SOD.[Unit Price] <> 0
+			UNION ALL
+			SELECT	CASE WHEN SIH.[No_]  LIKE '8SI%' THEN 'SAT' ELSE 'INDOMARCO' END AS CUSTOMER
+					,SIH.[Order Date] AS TGL_ORDER
+					,SIL.[No_]  AS NO_ITEM
+					,SIL.[Description] AS DESC_ITEM
+					,SIL.[Quantity] AS QTY
+					,SIL.[Line Amount] AS LINE_AMOUNT
+			FROM [dbo].[SOLUSI$Sales Invoice Header]  SIH
+			LEFT JOIN [dbo].[SOLUSI$Sales Invoice Line] SIL ON  SIL.[Document No_] = SIH.[No_]
+			LEFT JOIN [dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+			WHERE (SIH.[No_]  LIKE '8SI%' OR SIH.[No_]  LIKE '9SI%') AND
+					SIL.[Type] = 2 AND CRM.[No_] IS NULL AND
+					SIL.[Unit Price] <> 0
+		) X
+WHERE  X.LINE_AMOUNT <> 0 AND
+	X.TGL_ORDER >= $P{TglFrom} AND X.TGL_ORDER <= $P{TglUpto}]]>
+	</queryString>
+	<field name="REG" class="java.lang.String"/>
+	<field name="TGL_ORDER" class="java.sql.Timestamp"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="DESC_ITEM" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<title>
+		<band height="14" splitType="Stretch">
+			<staticText>
+				<reportElement x="200" y="0" width="223" height="14" uuid="8cf79679-3fe2-4352-82a6-127ab540fd10"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Item]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="0" width="100" height="14" uuid="3a766a66-fa2c-46b2-9ed3-8d84d4c37b4e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Order]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="423" y="0" width="76" height="14" uuid="f6cd3df2-105f-469b-aeb7-8b5425633522"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="8683911b-afd5-4560-9aab-4138c8cea56b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Register]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="100" height="14" uuid="6265b92f-471b-4739-99a6-ff27b244685d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{REG}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="100" height="14" uuid="32eeeedb-fab0-4856-9ebb-64926fe833f6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="200" y="0" width="223" height="14" uuid="19588a86-138a-4c71-acd8-fb7f540dd64b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="423" y="0" width="76" height="14" uuid="69f1702b-af63-4c40-971c-12fd0a4bbf4f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="AJCertificate" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a1ab9164-ee8c-4d5d-8273-615b6c335665">
+	<property name="ireport.zoom" value="1.000000000000006"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="250"/>
+	<parameter name="NoDo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item1" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item2" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item3" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CertNo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="sec1" class="java.lang.String"/>
+	<parameter name="sec2" class="java.lang.String"/>
+	<parameter name="sec3" class="java.lang.String"/>
+	<parameter name="sec4" class="java.lang.String"/>
+	<parameter name="sec5" class="java.lang.String"/>
+	<parameter name="sec6" class="java.lang.String"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	DOH.[No_] AS NO_DO
+		,DOL.[No_] AS ITEM_NO
+		,DOL.[Description 2] AS PRODUCT_CODE
+		,DOH.[Posting Date] AS TGL_DO
+		,DOL.[Quantity] AS QTY
+		,CASE WHEN CASE WHEN SUBSTRING(DET.WC,1,1) = 'W' THEN 'W' ELSE 'D' END = 'W' THEN  dateadd(MONTH, cast(ISNULL(ISNULL(SUBSTRING(DET.DDC, LEN(DET.DDC)-2, LEN(DET.DDC)-1),0) ,0) AS INT), DOH.[Posting Date])
+			ELSE  DOH.[Posting Date] END AS EXP_DATE
+		,(
+			SELECT '|'+IL.[Serial No_] + '| ' as 'data()'
+			FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] IL
+			WHERE	IL.[Document No_] = DOH.[No_] AND
+					IL.[Document Line No_] = DOL.[Order Line No_] AND
+					IL.[Item No_] = DOL.[No_]
+			for xml path('')
+
+			) AS SN
+FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Shipment Header] DOH
+INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Shipment Line] DOL ON DOL.[Document No_] = DOH.[No_] AND DOL.[Type] = 2
+LEFT JOIN	(
+				SELECT ILE.[Item No_] AS NO_ITEM
+					  ,ILE.[Document No_] AS NO_DO
+					  ,ILE.[Document Line No_]  AS NO_DO_LINE
+					  ,MAX(ILE.[Warranty Code]) AS WC
+					  ,MAX(PYT.[Due Date Calculation]) AS DDC
+				FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] ILE
+				LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Payment Terms] PYT ON PYT.[Code] = ILE.[Warranty Code]
+				GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Document Line No_]
+			) DET ON DET.NO_DO = DOH.[No_] AND DET.NO_DO_LINE = DOL.[Order Line No_] AND DET.NO_ITEM = DOL.[No_]
+WHERE DOH.[No_] = $P{NoDo} AND
+	(DOL.[No_] = $P{Item1} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item2}) AND $P{Company} = 'AJ'
+UNION ALL
+SELECT	DOH.[No_] AS NO_DO
+		,DOL.[No_] AS ITEM_NO
+		,DOL.[Description 2] AS PRODUCT_CODE
+		,DOH.[Posting Date] AS TGL_DO
+		,DOL.[Quantity] AS QTY
+		,CASE WHEN CASE WHEN SUBSTRING(DET.WC,1,1) = 'W' THEN 'W' ELSE 'D' END = 'W' THEN  dateadd(MONTH, cast(ISNULL(ISNULL(SUBSTRING(DET.DDC, LEN(DET.DDC)-2, LEN(DET.DDC)-1),0) ,0) AS INT), DOH.[Posting Date])
+			ELSE  DOH.[Posting Date] END AS EXP_DATE
+		,(
+			SELECT '|'+IL.[Serial No_] + '| ' as 'data()'
+			FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] IL
+			WHERE	IL.[Document No_] = DOH.[No_] AND
+					IL.[Document Line No_] = DOL.[Order Line No_] AND
+					IL.[Item No_] = DOL.[No_]
+			for xml path('')
+
+			) AS SN
+FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Shipment Header] DOH
+INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Shipment Line] DOL ON DOL.[Document No_] = DOH.[No_] AND DOL.[Type] = 2
+LEFT JOIN	(
+				SELECT ILE.[Item No_] AS NO_ITEM
+					  ,ILE.[Document No_] AS NO_DO
+					  ,ILE.[Document Line No_]  AS NO_DO_LINE
+					  ,MAX(ILE.[Warranty Code]) AS WC
+					  ,MAX(PYT.[Due Date Calculation]) AS DDC
+				FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry] ILE
+				LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Payment Terms] PYT ON PYT.[Code] = ILE.[Warranty Code]
+				GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Document Line No_]
+			) DET ON DET.NO_DO = DOH.[No_] AND DET.NO_DO_LINE = DOL.[Order Line No_] AND DET.NO_ITEM = DOL.[No_]
+WHERE DOH.[No_] = $P{NoDo} AND
+	(DOL.[No_] = $P{Item1} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item2}) AND $P{Company} = 'SP']]>
+	</queryString>
+	<field name="NO_DO" class="java.lang.String"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="PRODUCT_CODE" class="java.lang.String"/>
+	<field name="TGL_DO" class="java.sql.Timestamp"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="EXP_DATE" class="java.sql.Timestamp"/>
+	<field name="SN" class="java.lang.String"/>
+	<group name="Item" isStartNewPage="true" footerPosition="ForceAtBottom">
+		<groupExpression><![CDATA[$F{ITEM_NO}]]></groupExpression>
+		<groupFooter>
+			<band height="124">
+				<staticText>
+					<reportElement x="26" y="7" width="507" height="19" isPrintWhenDetailOverflows="true" uuid="6be5dabc-4285-4581-a486-4e7b68f66483"/>
+					<textElement>
+						<font fontName="SansSerif" size="12" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Services Coverage Only Applicable for :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="58" y="26" width="475" height="15" isPrintWhenDetailOverflows="true" uuid="c41a2f3b-5985-4f78-9754-da93bdebda95"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Section 1	:	Scope & Coverage Of … Years Warranty]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="58" y="41" width="475" height="15" isPrintWhenDetailOverflows="true" uuid="7bbd8761-0a19-461a-bff0-61adf7121d27"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Section 2	:	Scope & Coverage Of Comprehensive  Coverage]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="58" y="56" width="475" height="15" isPrintWhenDetailOverflows="true" uuid="7a509afa-08dd-408a-98c5-96e0351b74f2"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Section 3	:	Scope & Coverage Of Pick Up and Delivery]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="58" y="71" width="475" height="15" isPrintWhenDetailOverflows="true" uuid="57839d07-ddfc-4b5c-b4db-04fceab56194"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Section 4	:	Scope & Coverage Of Backup Unit]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="58" y="86" width="475" height="15" isPrintWhenDetailOverflows="true" uuid="404b1fc0-c38d-42be-8027-9ea58b707661"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Section 5	:	Scope & Coverage Of Preventive Maintenance]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="58" y="101" width="475" height="15" isPrintWhenDetailOverflows="true" uuid="f0b84575-cede-4db3-b8ff-48a42a3c08c3"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Section 6	:	Scope & Coverage Of 24 Hours Support]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="36" y="26" width="12" height="15" isPrintWhenDetailOverflows="true" uuid="dede225a-7106-4127-a50c-f8597c404c7d">
+						<printWhenExpression><![CDATA[$P{sec1}.equals( "Y" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[v]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="26" y="26" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="44ddca13-c2d9-4260-8ca6-005e8b878878"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[(]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="48" y="26" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="e62ff754-cbea-4851-a017-3973a1af92d4"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="48" y="41" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="674c50f8-956d-4149-a652-bad5f2dd3479"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="26" y="41" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="7fceeef9-f58b-4e70-be7d-110129341a97"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[(]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="36" y="41" width="12" height="15" isPrintWhenDetailOverflows="true" uuid="50fe51e4-ff56-4c19-b480-d6d8d62ec6d9">
+						<printWhenExpression><![CDATA[$P{sec2}.equals( "Y" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[v]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="36" y="71" width="12" height="15" isPrintWhenDetailOverflows="true" uuid="0d265c54-2fe3-4713-84d4-7409cf9901fd">
+						<printWhenExpression><![CDATA[$P{sec4}.equals( "Y" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[v]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="26" y="71" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="31d12e8d-5696-4486-8756-39d3efd96119"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[(]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="48" y="71" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="2cf3f0bf-c035-4649-8826-3fe8afc5d2c8"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="48" y="56" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="aa7eca8c-b126-434b-afd2-a9bc2f4e5078"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="26" y="56" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="6c713a97-5a7f-47de-b4e0-10410daee2dc"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[(]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="36" y="56" width="12" height="15" isPrintWhenDetailOverflows="true" uuid="119de6e1-16c5-4a61-994c-063aa56c48a4">
+						<printWhenExpression><![CDATA[$P{sec3}.equals( "Y" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[v]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="36" y="101" width="12" height="15" isPrintWhenDetailOverflows="true" uuid="31ff3d42-eb52-4100-9559-aec7e35884c7">
+						<printWhenExpression><![CDATA[$P{sec6}.equals( "Y" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[v]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="26" y="101" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="2b5a41d0-10bb-4bfe-bfb9-54792fc476a0"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[(]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="48" y="101" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="b214771f-d05e-4162-b7b3-ec862cf6fbf5"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="48" y="86" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="be674d75-f447-4dfc-8e82-93873e5627cc"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="26" y="86" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="ea2fa0e9-ed92-412a-bb38-008a85dd8dd1"/>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[(]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="36" y="86" width="12" height="15" isPrintWhenDetailOverflows="true" uuid="2121c342-db0b-42cd-98e3-ec651b964f84">
+						<printWhenExpression><![CDATA[$P{sec5}.equals( "Y" )]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[v]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="176" splitType="Stretch">
+			<staticText>
+				<reportElement x="26" y="104" width="507" height="56" uuid="81b939bd-1d6f-448c-984d-ba5f98b5f768"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="36" isBold="true" isItalic="false"/>
+				</textElement>
+				<text><![CDATA[Certificate of Service]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="203" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="101" y="173" width="366" height="17" uuid="1d3ce14b-7d49-4a32-ad02-88cb548bcddb"/>
+				<textElement textAlignment="Justified">
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="152" y="105" width="250" height="15" uuid="22c83fae-0341-4b39-9dbe-4ebc1e94318f"/>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_NO}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="26" y="12" width="507" height="36" isPrintWhenDetailOverflows="true" uuid="234fb875-29ad-4985-89b1-f631e5bad301"/>
+				<textElement textAlignment="Justified">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Thank you for purchasing our services. Information below represents your detail services and coverage.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="26" y="49" width="116" height="15" isPrintWhenDetailOverflows="true" uuid="10d0abdb-c66f-402e-b8c7-2139086bb555"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Certificate Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="26" y="64" width="116" height="15" isPrintWhenDetailOverflows="true" uuid="113b95ff-8964-405b-a85b-87becb2b9541"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Length Periode]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="142" y="49" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="12fb8640-3d2d-4b89-8e82-3ccba7dfec54"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="142" y="64" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="364314b6-0588-474d-ada2-02808a7b6d69"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="152" y="49" width="250" height="15" uuid="f0dfd22f-4171-4f5d-a9f8-06beb2d8e5e8"/>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{CertNo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMM dd, yyyy">
+				<reportElement x="152" y="64" width="119" height="15" uuid="1991f4f3-a91e-4785-b582-694447e078e1"/>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_DO}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="271" y="64" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="d7fc754e-ef36-4acc-913c-1ce1de73859b"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<textField pattern="MMMM dd, yyyy">
+				<reportElement x="283" y="64" width="119" height="15" uuid="d2139d93-8050-4528-bb99-e7736a1e3d8b"/>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXP_DATE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="26" y="90" width="116" height="15" isPrintWhenDetailOverflows="true" uuid="095d7784-345e-4407-a4b1-d53af1d2d44d"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Service Part Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="26" y="105" width="116" height="15" isPrintWhenDetailOverflows="true" uuid="538b33d9-cf20-4a70-9f1d-8fc35ff546e0"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Product Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="142" y="90" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="5826ae75-8347-4978-b871-ad227870d36f"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="142" y="105" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="f6a2a9f7-3889-4e97-a6eb-cbace06cd936"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="152" y="90" width="250" height="15" uuid="777064ad-5f37-4df1-af75-d427eb85034c"/>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCT_CODE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="26" y="120" width="116" height="15" isPrintWhenDetailOverflows="true" uuid="559a7822-11f2-4b73-8a71-31d2db8c8200"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Quantity]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="142" y="120" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="d7f0fdc8-2475-4275-b047-8d18e510fbb7"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="#,##0">
+				<reportElement x="152" y="120" width="250" height="15" uuid="f9e49345-ac0d-431d-90fb-e61b9e1ffe7b"/>
+				<textElement>
+					<font fontName="SansSerif"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="26" y="145" width="116" height="15" isPrintWhenDetailOverflows="true" uuid="655de8aa-2715-4c78-9305-cff06e5119d1"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Serial Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="142" y="145" width="10" height="15" isPrintWhenDetailOverflows="true" uuid="46db40f2-17ff-4198-bf17-4a68f8e4561e"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="30" splitType="Stretch">
+			<staticText>
+				<reportElement x="26" y="7" width="507" height="16" isPrintWhenDetailOverflows="true" uuid="b5035aea-e2e0-4b4d-86aa-5f0ad5011779"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Please keep in a safe place.]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<lastPageFooter>
+		<band height="30" splitType="Immediate">
+			<staticText>
+				<reportElement x="26" y="7" width="507" height="16" isPrintWhenDetailOverflows="true" uuid="c780fc37-5bb9-43a5-9de2-42fc0c0d037e"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Please keep in a safe place.]]></text>
+			</staticText>
+		</band>
+	</lastPageFooter>
+</jasperReport>

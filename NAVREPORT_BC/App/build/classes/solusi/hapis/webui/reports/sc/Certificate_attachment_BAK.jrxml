@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Certificate_attachment" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a1ab9164-ee8c-4d5d-8273-615b6c335665">
+	<property name="ireport.zoom" value="0.9090909090909204"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#FFBFBF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<parameter name="NoDo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item1" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item2" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item3" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NoPo" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	DOH.[No_] AS NO_DO
+		,DOH.[Sell-to Customer Name] AS CUST_NAME
+		,DOL.[No_] AS ITEM_NO
+		,DOL.[Description 2] AS PRODUCT_CODE
+		,DOH.[Posting Date] AS TGL_DO
+		,CASE WHEN CASE WHEN SUBSTRING(DET.WC,1,1) = 'W' THEN 'W' ELSE 'D' END = 'W' THEN  dateadd(MONTH, cast(ISNULL(ISNULL(SUBSTRING(DET.DDC, LEN(DET.DDC)-2, LEN(DET.DDC)-1),0) ,0) AS INT), DOH.[Posting Date]) - 1
+			ELSE  DOH.[Posting Date] END AS EXP_DATE
+		,IL.[Serial No_] AS SN
+FROM [dbo].[BC_AUTOJAYA$Sales Shipment Header] DOH
+INNER JOIN [dbo].[BC_AUTOJAYA$Sales Shipment Line] DOL ON DOL.[Document No_] = DOH.[No_] AND DOL.[Type] = 2
+LEFT JOIN	(
+				SELECT ILE.[Item No_] AS NO_ITEM
+					  ,ILE.[Document No_] AS NO_DO
+					  ,ILE.[Document Line No_]  AS NO_DO_LINE
+					  ,MAX(ILE.[Warranty Code]) AS WC
+					  ,MAX(PYT.[Due Date Calculation]) AS DDC
+				FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry] ILE
+				LEFT JOIN [dbo].[BC_AUTOJAYA$Payment Terms] PYT ON PYT.[Code] = ILE.[Warranty Code]
+				GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Document Line No_]
+			) DET ON DET.NO_DO = DOH.[No_] AND DET.NO_DO_LINE = DOL.[Order Line No_] AND DET.NO_ITEM = DOL.[No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Item Ledger Entry] IL ON IL.[Document No_] = DOH.[No_] AND
+															  IL.[Document Line No_] = DOL.[Order Line No_] AND
+															  IL.[Item No_] = DOL.[No_]
+WHERE	DOH.[No_] = $P{NoDo} AND
+		(DOL.[No_] = $P{Item1} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item3}) AND $P{Company} = 'AJ'
+		AND IL.[Serial No_] IS NOT NULL
+UNION ALL
+SELECT	DOH.[No_] AS NO_DO
+		,DOH.[Sell-to Customer Name] AS CUST_NAME
+		,DOL.[No_] AS ITEM_NO
+		,DOL.[Description 2] AS PRODUCT_CODE
+		,DOH.[Posting Date] AS TGL_DO
+		,CASE WHEN CASE WHEN SUBSTRING(DET.WC,1,1) = 'W' THEN 'W' ELSE 'D' END = 'W' THEN  dateadd(MONTH, cast(ISNULL(ISNULL(SUBSTRING(DET.DDC, LEN(DET.DDC)-2, LEN(DET.DDC)-1),0) ,0) AS INT), DOH.[Posting Date]) - 1
+			ELSE  DOH.[Posting Date] END AS EXP_DATE
+		,IL.[Serial No_] AS SN
+FROM [dbo].[BC_SOLUSI$Sales Shipment Header] DOH
+INNER JOIN [dbo].[BC_SOLUSI$Sales Shipment Line] DOL ON DOL.[Document No_] = DOH.[No_] AND DOL.[Type] = 2
+LEFT JOIN	(
+				SELECT ILE.[Item No_] AS NO_ITEM
+					  ,ILE.[Document No_] AS NO_DO
+					  ,ILE.[Document Line No_]  AS NO_DO_LINE
+					  ,MAX(ILE.[Warranty Code]) AS WC
+					  ,MAX(PYT.[Due Date Calculation]) AS DDC
+				FROM [dbo].[BC_SOLUSI$Item Ledger Entry] ILE
+				LEFT JOIN [dbo].[BC_SOLUSI$Payment Terms] PYT ON PYT.[Code] = ILE.[Warranty Code]
+				GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Document Line No_]
+			) DET ON DET.NO_DO = DOH.[No_] AND DET.NO_DO_LINE = DOL.[Order Line No_] AND DET.NO_ITEM = DOL.[No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Item Ledger Entry] IL ON IL.[Document No_] = DOH.[No_] AND
+															  IL.[Document Line No_] = DOL.[Order Line No_] AND
+															  IL.[Item No_] = DOL.[No_]
+WHERE	DOH.[No_] = $P{NoDo} AND
+		(DOL.[No_] = $P{Item1} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item3}) AND $P{Company} = 'SP'
+		AND IL.[Serial No_] IS NOT NULL]]>
+	</queryString>
+	<field name="NO_DO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="PRODUCT_CODE" class="java.lang.String"/>
+	<field name="TGL_DO" class="java.sql.Timestamp"/>
+	<field name="EXP_DATE" class="java.sql.Timestamp"/>
+	<field name="SN" class="java.lang.String"/>
+	<group name="Item">
+		<groupExpression><![CDATA[$F{ITEM_NO}]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<textField>
+					<reportElement x="19" y="1" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="195b43c6-6282-4c43-bd7b-7ccc7868c19d"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ITEM_NO}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="12" y="17" width="151" height="1" uuid="326e1b9d-1075-47be-b96c-acadc45b9752"/>
+				</line>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="19">
+				<staticText>
+					<reportElement x="19" y="1" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="3fd7e0a7-8dd1-42da-a940-da9ef6136ad1"/>
+					<textElement>
+						<font fontName="SansSerif" size="10" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<pageHeader>
+		<band height="425" splitType="Stretch">
+			<printWhenExpression><![CDATA[$V{PAGE_NUMBER}==1]]></printWhenExpression>
+			<textField pattern="dd-MMM-yyyy">
+				<reportElement x="404" y="31" width="94" height="14" uuid="e7a59ff0-0cc7-46aa-9995-0ac8c5b59304"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="12" y="370" width="500" height="1" uuid="740ec431-e89f-40cc-80d7-94e08ab5f9ce"/>
+			</line>
+			<staticText>
+				<reportElement x="19" y="48" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="b6ec139f-7440-4c5d-bb40-93d621f6550c"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Contract No. (if renewal)]]></text>
+			</staticText>
+			<line>
+				<reportElement x="13" y="80" width="150" height="1" uuid="cb223439-edd2-4478-89c5-943bef6ff7ac"/>
+			</line>
+			<line>
+				<reportElement x="13" y="97" width="150" height="1" uuid="f3f9a408-2e99-4725-9f5e-6f5553ca0181"/>
+			</line>
+			<line>
+				<reportElement x="13" y="114" width="150" height="1" uuid="99867b3b-5350-4346-8e99-0e44f7efead7"/>
+			</line>
+			<line>
+				<reportElement x="13" y="131" width="150" height="1" uuid="d3b54204-2787-477e-ab4d-1eec36ef8579"/>
+			</line>
+			<line>
+				<reportElement x="13" y="148" width="150" height="1" uuid="69e49949-edbe-4365-9882-f742a26b85ea"/>
+			</line>
+			<line>
+				<reportElement x="13" y="165" width="150" height="1" uuid="71d476b7-f00b-4d83-a67f-ee6f61d3954a"/>
+			</line>
+			<line>
+				<reportElement x="13" y="182" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="199" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="216" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="233" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="250" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="267" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="284" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="301" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="318" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="336" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="13" y="353" width="150" height="1" uuid="67aa31c6-30fe-450e-b0f5-f66d3f9ab9c1"/>
+			</line>
+			<line>
+				<reportElement x="163" y="46" width="1" height="324" uuid="2f9c19f3-47f2-4e3e-97ec-413a2908df18"/>
+			</line>
+			<staticText>
+				<reportElement x="19" y="64" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="800f68e6-59a1-4804-9c18-0360c9cc2f36"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Salesperson]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="81" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="120d2ff6-502e-4517-8aca-fc3eda2b0521"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Email add]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="98" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="7fd20f5f-9f32-4741-8fa0-ecff2a34f3ec"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[PO Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="116" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="016ca147-1dbf-470a-baca-117d5c762130"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[SKU]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="132" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="f3f33ca4-c9a1-4e58-8b10-73a267a52e05"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Q'ty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="149" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="ef88ecae-4b0b-4fc0-ad5b-63a4a46087f7"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Product Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="166" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="65cc8255-ef7d-4fb4-9ce6-8898cf843786"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Contract Start Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="183" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="b4034e9e-c652-4832-bef5-a637a8c8aea0"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Contract End Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="217" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="b3181e85-928a-4044-90ce-7a3c6bda2150"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Reseller]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="234" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="2124b661-7ec1-4ca8-a0b8-c739433ecc73"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Contact Person]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="251" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="ad7734f3-607c-41e9-a501-ba3e293b19de"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[e-mail add]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="286" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="ff3a72f0-ab53-4a84-b733-4b6d85f70d99"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[End User Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="303" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="d40c0a7c-f337-4575-93e5-94508cc87358"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Contact Person]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="320" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="3c99134a-44d6-43aa-a492-f839c1c5d027"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[e-mail add]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="338" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="0719fa3c-44d9-4ade-9e84-2a5d5dd9330c"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Address]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="355" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="d73ae833-5578-4da4-8c48-8bad5999aaaf"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Country]]></text>
+			</staticText>
+			<line>
+				<reportElement x="12" y="45" width="500" height="1" uuid="ee1035ad-9762-4042-8fdb-b7995e7924be"/>
+			</line>
+			<line>
+				<reportElement x="13" y="63" width="150" height="1" uuid="9a36a23d-7626-49dd-b332-70ad762d3aa1"/>
+			</line>
+			<line>
+				<reportElement x="12" y="46" width="1" height="324" uuid="bfb83eb7-7f9d-436e-9031-193a4b616a44"/>
+			</line>
+			<line>
+				<reportElement x="511" y="46" width="1" height="324" uuid="48769194-6923-47ac-a955-5f24358217df"/>
+			</line>
+			<staticText>
+				<reportElement x="181" y="355" width="125" height="15" isPrintWhenDetailOverflows="true" uuid="7b556e54-687f-445a-9f40-af9d8f2795c7"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[INDONESIA]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="181" y="286" width="317" height="15" uuid="4d44f17d-9156-43ae-849f-d5dcb39b2a7c"/>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MMM-yyyy">
+				<reportElement x="181" y="166" width="178" height="15" uuid="45bd34cb-53bc-49b0-b016-b81c820876e7"/>
+				<textFieldExpression><![CDATA[$F{TGL_DO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MMM-yyyy">
+				<reportElement x="181" y="183" width="178" height="15" uuid="a7986ae3-66cd-4841-8be7-b569cfac0253"/>
+				<textFieldExpression><![CDATA[$F{EXP_DATE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="181" y="98" width="178" height="15" uuid="20075287-17a5-47b8-9a25-19a684d92ca4"/>
+				<textFieldExpression><![CDATA[$P{NoPo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="361" y="30" width="43" height="15" isPrintWhenDetailOverflows="true" uuid="a47c144b-d274-4ea2-82c7-7c92a72de1c7"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="12" y="4" width="499" height="26" isPrintWhenDetailOverflows="true" uuid="9a604dba-95ba-445e-9ebf-b7866429a300"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Service Contract]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="372" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="34d2fc86-65a0-4ff4-a356-afde3124f8c8"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="387" width="134" height="21" isPrintWhenDetailOverflows="true" uuid="902837a2-2e3f-4d3e-a08f-44afd07c95d6"/>
+				<textElement>
+					<font fontName="SansSerif" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Serial Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="19" y="408" width="134" height="15" isPrintWhenDetailOverflows="true" uuid="ba738d52-daab-4a29-9e36-0c69e169a63b"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<line>
+				<reportElement x="164" y="63" width="347" height="1" uuid="19721608-10fe-4785-9c84-ad7cf366e076"/>
+			</line>
+			<line>
+				<reportElement x="164" y="80" width="347" height="1" uuid="d41ad51a-4568-4686-ac2a-7efc16782666"/>
+			</line>
+			<line>
+				<reportElement x="164" y="97" width="347" height="1" uuid="e6ad60fa-4b51-4494-993e-686a9af9f2a7"/>
+			</line>
+			<line>
+				<reportElement x="164" y="114" width="347" height="1" uuid="9f54d9c8-072b-4168-83e3-015f77576580"/>
+			</line>
+			<line>
+				<reportElement x="164" y="131" width="347" height="1" uuid="f73f576e-3e6c-4bca-9085-71a56bed7cb6"/>
+			</line>
+			<line>
+				<reportElement x="164" y="148" width="347" height="1" uuid="b1f4fc78-853c-470d-ac84-00c1c83de8b2"/>
+			</line>
+			<line>
+				<reportElement x="164" y="165" width="347" height="1" uuid="ebe48745-5e32-40a8-89d0-e98b307b6e4a"/>
+			</line>
+			<line>
+				<reportElement x="164" y="182" width="347" height="1" uuid="e75dc64b-0f38-4079-b48a-0cba2adefc64"/>
+			</line>
+			<line>
+				<reportElement x="164" y="199" width="347" height="1" uuid="c47c0163-ebd7-4d1e-9c28-24d14ccbfda7"/>
+			</line>
+			<line>
+				<reportElement x="164" y="216" width="347" height="1" uuid="32f995a0-ce8c-4f2e-826c-e787784d7a90"/>
+			</line>
+			<line>
+				<reportElement x="164" y="233" width="347" height="1" uuid="c2b63173-b2e0-4a17-8a24-5f0e14bc91f4"/>
+			</line>
+			<line>
+				<reportElement x="164" y="250" width="347" height="1" uuid="79a38f56-3eed-4f27-b5b8-a9605718584d"/>
+			</line>
+			<line>
+				<reportElement x="164" y="267" width="347" height="1" uuid="7663d319-33fb-47ec-bff3-588849f77c96"/>
+			</line>
+			<line>
+				<reportElement x="164" y="284" width="347" height="1" uuid="616b0c09-98bd-4fb8-b8b9-a44278e86449"/>
+			</line>
+			<line>
+				<reportElement x="164" y="301" width="347" height="1" uuid="d8d076f7-7168-4b6d-a147-209e3bc7c4d1"/>
+			</line>
+			<line>
+				<reportElement x="164" y="318" width="347" height="1" uuid="2b70dc40-6332-4299-8639-e6f2bb3609a5"/>
+			</line>
+			<line>
+				<reportElement x="164" y="336" width="347" height="1" uuid="949f52f6-919c-480d-aed9-d99a3d5e32d0"/>
+			</line>
+			<line>
+				<reportElement x="164" y="353" width="347" height="1" uuid="66889f33-70ce-4208-aea1-bbd7b5b96d82"/>
+			</line>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="17">
+			<textField>
+				<reportElement x="19" y="1" width="134" height="15" uuid="19408240-3559-4aa0-8867-a0ed29524ccf"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SN}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

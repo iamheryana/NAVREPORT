@@ -1,0 +1,847 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04047_02_ForecastSalesACSOutSO" language="groovy" pageWidth="830" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="790" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.4641000000001496"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Tahun" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProsesId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+		XOX.MAIN_GRP
+		,XOX.GROUP_DESC
+		,ROW_NUMBER() OVER (PARTITION BY XOX.MAIN_GRP ORDER BY XOX.MAIN_GRP, XOX.BRANCHES, XOX.CUST_NAME) AS SUBGROUP_NO
+		,XOX.CUST_NAME
+		,XOX.SALESMAN
+		,XOX.BRANCHES
+		,(ROUND((SUM(XOX.AMOUNT_S1)/1000000),2) + ROUND((SUM(XOX.AMOUNT_S2)/1000000),2)) AS AMOUNT
+		,ROUND((SUM(XOX.AMOUNT_S1)/1000000),2) AS AMOUNT_S1
+		,ROUND((SUM(XOX.AMOUNT_S2)/1000000),2) AS AMOUNT_S2
+		,(ROUND((SUM(XOX.AMOUNT_THIS_MONTH)/1000000),2) + ROUND((SUM(XOX.AMOUNT_OTHER_MONTH)/1000000),2)) AS AMOUNT_TTL
+		,ROUND((SUM(XOX.AMOUNT_THIS_MONTH)/1000000),2) AS AMOUNT_THIS_MONTH
+		,ROUND((SUM(XOX.AMOUNT_OTHER_MONTH)/1000000),2) AS AMOUNT_OTHER_MONTH
+FROM	(
+SELECT	CASE WHEN XAX.TIPE = 'RT' THEN 1 ELSE 2 END AS MAIN_GRP
+		,CASE WHEN XAX.TIPE = 'RT' THEN 'MANANGED SERVICE BERKALA' ELSE 'PROJECT ON CONTRACT' END AS GROUP_DESC
+		,XAX.CUST_NAME
+		,XAX.BRANCHES
+		,XAX.SALESMAN
+		,	CASE WHEN $P{Tahun} < DATEPART(year, GETDATE()) THEN
+				0
+			ELSE
+				CASE WHEN $P{Tahun} = DATEPART(year, GETDATE()) THEN
+					CASE WHEN XAX.EST_REALISASI < GETDATE() AND DATEPART(quarter, GETDATE()) IN (1,2) THEN XAX.AMOUNT_IDR ELSE
+						CASE WHEN DATEPART(quarter, XAX.EST_REALISASI) IN (1,2) THEN XAX.AMOUNT_IDR ELSE 0 END
+					END
+				ELSE
+					CASE WHEN DATEPART(quarter, XAX.EST_REALISASI) IN (1,2) THEN XAX.AMOUNT_IDR ELSE 0 END
+				END
+			END AMOUNT_S1
+		,	CASE WHEN $P{Tahun} < DATEPART(year, GETDATE()) THEN
+				0
+			ELSE
+				CASE WHEN $P{Tahun} = DATEPART(year, GETDATE()) THEN
+					CASE WHEN XAX.EST_REALISASI < GETDATE() AND DATEPART(quarter, GETDATE()) IN (3,4) THEN XAX.AMOUNT_IDR ELSE
+						CASE WHEN DATEPART(quarter, XAX.EST_REALISASI) IN (3,4) THEN XAX.AMOUNT_IDR ELSE 0 END
+					END
+				ELSE
+					CASE WHEN DATEPART(quarter, XAX.EST_REALISASI) IN (3,4) THEN XAX.AMOUNT_IDR ELSE 0 END
+				END
+			END AMOUNT_S2
+		,	CASE WHEN $P{Tahun} < DATEPART(year, GETDATE()) THEN
+				0
+			ELSE
+				CASE WHEN $P{Tahun} = DATEPART(year, GETDATE()) THEN
+					CASE WHEN DATEPART(month, XAX.EST_REALISASI) = DATEPART(month, GETDATE()) THEN XAX.AMOUNT_IDR ELSE 0 END
+				ELSE
+					0
+				END
+			END AMOUNT_THIS_MONTH
+		,	CASE WHEN $P{Tahun} < DATEPART(year, GETDATE()) THEN
+				0
+			ELSE
+				CASE WHEN $P{Tahun} = DATEPART(year, GETDATE()) THEN
+					CASE WHEN DATEPART(month, XAX.EST_REALISASI) > DATEPART(month, GETDATE()) THEN XAX.AMOUNT_IDR ELSE 0 END
+				ELSE
+					XAX.AMOUNT_IDR
+				END
+			END AMOUNT_OTHER_MONTH
+FROM	(
+			SELECT	XXX.TIPE
+					,XXX.CUST_NAME
+					,CAB.[Code] AS BRANCHES
+					,XXX.SALES_CODE AS SALESMAN
+					,XXX.AMOUNT_IDR
+					,XXX.EST_REALISASI
+			FROM [dbo].[TEMP20_OUTSTANDING_SO] XXX
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Name] = XXX.CABANG
+			WHERE	XXX.PROSES_ID = $P{ProsesId} AND
+					XXX.BARIS = 1 AND
+					XXX.STATUS_SO = 'RELEASED'
+					) XAX
+WHERE	(
+			(
+				SUBSTRING(CONVERT(varchar, (CAST((CAST($P{Tahun} as varchar(4))+'-12-31') AS datetime)), 105), 7,4) <= SUBSTRING(CONVERT(varchar, GETDATE(), 105), 7,4) AND
+				SUBSTRING(CONVERT(varchar, XAX.EST_REALISASI, 105), 7,4) = SUBSTRING(CONVERT(varchar,  GETDATE(), 105), 7,4)
+			)
+				OR
+			(
+				SUBSTRING(CONVERT(varchar, (CAST((CAST($P{Tahun} as varchar(4))+'-12-31') AS datetime)), 105), 7,4) > SUBSTRING(CONVERT(varchar, GETDATE(), 105), 7,4) AND
+				SUBSTRING(CONVERT(varchar, XAX.EST_REALISASI, 105), 7,4) = SUBSTRING(CONVERT(varchar, (CAST((CAST($P{Tahun} as varchar(4))+'-12-31') AS datetime)), 105), 7,4)
+			)
+		)
+		) XOX
+WHERE ((XOX.AMOUNT_S1) + (XOX.AMOUNT_S2)) <> 0
+GROUP BY XOX.MAIN_GRP
+		,XOX.GROUP_DESC
+		,XOX.CUST_NAME
+		,XOX.SALESMAN
+		,XOX.BRANCHES]]>
+	</queryString>
+	<field name="MAIN_GRP" class="java.lang.Integer"/>
+	<field name="GROUP_DESC" class="java.lang.String"/>
+	<field name="SUBGROUP_NO" class="java.lang.Long"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="SALESMAN" class="java.lang.String"/>
+	<field name="BRANCHES" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_S1" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_S2" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_TTL" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_THIS_MONTH" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_OTHER_MONTH" class="java.math.BigDecimal"/>
+	<sortField name="MAIN_GRP"/>
+	<sortField name="BRANCHES"/>
+	<sortField name="CUST_NAME"/>
+	<variable name="AMOUNT_S1_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_S1}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_S2_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_S2}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_S1_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_S1}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_S2_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_S2}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_THIS_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_THIS_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_OTHER_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OTHER_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_TTL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_TTL}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_THIS_MONTH_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_THIS_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_OTHER_MONTH_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OTHER_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_TTL_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_TTL}]]></variableExpression>
+	</variable>
+	<group name="MainGrp">
+		<groupExpression><![CDATA[$F{MAIN_GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField>
+					<reportElement x="28" y="0" width="250" height="14" uuid="ed045b2f-d01a-4467-ab7b-c66bd35b4f87"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{GROUP_DESC}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="640" y="0" width="75" height="14" uuid="422bfb1f-e825-41e6-85d2-d60c7575b8a4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[> THIS MONTHS]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="565" y="0" width="75" height="14" uuid="b08be608-dc2a-458b-b613-36837cf1874b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[THIS MONTH]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="278" y="0" width="50" height="14" uuid="80ab8866-97af-4f67-b790-5b4cf078ca47"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[SALES]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="715" y="0" width="75" height="14" uuid="46cfba65-6545-4f3a-b550-9a60c7bf1fc6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="28" height="14" uuid="13c26678-feec-4968-ac84-5704b38cf49a"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="478" y="0" width="75" height="14" uuid="5408cc7c-5be0-4946-a5d8-795f9cbe56f3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="403" y="0" width="75" height="14" uuid="763252d7-2773-4d5c-8e57-f0616d478798"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[SEMESTER II]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="328" y="0" width="75" height="14" uuid="0009ff03-755d-463f-ae9c-26ef21733dbc"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[SEMESTER I]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="553" y="0" width="12" height="14" uuid="4396b192-ccc3-4daf-a58b-fe93de266a71"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<staticText>
+					<reportElement x="0" y="0" width="28" height="14" uuid="e6f36e95-8dde-4aac-98cf-9c523ee4ebe5"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="28" y="0" width="250" height="14" uuid="8d15185c-1794-4c41-8612-55a92f6780b2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["TOTAL "+$F{GROUP_DESC}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="328" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="0faa63f1-1b06-419e-abbc-f656e87551eb"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_S1_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="403" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="089eba69-6ef4-4de4-9d90-4839accc37b6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_S2_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="278" y="0" width="50" height="14" uuid="59af2cc8-2847-4ce4-a300-7b3acdaac4f1"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="478" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e1ec0e70-f3b8-4771-821f-41d754a7128a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="28" height="14" uuid="863b03dc-9a88-44a8-bf7f-017a969cd3bb"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="328" y="14" width="75" height="14" uuid="296423f8-8530-4bfb-9a2a-f5d18ef91442"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="278" y="14" width="50" height="14" uuid="74dab56e-133a-4e25-ab02-f6f504342c97"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="28" y="14" width="250" height="14" uuid="d9ef958c-9d62-4648-b31c-48040e8f0925"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="478" y="14" width="75" height="14" uuid="365a74e6-06db-4fb5-9d47-d4d749f4e187"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="403" y="14" width="75" height="14" uuid="b7dd1825-8bcc-40a3-9c61-d5ffc813c2c0"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="553" y="0" width="12" height="14" uuid="bc1437c3-e46d-4d74-8a83-2f7427476105"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="553" y="14" width="12" height="14" uuid="4ac6d00d-8513-4f32-abdf-7e5b50329097"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="640" y="14" width="75" height="14" uuid="9dba3cb1-8f40-4f90-8599-e386974bfa04"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="565" y="14" width="75" height="14" uuid="72fa5f34-a876-44ac-b5dd-9ddfccedcf49"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="715" y="14" width="75" height="14" uuid="33064196-7562-46ed-9d2c-1222a5311ce7"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="565" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="7fd879ad-5478-4f92-83e2-b339aa741131"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_THIS_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="640" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="60f355a2-f138-43a9-9640-9432ccb62921"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_OTHER_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="715" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="67cbd1fe-d249-49be-bf11-782d0053f683"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_TTL_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Branches">
+		<groupExpression><![CDATA[$F{BRANCHES}]]></groupExpression>
+		<groupFooter>
+			<band height="14">
+				<staticText>
+					<reportElement x="0" y="0" width="28" height="14" uuid="6b5ff5ed-cdca-4da6-b332-eab192038657"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="28" y="0" width="250" height="14" uuid="79d6ab94-077a-4c4b-b7b8-f829bcd7c409"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="278" y="0" width="50" height="14" uuid="52e875b4-254f-4780-bd0c-c30dbb3b144a"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="565" y="0" width="75" height="14" uuid="17181ab9-a442-4c10-a09c-8ac2bd2d49ba"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="640" y="0" width="75" height="14" uuid="9c061884-9361-4411-9710-b09a78921fd3"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="715" y="0" width="75" height="14" uuid="dc1cefae-43c1-45fe-822f-0987a9e975e3"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="553" y="0" width="12" height="14" uuid="e334b4ab-5b49-47a5-ac14-d5e97f2ad724"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="403" y="0" width="75" height="14" uuid="fbf6fde4-fa85-4c02-8efa-11493864c8bd"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="328" y="0" width="75" height="14" uuid="cb4498be-9d1e-41ca-89e7-50e710aaf609"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="478" y="0" width="75" height="14" uuid="b4360d77-6cf1-440b-8461-bb23a19a6877"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="98">
+			<staticText>
+				<reportElement x="0" y="0" width="28" height="14" uuid="f97f8d1a-45da-4395-b971-281ecf908f9a"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="0" width="250" height="14" uuid="acd4205f-277b-4ec2-ada9-5a79458adb73"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04047-02) Outstanding SO per Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="14" width="250" height="14" uuid="d4400665-9c25-4138-b12f-910908625b6a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="28" height="14" uuid="e89ce257-f955-45e4-a80e-6cab058ed45a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="42" width="250" height="14" uuid="5d516873-20c7-48a6-86a6-3aeae26f97ad"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed on]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="328" y="42" width="150" height="14" uuid="4dc4a503-b27e-439e-b1ae-c79bf378ce8f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="28" y="28" width="250" height="14" uuid="2c8a0df7-dc37-4e35-92c1-f757b469bf68"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="328" y="28" width="150" height="14" uuid="66282874-183e-42fd-a70b-3c72c237d244"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="28" height="14" uuid="97ac2135-90cd-4d07-988b-cf05ebc816fd"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="28" height="14" uuid="d8424e3d-e41d-4879-afb1-5590285beec3"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="28" height="14" uuid="99acf5d9-154d-43b3-8c58-04c332d47b62"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="56" width="250" height="14" uuid="0d5436e1-8fc9-4c73-85d8-7dcea2fd906f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="28" width="50" height="14" uuid="2f3b7c16-ecef-4c12-b306-8cb88cf5b898"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="42" width="50" height="14" uuid="87e7c666-8674-4712-addd-24194cc9e2ed"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="70" width="250" height="14" uuid="23e6fa97-1872-4244-aa83-418095144188"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Note : Amount in million (1,000,000)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="28" height="14" uuid="94173bf7-2d1b-48c5-ac9a-f9a9cd803577"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="28" height="14" uuid="02361daa-eadc-4c71-996d-6741c194528b"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="84" width="250" height="14" uuid="f62b2be8-e9a8-4b35-9fd3-6134e6845c02"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="328" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="44efd10a-f95c-46b2-9883-89398cf23f3d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_S1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="403" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="b5ce705a-9674-4462-a9c8-2e425fcc7059"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_S2}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="28" y="0" width="250" height="14" uuid="f8dd54c4-da15-4851-864a-daba7b871934"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="278" y="0" width="50" height="14" uuid="5ef7585f-06a3-401e-ac69-5ee0a311ad15"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALESMAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="478" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="68d37a9c-a004-41ed-a741-2d1c54bde4b9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="28" height="14" uuid="630558c0-d35e-4682-a8df-e3a134664c1d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SUBGROUP_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="565" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="41ef22f3-ce82-4316-907c-98776f67912a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_THIS_MONTH}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="640" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="a7b78bbe-9d8f-4513-b137-019264088127"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_OTHER_MONTH}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="715" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="dd4cfc7c-4df6-446e-b709-face686aeac8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_TTL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="553" y="0" width="12" height="14" uuid="a516f58a-4219-4d12-b343-83a0f89970f6"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<summary>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="28" height="14" uuid="64f0c43f-1df7-4ae4-95eb-75674c0b697f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="0" width="250" height="14" uuid="c5d34aac-d984-461d-a320-9f7d4c6a3249"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRAND TOTAL]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="328" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="419ee51f-db04-4d50-9c3a-3f3806b9afb4"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_S1_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="403" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="8a5bb2c6-5dfa-41b5-8f2c-0ca18299eb8a"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_S2_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="278" y="0" width="50" height="14" uuid="7ae27988-ca4d-4a23-ae96-669d6f6538bb"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="478" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="c351465c-9f65-4fc5-bec2-24a6a9462c65"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="553" y="0" width="12" height="14" uuid="f791b59d-80d1-4a91-accf-881e55951260"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="565" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="fef57aef-a0a3-4bca-9510-b885f80860dd"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_THIS_MONTH_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="640" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="6e9db2df-332b-4e55-b8ff-d26e62f63309"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_OTHER_MONTH_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="715" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="b7b7b461-4a9a-4726-9bcb-6ebd6cb3fbd2"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_TTL_2}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="84">
+			<staticText>
+				<reportElement x="28" y="70" width="250" height="14" uuid="e762fe98-ae4e-46c4-a6dc-d3d20f52f9ce"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA YANG MEMENUHI KRITERIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="28" height="14" uuid="0d0e937a-cc13-4fa7-b654-31f654651860"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="28" height="14" uuid="816a2a4e-6da7-43fb-89a3-0bec10e1304d"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="42" width="50" height="14" uuid="1a89c39e-d114-4187-8774-074a19467b72"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="328" y="28" width="150" height="14" uuid="6d2edefe-88ae-4bfa-a4e3-211fb517c6b4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="28" height="14" uuid="e41feda4-7ca3-4e0f-bfd6-1277a112f799"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="28" height="14" uuid="d346aa8c-34ea-416a-8350-178ba32e72e6"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="28" width="250" height="14" uuid="1d1c66ce-e7e8-4f66-8130-6527d9d49a16"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="328" y="42" width="150" height="14" uuid="a12b9df6-6ee1-42b3-902e-02dd5721c422"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="28" y="14" width="250" height="14" uuid="c3ab39f2-c87d-42a8-9221-c2a8eeae7361"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="278" y="28" width="50" height="14" uuid="3b3b6183-d8ee-4bb0-a993-9d6afce2d35f"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="28" height="14" uuid="675f506c-b9f2-4043-a56c-7e55420a4da2"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="56" width="250" height="14" uuid="04b95eca-4425-4b33-bfa5-927485c5fa14"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="28" height="14" uuid="80a5e9be-53dd-4b5c-bcbe-b194259f0ca0"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="0" width="250" height="14" uuid="dd5197b8-6da6-4bac-b423-daad3c5eb70d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04047-02) Outstanding SO per Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="28" y="42" width="250" height="14" uuid="82477ce3-ec4e-4494-8e60-d6354a4984f2"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed on]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

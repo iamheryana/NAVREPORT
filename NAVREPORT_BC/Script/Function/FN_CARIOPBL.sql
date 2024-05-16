@@ -1,0 +1,101 @@
+
+CREATE OR REPLACE FUNCTION public.fn_cariopbl (in l_kolom varchar, in l_nip varchar, in l_tglproses date, in l_mypass varchar) RETURNS numeric AS
+$BODY$ 
+-----
+DECLARE l_ADAOPBL 	DECIMAL(5,0);	l_EGIYNBOPBL 	DECIMAL(15,2); 
+	l_TglOPBL 	DATE; 	   	l_PRDAWAL	DATE;
+	l_K2YTD		DECIMAL(15,2);  l_BALIKAN	DECIMAL(15,2); 
+	l_EncEYITT	DECIMAL(15,2);  l_EncEYIT 	DECIMAL(15,2); 
+	l_K8YTD		DECIMAL(15,2);  l_CTRPAYR	INT;
+	l_JNSPAJAK	VARCHAR(1);   	l_CTRCaba	INT; 
+	l_K11		DECIMAL(15,2);  l_K11GCT	DECIMAL(15,2);
+
+BEGIN
+	SELECT TglMasuk, PAJAK 
+	FROM M15PEGA 
+	INTO l_PrdAwal, l_JNSPAJAK
+	WHERE NIP=l_NIP ;
+
+	SELECT COUNT(*) 
+ 	FROM S05PSTD 
+ 	INTO l_CTRPAYR
+	WHERE NIP=l_NIP AND EXTRACT(YEAR FROM TglPosting) = EXTRACT(YEAR FROM l_TglProses) ;
+
+	IF (SELECT SUBSTRING(StringFlag,2,1) FROM FZ2FLDA LIMIT 1)= '1'  THEN 
+	BEGIN 
+		SELECT COUNT(KdCaba) 
+		FROM 
+		( 
+		SELECT DISTINCT KDCABA 
+	 	FROM S01HGAJ
+		WHERE NIP=l_NIP AND TglPayr <= l_TglProses AND EXTRACT(YEAR FROM TglPayr) = EXTRACT(YEAR FROM l_TglProses) 
+		) X 
+		INTO l_CTRCaba;
+		l_CTRCaba := COALESCE(l_CTRCaba,1) ;
+	END ;
+	ELSE 
+	BEGIN 
+		l_CTRCABA := 1 ;
+	END ;
+	END IF; 
+   IF EXTRACT(YEAR FROM l_PrdAwal) = EXTRACT(YEAR FROM l_TglProses) THEN 
+   BEGIN 
+	   l_ADAOPBL := 0 ;
+	   SELECT COUNT(*) 
+	   FROM T25OPBP 
+	   INTO l_ADAOPBL
+	   WHERE NIP = l_NIP AND FLGIMPL = 'T' ; 
+	   
+	   IF l_ADAOPBL <> 0 THEN 
+	   BEGIN 
+		l_EGIYNBOPBL := 0; 
+		l_K2YTD := 0 ;
+		SELECT T25.PrevDate 
+		FROM T25OPBP T25 
+		INTO l_TglOPBL 
+		WHERE NIP = l_NIP AND FLGIMPL = 'T' ; 
+
+-- FIX INC + VAR INC - K10 - K12 
+		SELECT  K1GCT + K3GCT + K4GCT + K5GCT + K6GCT + 
+							 K1NCT + K3NCT + K4NCT + K5NCT + K6NCT + 
+							 K1GCS + K3GCS + K4GCS + K5GCS + K6GCS + 
+							 K1NCS + K3NCS + K4NCS + K5NCS + K6NCS - 
+							 K10GCT - K10GCS - K12GCT - K12GCS,  
+		        K2GCT + K2GCS +K2NCT + K2NCS, 
+		        Fn_Kpusat(NIP,EncEYITT,l_MyPass), 
+		        Fn_Kpusat(NIP,EncEYIT,l_MyPass), 
+		        K8GCT + K8GCS + K8NCT + K8NCS,
+		        K11GCT + K11GCS,
+			K11GCT
+
+		FROM T25OPBP 
+		INTO l_EGIYNBOPBL, l_K2YTD, l_EncEYITT, l_EncEYIT, l_K8YTD, l_K11, l_K11GCT
+		WHERE NIP = l_NIP AND FLGIMPL = 'T' ; 
+	   END ; 
+	   END IF ; 
+   END ; 
+   END IF ; 
+   l_EGIYNBOPBL := COALESCE(l_EGIYNBOPBL,0) ; 
+
+   l_BALIKAN := COALESCE(CASE WHEN l_KOLOM = '2' THEN l_K2YTD 
+								WHEN l_KOLOM = '8' AND l_CTRPAYR = 0 THEN l_K8YTD
+								WHEN l_KOLOM = '8' AND l_CTRPAYR <> 0 THEN 0
+								WHEN l_KOLOM = '8R' AND l_CTRCABA <= 1 THEN l_K8YTD - l_K11GCT  -- RPT YG PAKE 
+								WHEN l_KOLOM = '8R' AND l_CTRCABA > 1 THEN 0  -- RPT YG PAKE 
+--								WHEN l_KOLOM = ''19NB'' AND l_JNSPAJAK <> ''N'' THEN l_EncEYIT
+--								WHEN l_KOLOM = ''19NB'' AND l_JNSPAJAK = ''N'' THEN 0
+--								WHEN l_KOLOM = ''19B'' AND l_JNSPAJAK <> ''N'' THEN l_EncEYITT - l_EncEYIT
+--								WHEN l_KOLOM = ''19B'' AND l_JNSPAJAK = ''N'' THEN 0
+								WHEN l_KOLOM = '15R' AND l_CTRCABA <= 1 THEN l_K8YTD - l_K11GCT  -- RPT YG PAKE 
+								WHEN l_KOLOM = '19NB' THEN l_EncEYIT
+								WHEN l_KOLOM = '19B' THEN l_EncEYITT - l_EncEYIT
+								WHEN l_KOLOM = '19' THEN l_EncEYITT
+								WHEN l_KOLOM = '16NB' THEN l_EGIYNBOPBL 
+								WHEN l_KOLOM = '16B' THEN l_EGIYNBOPBL + l_K8YTD - l_K11 
+							END,0) ;
+
+   RETURN l_BALIKAN ;
+END;
+$BODY$
+LANGUAGE 'plpgsql'
+GO

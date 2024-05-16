@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="LapSalesByPrincipal" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.9487171000000314"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvTo" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Cabang" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	PRIN.[Name] AS PRINCIPAL
+		,XXX.PRINCIPAL AS PRINCIPAL_CODE
+		,XXX.SCANNER_AMT
+		,XXX.MOBILECOMP_AMT
+		,XXX.PRINTER_AMT
+		,XXX.OTH_AMT
+		,XXX.TTL_AMT
+FROM	(
+SELECT	SRP.PRINCIPAL
+		,ROUND((SUM(SRP.SCANNER_AMT) / 1000000000),2) AS SCANNER_AMT
+		,ROUND((SUM(SRP.MOBILECOMP_AMT) / 1000000000),2) AS MOBILECOMP_AMT
+		,ROUND((SUM(SRP.PRINTER_AMT) / 1000000000),2) AS PRINTER_AMT
+		,ROUND((SUM(SRP.OTH_AMT) / 1000000000),2) AS OTH_AMT
+		,(	ROUND((SUM(SRP.SCANNER_AMT) / 1000000000),2) +
+			ROUND((SUM(SRP.MOBILECOMP_AMT) / 1000000000),2) +
+			ROUND((SUM(SRP.PRINTER_AMT) / 1000000000),2) +
+			ROUND((SUM(SRP.OTH_AMT) / 1000000000),2) ) AS TTL_AMT
+FROM	(
+			SELECT
+					CAB.[Name] AS BRANCHES
+					, CASE	WHEN DIMS.PRINCIPAL = 'NONE' THEN 'LOCAL'
+							WHEN DIMS.PRINCIPAL = 'ARMOR' THEN 'OPGLB'
+							WHEN DIMS.PRINCIPAL = 'ARUBA' THEN 'HP'
+							WHEN DIMS.PRINCIPAL = 'BART' THEN 'OPGLB'
+							WHEN DIMS.PRINCIPAL = 'DATA' THEN 'OPGLB'
+							ELSE DIMS.PRINCIPAL END AS PRINCIPAL
+					, CASE WHEN DIMS.PRODUCT = 'H001' THEN (GLE.[Amount] * -1 ) ELSE 0 END AS SCANNER_AMT
+					, CASE WHEN DIMS.PRODUCT = 'H002' THEN (GLE.[Amount] * -1 ) ELSE 0 END AS MOBILECOMP_AMT
+					, CASE WHEN DIMS.PRODUCT IN ('H003', 'H013') THEN (GLE.[Amount] * -1 ) ELSE 0 END AS PRINTER_AMT
+					, CASE WHEN DIMS.PRODUCT NOT IN ('H001', 'H002', 'H003', 'H013') THEN (GLE.[Amount] * -1 ) ELSE 0 END AS OTH_AMT
+			FROM [AUTOJAYA].[dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT [Dimension Set ID] AS DIM_ID
+									,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+									,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+									,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry]
+							GROUP BY[Dimension Set ID]
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = DIMS.BRANCHES
+			WHERE GLE.[G_L Account No_] IN ('400.110.00', '400.110.03', '410.110.00', '420.110.00')
+					AND (GLE.[Posting Date] >= $P{TglInvFrom} AND GLE.[Posting Date] <= $P{TglInvTo})
+					AND (CAB.[Name] = $P{Cabang} OR $P{Cabang} = 'ALL')
+			UNION ALL
+			SELECT
+					CAB.[Name] AS BRANCHES
+					, CASE	WHEN DIMS.PRINCIPAL = 'NONE' THEN 'LOCAL'
+							WHEN DIMS.PRINCIPAL = 'ARMOR' THEN 'OPGLB'
+							WHEN DIMS.PRINCIPAL = 'ARUBA' THEN 'HP'
+							WHEN DIMS.PRINCIPAL = 'BART' THEN 'OPGLB'
+							WHEN DIMS.PRINCIPAL = 'DATA' THEN 'OPGLB'
+							ELSE DIMS.PRINCIPAL END AS PRINCIPAL
+					, CASE WHEN DIMS.PRODUCT = 'H001' THEN (GLE.[Amount] * -1 ) ELSE 0 END AS SCANNER_AMT
+					, CASE WHEN DIMS.PRODUCT = 'H002' THEN (GLE.[Amount] * -1 ) ELSE 0 END AS MOBILECOMP_AMT
+					, CASE WHEN DIMS.PRODUCT IN ('H003', 'H013') THEN (GLE.[Amount] * -1 ) ELSE 0 END AS PRINTER_AMT
+					, CASE WHEN DIMS.PRODUCT NOT IN ('H001', 'H002', 'H003', 'H013') THEN (GLE.[Amount] * -1 ) ELSE 0 END AS OTH_AMT
+			FROM [AUTOJAYA].[dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT [Dimension Set ID] AS DIM_ID
+									,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+									,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+									,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry]
+							GROUP BY[Dimension Set ID]
+						) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Responsibility Center] CAB ON CAB.[Code] = DIMS.BRANCHES
+			WHERE GLE.[G_L Account No_] IN ('400.110.00', '400.110.03', '410.110.00', '420.110.00')
+					AND (GLE.[Posting Date] >= $P{TglInvFrom} AND GLE.[Posting Date] <= $P{TglInvTo})
+					AND (CAB.[Name] = $P{Cabang} OR $P{Cabang} = 'ALL')
+			UNION ALL
+			SELECT	OSO.CABANG AS BRANCHES
+					, CASE	WHEN OSO.PRINCIPAL = 'NONE' THEN 'LOCAL'
+							WHEN OSO.PRINCIPAL = 'ARMOR' THEN 'OPGLB'
+							WHEN OSO.PRINCIPAL = 'ARUBA' THEN 'HP'
+							WHEN OSO.PRINCIPAL = 'BART' THEN 'OPGLB'
+							WHEN OSO.PRINCIPAL = 'DATA' THEN 'OPGLB'
+							ELSE OSO.PRINCIPAL END AS PRINCIPAL
+					, CASE WHEN OSO.PRODUCT = 'H001' THEN OSO.AMOUNT_IDR ELSE 0 END AS SCANNER_AMT
+					, CASE WHEN OSO.PRODUCT = 'H002' THEN OSO.AMOUNT_IDR ELSE 0 END AS MOBILECOMP_AMT
+					, CASE WHEN OSO.PRODUCT IN ('H003', 'H013') THEN OSO.AMOUNT_IDR ELSE 0 END AS PRINTER_AMT
+					, CASE WHEN OSO.PRODUCT NOT IN ('H001', 'H002', 'H003', 'H013') THEN OSO.AMOUNT_IDR ELSE 0 END AS OTH_AMT
+			FROM	(
+						SELECT	'AUTOJAYA' AS COMPANY
+								, XY.CABANG
+								, XY.CUST_CODE
+								, XY.ORDER_DATE
+								, XY.STATUS_SO
+								, XY.NO_PO_CUST
+								, XY.PRODUCT
+								, XY.PRINCIPAL
+								, XY.REV_YEAR
+								, CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+									(XY.AMOUNT_IDR - XY.UM_AMOUNT_IDR)
+									ELSE
+									(XY.AMOUNT_IDR - ((XY.UM_AMOUNT_IDR*XY.AMOUNT_IDR)/(XY.AMOUNT_IDR_TTL)))
+									END AS AMOUNT_IDR
+								, CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+									(XY.AMOUNT - XY.UM_AMOUNT)
+									ELSE
+									(XY.AMOUNT - ((XY.UM_AMOUNT*XY.AMOUNT) /(XY.AMOUNT_TTL)))
+									END AS AMOUNT
+						FROM	(
+									SELECT SH.[No_] AS NO_SO
+											, SUBSTRING( SH.[No_], 1, 4) AS TIPE
+											, ISNULL(CAB.[Name], 'JAKARTA') AS CABANG
+											, SH.[Bill-to Customer No_] AS CUST_CODE
+											, SH.[Order Date] AS ORDER_DATE
+											, CASE	WHEN SH.[Status] = 0 THEN 'OPEN'
+													WHEN SH.[Status] = 1 THEN 'RELEASED'
+													WHEN SH.[Status] = 2 THEN 'PENDING APPROVAL'
+													WHEN SH.[Status] = 3 THEN 'RELEASED'
+													ELSE '' END AS STATUS_SO
+											, SH.[External Document No_] AS NO_PO_CUST
+											, SL.PRODUCT
+											, SL.PRINCIPAL
+											, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END,0) AS AMOUNT_IDR
+											, ISNULL(SL.AMOUNT,0) AS AMOUNT
+											, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL2.AMOUNT_TTL / SH.[Currency Factor],0) ELSE SL2.AMOUNT_TTL END,0) AS AMOUNT_IDR_TTL
+											, ISNULL(SL2.AMOUNT_TTL,0) AS AMOUNT_TTL
+											, ISNULL(UM.UM_AMOUNT_IDR,0) AS UM_AMOUNT_IDR
+											, ISNULL(UM.UM_AMOUNT,0) AS UM_AMOUNT
+											, SH.[Package Tracking No_] AS REV_YEAR
+									FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Header] SH
+									LEFT JOIN  (
+													SELECT X.[Document No_]
+															,X.PRODUCT
+															,X.PRINCIPAL
+															,SUM(X.QTY) AS QTY
+															,SUM(X.QTY_INV)AS QTY_INV
+															,SUM(X.AMOUNT) AS AMOUNT
+													FROM	(
+																SELECT SLN.[Document No_]
+																		, DIMS.PRODUCT
+																		, DIMS.PRINCIPAL
+																		, SLN.[Quantity] AS QTY
+																		, SLN.[Quantity Invoiced] AS QTY_INV
+																		, CASE WHEN SLN.[Quantity Invoiced] <> 0 AND SLN.[Quantity] <> SLN.[Quantity Invoiced] THEN
+																			(SLN.[Amount] / SLN.[Quantity]) * (SLN.[Quantity] - SLN.[Quantity Invoiced])
+																		  ELSE
+																			SLN.[Amount]
+																		  END AS AMOUNT
+																FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Line] SLN
+																LEFT JOIN	(
+																				SELECT [Dimension Set ID] AS DIM_ID
+																						,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																						,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																				FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry]
+																				GROUP BY[Dimension Set ID]
+																			) DIMS ON DIMS.DIM_ID = SLN.[Dimension Set ID]
+																WHERE	SLN.[Document Type] = 1 AND
+																		SLN.[Quantity] <> SLN.[Quantity Invoiced]
+															) X
+													GROUP BY X.[Document No_], X.PRODUCT, X.PRINCIPAL
+												)SL ON SL.[Document No_] = SH.[No_]
+									LEFT JOIN  (
+													SELECT SLN.[Document No_]
+														 , DIMS.PRODUCT
+														 , DIMS.PRINCIPAL
+														 , SUM(SLN.[Amount]) AS AMOUNT_TTL
+													FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Line] SLN
+													LEFT JOIN	(
+																	SELECT [Dimension Set ID] AS DIM_ID
+																			,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																			,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																			,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																	FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry]
+																	GROUP BY[Dimension Set ID]
+																) DIMS ON DIMS.DIM_ID = SLN.[Dimension Set ID]
+													WHERE SLN.[Document Type] = 1
+													GROUP BY SLN.[Document No_], DIMS.PRODUCT, DIMS.PRINCIPAL
+												)SL2 ON SL2.[Document No_] = SL.[Document No_] AND SL2.PRODUCT = SL.PRODUCT AND SL2.PRINCIPAL = SL.PRINCIPAL
+									LEFT JOIN	(
+													SELECT	Y.NO_SO
+															,Y.PRODUCT
+															,Y.PRINCIPAL
+															,SUM(Y.UM_AMOUNT) AS UM_AMOUNT
+															,SUM(Y.UM_AMOUNT_IDR) AS UM_AMOUNT_IDR
+													FROM (
+															SELECT [Prepayment Order No_] AS NO_SO
+																	,DIMS.PRODUCT
+																	,DIMS.PRINCIPAL
+																	,SUM(UMD.[Amount]) AS UM_AMOUNT
+																	,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) END AS UM_AMOUNT_IDR
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Invoice Header] UMH
+															INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Invoice Line] UMD ON UMH.[No_] = UMD.[Document No_]
+															LEFT JOIN	(
+																			SELECT [Dimension Set ID] AS DIM_ID
+																					,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																					,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																					,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																			FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry]
+																			GROUP BY[Dimension Set ID]
+																		) DIMS ON DIMS.DIM_ID = UMD.[Dimension Set ID]
+															GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor], DIMS.PRODUCT, DIMS.PRINCIPAL
+															UNION ALL
+															SELECT	[Prepayment Order No_] AS NO_SO
+																	,DIMS.PRODUCT
+																	,DIMS.PRINCIPAL
+																	,SUM(UMD.[Amount]) * -1 AS UM_AMOUNT
+																	,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) * -1 END AS UM_AMOUNT_IDR
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Cr_Memo Header] UMH
+															INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Cr_Memo Line] UMD ON UMH.[No_] = UMD.[Document No_]
+															LEFT JOIN	(
+																			SELECT [Dimension Set ID] AS DIM_ID
+																					,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																					,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																					,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																			FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry]
+																			GROUP BY[Dimension Set ID]
+																		) DIMS ON DIMS.DIM_ID = UMD.[Dimension Set ID]
+															GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor], DIMS.PRODUCT, DIMS.PRINCIPAL
+														) Y
+													GROUP BY Y.NO_SO, Y.PRODUCT, Y.PRINCIPAL
+												) UM ON UM.NO_SO = SH.[No_] AND  UM.PRODUCT = SL.PRODUCT AND UM.PRINCIPAL = SL.PRINCIPAL
+									LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SH.[Shortcut Dimension 1 Code]
+									WHERE SH.[Document Type] = 1
+								) XY
+						WHERE	(	( XY.TIPE <> 'SOAR') OR
+									(SUBSTRING(CONVERT(varchar, XY.ORDER_DATE, 105), 7,4) <= SUBSTRING(CONVERT(varchar, $P{TglInvTo}, 105), 7,4) AND XY.TIPE = 'SOAR'))  AND
+									(XY.REV_YEAR = '' OR XY.REV_YEAR = SUBSTRING(CONVERT(varchar, $P{TglInvTo}, 105), 7,4)) AND
+									(XY.STATUS_SO = 'RELEASED')
+						UNION ALL
+						SELECT	'SOLUSI' AS COMPANY
+								, XY.CABANG
+								, XY.CUST_CODE
+								, XY.ORDER_DATE
+								, XY.STATUS_SO
+								, XY.NO_PO_CUST
+								, XY.PRODUCT
+								, XY.PRINCIPAL
+								, XY.REV_YEAR
+								, CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+									(XY.AMOUNT_IDR - XY.UM_AMOUNT_IDR)
+									ELSE
+									(XY.AMOUNT_IDR - ((XY.UM_AMOUNT_IDR*XY.AMOUNT_IDR)/(XY.AMOUNT_IDR_TTL)))
+									END AS AMOUNT_IDR
+								, CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+									(XY.AMOUNT - XY.UM_AMOUNT)
+									ELSE
+									(XY.AMOUNT - ((XY.UM_AMOUNT*XY.AMOUNT) /(XY.AMOUNT_TTL)))
+									END AS AMOUNT
+						FROM	(
+									SELECT SH.[No_] AS NO_SO
+											, SUBSTRING( SH.[No_], 1, 4) AS TIPE
+											, ISNULL(CAB.[Name], 'JAKARTA') AS CABANG
+											, SH.[Bill-to Customer No_] AS CUST_CODE
+											, SH.[Order Date] AS ORDER_DATE
+											, CASE	WHEN SH.[Status] = 0 THEN 'OPEN'
+													WHEN SH.[Status] = 1 THEN 'RELEASED'
+													WHEN SH.[Status] = 2 THEN 'PENDING APPROVAL'
+													WHEN SH.[Status] = 3 THEN 'RELEASED'
+													ELSE '' END AS STATUS_SO
+											, SH.[External Document No_] AS NO_PO_CUST
+											, SL.PRODUCT
+											, SL.PRINCIPAL
+											, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END,0) AS AMOUNT_IDR
+											, ISNULL(SL.AMOUNT,0) AS AMOUNT
+											, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL2.AMOUNT_TTL / SH.[Currency Factor],0) ELSE SL2.AMOUNT_TTL END,0) AS AMOUNT_IDR_TTL
+											, ISNULL(SL2.AMOUNT_TTL,0) AS AMOUNT_TTL
+											, ISNULL(UM.UM_AMOUNT_IDR,0) AS UM_AMOUNT_IDR
+											, ISNULL(UM.UM_AMOUNT,0) AS UM_AMOUNT
+											, SH.[Package Tracking No_] AS REV_YEAR
+									FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Header] SH
+									INNER JOIN  (
+													SELECT X.[Document No_]
+															,X.PRODUCT
+															,X.PRINCIPAL
+															,SUM(X.QTY) AS QTY
+															,SUM(X.QTY_INV)AS QTY_INV
+															,SUM(X.AMOUNT) AS AMOUNT
+													FROM	(
+																SELECT SLN.[Document No_]
+																		, DIMS.PRODUCT
+																		, DIMS.PRINCIPAL
+																		, SLN.[Quantity] AS QTY
+																		, SLN.[Quantity Invoiced] AS QTY_INV
+																		, CASE WHEN SLN.[Quantity Invoiced] <> 0 AND SLN.[Quantity] <> SLN.[Quantity Invoiced] THEN
+																			(SLN.[Amount] / SLN.[Quantity]) * (SLN.[Quantity] - SLN.[Quantity Invoiced])
+																		  ELSE
+																			SLN.[Amount]
+																		  END AS AMOUNT
+																FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Line] SLN
+																LEFT JOIN	(
+																				SELECT [Dimension Set ID] AS DIM_ID
+																						,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																						,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																				FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry]
+																				GROUP BY[Dimension Set ID]
+																			) DIMS ON DIMS.DIM_ID = SLN.[Dimension Set ID]
+																WHERE	SLN.[Document Type] = 1 AND
+																		SLN.[Quantity] <> SLN.[Quantity Invoiced]
+															) X
+													GROUP BY X.[Document No_], X.PRODUCT, X.PRINCIPAL
+												)SL ON SL.[Document No_] = SH.[No_]
+									LEFT JOIN  (
+													SELECT SLN.[Document No_]
+														 , DIMS.PRODUCT
+														 , DIMS.PRINCIPAL
+														 , SUM(SLN.[Amount]) AS AMOUNT_TTL
+													FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Line] SLN
+													LEFT JOIN	(
+																	SELECT [Dimension Set ID] AS DIM_ID
+																			,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																			,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																			,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																	FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry]
+																	GROUP BY[Dimension Set ID]
+																) DIMS ON DIMS.DIM_ID = SLN.[Dimension Set ID]
+													WHERE SLN.[Document Type] = 1
+													GROUP BY SLN.[Document No_], DIMS.PRODUCT, DIMS.PRINCIPAL
+												)SL2 ON SL2.[Document No_] = SL.[Document No_] AND SL2.PRODUCT = SL.PRODUCT AND SL2.PRINCIPAL = SL.PRINCIPAL
+									LEFT JOIN	(
+													SELECT	Y.NO_SO
+															,Y.PRODUCT
+															,Y.PRINCIPAL
+															,SUM(Y.UM_AMOUNT) AS UM_AMOUNT
+															,SUM(Y.UM_AMOUNT_IDR) AS UM_AMOUNT_IDR
+													FROM (
+															SELECT UMH.[Prepayment Order No_] AS NO_SO
+																	,DIMS.PRODUCT
+																	,CASE WHEN (UMH.[Prepayment Order No_] = 'SOST170260' AND DIMS.PRODUCT = 'S201' AND DIMS.PRINCIPAL = 'NONE') OR
+																			   (UMH.[Prepayment Order No_] = 'SOST170260' AND DIMS.PRODUCT = 'H014' AND DIMS.PRINCIPAL = 'HP') THEN 'LOCAL' ELSE DIMS.PRINCIPAL END AS PRINCIPAL
+																	,SUM(UMD.[Amount]) AS UM_AMOUNT
+																	,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) END AS UM_AMOUNT_IDR
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Invoice Header] UMH
+															INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Invoice Line] UMD ON UMH.[No_] = UMD.[Document No_]
+															LEFT JOIN	(
+																			SELECT [Dimension Set ID] AS DIM_ID
+																					,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																					,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																					,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																			FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry]
+																			GROUP BY[Dimension Set ID]
+																		) DIMS ON DIMS.DIM_ID = UMD.[Dimension Set ID]
+															GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor], DIMS.PRODUCT, DIMS.PRINCIPAL
+															UNION ALL
+															SELECT	[Prepayment Order No_] AS NO_SO
+																	,DIMS.PRODUCT
+																	,DIMS.PRINCIPAL
+																	,SUM(UMD.[Amount]) * -1 AS UM_AMOUNT
+																	,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) * -1 END AS UM_AMOUNT_IDR
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Cr_Memo Header] UMH
+															INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Cr_Memo Line] UMD ON UMH.[No_] = UMD.[Document No_]
+															LEFT JOIN	(
+																			SELECT [Dimension Set ID] AS DIM_ID
+																					,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+																					,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT
+																					,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+																			FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry]
+																			GROUP BY[Dimension Set ID]
+																		) DIMS ON DIMS.DIM_ID = UMD.[Dimension Set ID]
+															GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor], DIMS.PRODUCT, DIMS.PRINCIPAL
+														) Y
+													GROUP BY Y.NO_SO, Y.PRODUCT, Y.PRINCIPAL
+												) UM ON UM.NO_SO = SH.[No_] AND  UM.PRODUCT = SL.PRODUCT AND UM.PRINCIPAL = SL.PRINCIPAL									LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Responsibility Center] CAB ON CAB.[Code] = SH.[Shortcut Dimension 1 Code]
+									WHERE SH.[Document Type] = 1
+								) XY
+						WHERE 	(	( XY.TIPE <> 'SOSR') OR
+									(SUBSTRING(CONVERT(varchar, XY.ORDER_DATE, 105), 7,4) <= SUBSTRING(CONVERT(varchar, $P{TglInvTo}, 105), 7,4) AND XY.TIPE = 'SOSR'))  AND
+									(XY.REV_YEAR = '' OR XY.REV_YEAR = SUBSTRING(CONVERT(varchar, $P{TglInvTo}, 105), 7,4)) AND
+									(XY.STATUS_SO = 'RELEASED')
+			) OSO
+			WHERE  (OSO.CABANG = $P{Cabang} OR $P{Cabang} = 'ALL')
+					AND OSO.NO_PO_CUST NOT LIKE '%OTP%' AND OSO.NO_PO_CUST NOT LIKE 'BOOKING%'
+					AND OSO.CUST_CODE NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+		) SRP
+GROUP BY SRP.PRINCIPAL
+) XXX
+LEFT JOIN	(
+				SELECT	PRI.[Code], MAX(PRI.[Name]) AS [Name]
+				FROM	(
+							SELECT [Code]
+								  ,[Name]
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT [Code]
+								  ,[Name]
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+						) PRI
+				GROUP BY PRI.[Code]
+			) PRIN ON PRIN.[Code] = XXX.PRINCIPAL
+WHERE XXX.TTL_AMT > 0]]>
+	</queryString>
+	<field name="PRINCIPAL" class="java.lang.String"/>
+	<field name="PRINCIPAL_CODE" class="java.lang.String"/>
+	<field name="SCANNER_AMT" class="java.math.BigDecimal"/>
+	<field name="MOBILECOMP_AMT" class="java.math.BigDecimal"/>
+	<field name="PRINTER_AMT" class="java.math.BigDecimal"/>
+	<field name="OTH_AMT" class="java.math.BigDecimal"/>
+	<field name="TTL_AMT" class="java.math.BigDecimal"/>
+	<sortField name="PRINCIPAL"/>
+	<variable name="SCANNER_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SCANNER_AMT}]]></variableExpression>
+	</variable>
+	<variable name="MOBILECOMP_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{MOBILECOMP_AMT}]]></variableExpression>
+	</variable>
+	<variable name="PRINTER_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PRINTER_AMT}]]></variableExpression>
+	</variable>
+	<variable name="OTH_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{OTH_AMT}]]></variableExpression>
+	</variable>
+	<variable name="TTL_AMT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{TTL_AMT}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="132" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="82" y="18" width="93" height="14" uuid="e983ef99-7a2c-412b-8c04-aa31da3407c1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="203" y="18" width="85" height="14" uuid="a76e333a-f2cb-410c-a1dd-330ea4d1d958"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="82" y="46" width="206" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="288" y="117" width="67" height="14" uuid="bc0b5f21-bd58-4128-90d9-0da9bfd247a3"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Scanner]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="46" width="74" height="14" uuid="2416e567-b590-46cd-b14e-f9281133ba81"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak Pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="4" width="280" height="14" uuid="b3e39015-60b7-4554-84b0-56f951c68c37"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales by Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="18" width="74" height="14" uuid="4eb2c989-0b8b-464e-9e93-b047e47ba9df"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="18" width="28" height="14" uuid="7a7817d3-1ca0-4345-9306-f2cecc43279f"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="88" width="280" height="14" uuid="f47a3c22-aad1-4ef8-8762-fa524640460e"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(1) Sales Invoice; (2) Invoice Uang Muka; ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="60" width="280" height="14" uuid="c2958fed-a0e5-405b-876d-a86598f384bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="355" y="117" width="67" height="14" uuid="6c6cce57-c57c-4342-9b77-8c9fadc74ed4"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobile Comp.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="422" y="117" width="67" height="14" uuid="c5fdc37d-90c1-4742-8fa9-aa49736b5227"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="489" y="117" width="67" height="14" uuid="e51c9a37-5db1-4724-bc01-e5bf4f43cc67"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Others]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="117" width="67" height="14" uuid="7ab956d5-5315-47fe-80f7-6cf74ec2fc64"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="32" width="74" height="14" uuid="4f1445b2-2479-45e7-a824-d495a41be249"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="82" y="32" width="206" height="14" uuid="e3e4a1a6-a797-47b3-a408-fc9ba1fb0396"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="74" width="280" height="14" uuid="71b80ee3-f337-4eec-be34-bbbaa484fea6"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Nilai Sales berasal dari :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="117" width="280" height="14" uuid="76233947-bb1b-44fc-b816-c5d813df3222"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Principal (Nilai dalam Milyar)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="102" width="280" height="14" uuid="a3be37e0-0fdb-45c6-8eca-b26b07017b5b"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(3) Outstanding SO (as per Today)]]></text>
+			</staticText>
+			<line>
+				<reportElement x="8" y="131" width="615" height="1" uuid="d53df1f5-4e61-4933-aa8f-351cb388927b"/>
+			</line>
+			<line>
+				<reportElement x="8" y="116" width="615" height="1" uuid="135487b3-6783-4d37-9c9c-d4020d986ced"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="288" y="1" width="67" height="14" uuid="b9aec37a-0e93-4915-83cf-a933058455b1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SCANNER_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="355" y="1" width="67" height="14" uuid="f5e8a7ab-26ef-413f-bf5b-e6fbaac92b73"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{MOBILECOMP_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="422" y="1" width="67" height="14" uuid="844c1d57-0580-443f-beec-40348fa5b253"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRINTER_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="489" y="1" width="67" height="14" uuid="49302907-7cd5-47f2-9c36-187ff6914480"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OTH_AMT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="556" y="1" width="67" height="14" uuid="4b6d8e83-af35-4b28-85a6-a5ae30054a6e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TTL_AMT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="8" y="1" width="280" height="14" uuid="74f940ec-25d6-4b49-a722-652466d0dbbe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRINCIPAL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="42" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="288" y="2" width="67" height="14" uuid="9b155c3e-ab1c-4830-aa81-f7d4fee742c3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SCANNER_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="355" y="2" width="67" height="14" uuid="413007cc-583b-48c1-99fb-5737204c171c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{MOBILECOMP_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="422" y="2" width="67" height="14" uuid="a58ed31a-1049-4dbe-96e3-2714a456895a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PRINTER_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="489" y="2" width="67" height="14" uuid="95341f8f-a0ee-40fb-9145-824fd79ef8cf"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{OTH_AMT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="556" y="2" width="67" height="14" uuid="30fb9d7f-6374-46aa-95e7-aaca036c19f1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{TTL_AMT_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="2" width="280" height="14" uuid="9ec53cfe-8a9b-489d-9693-aabe8773e649"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Grand Total]]></text>
+			</staticText>
+			<line>
+				<reportElement x="8" y="1" width="615" height="1" uuid="518dd373-23ff-44fd-8846-efe08fc57d91"/>
+			</line>
+		</band>
+	</summary>
+</jasperReport>

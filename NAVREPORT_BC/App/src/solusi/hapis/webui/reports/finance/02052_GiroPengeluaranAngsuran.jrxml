@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02052_GiroPengeluaranAngsuran" language="groovy" pageWidth="612" pageHeight="510" whenNoDataType="NoDataSection" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.1000000000000372"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="T04Id" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+		  CASE WHEN VT.COMPANY = 'AUTOJAYA' THEN
+			SUBSTRING(CA.[County], LEN(CA.[County])-6,7)
+		  ELSE
+			SUBSTRING(CS.[County], LEN(CS.[County])-6,7)
+		  END AS KOTA
+		, VT.TGL_GIRO
+		, '# '+FORMAT(VT.AMOUNT_GIRO,'#,###')+ ' #' AS JUMLAH_DI_CEK
+		, (SELECT [NavBI].[dbo].terbilang(VT.AMOUNT_GIRO)) AS TERBILANG
+		, VT.AMOUNT_GIRO
+		,	CASE WHEN VBA.[Code] = 'IDR' THEN
+				VBA.[Bank Account No_]
+			ELSE
+				VBA.[Bank Account No_] + ' ('+VBA.[Code]+')'
+			END AS NO_REK_PENERIMA
+		, CASE WHEN VON.[Code] IS NOT NULL THEN VON.[Name] ELSE VEN.[Name] END NAMA_PENERIMA
+		, VBA.[Name] AS NAMA_BANK
+FROM	(
+			SELECT	T04.[T04_ID]
+					,T04.COMPANY
+					,T04.SUPP_CODE
+					,T04.VALUTA_PO
+					,ROUND((T04.NILAI_PO / T04.JML_GIRO ),0) AS AMOUNT_GIRO
+					, CASE	WHEN T04.INTERVAL_WAKTU = 'BULAN' THEN DATEADD(MONTH, (T02.ADD_NUM * T04.INTERVAL), T04.TMT)
+							WHEN T04.INTERVAL_WAKTU = 'TAHUN' THEN DATEADD(YEAR, (T02.ADD_NUM * T04.INTERVAL), T04.TMT)
+							ELSE T04.TMT END AS TGL_GIRO
+			FROM [dbo].[T04_BAYAR_ANGSURAN] T04
+			LEFT JOIN [dbo].[T02_SO_ADJ_LINE] T02 ON T02.[ADD_NUM] < T04.JML_GIRO
+		) VT
+LEFT JOIN [dbo].[BC_AUTOJAYA$Vendor Bank Account] VON ON VON.[Vendor No_] = VT.SUPP_CODE   AND VON.Code = (VT.SUPP_CODE+'-'+CASE WHEN VT.VALUTA_PO='' THEN 'IDR' ELSE VT.VALUTA_PO END)
+LEFT JOIN [dbo].[BC_AUTOJAYA$Vendor] VEN ON VEN.[No_] = VT.SUPP_CODE
+LEFT JOIN [dbo].[BC_AUTOJAYA$Vendor Bank Account] VBA ON VBA.[Vendor No_] = VT.SUPP_CODE  AND VBA.[Code] = CASE WHEN VT.VALUTA_PO='' THEN 'IDR' ELSE VT.VALUTA_PO END
+LEFT JOIN [dbo].[BC_AUTOJAYA$Company Information] CA ON VT.COMPANY = 'AUTOJAYA'
+LEFT JOIN [dbo].[BC_SOLUSI$Company Information] CS ON VT.COMPANY = 'SOLUSI'
+WHERE VT.T04_ID = $P{T04Id}]]>
+	</queryString>
+	<field name="KOTA" class="java.lang.String"/>
+	<field name="TGL_GIRO" class="java.sql.Timestamp"/>
+	<field name="JUMLAH_DI_CEK" class="java.lang.String"/>
+	<field name="TERBILANG" class="java.lang.String"/>
+	<field name="AMOUNT_GIRO" class="java.math.BigDecimal"/>
+	<field name="NO_REK_PENERIMA" class="java.lang.String"/>
+	<field name="NAMA_PENERIMA" class="java.lang.String"/>
+	<field name="NAMA_BANK" class="java.lang.String"/>
+	<detail>
+		<band height="510">
+			<textField isBlankWhenNull="true">
+				<reportElement x="300" y="21" width="80" height="14" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="92c3061a-16e9-4b1d-8cb8-31e4d4a6f357"/>
+				<textElement textAlignment="Right">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KOTA}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="380" y="21" width="10" height="14" isPrintWhenDetailOverflows="true" uuid="a2454762-98fa-49ac-9b56-030a2fc8e0dc"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font fontName="SansSerif" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[,]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="390" y="21" width="98" height="14" uuid="5ff9740d-2b0c-4a13-9732-b12180ba44bc"/>
+				<textElement>
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_GIRO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="266" y="92" width="140" height="26" isPrintInFirstWholeBand="true" isPrintWhenDetailOverflows="true" uuid="940f0cb9-55c7-43b6-b2f3-96893abb41fd"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isBold="false" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="23" y="70" width="480" height="22" isPrintWhenDetailOverflows="true" uuid="2da71394-305a-4a1c-8305-df04a470136f"/>
+				<textElement verticalAlignment="Top">
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TERBILANG}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="300" y="56" width="188" height="14" isPrintWhenDetailOverflows="true" uuid="521fc40e-0d35-4604-9a1a-b4d87999bdbf"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JUMLAH_DI_CEK}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="155" y="37" width="98" height="14" uuid="5bfc1d45-9193-423b-bad2-b48815cfb4c7"/>
+				<textElement>
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_GIRO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="112" y="92" width="128" height="26" isPrintWhenDetailOverflows="true" uuid="beb99814-5747-42e9-a168-7632ebd6e5b1"/>
+				<textElement>
+					<font size="8" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_REK_PENERIMA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="428" y="92" width="97" height="26" isPrintWhenDetailOverflows="true" uuid="828757a0-3b2c-43a9-a494-d6987ababef8"/>
+				<textElement>
+					<font size="8" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_BANK}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

@@ -1,0 +1,75 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_SALES_COGS_ANALYSIS_NEW]    Script Date: 07-02-2023 4:49:52 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[P_SALES_COGS_ANALYSIS_NEW] 
+	@ProsesId  nvarchar(100) ,  
+	@Cabang  nvarchar(15),
+	@PeriodeFrom  datetime , 
+	@PeriodeUpto  datetime , 	
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	DECLARE @ProsesId_LY VARCHAR(100) = @ProsesId +'_LY';
+	--
+	DECLARE @TglInvFrom DATETIME = CAST(@PeriodeFrom AS DATETIME);
+	DECLARE @TglInvUpto DATETIME = CAST(@PeriodeUpto AS DATETIME);
+	--
+	DECLARE @TglInvFromLY DATETIME = DATEADD(year, -1, @TglInvFrom);
+	DECLARE @TglInvUptoLY DATETIME = DATEADD(year, -1, @TglInvUpto);
+	--
+	DECLARE @PeriodYear INT = DATEPART(year,@TglInvFrom);
+	DECLARE @PeriodLastYear INT = DATEPART(year,@TglInvFromLY);
+	--
+	IF @Action = 'CETAK'
+	BEGIN
+		IF @PeriodYear < 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_2021]  @ProsesId, 'ALL', @TglInvFrom, @TglInvUpto,  'CETAK';
+		END;
+		--
+		IF @PeriodYear >= 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_2022]  @ProsesId, 'ALL', @TglInvFrom, @TglInvUpto,  'CETAK';
+		END;
+		--
+		IF @PeriodYear < 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_LY_2021]  @ProsesId_LY, 'ALL', @TglInvFromLY, @TglInvUptoLY,  'CETAK';
+		END;
+		--
+		IF @PeriodYear >= 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_LY_2022]  @ProsesId_LY, 'ALL', @TglInvFromLY, @TglInvUptoLY,  'CETAK';
+		END;
+		RETURN  ;
+	END;
+	--
+	IF @Action = 'DELETE' 
+	BEGIN
+		IF @PeriodYear < 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_2021]  @ProsesId, 'ALL', @TglInvFrom, @TglInvUpto,  'DELETE';
+		END;
+		--
+		IF @PeriodYear >= 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_2022]  @ProsesId, 'ALL', @TglInvFrom, @TglInvUpto,  'DELETE';
+		END;
+		--
+		IF @PeriodYear < 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_LY_2021]  @ProsesId_LY, 'ALL', @TglInvFromLY, @TglInvUptoLY,  'DELETE';
+		END;
+		--
+		IF @PeriodYear >= 2022 
+		BEGIN
+			EXEC [P_SALES_COGS_ANALYSIS_SUB_LY_2022]  @ProsesId_LY, 'ALL', @TglInvFromLY, @TglInvUptoLY,  'DELETE';
+		END;
+		--
+		RETURN  ;
+	END;
+END;

@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PembelianNonPPN" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="2.1435888100000025"/>
+	<property name="ireport.x" value="722"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	PMB.COMPANY
+		, PMB.NO_INV
+		, PMB.TGL_INV
+		, PMB.KODE_SUPP
+		, PMB.NAMA_SUPP
+		, PMB.NO_INV_SUPP
+		, PMB.ITEM_NO
+		, PMB.ITEM_DESC
+		, PMB.UOM
+		, PMB.QTY
+		, PMB.AMOUNT_IDR
+FROM	(
+			SELECT  'AUTOJAYA' AS COMPANY
+					, PRH.[No_] AS NO_INV
+					, PRH.[Posting Date] AS TGL_INV
+					, PRH.[Pay-to Vendor No_] AS KODE_SUPP
+					, PRH.[Pay-to Name] AS NAMA_SUPP
+					, PRH.[Vendor Invoice No_] AS NO_INV_SUPP
+					, PRLD.[No_] AS ITEM_NO
+					, PRLD.[Description] AS ITEM_DESC
+					, PRLD.[Unit of Measure] AS UOM
+					, PRLD.[Quantity] AS QTY
+					, CASE WHEN PRH.[Currency Code] = '' THEN PRLD.[Line Amount]ELSE ROUND((PRLD.[Line Amount] / PRH.[Currency Factor]),0) END AS AMOUNT_IDR
+     		FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Header] PRH
+			INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Line] PRLD ON PRH.[No_] = PRLD.[Document No_]
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Cr_ Memo Hdr_] PCMH ON PCMH.[Applies-to Doc_ No_] = PRH.[No_]
+			INNER JOIN	(
+							SELECT X.[Document No_]
+							FROM (
+							SELECT [Document No_]
+									, SUM(
+											CASE WHEN [Type] = 2 OR
+												([Type] = 1 AND [No_] = '118.150.00')
+											THEN 1 ELSE 0 END
+										 ) AS JML_DTL_ITM
+									,SUM(
+											CASE WHEN [VAT Bus_ Posting Group] = 'VAT'
+											THEN 1 ELSE 0 END
+										 ) AS JML_DTL_VAT
+									,SUM([Amount Including VAT]) - SUM([Amount]) AS VAT
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Line]
+							GROUP BY [Document No_]
+							) X
+							WHERE X.JML_DTL_ITM > 0 AND VAT = 0 AND JML_DTL_VAT = 0 AND
+								  X.[Document No_] NOT IN (
+							SELECT DISTINCT PH.[No_]
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Line] PID
+							INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Header] PH ON PH.[No_] = PID.[Document No_]
+							INNER JOIN  (
+											SELECT DISTINCT PIH.[No_]
+													,ICA.[Applies-to Doc_ No_] AS GR_NO
+													,ICA.[Applies-to Doc_ Line No_] AS GR_LINE_NO
+											FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Charge Assignment (Purch)] ICA
+											LEFT JOIN	(
+															SELECT [Document No_] AS NO_GR
+																	,[Line No_] AS GR_LINE_NO
+																	,[Order No_] AS PO_NO
+																	,[Order Line No_] AS PO_LINE_NO
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Rcpt_ Line]
+															WHERE [Quantity] <> 0
+														) PRL ON PRL.PO_NO = ICA.[Document No_] AND PRL.PO_LINE_NO = ICA.[Document Line No_]
+											LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Line] PIL ON PIL.[Receipt No_] = PRL.NO_GR AND PIL.[Receipt Line No_] = PRL.GR_LINE_NO
+											LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = PIL.[Document No_]
+											LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Cr_ Memo Hdr_] PCM ON PCM.[Applies-to Doc_ No_] = PIH.[No_]
+											WHERE PCM.[No_] IS NULL
+													AND PIH.[No_] IN	(
+																			SELECT X.[Document No_]
+																			FROM	(
+																						SELECT [Document No_]
+																								,MAX([Receipt No_]) AS GR_NO
+																								, SUM(
+																										CASE WHEN([Type] = 1 AND [No_] = '118.290.00')
+																										THEN 1 ELSE 0 END
+																									 ) AS JML_DTL_PNN
+																								, SUM(
+																										CASE WHEN[Type] = 5
+																										THEN 1 ELSE 0 END
+																									 ) AS JML_DTL_FREIGHT
+																						FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Line]
+																						GROUP BY [Document No_]
+																					) X
+																			WHERE X.JML_DTL_PNN > 0 AND X.JML_DTL_FREIGHT > 0
+																		)
+										) FRG ON FRG.GR_NO = PID.[Receipt No_] AND FRG.GR_LINE_NO = PID.[Receipt Line No_]
+										)
+						) PUI ON PUI.[Document No_] = PRH.[No_]
+			WHERE PCMH.[No_] IS NULL AND PRLD.[No_] <> ''
+			UNION ALL
+			SELECT 'SOLUSI' AS COMPANY
+					, PRH.[No_] AS NO_INV
+					, PRH.[Posting Date] AS TGL_INV
+					, PRH.[Pay-to Vendor No_] AS KODE_SUPP
+					, PRH.[Pay-to Name] AS NAMA_SUPP
+					, PRH.[Vendor Invoice No_] AS NO_INV_SUPP
+					, PRLD.[No_] AS ITEM_NO
+					, PRLD.[Description] AS ITEM_DESC
+					, PRLD.[Unit of Measure] AS UOM
+					, PRLD.[Quantity] AS QTY
+					, CASE WHEN PRH.[Currency Code] = '' THEN PRLD.[Line Amount]ELSE ROUND((PRLD.[Line Amount] / PRH.[Currency Factor]),0) END AS AMOUNT_IDR
+			FROM [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Header] PRH
+			INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Line] PRLD ON PRH.[No_] = PRLD.[Document No_]
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Cr_ Memo Hdr_] PCMH ON PCMH.[Applies-to Doc_ No_] = PRH.[No_]
+			INNER JOIN	(
+							SELECT X.[Document No_]
+							FROM (
+							SELECT [Document No_]
+									, SUM(
+											CASE WHEN [Type] = 2 OR
+												([Type] = 1 AND [No_] = '118.150.00')
+											THEN 1 ELSE 0 END
+										 ) AS JML_DTL_ITM
+									,SUM(
+											CASE WHEN [VAT Bus_ Posting Group] = 'VAT'
+											THEN 1 ELSE 0 END
+										 ) AS JML_DTL_VAT
+									,SUM([Amount Including VAT]) - SUM([Amount]) AS VAT
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Line]
+							GROUP BY [Document No_]
+							) X
+							WHERE X.JML_DTL_ITM > 0 AND VAT = 0 AND JML_DTL_VAT = 0 AND
+								  X.[Document No_] NOT IN (
+							SELECT DISTINCT PH.[No_]
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Line] PID
+							INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Header] PH ON PH.[No_] = PID.[Document No_]
+							INNER JOIN  (
+											SELECT DISTINCT PIH.[No_]
+													,ICA.[Applies-to Doc_ No_] AS GR_NO
+													,ICA.[Applies-to Doc_ Line No_] AS GR_LINE_NO
+											FROM [AUTOJAYA].[dbo].[SOLUSI$Item Charge Assignment (Purch)] ICA
+											LEFT JOIN	(
+															SELECT [Document No_] AS NO_GR
+																	,[Line No_] AS GR_LINE_NO
+																	,[Order No_] AS PO_NO
+																	,[Order Line No_] AS PO_LINE_NO
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Purch_ Rcpt_ Line]
+															WHERE [Quantity] <> 0
+														) PRL ON PRL.PO_NO = ICA.[Document No_] AND PRL.PO_LINE_NO = ICA.[Document Line No_]
+											LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Line] PIL ON PIL.[Receipt No_] = PRL.NO_GR AND PIL.[Receipt Line No_] = PRL.GR_LINE_NO
+											LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = PIL.[Document No_]
+											LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Cr_ Memo Hdr_] PCM ON PCM.[Applies-to Doc_ No_] = PIH.[No_]
+											WHERE PCM.[No_] IS NULL
+													AND PIH.[No_] IN	(
+																			SELECT X.[Document No_]
+																			FROM	(
+																						SELECT [Document No_]
+																								,MAX([Receipt No_]) AS GR_NO
+																								, SUM(
+																										CASE WHEN([Type] = 1 AND [No_] = '118.290.00')
+																										THEN 1 ELSE 0 END
+																									 ) AS JML_DTL_PNN
+																								, SUM(
+																										CASE WHEN[Type] = 5
+																										THEN 1 ELSE 0 END
+																									 ) AS JML_DTL_FREIGHT
+																						FROM [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Line]
+																						GROUP BY [Document No_]
+																					) X
+																			WHERE X.JML_DTL_PNN > 0 AND X.JML_DTL_FREIGHT > 0
+																		)
+										) FRG ON FRG.GR_NO = PID.[Receipt No_] AND FRG.GR_LINE_NO = PID.[Receipt Line No_]
+										)
+						) PUI ON PUI.[Document No_] = PRH.[No_]
+			WHERE PCMH.[No_] IS NULL AND PRLD.[No_] <> ''
+		) PMB
+WHERE (PMB.COMPANY = $P{Company} OR  $P{Company} = 'ALL') AND
+	(PMB.TGL_INV >= $P{TglFrom} AND PMB.TGL_INV <= $P{TglUpto})]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="KODE_SUPP" class="java.lang.String"/>
+	<field name="NAMA_SUPP" class="java.lang.String"/>
+	<field name="NO_INV_SUPP" class="java.lang.String"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="ITEM_DESC" class="java.lang.String"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR" class="java.math.BigDecimal"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="NO_INV"/>
+	<variable name="AMOUNT_IDR_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_2" class="java.math.BigDecimal" resetType="Group" resetGroup="NoInvoice" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR}]]></variableExpression>
+	</variable>
+	<group name="NoInvoice">
+		<groupExpression><![CDATA[$F{NO_INV}]]></groupExpression>
+		<groupHeader>
+			<band height="15">
+				<textField>
+					<reportElement x="7" y="1" width="100" height="14" uuid="d160cb20-e7e9-4f5f-ad5e-6f64ec5c94a9"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+				</textField>
+				<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="107" y="1" width="70" height="14" uuid="80d14783-15e0-4dea-94d0-271f982af66d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="177" y="1" width="67" height="14" uuid="8c20f6d8-da9c-4629-abb8-e7a10a0c0749"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="244" y="1" width="218" height="14" uuid="833d56af-7056-4801-a566-7cafb4cb2b30"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="462" y="1" width="155" height="14" uuid="cb2704fd-4809-4290-bb38-3315dabcadc5"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="NoInvoice" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="617" y="1" width="116" height="14" uuid="ef6c8592-46c5-4bec-a571-382cf27afc80"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="93" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="244" y="51" width="218" height="14" uuid="c2d9574e-e8a5-427a-90ac-6d9237ff504c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="177" y="9" width="285" height="14" uuid="f8dc1ccc-aa64-432c-a2e6-a647b00a11da"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Laporan Pembelian NON PPN - Summary]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="79" width="67" height="14" uuid="ccd3d4c1-e812-4cdd-a6e2-7cf1d4f035d6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kode Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="244" y="79" width="218" height="14" uuid="523fb0f0-a3ae-4db7-ae37-d05a1eb9cc51"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Nama Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="79" width="100" height="14" uuid="b6f4a1ba-26a8-427f-94bc-6b8a4743a213"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="65" width="100" height="14" uuid="5d6950f4-0bac-4b8a-82f7-23445eb854e0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="65" width="67" height="14" uuid="60fdc4d6-5eea-4ea4-9359-7448e62ca11e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="51" width="100" height="14" uuid="c02489d4-1691-41e4-bdae-dcd714670428"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="51" width="67" height="14" uuid="4c1e6814-8ae4-4154-a90d-d24b3e356349"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="244" y="65" width="218" height="14" uuid="7c209999-dcbe-414a-a4ae-10d5b5c4758d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="37" width="67" height="14" uuid="1400db80-573a-4957-8ae0-977254de313a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="23" width="67" height="14" uuid="6bfa6352-3111-48fb-984a-35e428cfbd07"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="37" width="100" height="14" uuid="0e68a3f8-b3ca-437b-ab41-ec119beff3ff"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="23" width="100" height="14" uuid="b68a4483-c6bf-4bbf-af09-58d005aa2c75"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="7" y="9" width="100" height="14" uuid="e12a1fdb-3019-406b-a697-a09eb241172a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="244" y="23" width="218" height="14" uuid="fc86189a-2666-4f0e-aa39-6570453e739a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="244" y="37" width="71" height="14" uuid="dfe11752-de12-447a-9b6a-449425c983c9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="338" y="37" width="124" height="14" uuid="ffee7462-825c-4a23-bc3e-24b8f5786329"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="315" y="37" width="23" height="14" uuid="edc70f62-35d5-4cd4-8078-ca99db47b811"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="9" width="70" height="14" uuid="fd922ded-da52-4e42-a7a1-fa5d216813b5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="65" width="70" height="14" uuid="e6b93847-81be-41f1-89b8-999a173dee3e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="37" width="70" height="14" uuid="6ac4cf56-7f07-4104-93a7-9567bb419b4c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="79" width="70" height="14" uuid="67b40193-5f06-4508-b3c9-e53b0f42cf18"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="51" width="70" height="14" uuid="bee66375-b9b0-4bb5-8fa7-3105863de63e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="23" width="70" height="14" uuid="01975610-ff62-4d5e-ace0-f50f73783402"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="462" y="79" width="155" height="14" uuid="72e237fe-b973-4841-9ce2-ba69751bd0d8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Invoice Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="617" y="79" width="116" height="14" uuid="fcf43cbc-72db-49c0-9f95-fd43e462d6cc"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+		</band>
+	</title>
+	<summary>
+		<band height="15" splitType="Stretch">
+			<staticText>
+				<reportElement x="7" y="1" width="100" height="14" uuid="e620d6e7-e47c-4b4c-a776-a2134f0a6f76"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="1" width="67" height="14" uuid="c4ccfe95-bb83-44af-9e4f-afd3bf8a5e76"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="462" y="1" width="155" height="14" uuid="ab023a4b-dcf9-41f7-9f7a-564eb71e4765"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="1" width="70" height="14" uuid="df70336e-06b4-4395-8b2b-b0ebc266616f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="244" y="1" width="218" height="14" uuid="77dc58d9-6c60-4621-9049-598ca6a9575e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="617" y="1" width="116" height="14" uuid="b19cd1ff-1d4f-4d54-a6ec-d30a25bac969"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_IDR_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="7" y="11" width="204" height="14" uuid="c10988e7-7273-45fd-9b88-a4450e60b229"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Certificate" language="groovy" pageWidth="595" pageHeight="842" columnWidth="495" leftMargin="50" rightMargin="50" topMargin="20" bottomMargin="20" uuid="a1ab9164-ee8c-4d5d-8273-615b6c335665">
+	<property name="ireport.zoom" value="0.6830134553650781"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="NoDo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item1" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item2" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Item3" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CertNo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="sec1" class="java.lang.String"/>
+	<parameter name="sec2" class="java.lang.String"/>
+	<parameter name="sec3" class="java.lang.String"/>
+	<parameter name="sec4" class="java.lang.String"/>
+	<parameter name="sec5" class="java.lang.String"/>
+	<parameter name="sec6" class="java.lang.String"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Period" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT 'A' AS GROUP_TEXT
+		,'A' AS LINE_TEXT
+		,X.NO_DO
+		,X.CUST_NAME
+		,X.ITEM_NO
+		,X.UOM
+		,X.PRODUCT_CODE
+		,X.TGL_DO
+		,X.QTY
+		,X.EXP_DATE
+		,X.SN
+FROM
+(
+SELECT	DOH.[No_] AS NO_DO
+		,DOH.[Sell-to Customer Name] AS CUST_NAME
+		,DOL.[No_] AS ITEM_NO
+		,DOL.[Unit of Measure] AS UOM
+		,DOL.[Description 2] AS PRODUCT_CODE
+		,DOH.[Posting Date] AS TGL_DO
+		,DOL.[Quantity] AS QTY
+		,CASE WHEN CASE WHEN SUBSTRING(DET.WC,1,1) = 'W' THEN 'W' ELSE 'D' END = 'W' THEN  dateadd(MONTH, cast(ISNULL(ISNULL(SUBSTRING(DET.DDC, LEN(DET.DDC)-2, LEN(DET.DDC)-1),0) ,0) AS INT), DOH.[Posting Date])
+			ELSE  DOH.[Posting Date] END AS EXP_DATE
+		,(
+			SELECT '|'+IL.[Serial No_] + '| ' as 'data()'
+			FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] IL
+			WHERE	IL.[Document No_] = DOH.[No_] AND
+					IL.[Document Line No_] = DOL.[Order Line No_] AND
+					IL.[Item No_] = DOL.[No_]
+			for xml path('')
+
+			) AS SN
+FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Shipment Header] DOH
+INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Shipment Line] DOL ON DOL.[Document No_] = DOH.[No_] AND DOL.[Type] = 2
+LEFT JOIN	(
+				SELECT ILE.[Item No_] AS NO_ITEM
+					  ,ILE.[Document No_] AS NO_DO
+					  ,ILE.[Document Line No_]  AS NO_DO_LINE
+					  ,MAX(ILE.[Warranty Code]) AS WC
+					  ,MAX(PYT.[Due Date Calculation]) AS DDC
+				FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] ILE
+				LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Payment Terms] PYT ON PYT.[Code] = ILE.[Warranty Code]
+				GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Document Line No_]
+			) DET ON DET.NO_DO = DOH.[No_] AND DET.NO_DO_LINE = DOL.[Order Line No_] AND DET.NO_ITEM = DOL.[No_]
+WHERE DOH.[No_] = $P{NoDo} AND
+	(DOL.[No_] = $P{Item1} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item2}) AND $P{Company} = 'AJ'
+UNION ALL
+SELECT	DOH.[No_] AS NO_DO
+		,DOH.[Sell-to Customer Name] AS CUST_NAME
+		,DOL.[No_] AS ITEM_NO
+		,DOL.[Unit of Measure] AS UOM
+		,DOL.[Description 2] AS PRODUCT_CODE
+		,DOH.[Posting Date] AS TGL_DO
+		,DOL.[Quantity] AS QTY
+		,CASE WHEN CASE WHEN SUBSTRING(DET.WC,1,1) = 'W' THEN 'W' ELSE 'D' END = 'W' THEN  dateadd(MONTH, cast(ISNULL(ISNULL(SUBSTRING(DET.DDC, LEN(DET.DDC)-2, LEN(DET.DDC)-1),0) ,0) AS INT), DOH.[Posting Date])
+			ELSE  DOH.[Posting Date] END AS EXP_DATE
+		,(
+			SELECT '|'+IL.[Serial No_] + '| ' as 'data()'
+			FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry] IL
+			WHERE	IL.[Document No_] = DOH.[No_] AND
+					IL.[Document Line No_] = DOL.[Order Line No_] AND
+					IL.[Item No_] = DOL.[No_]
+			for xml path('')
+
+			) AS SN
+FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Shipment Header] DOH
+INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Shipment Line] DOL ON DOL.[Document No_] = DOH.[No_] AND DOL.[Type] = 2
+LEFT JOIN	(
+				SELECT ILE.[Item No_] AS NO_ITEM
+					  ,ILE.[Document No_] AS NO_DO
+					  ,ILE.[Document Line No_]  AS NO_DO_LINE
+					  ,MAX(ILE.[Warranty Code]) AS WC
+					  ,MAX(PYT.[Due Date Calculation]) AS DDC
+				FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry] ILE
+				LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Payment Terms] PYT ON PYT.[Code] = ILE.[Warranty Code]
+				GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Document Line No_]
+			) DET ON DET.NO_DO = DOH.[No_] AND DET.NO_DO_LINE = DOL.[Order Line No_] AND DET.NO_ITEM = DOL.[No_]
+WHERE DOH.[No_] = $P{NoDo} AND
+	(DOL.[No_] = $P{Item1} OR DOL.[No_] = $P{Item2} OR DOL.[No_] = $P{Item2}) AND $P{Company} = 'SP'
+) X
+UNION ALL
+SELECT 'B1' AS GROUP_TEXT, 'B101' AS LINE_TEXT, NULL AS NO_DO, NULL AS CUST_NAME, 'ZZZZZZZZZZZZZZZZZZZZ' AS ITEM_NO, NULL AS UOM, NULL AS PRODUCT_CODE, NULL AS TGL_DO,0 AS QTY, NULL AS EXP_DATE, NULL AS SN WHERE $P{sec1} ='Y'
+UNION ALL
+SELECT 'B1' AS GROUP_TEXT, 'C101' AS LINE_TEXT, NULL AS NO_DO, NULL AS CUST_NAME, 'ZZZZZZZZZZZZZZZZZZZZ' AS ITEM_NO, NULL AS UOM, NULL AS PRODUCT_CODE, NULL AS TGL_DO,0 AS QTY, NULL AS EXP_DATE, NULL AS SN WHERE $P{sec2} ='Y'
+UNION ALL
+SELECT 'B1' AS GROUP_TEXT, 'D101' AS LINE_TEXT, NULL AS NO_DO, NULL AS CUST_NAME, 'ZZZZZZZZZZZZZZZZZZZZ' AS ITEM_NO, NULL AS UOM, NULL AS PRODUCT_CODE, NULL AS TGL_DO,0 AS QTY, NULL AS EXP_DATE, NULL AS SN WHERE $P{sec3} ='Y'
+UNION ALL
+SELECT 'B1' AS GROUP_TEXT, 'E101' AS LINE_TEXT, NULL AS NO_DO, NULL AS CUST_NAME, 'ZZZZZZZZZZZZZZZZZZZZ' AS ITEM_NO, NULL AS UOM, NULL AS PRODUCT_CODE, NULL AS TGL_DO,0 AS QTY, NULL AS EXP_DATE, NULL AS SN WHERE $P{sec4} ='Y'
+UNION ALL
+SELECT 'B1' AS GROUP_TEXT, 'F101' AS LINE_TEXT, NULL AS NO_DO, NULL AS CUST_NAME, 'ZZZZZZZZZZZZZZZZZZZZ' AS ITEM_NO, NULL AS UOM, NULL AS PRODUCT_CODE, NULL AS TGL_DO,0 AS QTY, NULL AS EXP_DATE, NULL AS SN WHERE $P{sec5} ='Y'
+UNION ALL
+SELECT 'B1' AS GROUP_TEXT, 'G101' AS LINE_TEXT, NULL AS NO_DO, NULL AS CUST_NAME, 'ZZZZZZZZZZZZZZZZZZZZ' AS ITEM_NO, NULL AS UOM, NULL AS PRODUCT_CODE, NULL AS TGL_DO,0 AS QTY, NULL AS EXP_DATE, NULL AS SN WHERE $P{sec6} ='Y']]>
+	</queryString>
+	<field name="GROUP_TEXT" class="java.lang.String"/>
+	<field name="LINE_TEXT" class="java.lang.String"/>
+	<field name="NO_DO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="PRODUCT_CODE" class="java.lang.String"/>
+	<field name="TGL_DO" class="java.sql.Timestamp"/>
+	<field name="QTY" class="java.math.BigDecimal"/>
+	<field name="EXP_DATE" class="java.sql.Timestamp"/>
+	<field name="SN" class="java.lang.String"/>
+	<sortField name="GROUP_TEXT"/>
+	<sortField name="ITEM_NO"/>
+	<sortField name="LINE_TEXT"/>
+	<variable name="Section3" class="java.lang.String">
+		<variableExpression><![CDATA[($P{Company}.equals( "AJ" )?"PT. AUTOJAYA IDETECH" : "PT. SOLUSI PERIFERAL")+" will pick up the equipment(s) to be repaired at "+($P{Company}.equals( "AJ" )?"PT. AUTOJAYA IDETECH" : "PT. SOLUSI PERIFERAL")+" Service Center and deliveries of the equipment(s) after repair to predetermined customer premises \n"+
+"- Pickup time is working hours: Monday to Friday, 08.30 AM– 05.30 PM. (except public holiday).\n"+
+"- Response time for "+($P{Company}.equals( "AJ" )?"PT. AUTOJAYA IDETECH" : "PT. SOLUSI PERIFERAL")+" to be available for picked up the equipment(s) is one working day after Customer Request."]]></variableExpression>
+	</variable>
+	<group name="GroupAtas" footerPosition="ForceAtBottom">
+		<groupExpression><![CDATA[$F{GROUP_TEXT}]]></groupExpression>
+	</group>
+	<group name="Product" isStartNewPage="true">
+		<groupExpression><![CDATA[$F{ITEM_NO}]]></groupExpression>
+	</group>
+	<pageHeader>
+		<band height="234" splitType="Stretch">
+			<staticText>
+				<reportElement x="4" y="124" width="476" height="56" uuid="81b939bd-1d6f-448c-984d-ba5f98b5f768"/>
+				<textElement textAlignment="Center">
+					<font fontName="SansSerif" size="38" isBold="true" isItalic="false"/>
+				</textElement>
+				<text><![CDATA[Certificate of Service]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="4" y="188" width="476" height="35" uuid="5316d242-c563-431b-95ca-6dc44e9560e1"/>
+				<textElement textAlignment="Center">
+					<font size="26" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+</jasperReport>

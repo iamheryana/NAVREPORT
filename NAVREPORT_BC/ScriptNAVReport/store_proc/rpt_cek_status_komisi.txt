@@ -1,0 +1,79 @@
+-- Function: rpt_cek_status_komisi(character varying, character varying, character varying, character varying, character varying, character varying)
+
+-- DROP FUNCTION rpt_cek_status_komisi(character varying, character varying, character varying, character varying, character varying, character varying);
+
+CREATE OR REPLACE FUNCTION rpt_cek_status_komisi(IN p_prosesid character varying, IN p_customer character varying, IN p_extdocno character varying, IN p_nobso character varying, IN p_noinvoice character varying, IN p_sales character varying)
+  RETURNS TABLE(company character varying, sales character varying, sales_name character varying, no_bso character varying, no_so character varying, tgl_so date, customer character varying, no_po_cust character varying, amount numeric, no_invoice character varying, tgl_invoice date, tgl_lunas date, pcn_komisi numeric, amount_komisi numeric, status character varying) AS
+$BODY$ 
+BEGIN
+	RETURN QUERY 
+	SELECT
+		X.company
+		,X.sales
+		,T03.sales_name
+		,X.no_bso
+		,X.no_so
+		,X.tgl_so
+		,X.customer
+		,X.no_po_cust
+		,X.amount
+		,X.no_invoice
+		,X.tgl_invoice
+		,X.tgl_lunas
+		,X.pcn_komisi
+		,X.amount_komisi
+		,CAST (X.status As character varying) as status
+	FROM	(
+			SELECT tmp06.company
+				,tmp06.sales
+				,tmp06.no_bso
+				,tmp06.no_so
+				,tmp06.tgl_so
+				,tmp06.customer
+				,tmp06.no_po_cust
+				,tmp06.amount
+				,tmp06.no_invoice
+				,tmp06.tgl_invoice
+				,tmp06.tgl_lunas
+				,0 as pcn_komisi
+				,0 as amount_komisi
+				,CASE WHEN tmp06.tgl_lunas IS NULL THEN 'INVOICE BELUM LUNAS' ELSE 'BELUM ADA COSTING/BELUM DIPROSES' END AS STATUS
+			FROM tmp06invoicelunas tmp06
+			LEFT JOIN t02rekapcosting T02 ON T02.no_invoice = tmp06.no_invoice AND T02.company = tmp06.company
+			WHERE proses_id = p_prosesid AND
+				T02.no_invoice IS NULL
+			UNION ALL
+			SELECT T02.company
+				,T02.sales
+				,T02.no_bso
+				,T02.no_so
+				,T02.tgl_so
+				,T02.customer
+				,T02.no_po_cust
+				,T02.amount
+				,T02.no_invoice
+				,T02.tgl_invoice
+				,T02.tgl_lunas
+				,T02.pcn_komisi
+				,T02.amount_komisi
+				,CASE WHEN T02.flag_komisi = 'Y' THEN
+					'SUDAH DIPROSES DAN DIBAYAR PADA PERIODE '|| T02.masa_komisi || '-' || T02.tahun_komisi ELSE
+					'BELUM DIPROSES'
+				 END AS STATUS
+			FROM t02rekapcosting T02
+		) X
+	LEFT JOIN t03salesperson T03 ON T03.sales = X.sales
+	WHERE X.sales IN	(
+					SELECT aa.sales FROM t03salesperson aa WHERE aa.sales = p_sales
+					UNION ALL
+					SELECT bb.sales FROM t03salesperson bb WHERE bb.spv = p_sales
+				) AND
+	      (X.customer LIKE '%'||p_customer||'%' OR p_customer = 'ALL') AND
+	      (X.no_po_cust LIKE '%'||p_extdocno||'%' OR p_extdocno = 'ALL') AND
+	      (X.no_bso LIKE '%'||p_nobso||'%' OR p_nobso = 'ALL') AND
+	      (X.no_invoice LIKE '%'||p_noinvoice||'%' OR p_noinvoice = 'ALL') ;
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100
+  ROWS 1000;

@@ -1,0 +1,1686 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="0105013_LapProyeksiSalesOutSO" language="groovy" pageWidth="1520" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1480" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.771561000000023"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="54"/>
+	<parameter name="Cabang" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Tahun" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JnsRpt" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	1 AS GRP
+	, XXI.COMPANY
+		, XXI.CUST_NAME
+		, MIN(XXI.EST_REALISASI_MONTH) AS SORT_CUST_NAME
+		, SUM(XXI.AMOUNT_IDR) AS AMOUNT_IDR
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 1 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_1
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 2 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_2
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 3 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_3
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 4 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_4
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 5 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_5
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 6 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_6
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 7 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_7
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 8 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_8
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 9 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_9
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 10 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_10
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 11 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_11
+		, SUM(CASE WHEN XXI.EST_REALISASI_MONTH = 12 THEN XXI.AMOUNT_IDR ELSE 0 END) AS AMOUNT_IDR_PERIOD_12
+FROM	(
+			SELECT	XAX.COMPANY
+					, XAX.BRANCHES
+					, CAB.[Name] AS BRANCHES_NAME
+					, XAX.SALESMAN
+					, XAX.CUST_NAME
+					, XAX.NO_SO
+					, XAX.NO_PO_CUST
+					, XAX.AMOUNT_IDR
+					, XAX.EST_REALISASI_REAL
+					, XAX.EST_REALISASI
+					, DATEPART(MONTH,  XAX.EST_REALISASI) AS EST_REALISASI_MONTH
+					, DATEPART(YEAR,  XAX.EST_REALISASI) AS EST_REALISASI_YEAR
+			FROM	(
+						SELECT	XXX.COMPANY
+								, XXX.BRANCHES
+								, XXX.SALESMAN
+								, XXX.CUST_NAME
+								, XXX.NO_SO
+								, XXX.NO_PO_CUST
+								,	CASE WHEN XXX.RULE_TIPE = 'TRAD' AND XXX.RELEASE_TODAY = 'YES' THEN
+										XXX.AMOUNT_IDR
+									ELSE
+										CASE WHEN XOX.NO_SO IS NOT NULL THEN
+											CASE WHEN XOX.JENIS_PAYMENT = 'D' THEN
+												ROUND(((XXX.AMOUNT_IDR_FULL * XOX.QTY)/100),0)
+											ELSE
+												ROUND((XXX.AMOUNT_IDR  / XOX.QTY),0)
+											END
+										ELSE
+											XXX.AMOUNT_IDR
+										END
+									END AS AMOUNT_IDR
+								,	CASE WHEN XXX.RULE_TIPE = 'TRAD' AND XXX.RELEASE_TODAY = 'YES' THEN
+										CASE WHEN XXX.DELIVERY_DATE < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XXX.DELIVERY_DATE END
+									ELSE
+										CASE WHEN XOX.NO_SO IS NOT NULL THEN
+											CASE WHEN XOX.JENIS_PAYMENT = 'D' THEN
+												XOX.EST_REALISASI
+											ELSE
+												CASE WHEN XOX.JENIS_PAYMENT = 'M' THEN DATEADD(month, XOX.ADD_NUM, XXX.EST_REALISASI)
+														WHEN XOX.JENIS_PAYMENT = 'Q' THEN DATEADD(month, (XOX.ADD_NUM*3), XXX.EST_REALISASI)
+														WHEN XOX.JENIS_PAYMENT = 'S' THEN DATEADD(month, (XOX.ADD_NUM*6), XXX.EST_REALISASI)
+														WHEN XOX.JENIS_PAYMENT = 'Y' THEN DATEADD(month, (XOX.ADD_NUM*12), XXX.EST_REALISASI)
+														ELSE  XXX.EST_REALISASI
+												END
+											END
+										ELSE
+											XXX.EST_REALISASI
+										END
+									END AS EST_REALISASI
+								,	CASE WHEN XXX.RULE_TIPE = 'TRAD' AND XXX.RELEASE_TODAY = 'YES' THEN
+										XXX.DELIVERY_DATE
+									ELSE
+										CASE WHEN XOX.NO_SO IS NOT NULL THEN
+											CASE WHEN XOX.JENIS_PAYMENT = 'D' THEN
+												XOX.EST_REALISASI
+											ELSE
+												CASE WHEN XOX.JENIS_PAYMENT = 'M' THEN DATEADD(month, XOX.ADD_NUM, XXX.EST_REALISASI_REAL)
+														WHEN XOX.JENIS_PAYMENT = 'Q' THEN DATEADD(month, (XOX.ADD_NUM*3), XXX.EST_REALISASI_REAL)
+														WHEN XOX.JENIS_PAYMENT = 'S' THEN DATEADD(month, (XOX.ADD_NUM*6), XXX.EST_REALISASI_REAL)
+														WHEN XOX.JENIS_PAYMENT = 'Y' THEN DATEADD(month, (XOX.ADD_NUM*12), XXX.EST_REALISASI_REAL)
+														ELSE  XXX.EST_REALISASI_REAL
+												END
+											END
+										ELSE
+											XXX.EST_REALISASI_REAL
+										END
+									END AS EST_REALISASI_REAL
+						FROM	(
+									SELECT
+											UPPER(ASH.[Your Reference]) AS COMPANY
+											, ASH.[No_] AS NO_SO
+											, '' AS RULE_TIPE
+											, 'NO' AS RELEASE_TODAY
+											,	CASE WHEN ASL.[Shipment Date] <= CAST(CAST(GETDATE() AS DATE) AS DATETIME) THEN
+													CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+												ELSE
+													ASL.[Shipment Date]
+												END AS DELIVERY_DATE
+											, '' AS TIPE
+											, ASH.[Responsibility Center] AS BRANCHES
+											, '' AS SALESMAN
+											, ASH.[Sell-to Customer No_] AS CUST_CODE
+											, ASH.[Sell-to Customer Name] AS CUST_NAME
+											, '' AS NO_PO_CUST
+											, ASL.[Amount]  AS AMOUNT_IDR_FULL
+											, ASL.[Amount]  AS AMOUNT_IDR
+											,	CASE WHEN ASL.[Shipment Date] <= CAST(CAST(GETDATE() AS DATE) AS DATETIME) THEN
+													CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+												ELSE
+													ASL.[Shipment Date]
+												END AS EST_REALISASI_REAL
+											,	CASE WHEN ASL.[Shipment Date] <= CAST(CAST(GETDATE() AS DATE) AS DATETIME) THEN
+													CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+												ELSE
+													ASL.[Shipment Date]
+												END AS EST_REALISASI
+									FROM [dbo].[BC_PI-ADJ$Sales Header] ASH
+									LEFT JOIN [dbo].[BC_PI-ADJ$Sales Line] ASL ON ASL.[Document Type] = ASH.[Document Type] AND ASL.[Document No_] = ASH.[No_]
+									WHERE ASH.[Document Type] = 1
+									UNION ALL
+									SELECT	'AUTOJAYA' AS COMPANY
+											, XY.NO_SO
+											, XY.RULE_TIPE
+											, XY.RELEASE_TODAY
+											, XY.DELIVERY_DATE
+											, XY.TIPE
+											, XY.BRANCHES
+											, XY.SALES_CODE AS SALESMAN
+											, XY.CUST_CODE
+											, XY.CUST_NAME
+											, XY.NO_PO_CUST
+											, XY.AMOUNT_IDR AS AMOUNT_IDR_FULL
+											,	CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+													(XY.AMOUNT_IDR - XY.UM_AMOUNT_IDR)
+												ELSE
+													(XY.AMOUNT_IDR - ((XY.UM_AMOUNT_IDR*XY.AMOUNT_IDR)/(XY.AMOUNT_IDR_TTL)))
+												END AS AMOUNT_IDR
+											,	CASE WHEN XY.RULE_TIPE = 'RTAL' THEN
+													XY.ORDER_DATE
+												ELSE
+													CASE WHEN XY.SHIP_DATE_ADJ <> CAST('01/01/1753' AS DATETIME) THEN
+														XY.SHIP_DATE_ADJ
+													ELSE
+														CASE WHEN MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO) IS NOT NULL THEN
+															CASE WHEN XY.RULE_TIPE = 'IDMR' THEN
+																DATEADD(WEEK, 3, MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO))
+															ELSE
+																CASE	WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Mon' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Tue' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Wed' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Thu' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Fri' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sat' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sun' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 4
+																		ELSE
+																			CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																END
+															END
+														ELSE
+															CASE	WHEN XY.RULE_TIPE = 'IDMR' THEN DATEADD(WEEK, 3, XY.ORDER_DATE)
+																	WHEN XY.RULE_TIPE = 'ALFA' THEN
+																		CASE	WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Mon' THEN XY.ORDER_DATE + 3
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Tue' THEN XY.ORDER_DATE + 3
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Wed' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Thu' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Fri' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sat' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sun' THEN XY.ORDER_DATE + 4
+																				ELSE
+																					CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																		END
+																	ELSE
+																		XY.DELIVERY_DATE
+															END
+														END
+													END
+												END AS EST_REALISASI_REAL
+											,	CASE WHEN XY.RULE_TIPE = 'RTAL' THEN
+													CASE WHEN XY.ORDER_DATE < GETDATE() THEN
+														CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+													ELSE
+														XY.ORDER_DATE
+													END
+												ELSE
+													CASE WHEN XY.SHIP_DATE_ADJ <> CAST('01/01/1753' AS DATETIME) THEN
+														XY.SHIP_DATE_ADJ
+													ELSE
+														CASE WHEN MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO) IS NOT NULL THEN
+															CASE WHEN XY.RULE_TIPE = 'IDMR' THEN
+																CASE WHEN DATEADD(WEEK, 3, (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO))) <  GETDATE() THEN
+																	CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																ELSE
+																	DATEADD(WEEK, 3, MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO))
+																END
+															ELSE
+																CASE	WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Mon' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Tue' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Wed' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Thu' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Fri' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sat' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sun' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 4 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 4 END
+																		ELSE
+																			CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																END
+															END
+														ELSE
+															CASE	WHEN XY.RULE_TIPE = 'IDMR' THEN
+																		CASE WHEN DATEADD(WEEK, 3, XY.ORDER_DATE) < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE DATEADD(WEEK, 3, XY.ORDER_DATE) END
+																	WHEN XY.RULE_TIPE = 'ALFA' THEN
+																		CASE	WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Mon' THEN
+																					CASE WHEN XY.ORDER_DATE + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 3 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Tue' THEN
+																					CASE WHEN XY.ORDER_DATE + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 3 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Wed' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Thu' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Fri' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sat' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sun' THEN
+																					CASE WHEN XY.ORDER_DATE + 4 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 4 END
+																				ELSE
+																					CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																		END
+																	ELSE
+																		CASE WHEN XY.DELIVERY_DATE < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.DELIVERY_DATE END
+															END
+														END
+													END
+												END AS EST_REALISASI
+									FROM	(
+												SELECT SH.[No_] AS NO_SO
+														, CASE WHEN SUBSTRING( SH.[No_], 1, 4) = 'SOAS' THEN 'SC' ELSE
+															CASE WHEN SUBSTRING( SH.[No_], 1, 4) = 'SOAR' THEN 'RT' ELSE
+																CASE WHEN SUBSTRING( SH.[No_], 1, 2) IN ('8S','9S') THEN 'AI' ELSE
+																	CASE WHEN SUBSTRING( SH.[No_], 1, 2) IN ('7S') THEN 'LZ' ELSE 'TD' END
+																END
+															END
+															END AS TIPE
+														, CASE WHEN SUBSTRING( SH.[No_], 4, 1) = 'S' THEN 'SCEN' ELSE
+															CASE WHEN SUBSTRING( SH.[No_], 4, 1) = 'R' THEN 'RTAL' ELSE
+																CASE WHEN SUBSTRING( SH.[No_], 1, 2) = '8S' THEN 'ALFA' ELSE
+																	CASE WHEN SUBSTRING( SH.[No_], 1, 2) = '9S' THEN 'IDMR' ELSE 'TRAD' END
+																END
+															END
+														  END AS RULE_TIPE
+														, SH.[Requested Delivery Date] AS DELIVERY_DATE
+														, CASE WHEN DATEADD(dd, DATEDIFF(dd, 0, SH.[Released Date]), 0) = DATEADD(dd, DATEDIFF(dd, 0, getdate()), 0) THEN 'YES' ELSE 'NO' END AS RELEASE_TODAY
+														, CASE WHEN SH.[Shortcut Dimension 1 Code] = '' THEN '10' ELSE ISNULL(SH.[Shortcut Dimension 1 Code],'10') END AS BRANCHES
+														, CASE WHEN SH.[Salesperson Code] = '' THEN '.' ELSE SH.[Salesperson Code] END AS SALES_CODE
+														, SH.[Bill-to Customer No_] AS CUST_CODE
+														, SH.[Bill-to Name] AS CUST_NAME
+														, SH.[Order Date] AS ORDER_DATE
+														, CASE	WHEN SH.[Status] = 0 THEN 'OPEN'
+																WHEN SH.[Status] = 1 THEN 'RELEASED'
+																WHEN SH.[Status] = 2 THEN 'PENDING APPROVAL'
+																WHEN SH.[Status] = 3 THEN 'RELEASED'
+																ELSE '' END AS STATUS_SO
+														, SH.[External Document No_] AS NO_PO_CUST
+														, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END,0) AS AMOUNT_IDR
+														, ISNULL(SL.AMOUNT,0) AS AMOUNT
+														, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL2.AMOUNT_TTL / SH.[Currency Factor],0) ELSE SL2.AMOUNT_TTL END,0) AS AMOUNT_IDR_TTL
+														, ISNULL(SL2.AMOUNT_TTL,0) AS AMOUNT_TTL
+														, ISNULL(UM.UM_AMOUNT_IDR,0) AS UM_AMOUNT_IDR
+														, ISNULL(UM.UM_AMOUNT,0) AS UM_AMOUNT
+														,	CASE WHEN ISDATE(SUBSTRING(SH.[Package Tracking No_],4,2)+'/'+SUBSTRING(SH.[Package Tracking No_],1,2)+'/'+SUBSTRING(SH.[Package Tracking No_],7,4)) = 0 THEN
+																CAST('01/01/1753' AS DATETIME)
+															ELSE
+																CONVERT(DATETIME, (SUBSTRING(SH.[Package Tracking No_],4,2)+'/'+SUBSTRING(SH.[Package Tracking No_],1,2)+'/'+SUBSTRING(SH.[Package Tracking No_],7,4)))
+															END AS SHIP_DATE_ADJ
+														, SH.[Shipment Date] AS SHIP_DATE
+												FROM [dbo].[BC_AUTOJAYA$Sales Header] SH
+												LEFT JOIN  (	SELECT X.[Document No_]
+																	,SUM(X.QTY) AS QTY
+																	,SUM(X.QTY_INV)AS QTY_INV
+																	,SUM(X.AMOUNT) AS AMOUNT
+																FROM (
+																		SELECT [Document No_]
+																				, [Quantity] AS QTY
+																				, [Quantity Invoiced] AS QTY_INV
+																				, CASE WHEN [Quantity Invoiced] <> 0 AND [Quantity] <> [Quantity Invoiced] THEN
+																					([Amount] / [Quantity]) * ([Quantity] - [Quantity Invoiced])
+																					ELSE
+																					[Amount]
+																					END AS AMOUNT
+																		FROM [dbo].[BC_AUTOJAYA$Sales Line]
+																		WHERE [Document Type] = 1 AND
+																			[Quantity] <> [Quantity Invoiced]
+																	) X
+																GROUP BY X.[Document No_]
+															)SL ON SL.[Document No_] = SH.[No_]
+												LEFT JOIN  (
+																SELECT [Document No_]
+																		, SUM([Amount]) AS AMOUNT_TTL
+																FROM [dbo].[BC_AUTOJAYA$Sales Line]
+																WHERE [Document Type] = 1
+																GROUP BY [Document No_]
+															)SL2 ON SL2.[Document No_] = SH.[No_]
+												LEFT JOIN	(
+																SELECT Y.NO_SO
+																		,SUM(Y.UM_AMOUNT) AS UM_AMOUNT
+																		,SUM(Y.UM_AMOUNT_IDR) AS UM_AMOUNT_IDR
+																FROM (
+																		SELECT [Prepayment Order No_] AS NO_SO
+																				,SUM(UMD.[Amount]) AS UM_AMOUNT
+																				,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) END AS UM_AMOUNT_IDR
+
+																		FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] UMH
+																		INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																		GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																		UNION ALL
+																		SELECT [Prepayment Order No_] AS NO_SO
+																				,SUM(UMD.[Amount]) * -1 AS UM_AMOUNT
+																				,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) * -1 END AS UM_AMOUNT_IDR
+
+																		FROM [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] UMH
+																		INNER JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																		GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																	) Y
+																GROUP BY Y.NO_SO
+															) UM ON UM.NO_SO = SH.[No_]
+												WHERE SH.[Document Type] = 1
+											) XY
+									LEFT JOIN	(
+													SELECT	POX.NO_SO
+															,MAX(POX.EXPECTED_DATE) AS EXPECTED_DATE
+													FROM (
+															SELECT	PO.ITEM_NO
+																	,RSV.NO_SO
+																	,RSV.NO_SO_LINE
+																	,PO.NO_PO
+																	,PO.EXPECTED_DATE
+															FROM	(
+																		SELECT POD.[No_] AS ITEM_NO
+																				,POH.[No_] AS NO_PO
+																				,POD.[Line No_] AS NO_PO_LINE
+																				,SUM(POD.[Outstanding Qty_ (Base)]) AS QTY_ON_ORDER
+																				,POD.[Expected Receipt Date] AS EXPECTED_DATE
+																		FROM [dbo].[BC_AUTOJAYA$Purchase Header] POH
+																		INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+																		WHERE POH.[Document Type] = 1 AND
+																			POD.[Type] = 2
+																		GROUP BY POD.[No_]
+																				,POH.[No_]
+																				,POD.[Expected Receipt Date]
+																				,POD.[IC Partner Reference]
+																				,POD.[Line No_]
+																	) PO
+															LEFT JOIN	(
+																			SELECT  REA.[Item No_] AS ITEM_NO
+																					, REA.[Source ID] AS NO_PO
+																					, REA.[Source Ref_ No_] AS NO_PO_LINE
+																					, REB.[Source ID] AS NO_SO
+																					, REB.[Source Ref_ No_] AS NO_SO_LINE
+																					, SUM(REA.[Quantity (Base)]) AS RSRV_ON_ORDER
+																			FROM [dbo].[BC_AUTOJAYA$Reservation Entry] REA
+																			LEFT JOIN [dbo].[BC_AUTOJAYA$Reservation Entry] REB ON REA.[Entry No_] = REB.[Entry No_] AND REB.[Positive] = 0
+																			WHERE REA.[Reservation Status] = 0 AND
+																					REA.[Positive] = 1 AND
+																					REA.[Source ID] <>''
+																			GROUP BY REA.[Item No_],  REA.[Source ID], REB.[Source ID], REB.[Source Ref_ No_], REA.[Source Ref_ No_]
+																		) RSV ON RSV.ITEM_NO = PO.ITEM_NO AND RSV.NO_PO = PO.NO_PO AND RSV.NO_PO_LINE = PO.NO_PO_LINE
+															WHERE PO.QTY_ON_ORDER > 0
+														) POX
+													GROUP BY POX.NO_SO
+												) POC ON POC.NO_SO = XY.NO_SO
+									WHERE	XY.STATUS_SO = 'RELEASED'
+									UNION ALL
+									SELECT	'SOLUSI' AS COMPANY
+											, XY.NO_SO
+											, XY.RULE_TIPE
+											, XY.RELEASE_TODAY
+											, XY.DELIVERY_DATE
+											, XY.TIPE
+											, XY.BRANCHES
+											, XY.SALES_CODE AS SALESMAN
+											, XY.CUST_CODE
+											, XY.CUST_NAME
+											, XY.NO_PO_CUST
+											, XY.AMOUNT_IDR AS AMOUNT_IDR_FULL
+											,	CASE WHEN XY.AMOUNT_IDR_TTL = 0 THEN
+													(XY.AMOUNT_IDR - XY.UM_AMOUNT_IDR)
+												ELSE
+													(XY.AMOUNT_IDR - ((XY.UM_AMOUNT_IDR*XY.AMOUNT_IDR)/(XY.AMOUNT_IDR_TTL)))
+												END AS AMOUNT_IDR
+											,	CASE WHEN XY.RULE_TIPE = 'RTAL' THEN
+													XY.ORDER_DATE
+												ELSE
+													CASE WHEN XY.SHIP_DATE_ADJ <> CAST('01/01/1753' AS DATETIME) THEN
+														XY.SHIP_DATE_ADJ
+													ELSE
+														CASE WHEN MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO) IS NOT NULL THEN
+															CASE WHEN XY.RULE_TIPE = 'IDMR' THEN
+																DATEADD(WEEK, 3, MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO))
+															ELSE
+																CASE	WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Mon' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Tue' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Wed' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Thu' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Fri' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sat' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sun' THEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 4
+																		ELSE
+																			CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																END
+															END
+														ELSE
+															CASE	WHEN XY.RULE_TIPE = 'IDMR' THEN DATEADD(WEEK, 3, XY.ORDER_DATE)
+																	WHEN XY.RULE_TIPE = 'ALFA' THEN
+																		CASE	WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Mon' THEN XY.ORDER_DATE + 3
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Tue' THEN XY.ORDER_DATE + 3
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Wed' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Thu' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Fri' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sat' THEN XY.ORDER_DATE + 5
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sun' THEN XY.ORDER_DATE + 4
+																				ELSE
+																					CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																		END
+																	ELSE
+																		XY.DELIVERY_DATE
+															END
+														END
+													END
+												END AS EST_REALISASI_REAL
+											,	CASE WHEN XY.RULE_TIPE = 'RTAL' THEN
+													CASE WHEN XY.ORDER_DATE < GETDATE() THEN
+														CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+													ELSE
+														XY.ORDER_DATE
+													END
+												ELSE
+													CASE WHEN XY.SHIP_DATE_ADJ <> CAST('01/01/1753' AS DATETIME) THEN
+														XY.SHIP_DATE_ADJ
+													ELSE
+														CASE WHEN MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO) IS NOT NULL THEN
+															CASE WHEN XY.RULE_TIPE = 'IDMR' THEN
+																CASE WHEN DATEADD(WEEK, 3, (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO))) <  GETDATE() THEN
+																	CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																ELSE
+																	DATEADD(WEEK, 3, MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO))
+																END
+															ELSE
+																CASE	WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Mon' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Tue' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 3 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Wed' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Thu' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Fri' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sat' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 5 END
+																		WHEN FORMAT((MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)), 'ddd') = 'Sun' THEN
+																			CASE WHEN (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 4 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE (MAX(POC.EXPECTED_DATE) OVER (PARTITION BY  XY.NO_SO)) + 4 END
+																		ELSE
+																			CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																END
+															END
+														ELSE
+															CASE	WHEN XY.RULE_TIPE = 'IDMR' THEN
+																		CASE WHEN DATEADD(WEEK, 3, XY.ORDER_DATE) < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE DATEADD(WEEK, 3, XY.ORDER_DATE) END
+																	WHEN XY.RULE_TIPE = 'ALFA' THEN
+																		CASE	WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Mon' THEN
+																					CASE WHEN XY.ORDER_DATE + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 3 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Tue' THEN
+																					CASE WHEN XY.ORDER_DATE + 3 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 3 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Wed' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Thu' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Fri' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sat' THEN
+																					CASE WHEN XY.ORDER_DATE + 5 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 5 END
+																				WHEN FORMAT(XY.ORDER_DATE, 'ddd') = 'Sun' THEN
+																					CASE WHEN XY.ORDER_DATE + 4 < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.ORDER_DATE + 4 END
+																				ELSE
+																					CAST(CAST(GETDATE() AS DATE) AS DATETIME)
+																		END
+																	ELSE
+																		CASE WHEN XY.DELIVERY_DATE < GETDATE() THEN CAST(CAST(GETDATE() AS DATE) AS DATETIME) ELSE XY.DELIVERY_DATE END
+															END
+														END
+													END
+												END AS EST_REALISASI
+									FROM	(
+												SELECT SH.[No_] AS NO_SO
+														, CASE WHEN SUBSTRING( SH.[No_], 1, 4) = 'SOSS' THEN 'SC' ELSE
+															CASE WHEN SUBSTRING( SH.[No_], 1, 4) = 'SOSR' THEN 'RT' ELSE
+																CASE WHEN SUBSTRING( SH.[No_], 1, 2) IN ('8S','9S') THEN 'AI' ELSE
+																	CASE WHEN SUBSTRING( SH.[No_], 1, 2) IN ('7S') THEN 'LZ' ELSE 'TD' END
+																END
+															END
+															END AS TIPE
+														, CASE WHEN SUBSTRING( SH.[No_], 4, 1) = 'S' THEN 'SCEN' ELSE
+															CASE WHEN SUBSTRING( SH.[No_], 4, 1) = 'R' THEN 'RTAL' ELSE
+																CASE WHEN SUBSTRING( SH.[No_], 1, 2) = '8S' THEN 'ALFA' ELSE
+																	CASE WHEN SUBSTRING( SH.[No_], 1, 2) = '9S' THEN 'IDMR' ELSE 'TRAD' END
+																END
+															END
+														  END AS RULE_TIPE
+														, SH.[Requested Delivery Date] AS DELIVERY_DATE
+														, CASE WHEN DATEADD(dd, DATEDIFF(dd, 0, SH.[Released Date]), 0) = DATEADD(dd, DATEDIFF(dd, 0, getdate()), 0) THEN 'YES' ELSE 'NO' END AS RELEASE_TODAY
+														, CASE WHEN SH.[Shortcut Dimension 1 Code] = '' THEN '10' ELSE ISNULL(SH.[Shortcut Dimension 1 Code],'10') END AS BRANCHES
+														, CASE WHEN SH.[Salesperson Code] = '' THEN '.' ELSE SH.[Salesperson Code] END AS SALES_CODE
+														, SH.[Bill-to Customer No_] AS CUST_CODE
+														, SH.[Bill-to Name] AS CUST_NAME
+														, SH.[Order Date] AS ORDER_DATE
+														, CASE	WHEN SH.[Status] = 0 THEN 'OPEN'
+																WHEN SH.[Status] = 1 THEN 'RELEASED'
+																WHEN SH.[Status] = 2 THEN 'PENDING APPROVAL'
+																WHEN SH.[Status] = 3 THEN 'RELEASED'
+																ELSE '' END AS STATUS_SO
+														, SH.[External Document No_] AS NO_PO_CUST
+														, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END,0) AS AMOUNT_IDR
+														, ISNULL(SL.AMOUNT,0) AS AMOUNT
+														, ISNULL(CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL2.AMOUNT_TTL / SH.[Currency Factor],0) ELSE SL2.AMOUNT_TTL END,0) AS AMOUNT_IDR_TTL
+														, ISNULL(SL2.AMOUNT_TTL,0) AS AMOUNT_TTL
+														, ISNULL(UM.UM_AMOUNT_IDR,0) AS UM_AMOUNT_IDR
+														, ISNULL(UM.UM_AMOUNT,0) AS UM_AMOUNT
+														,	CASE WHEN ISDATE(SUBSTRING(SH.[Package Tracking No_],4,2)+'/'+SUBSTRING(SH.[Package Tracking No_],1,2)+'/'+SUBSTRING(SH.[Package Tracking No_],7,4)) = 0 THEN
+																CAST('01/01/1753' AS DATETIME)
+															ELSE
+																CONVERT(DATETIME, (SUBSTRING(SH.[Package Tracking No_],4,2)+'/'+SUBSTRING(SH.[Package Tracking No_],1,2)+'/'+SUBSTRING(SH.[Package Tracking No_],7,4)))
+															END AS SHIP_DATE_ADJ
+														, SH.[Shipment Date] AS SHIP_DATE
+												FROM [dbo].[BC_SOLUSI$Sales Header] SH
+												INNER JOIN  (	SELECT X.[Document No_]
+																	,SUM(X.QTY) AS QTY
+																	,SUM(X.QTY_INV)AS QTY_INV
+																	,SUM(X.AMOUNT) AS AMOUNT
+																FROM (
+																		SELECT [Document No_]
+																				, [Quantity] AS QTY
+																				, [Quantity Invoiced] AS QTY_INV
+																				, CASE WHEN [Quantity Invoiced] <> 0 AND [Quantity] <> [Quantity Invoiced] THEN
+																					([Amount] / [Quantity]) * ([Quantity] - [Quantity Invoiced])
+																					ELSE
+																					[Amount]
+																					END AS AMOUNT
+																		FROM [dbo].[BC_SOLUSI$Sales Line]
+																		WHERE [Document Type] = 1 AND
+																			[Quantity] <> [Quantity Invoiced]
+																	) X
+																GROUP BY X.[Document No_]
+															)SL ON SL.[Document No_] = SH.[No_]
+												LEFT JOIN  (
+																SELECT [Document No_]
+																		, SUM([Amount]) AS AMOUNT_TTL
+																FROM [dbo].[BC_SOLUSI$Sales Line]
+																WHERE [Document Type] = 1
+																GROUP BY [Document No_]
+															)SL2 ON SL2.[Document No_] = SH.[No_]
+												LEFT JOIN	(
+																SELECT Y.NO_SO
+																		,SUM(Y.UM_AMOUNT) AS UM_AMOUNT
+																		,SUM(Y.UM_AMOUNT_IDR) AS UM_AMOUNT_IDR
+																FROM (
+																		SELECT [Prepayment Order No_] AS NO_SO
+																				,SUM(UMD.[Amount]) AS UM_AMOUNT
+																				,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) END AS UM_AMOUNT_IDR
+
+																		FROM [dbo].[BC_SOLUSI$Sales Invoice Header] UMH
+																		INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																		GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																		UNION ALL
+																		SELECT [Prepayment Order No_] AS NO_SO
+																				,SUM(UMD.[Amount]) * -1 AS UM_AMOUNT
+																				,CASE WHEN UMH.[Currency Code] <> '' THEN ROUND(SUM(UMD.[Amount]) / UMH.[Currency Factor],0) ELSE SUM(UMD.[Amount]) * -1 END AS UM_AMOUNT_IDR
+																		FROM [dbo].[BC_SOLUSI$Sales Cr_Memo Header] UMH
+																		INNER JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Line] UMD ON UMH.[No_] = UMD.[Document No_]
+																		GROUP BY UMH.[Prepayment Order No_], UMH.[Currency Code], UMH.[Currency Factor]
+																	) Y
+																GROUP BY Y.NO_SO
+															) UM ON UM.NO_SO = SH.[No_]
+												WHERE SH.[Document Type] = 1
+											) XY
+									LEFT JOIN	(
+													SELECT	POX.NO_SO
+															,MAX(POX.EXPECTED_DATE) AS EXPECTED_DATE
+													FROM (
+															SELECT	PO.ITEM_NO
+																	,RSV.NO_SO
+																	,RSV.NO_SO_LINE
+																	,PO.NO_PO
+																	,PO.EXPECTED_DATE
+															FROM	(
+																		SELECT POD.[No_] AS ITEM_NO
+																				,POH.[No_] AS NO_PO
+																				,POD.[Line No_] AS NO_PO_LINE
+																				,SUM(POD.[Outstanding Qty_ (Base)]) AS QTY_ON_ORDER
+																				,POD.[Expected Receipt Date] AS EXPECTED_DATE
+																		FROM [dbo].[BC_SOLUSI$Purchase Header] POH
+																		INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+																		WHERE POH.[Document Type] = 1 AND
+																			POD.[Type] = 2
+																		GROUP BY POD.[No_]
+																				,POH.[No_]
+																				,POD.[Expected Receipt Date]
+																				,POD.[IC Partner Reference]
+																				,POD.[Line No_]
+																	) PO
+															LEFT JOIN	(
+																			SELECT  REA.[Item No_] AS ITEM_NO
+																					, REA.[Source ID] AS NO_PO
+																					, REA.[Source Ref_ No_] AS NO_PO_LINE
+																					, REB.[Source ID] AS NO_SO
+																					, REB.[Source Ref_ No_] AS NO_SO_LINE
+																					, SUM(REA.[Quantity (Base)]) AS RSRV_ON_ORDER
+																			FROM [dbo].[BC_SOLUSI$Reservation Entry] REA
+																			LEFT JOIN [dbo].[BC_SOLUSI$Reservation Entry] REB ON REA.[Entry No_] = REB.[Entry No_] AND REB.[Positive] = 0
+																			WHERE REA.[Reservation Status] = 0 AND
+																					REA.[Positive] = 1 AND
+																					REA.[Source ID] <>''
+																			GROUP BY REA.[Item No_],  REA.[Source ID], REB.[Source ID], REB.[Source Ref_ No_], REA.[Source Ref_ No_]
+																		) RSV ON RSV.ITEM_NO = PO.ITEM_NO AND RSV.NO_PO = PO.NO_PO AND RSV.NO_PO_LINE = PO.NO_PO_LINE
+															WHERE PO.QTY_ON_ORDER > 0
+														) POX
+													GROUP BY POX.NO_SO
+												) POC ON POC.NO_SO = XY.NO_SO
+									WHERE	XY.STATUS_SO = 'RELEASED'
+								) XXX
+						LEFT JOIN	(
+										SELECT T01.[NO_SO]
+												,T01.[JENIS_PAYMENT]
+												,T01.[QTY]
+												,T01.[EST_REALISASI]
+												,T02.[ADD_NUM]
+										FROM [dbo].[T01_SO_ADJ] T01
+										LEFT JOIN [dbo].[T02_SO_ADJ_LINE] T02 ON T02.[ADD_NUM] < T01.[QTY] AND T01.[JENIS_PAYMENT] <> 'D'
+									) XOX ON XOX.[NO_SO] = XXX.NO_SO
+						WHERE	XXX.AMOUNT_IDR <> 0 AND
+								XXX.NO_PO_CUST NOT LIKE '%OTP%' AND
+								XXX.NO_PO_CUST NOT LIKE 'BOOKING%'AND
+								XXX.CUST_CODE NOT IN ('AUJA001' , 'AUJA002', 'SOPE001') AND
+								XXX.NO_SO NOT IN ('SOST150107', 'SOST150657', 'HW15 C 000000274')
+					) XAX
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XAX.BRANCHES
+			WHERE	(CAB.[Name] =  $P{Cabang} OR $P{Cabang} = 'ALL')
+		) XXI
+WHERE	XXI.EST_REALISASI_YEAR = $P{Tahun}
+GROUP BY XXI.COMPANY, XXI.CUST_NAME]]>
+	</queryString>
+	<field name="GRP" class="java.lang.Integer"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="SORT_CUST_NAME" class="java.lang.Integer"/>
+	<field name="AMOUNT_IDR" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_1" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_2" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_3" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_4" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_5" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_6" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_7" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_8" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_9" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_10" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_11" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_IDR_PERIOD_12" class="java.math.BigDecimal"/>
+	<sortField name="COMPANY"/>
+	<sortField name="SORT_CUST_NAME"/>
+	<sortField name="CUST_NAME"/>
+	<variable name="AMOUNT_IDR_PERIOD_1_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_1}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_2_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_2}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_3_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_3}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_4_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_4}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_5_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_5}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_6_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_6}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_7_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_7}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_8_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_8}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_9_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_9}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_10_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_10}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_11_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_11}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_12_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_12}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Company" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_1_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_1}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_2_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_2}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_3_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_3}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_4_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_4}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_5_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_5}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_6_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_6}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_7_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_7}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_8_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_8}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_9_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_9}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_10_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_10}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_11_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_11}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_PERIOD_12_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_12}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_IDR_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_IDR}]]></variableExpression>
+	</variable>
+	<group name="Grp">
+		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="740c83bd-86e4-4c31-8396-7a775266917d"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Company]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="100" y="0" width="80" height="14" uuid="5239989a-9d59-4423-b819-5c44d5491668"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Januari	]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="180" y="0" width="80" height="14" uuid="d7a170ea-9156-46e8-b945-abda877aea94"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Februari]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="260" y="0" width="80" height="14" uuid="a6140c7b-eaa4-4122-9d0c-fec0309c7a54"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Maret]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="340" y="0" width="80" height="14" uuid="6d73113c-5c78-4230-aa2a-014a2bb6c6f2"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[April]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="420" y="0" width="80" height="14" uuid="0cabd423-0ddb-4f62-a4b6-6607c0237c19"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Mei]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="0" width="80" height="14" uuid="4c5ea52b-b39b-46ed-9755-29daa9204b1e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Juni]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="580" y="0" width="80" height="14" uuid="5000180f-4a31-480d-973b-d2859f940d6d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Juli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="660" y="0" width="80" height="14" uuid="efb8421c-8edb-4f06-97a9-a39f04bb30b3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Agustus]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="740" y="0" width="80" height="14" uuid="a08924e5-2a41-4a65-be25-bedc25dd5492"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[September]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="820" y="0" width="80" height="14" uuid="7f0e41ec-66e9-4c42-86d2-36441613878d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Oktober]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="900" y="0" width="80" height="14" uuid="515eb529-b47c-48f9-a6a3-370b7c25133b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[November]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="980" y="0" width="80" height="14" uuid="83e184b8-491e-4f33-beda-afb1149283d6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Desember]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1060" y="0" width="100" height="14" uuid="d669b34e-b4ae-4b7a-aee2-231a77e54b7d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == false]]></printWhenExpression>
+				<staticText>
+					<reportElement x="1380" y="0" width="100" height="14" uuid="e89d8382-4c65-477b-bd59-29019a8b8b2c"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1140" y="0" width="80" height="14" uuid="e0887f86-25a5-4d91-bbb2-c0133eabdabe"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Oktober]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="420" y="0" width="80" height="14" uuid="f4c5c2ce-51f0-4f76-a66f-521aee4d3f96"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Januari	]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="0" width="80" height="14" uuid="8336e1bd-a15c-4390-9566-d626b594308d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Februari]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="580" y="0" width="80" height="14" uuid="057f60b2-086f-4c5e-9ccd-07c38f01e510"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Maret]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1220" y="0" width="80" height="14" uuid="dab62b81-caf0-43a1-9f28-581bd1df6122"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[November]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="100" y="0" width="320" height="14" uuid="4017c0a5-fac3-4606-9e68-3c67b1468c20"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Customer]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="980" y="0" width="80" height="14" uuid="3a08e097-21e3-47a3-ab45-9c7700e0d77e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Agustus]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="740" y="0" width="80" height="14" uuid="b5b68877-2bc9-45ba-b385-88035c3c6f3b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Mei]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1060" y="0" width="80" height="14" uuid="1570f790-3a19-414d-85a0-3da9065caf55"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[September]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="660" y="0" width="80" height="14" uuid="70604db1-6557-4a5a-a40c-ddccd54846c5"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[April]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1300" y="0" width="80" height="14" uuid="57536cb3-0980-4edf-aaca-a8d50ac1d3e3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Desember]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="7a9d5383-0171-49ba-adea-c2039204e506"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Company]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="820" y="0" width="80" height="14" uuid="a4e27613-7fb3-4917-ae03-77c109471b27"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Juni]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="900" y="0" width="80" height="14" uuid="39f76ab6-dd6f-490c-b755-36538fe035db"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Juli]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="900" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="20e7c686-e674-4660-9fa5-2669d9f87b34"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_11_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="660" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="657dcf4d-6d56-4b6e-a835-cefd18aac802"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_8_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="980" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="131441b4-a1ee-48f7-a7b9-763c392d2a0f"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_12_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1060" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="fb88a922-c3c9-4fea-8e77-37844f16f885"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="2feddf2f-d4a4-452f-b9c2-291174cb5042"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_6_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="740" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="da75c74b-717a-44f7-a3d4-df712a5aadb7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_9_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="260" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="0b78d7c2-1e2b-4430-82ce-b0b0609a0fa7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_3_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="340" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="d28d28d7-3c08-4b74-a821-37ae956f913c"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_4_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="180" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a3981be4-a5de-466b-9902-36384301ab99"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_2_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="580" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="6e661de3-fc10-4638-a400-56fa4b72cbd1"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_7_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="820" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="56374395-5e9a-4442-bbbb-143d1db4dc3c"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_10_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3004e0d6-4c8f-4307-8f15-4b62667657dd"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_5_2}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="2bfb3010-e162-4b1f-baf9-5f315e3ee493"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Grand Total]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="51afe396-c0c5-4de7-bf9b-09eb3a51615a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_1_2}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == false]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="264877e7-fcb5-470a-819b-6919845064e9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="100" y="0" width="320" height="14" uuid="00b1779e-3d49-4a8c-8de3-97cd9386243a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Grand Total]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a81d5785-b439-415c-95e3-4374c885a0a7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_1_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="0d54e542-34c5-493d-9aa5-bf09d62019a5"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_2_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="580" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ccf263b8-de8e-4d3d-9621-3160fee10980"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_3_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="660" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="d216bb93-c130-41d7-b022-901467093d03"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_4_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="740" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="21a7fe53-6615-4436-bd0b-6cd5aa73352d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_5_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="820" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b3086793-536a-4e25-b531-148c2ae733a7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_6_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="900" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="30441e05-5e90-47cf-9611-44058e1644b4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_7_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="980" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="6b06bfcc-5fd9-4e6f-b781-025b6e50eaa6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_8_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1060" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b592e780-a325-480c-81e6-8ab0ca215a6a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_9_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1140" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="f3c9d639-7e21-4091-b07a-a45ee68174d2"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_10_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1220" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="72deadb5-96f2-4598-807b-8bb61fae2164"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_11_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1300" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="e8077e48-81be-41c0-a5f2-afaaa65de554"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_12_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1380" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="6cef78b5-c269-4128-ac4b-211d779d440c"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Company">
+		<groupExpression><![CDATA[$F{COMPANY}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == false]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="0" width="100" height="14" uuid="be2fc04f-13d9-48d5-9bd7-66444b49905e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="980" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="bbc7facd-4140-417f-951d-f0078aa44b2d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_12_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="740" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="111399c5-03fd-4b5d-80d2-61791f5c1949"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_9_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1060" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="960030fb-c0ca-499c-b323-baf33ccbb451"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="180" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="44853805-2c5c-4160-a9c9-076818e0c585"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_2_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="cf8bd574-ee0d-430c-b6cd-cbb60c79231d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_6_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="7752cbeb-4607-4af0-aa0c-fae55fca773e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_5_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="900" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="20e521af-0992-4dea-bd47-71e9b98b3486"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_11_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="340" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="890b5ad9-b3a3-4b62-83ca-f977446343a3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_4_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="580" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="203fb9aa-efd9-4266-bd57-815ddb98493b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_7_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="660" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a3a7f5a2-1260-42c6-9831-06ceddd70007"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_8_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="260" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b148fd19-a5bb-4d8d-b66c-d23794565525"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_3_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="2e48afd3-b7db-41e0-8f59-3a48d5a2d1ce"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_1_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="820" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="368b551d-6919-42ce-a8fc-1fb239203208"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_10_1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="0" y="0" width="100" height="14" uuid="f903413a-2729-4b63-be6e-505d21998a44"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == false]]></printWhenExpression>
+				<staticText>
+					<reportElement x="100" y="0" width="320" height="14" uuid="e2d600a9-c9f4-4f0b-a844-e357f35e48bd"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total Per Company]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="5e67a0e8-16a2-43b7-8a7e-87df2dbe5b27"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3aa02d75-458c-4261-b360-eccebaf40f56"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_1_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a37a4288-b04c-44b5-91af-960fb853b180"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_2_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="580" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="c189f6c7-fe84-4a92-a1a6-478ceae2107d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_3_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="660" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="958ead85-7bf7-4c8e-9adc-2fbcb20d378d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_4_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="740" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="18a0fb1f-3991-454c-8b25-b88d0f2a9680"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_5_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="820" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="5854104a-617c-4cf0-a281-98b2fbfa6ed2"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_6_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="900" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="60b19c8f-88e5-455b-a869-4908c5b5fa83"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_7_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="980" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ea3712a8-cee6-4432-8f6d-58571cf558dc"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_8_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1060" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="c845cd36-2dd9-47f7-888d-4ecd07e110b6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_9_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1140" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="5eb07aa2-4738-4e3f-94e0-eedad823f597"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_10_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1220" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="02a61130-19d7-43a5-a5b9-64bee318d821"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_11_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1300" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="1c128888-e782-40ec-9716-27df9bf351c4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_PERIOD_12_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="1380" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="0054d5ca-9209-4a0f-83b6-459aaa83730b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_IDR_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="1592d22b-d2fe-4bcc-a8b8-bbb2c5566e17"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="70" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="260" height="14" uuid="273acc50-f860-4b9b-a35d-1ee0d9baf160"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(0105013) - PROJECTION SALES -  Oustanding SO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="260" height="14" uuid="63f48bc2-e910-430c-93ed-37ea27901a3b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="260" y="28" width="160" height="14" uuid="4ee40960-7a20-4a35-bfcf-84439a4aeac6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="260" y="42" width="160" height="14" uuid="625063cd-217b-47d4-8204-a71466c56a88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="260" height="14" uuid="5fd09e20-918a-4926-a037-5ed2b936468f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="260" height="14" uuid="548ee8f8-fd27-4834-85f7-a5a5d4e9c8a0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="260" height="14" uuid="6cb6ad7b-47a4-400e-b9ea-c2b76e8a762c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="0" width="160" height="14" uuid="8a0f9e28-70b2-4773-8171-7a10586e52b5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="56" width="160" height="14" uuid="2dcc9834-2746-47f4-b68b-5bb817471f4c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="260" y="14" width="160" height="14" uuid="d7e8770d-8914-4664-972d-2ddf0fd81fbd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "SUM" ) == false]]></printWhenExpression>
+			<textField>
+				<reportElement x="100" y="0" width="320" height="14" uuid="12e08962-3c98-4b38-9f81-91ad3a7dbc8b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="a9129ddc-bb81-4593-8ac5-5923ef05c186"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="500" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="4a24cbd9-2567-473a-a1b6-190421df48fb"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="580" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="339a4747-88bc-460b-aac9-3f4f0947e436"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="660" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="8f4fc178-6582-4fb9-b55e-6e124ab527b2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_4}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="740" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="19cb1e69-98f7-432a-b966-56ed026b3ed1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_5}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="820" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="bb192911-3fd9-4553-ba50-fb7ce5ba7c4d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_6}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="900" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="def6049a-d981-49ea-97b0-e2d2c04f738b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_7}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="980" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="226f7e55-2e52-474e-b5ed-2d22a4958df4"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_8}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1060" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="41a15ef2-f0ba-4318-8098-8fd8294afd8f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_9}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1140" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="2d83292c-bb57-47a8-922a-6d435d888b79"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_10}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1220" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="d66c3e79-1206-4cfb-867c-be2499cef6c4"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_11}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1300" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="99ef555e-a13a-4fcc-8181-e4b36311cc6b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR_PERIOD_12}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1380" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="d7dadcc4-bec4-4738-9859-ae5ad8d7f594"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="84">
+			<staticText>
+				<reportElement x="0" y="70" width="420" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="260" height="14" uuid="3979e3ff-1442-4d7b-9753-79a9ac7d68fb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="260" y="14" width="160" height="14" uuid="c5644a4e-f9a3-4ff9-a926-1150101a2bca"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="260" height="14" uuid="e6c23288-303f-4390-9988-e91bb22405bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="56" width="160" height="14" uuid="264ba69e-ee25-4c81-9a1d-b4bfec90b5a8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="0" width="160" height="14" uuid="8ae53cce-9e30-4917-b5d4-d9bb34298e06"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="260" height="14" uuid="1912c0d2-c534-4c6c-9f85-e5167d52d914"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(0105013) - PROJECTION SALES -  Oustanding SO]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="260" y="42" width="160" height="14" uuid="0ccc9103-f7f7-4f2b-a09b-931fbd694a15"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="260" y="28" width="160" height="14" uuid="cafefce9-d365-436d-b180-17221110574d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="260" height="14" uuid="9d9d2d9b-8c9e-46d3-98ea-fb070614cd10"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="260" height="14" uuid="793a01c1-76fd-41bd-b484-b5c9afdb449c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

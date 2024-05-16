@@ -1,0 +1,734 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01074_ArusKasPiutangDetail" language="groovy" pageWidth="1000" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1000" leftMargin="0" rightMargin="0" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.4641000000000042"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="BankAcc" class="java.lang.String"/>
+	<parameter name="JnsPeredaran" class="java.lang.String"/>
+	<parameter name="JnsAcc" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	XXX.BANK_ACC
+		, BAC.[Name] AS BANK_NAME
+		, XXX.JENIS_ACC
+		, XXX.JNS_PEREDARAN
+		, XXX.TGL_POSTING
+		, XXX.NO_VOUCHER
+		, XXX.KETERANGAN
+		, XXX.AMOUNT
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					, XX.[Source No_] AS BANK_ACC
+					, XX.JENIS_ACC
+					, CASE WHEN (XX.ADA_PIUTANG_DAGANG + XX.ADA_PIUTANG_DAGANG_INTERCOY + XX.ADA_UNAPPLIED_PAYMENT) > 0 THEN 'USAHA' ELSE 'NONUSAHA' END JNS_PEREDARAN
+					, XX.[Posting Date] AS TGL_POSTING
+					, XX.[Document No_] AS NO_VOUCHER
+					, XX.[Description] AS KETERANGAN
+					, XX.[Debit Amount] AS AMOUNT
+			FROM	(
+						SELECT	 X.[Posting Date]
+								, X.[Document No_]
+								, X.[Transaction No_]
+								, X.[G_L Account No_]
+								, X.[Source No_]
+								, X.JENIS_ACC
+								, X.[Description]
+								, SUM(X.ADA_PIUTANG_DAGANG) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG
+								, SUM(X.ADA_PIUTANG_DAGANG_INTERCOY) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG_INTERCOY
+								, SUM(X.ADA_UNAPPLIED_PAYMENT) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_UNAPPLIED_PAYMENT
+								, X.[Debit Amount]
+						FROM	(
+									SELECT	[Posting Date]
+											, [Document No_]
+											, [Transaction No_]
+											, [G_L Account No_]
+											, [Source No_]
+											, MAX([Description]) AS [Description]
+											,	CASE	WHEN	([G_L Account No_] BETWEEN '110.110.00' AND '110.150.00') OR
+																([G_L Account No_] BETWEEN '112.110.00' AND '112.162.00') THEN 'BANK'
+														WHEN [G_L Account No_] = '118.215.00' THEN 'PPH23'
+												ELSE
+													'NON' END AS JENIS_ACC
+											, CASE WHEN [G_L Account No_] = '114.110.00' THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG
+											, CASE WHEN [G_L Account No_] = '114.140.00'  THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG_INTERCOY
+											, CASE WHEN [G_L Account No_] = '220.185.00' THEN 1 ELSE 0 END AS ADA_UNAPPLIED_PAYMENT
+											, SUM([Debit Amount]) AS [Debit Amount]
+											, SUM([Credit Amount]) AS [Credit Amount]
+									FROM [dbo].[AUTOJAYA$G_L Entry]
+									WHERE	([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+									GROUP BY [Posting Date]
+											, [Document No_]
+											, [Transaction No_]
+											, [G_L Account No_]
+											, [Source No_]
+								) X
+					) XX
+			WHERE	XX.[Debit Amount] <> 0
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					, XX.[Source No_] AS BANK_ACC
+					, XX.JENIS_ACC
+					, CASE WHEN (XX.ADA_PIUTANG_DAGANG + XX.ADA_PIUTANG_DAGANG_INTERCOY + XX.ADA_UNAPPLIED_PAYMENT) > 0 THEN 'USAHA' ELSE 'NONUSAHA' END JNS_PEREDARAN
+					, XX.[Posting Date] AS TGL_POSTING
+					, XX.[Document No_] AS NO_VOUCHER
+					, XX.[Description] AS KETERANGAN
+					, XX.[Debit Amount] AS AMOUNT
+			FROM	(
+						SELECT	 X.[Posting Date]
+								, X.[Document No_]
+								, X.[Transaction No_]
+								, X.[G_L Account No_]
+								, X.[Source No_]
+								, X.JENIS_ACC
+								, X.[Description]
+								, SUM(X.ADA_PIUTANG_DAGANG) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG
+								, SUM(X.ADA_PIUTANG_DAGANG_INTERCOY) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG_INTERCOY
+								, SUM(X.ADA_UNAPPLIED_PAYMENT) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_UNAPPLIED_PAYMENT
+								, X.[Debit Amount]
+						FROM	(
+									SELECT	[Posting Date]
+											, [Document No_]
+											, [Transaction No_]
+											, [G_L Account No_]
+											, [Source No_]
+											, MAX([Description]) AS [Description]
+											,	CASE	WHEN	([G_L Account No_] BETWEEN '110.110.00' AND '110.150.00') OR
+																([G_L Account No_] BETWEEN '112.110.00' AND '112.162.00') THEN 'BANK'
+														WHEN [G_L Account No_] = '118.215.00' THEN 'PPH23'
+												ELSE
+													'NON' END AS JENIS_ACC
+											, CASE WHEN [G_L Account No_] = '114.110.00' THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG
+											, CASE WHEN [G_L Account No_] = '114.140.00'  THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG_INTERCOY
+											, CASE WHEN [G_L Account No_] = '220.185.00' THEN 1 ELSE 0 END AS ADA_UNAPPLIED_PAYMENT
+											, SUM([Debit Amount]) AS [Debit Amount]
+											, SUM([Credit Amount]) AS [Credit Amount]
+									FROM [dbo].[SOLUSI$G_L Entry]
+									WHERE	([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+									GROUP BY [Posting Date]
+											, [Document No_]
+											, [Transaction No_]
+											, [G_L Account No_]
+											, [Source No_]
+								) X
+					) XX
+			WHERE	XX.[Debit Amount] <> 0
+		) XXX
+LEFT JOIN [dbo].[AUTOJAYA$Bank Account] BAC ON BAC.[No_] = XXX.BANK_ACC
+WHERE	XXX.JENIS_ACC = $P{JnsAcc} AND
+		(XXX.JNS_PEREDARAN = $P{JnsPeredaran} OR $P{JnsPeredaran} = 'ALL') AND
+		(XXX.BANK_ACC = $P{BankAcc} OR $P{BankAcc} = 'ALL') AND
+		(XXX.COMPANY = $P{Company} OR $P{Company} = 'ALL')]]>
+	</queryString>
+	<field name="BANK_ACC" class="java.lang.String"/>
+	<field name="BANK_NAME" class="java.lang.String"/>
+	<field name="JENIS_ACC" class="java.lang.String"/>
+	<field name="JNS_PEREDARAN" class="java.lang.String"/>
+	<field name="TGL_POSTING" class="java.sql.Timestamp"/>
+	<field name="NO_VOUCHER" class="java.lang.String"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<sortField name="JENIS_ACC"/>
+	<sortField name="BANK_ACC"/>
+	<sortField name="TGL_POSTING"/>
+	<sortField name="NO_VOUCHER"/>
+	<variable name="vJenisDetail" class="java.lang.String">
+		<variableExpression><![CDATA[$P{JnsAcc}.equals( "BANK" )==true?"Kas / Bank":"PPh Pasal 23"]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{JnsAcc}.equals( "BANK" )==true?"Kas / Bank":"PPh Pasal 23"]]></initialValueExpression>
+	</variable>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="BankAcc" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_2" class="java.math.BigDecimal" resetType="Group" resetGroup="JenisAcc" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="vJenisPeredaran" class="java.lang.String">
+		<variableExpression><![CDATA[$P{JnsPeredaran}.equals( "ALL" ) == true ? "ALL":
+($P{JnsPeredaran}.equals( "USAHA" ) == true?"Peredaran Usaha" : "Non Peredaran Usaha")
+]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{JnsPeredaran}.equals( "ALL" ) == true ? "ALL":
+($P{JnsPeredaran}.equals( "USAHA" ) == true?"Peredaran Usaha" : "Non Peredaran Usaha")]]></initialValueExpression>
+	</variable>
+	<group name="JenisAcc">
+		<groupExpression><![CDATA[$F{JENIS_ACC}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="295" y="0" width="75" height="14" uuid="85ebe3e1-fd1f-4625-949f-b8a3f0520a1a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tgl. Posting]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="370" y="0" width="120" height="14" uuid="4114f7bd-2ce4-44e5-8499-7aca8d50ef3f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Document No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="490" y="0" width="400" height="14" uuid="d09faefe-7805-40f5-adbc-eb895487f560"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="05744b08-59dd-4f14-9e54-1198e08ed13c"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Bank]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="75" y="0" width="220" height="14" uuid="8da52d20-4b4e-410b-92da-492075d441c3"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="890" y="0" width="100" height="14" uuid="82ea3d19-b53c-4d23-9b85-911ddb3b67de"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == false]]></printWhenExpression>
+				<staticText>
+					<reportElement x="595" y="0" width="100" height="14" uuid="e7e186ca-8387-4486-b9dd-19e8f52a3d33"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="75" y="0" width="120" height="14" uuid="22e5babc-343a-47e5-a7b8-e5fe5e5d168b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Document No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="195" y="0" width="400" height="14" uuid="c595e3a0-998f-48f6-8778-1ad0d671a2a7"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="9f7f57d1-98f4-43ea-9e12-2bde6560d1d8"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tgl. Posting]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="890" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="3766496a-bf2c-46c8-8af3-266c3181ce1a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_2}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="75" y="0" width="220" height="14" uuid="4292555a-148c-4632-9ea4-0f53ba0a211f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Grand Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="99bc3cc8-8131-4e71-9f21-d591aa6d7ff2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="295" y="0" width="75" height="14" uuid="d38ac24f-61b9-43b5-9ea2-d6a7c409b543"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="490" y="0" width="400" height="14" uuid="07476368-31fa-4f30-9c7b-163b96d8bae1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="370" y="0" width="120" height="14" uuid="c6d1774f-6a14-4593-a263-25f68141d4c4"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == false]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="595" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="7e027ccb-44f9-4d99-b65d-53dfddeece94"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_2}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="195" y="0" width="400" height="14" uuid="bcee2dec-4f3d-4377-b424-d203c8768390"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Grand Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="d25978c9-178c-4b00-9301-bdbd190512a1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="75" y="0" width="120" height="14" uuid="d1471306-d189-4f29-a2da-9b03edec27ac"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="BankAcc">
+		<groupExpression><![CDATA[$F{BANK_ACC}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == true]]></printWhenExpression>
+				<textField>
+					<reportElement x="75" y="0" width="220" height="14" uuid="f80a76a8-bb12-4f38-913b-d273fe89a92d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BANK_NAME}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="0" y="0" width="75" height="14" uuid="aacedcba-4428-491c-8c95-e5315f5b14cf"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BANK_ACC}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="890" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="1fdc3335-2953-4bad-8c04-c94fc063fc26"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="75" y="0" width="220" height="14" uuid="14ea2bf0-11c2-4555-b5c8-7ed70b158290"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Total "+$F{BANK_NAME}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="caa8ca92-703e-41e1-9891-e28d9cedffab"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="295" y="0" width="75" height="14" uuid="66462d77-ade2-4b4f-9ec3-1c1bc57bcdcb"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="370" y="0" width="120" height="14" uuid="094f471e-800d-4fd4-bdc8-3bb377506c75"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="490" y="0" width="400" height="14" uuid="dc1170f6-6855-4dd2-844e-6fb140e3e168"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="75" height="14" uuid="e21eeff6-3e63-4719-953e-fdbcc0a76353"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="141" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="98" width="75" height="14" uuid="689e0aa8-46c0-4185-9d6a-962cdcf83b14">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="75" y="98" width="120" height="14" uuid="201070ef-e966-4986-a076-deb0135ee60f">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="195" height="14" uuid="99cac461-e02f-410e-a809-e5c567cf0834"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01074)  Arus Kas Piutang - Detail]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="75151e40-ccb2-4dbd-a092-b6890b423d08"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="75" y="42" width="120" height="14" uuid="49a8bc53-ee95-43e9-8901-47f8e33ad21a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="295" y="42" width="195" height="14" uuid="20eb0aa9-4689-4c43-b1f4-3505b75ba44c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="195" y="42" width="100" height="14" uuid="fbbd749e-82e1-4de2-a6bb-55d064c7f026"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="195" height="14" uuid="3a1c8ea7-5ae5-48ad-a357-ab6996772b39"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="47f0aadf-254d-4c74-b148-e37d2f0ed231"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="28" width="120" height="14" uuid="60b5839c-17cd-40ad-ad10-c4d49e067d3d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="75" height="14" uuid="d4d13cb1-ca97-45ef-a23b-984c6d54956c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Detail :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="56" width="120" height="14" uuid="45b942ca-fb92-43cd-aa0e-53e80af5c9d3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vJenisDetail}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="75" height="14" uuid="5500422f-a469-4a43-a275-7180bba3da27">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Peredaran :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="75" height="14" uuid="8fc381db-0017-48e8-94fc-f746005e6ca3">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bank Acc. :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="70" width="120" height="14" uuid="96344fba-8598-4e5b-80c4-2de71657e4fc">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{BankAcc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="112" width="75" height="14" uuid="b12d6f1c-4631-4f07-80af-45306c1388c7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="84" width="120" height="14" uuid="37c42d3a-6e7c-4ece-ba9d-29dee3fddd3e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vJenisPeredaran}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == true]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="295" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="86af457b-6bbc-4781-917b-8a859efab396"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_POSTING}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="370" y="0" width="120" height="14" isPrintWhenDetailOverflows="true" uuid="dcd69249-e89c-4d4f-a934-3ac55d6a649e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_VOUCHER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="490" y="0" width="400" height="14" isPrintWhenDetailOverflows="true" uuid="8d905f4c-2323-4d7f-8754-07420757ce36"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="890" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="2421c6c9-3336-4fea-af91-c9ae363b967d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{JENIS_ACC}.equals( "BANK" ) == false]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="195" y="0" width="400" height="14" isPrintWhenDetailOverflows="true" uuid="d461805e-80e4-4557-9371-1e2a45d950de"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="75" y="0" width="120" height="14" isPrintWhenDetailOverflows="true" uuid="fa108959-e210-4a71-9652-1e26bbb14ecd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_VOUCHER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="9ee2fe15-22c6-4334-a891-f9f72c00c699"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_POSTING}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="595" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="18e5f737-9dde-46f3-acd0-3a89113317ed"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="140">
+			<staticText>
+				<reportElement x="0" y="112" width="195" height="14" uuid="beadf125-184e-4ece-a89d-1d7c5ca0becc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="4d7b2052-5171-4810-8e05-7ada660d32fd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="75" height="14" uuid="8a0fbf63-1e37-4288-83b7-5cedc5e1b1c5">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="28" width="120" height="14" uuid="c3dc1d45-7a72-4845-8352-7b6684b72a9b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="195" height="14" uuid="8c091c18-be54-4956-8033-e41f5e7a56a2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01074)  Arus Kas Piutang - Detail]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="195" height="14" uuid="b98ed66e-d337-4120-9541-a0a468112c2d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="75" height="14" uuid="76bebe35-090a-4c00-a967-c6b3a9f8c4ed">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Peredaran :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="75" y="42" width="120" height="14" uuid="c2567f93-9fea-4ae6-bcb8-0b3c9f63e189"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="195" y="42" width="100" height="14" uuid="c2b03ac7-a9e3-4412-9bf9-0bbfefab2744"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="56" width="120" height="14" uuid="ce8b4bca-ddc0-48de-a70b-aaa11194003d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vJenisDetail}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="295" y="42" width="200" height="14" uuid="aa28bc07-57ce-48c3-9cb3-37e2cf84ae2d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="75" height="14" uuid="f16388b2-5875-451a-8532-92b0662f47d9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Detail :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="9b46be8c-a0e7-425c-a197-c20a2c6e5ebe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="70" width="120" height="14" uuid="a83c6652-67ed-4a91-a9f9-6271a6fd2aa2">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{BankAcc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="75" height="14" uuid="b79898aa-bdf1-4dca-9dee-82f9cc5aa72e">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Bank Acc. :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="75" y="98" width="120" height="14" uuid="9a12f16a-8096-4064-9110-09326b0a151b">
+					<printWhenExpression><![CDATA[$P{JnsAcc}.equals( "BANK" ) == true]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="126" width="195" height="14" uuid="9ee1dd59-b7d5-46fa-bae5-65aa9e3533b7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tidak Ada Data]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="84" width="120" height="14" uuid="16c06ab8-750e-4c2a-a649-fec89a5b1ecd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vJenisPeredaran}]]></textFieldExpression>
+			</textField>
+		</band>
+	</noData>
+</jasperReport>

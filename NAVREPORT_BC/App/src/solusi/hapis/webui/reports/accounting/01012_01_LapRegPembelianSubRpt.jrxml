@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01012_01_LapRegPembelianSubRpt" language="groovy" pageWidth="683" pageHeight="595" orientation="Landscape" columnWidth="683" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="0.8264462809917429"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Tipe" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorTo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Layout" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	'AUTOJAYA' AS COMPANY
+		,XX.ACC_NO
+		,XX.ACC_NAME
+		,XX.ITEM_CAT
+		,XX.ITEM_CAT_DESC
+		,XX.DEBIT_AMOUNT
+		,XX.CREDIT_AMOUNT
+		,XX.GRUP
+FROM	(
+			SELECT 	DTL.ACC_NO
+					,GL.[Name] AS ACC_NAME
+					, DTL.ITEM_CAT
+					, IC.[Description] AS ITEM_CAT_DESC
+					, CASE WHEN SUM(DTL.NILAI) > 0 THEN SUM(DTL.NILAI) ELSE 0 END AS DEBIT_AMOUNT
+					, CASE WHEN SUM(DTL.NILAI) < 0 THEN SUM(DTL.NILAI) * -1 ELSE 0 END AS CREDIT_AMOUNT
+					, SUM(DTL.NILAI) AS NILAI
+					, CASE WHEN SUM(DTL.NILAI) > 0 THEN 'A' ELSE 'B' END AS GRUP
+			FROM (
+					SELECT	MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+							, GLE.[Document No_] AS NO_INV
+							, PIH.[Posting Date] AS TGL_INV
+							, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+					FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+					INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+					GROUP BY PIH.[Pay-to Vendor No_], PIH.[Posting Date], GLE.[Document No_]
+					UNION ALL
+					SELECT	MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+							, GLE.[Document No_] AS NO_INV
+							, CIH.[Posting Date] AS TGL_INV
+							, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+					FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+					INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+					GROUP BY CIH.[Pay-to Vendor No_], CIH.[Posting Date], GLE.[Document No_]
+				) X
+			INNER JOIN	(
+							SELECT	CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+										GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(GLE.[Amount]) AS NILAI
+							FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+							GROUP BY GLE.[G_L Account No_], GLE.[Document No_], GLE.[Global Dimension 2 Code]
+							UNION ALL
+							SELECT	CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+										GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(GLE.[Amount]) AS NILAI
+							FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+							GROUP BY GLE.[G_L Account No_], GLE.[Document No_], GLE.[Global Dimension 2 Code]
+						) DTL ON DTL.NO_INV = X.NO_INV
+			LEFT JOIN [dbo].[BC_AUTOJAYA$G_L Account] GL ON GL.[No_] = DTL.ACC_NO
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Item Category] IC ON IC.[Code] = DTL.ITEM_CAT
+			WHERE	(X.TGL_INV >= $P{TglFrom} AND X.TGL_INV <= $P{TglUpto}) AND
+					($P{Tipe} = 'ALL' OR X.TIPE = $P{Tipe}) AND
+					(X.KODE_SUPP >= $P{VendorFrom} AND X.KODE_SUPP <= $P{VendorTo})
+			GROUP BY DTL.ACC_NO, GL.[Name], DTL.ITEM_CAT, IC.[Description]
+		) XX
+WHERE XX.NILAI <> 0  AND $P{Company} = 'AUTOJAYA'
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		,XX.ACC_NO
+		,XX.ACC_NAME
+		,XX.ITEM_CAT
+		,XX.ITEM_CAT_DESC
+		,XX.DEBIT_AMOUNT
+		,XX.CREDIT_AMOUNT
+		,XX.GRUP
+FROM	(
+			SELECT 	DTL.ACC_NO
+					,GL.[Name] AS ACC_NAME
+					, DTL.ITEM_CAT
+					, IC.[Description] AS ITEM_CAT_DESC
+					, CASE WHEN SUM(DTL.NILAI) > 0 THEN SUM(DTL.NILAI) ELSE 0 END AS DEBIT_AMOUNT
+					, CASE WHEN SUM(DTL.NILAI) < 0 THEN SUM(DTL.NILAI) * -1 ELSE 0 END AS CREDIT_AMOUNT
+					, SUM(DTL.NILAI) AS NILAI
+					, CASE WHEN SUM(DTL.NILAI) > 0 THEN 'A' ELSE 'B' END AS GRUP
+			FROM (
+					SELECT	MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+							, GLE.[Document No_] AS NO_INV
+							, PIH.[Posting Date] AS TGL_INV
+							, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+					FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+					INNER JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+					GROUP BY PIH.[Pay-to Vendor No_], PIH.[Posting Date], GLE.[Document No_]
+					UNION ALL
+					SELECT	MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+							, GLE.[Document No_] AS NO_INV
+							, CIH.[Posting Date] AS TGL_INV
+							, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+					FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+					INNER JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+					GROUP BY CIH.[Pay-to Vendor No_], CIH.[Posting Date], GLE.[Document No_]
+				) X
+			INNER JOIN	(
+							SELECT	CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+										GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(GLE.[Amount]) AS NILAI
+							FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+							GROUP BY GLE.[G_L Account No_], GLE.[Document No_], GLE.[Global Dimension 2 Code]
+							UNION ALL
+							SELECT	CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+									, GLE.[Document No_] AS NO_INV
+									, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+										GLE.[Global Dimension 2 Code] ELSE NULL
+									  END AS ITEM_CAT
+									, SUM(GLE.[Amount]) AS NILAI
+							FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+							INNER JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+							GROUP BY GLE.[G_L Account No_], GLE.[Document No_], GLE.[Global Dimension 2 Code]
+						) DTL ON DTL.NO_INV = X.NO_INV
+			LEFT JOIN [dbo].[BC_SOLUSI$G_L Account] GL ON GL.[No_] = DTL.ACC_NO
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Item Category] IC ON IC.[Code] = DTL.ITEM_CAT
+			WHERE	(X.TGL_INV >= $P{TglFrom} AND X.TGL_INV <= $P{TglUpto}) AND
+					($P{Tipe} = 'ALL' OR X.TIPE = $P{Tipe}) AND
+					(X.KODE_SUPP >= $P{VendorFrom} AND X.KODE_SUPP <= $P{VendorTo})
+			GROUP BY DTL.ACC_NO, GL.[Name], DTL.ITEM_CAT, IC.[Description]
+		) XX
+WHERE XX.NILAI <> 0 AND $P{Company} = 'SOLUSI']]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="ACC_NO" class="java.lang.String"/>
+	<field name="ACC_NAME" class="java.lang.String"/>
+	<field name="ITEM_CAT" class="java.lang.String"/>
+	<field name="ITEM_CAT_DESC" class="java.lang.String"/>
+	<field name="DEBIT_AMOUNT" class="java.math.BigDecimal"/>
+	<field name="CREDIT_AMOUNT" class="java.math.BigDecimal"/>
+	<field name="GRUP" class="java.lang.String"/>
+	<sortField name="GRUP"/>
+	<sortField name="ACC_NO"/>
+	<sortField name="ITEM_CAT"/>
+	<variable name="DEBIT_AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{DEBIT_AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="CREDIT_AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{CREDIT_AMOUNT}]]></variableExpression>
+	</variable>
+	<title>
+		<band height="14">
+			<printWhenExpression><![CDATA[$P{Layout}.equals( "PDF" ) == false]]></printWhenExpression>
+			<staticText>
+				<reportElement x="268" y="0" width="115" height="14" uuid="b55eb0d7-1a7e-4388-9ab0-ef7cefd1a4a3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item Category]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="0" width="120" height="14" uuid="3b1565dd-cd36-4750-893c-bab22191c348"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="70" y="0" width="198" height="14" uuid="18a1558e-bd4d-4599-9bdf-867577f634e5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kegterangan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="70" height="14" uuid="5415544e-c74e-4539-9f27-df3105729453"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Account]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="503" y="0" width="90" height="14" uuid="53f9e2e0-135d-4256-82f3-ed439c42b598"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Debet]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="593" y="0" width="90" height="14" uuid="d53697b0-b1bb-40d5-82dc-254a2bbe1c8c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kredit]]></text>
+			</staticText>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="14">
+			<printWhenExpression><![CDATA[$P{Layout}.equals( "PDF" ) == true]]></printWhenExpression>
+			<staticText>
+				<reportElement x="70" y="0" width="198" height="14" uuid="3e54b9b7-cee4-44ba-b3bb-61d4f1d70f8c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kegterangan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="70" height="14" uuid="71585d6a-ee8a-4c7b-9ffb-32c195d7ca53"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Account]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="0" width="120" height="14" uuid="551bff75-a7fa-4d81-a4ec-4129c0c90a93"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="268" y="0" width="115" height="14" uuid="c9a0c8e7-a0b9-44e3-be69-fb9f6cc301f0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item Category]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="593" y="0" width="90" height="14" uuid="c8e5671e-744f-46dd-b07e-cb526d1d3de5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kredit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="503" y="0" width="90" height="14" uuid="f776c75b-4e54-400c-82cd-36d9a1716043"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Debet]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="70" height="14" uuid="51ffb886-2a3a-4f3d-bd90-15c1c8f7c009"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACC_NO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="70" y="0" width="198" height="14" uuid="39c98835-7191-4787-97cd-e8266a161340"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACC_NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="503" y="0" width="90" height="14" uuid="89218d44-81d2-4e9b-8284-7bba2a80bbe7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DEBIT_AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="593" y="0" width="90" height="14" uuid="e4777c21-aba8-4988-a56b-7da9ec3f2b4d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CREDIT_AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="268" y="0" width="115" height="14" uuid="f0e0559c-40bf-409f-b60a-928764491971"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CAT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="383" y="0" width="120" height="14" uuid="f315fafd-a57b-4616-ba0f-6dd73bfa629c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CAT_DESC}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="14" splitType="Stretch">
+			<textField pattern="#,###">
+				<reportElement x="503" y="0" width="90" height="14" uuid="8e0904c9-3540-4074-b002-db494d047282"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{DEBIT_AMOUNT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="593" y="0" width="90" height="14" uuid="12b6413c-f4fc-4353-8c86-1aa577824c92"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CREDIT_AMOUNT_1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="70" height="14" uuid="4c9cb9b0-bb6e-4ae7-ad90-27cd20bbe63b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="70" y="0" width="198" height="14" uuid="3bd5ca71-7765-4f1e-afe4-812711e21401"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="268" y="0" width="115" height="14" uuid="4cd53367-0a09-4c78-a43b-ea086cbb8746"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="383" y="0" width="120" height="14" uuid="a704b05f-868f-4cb3-833d-e07540b700bf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>

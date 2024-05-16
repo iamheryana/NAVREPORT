@@ -1,0 +1,85 @@
+-- Function: p_download_invoice_lunas(character varying)
+
+-- DROP FUNCTION p_download_invoice_lunas(character varying);
+--
+CREATE OR REPLACE FUNCTION p_download_invoice_lunas(processid character varying)
+  RETURNS character varying AS
+$BODY$ 
+--
+DECLARE hasil  VARCHAR(300);  
+DECLARE jmlInv  INTEGER;
+DECLARE jmlCm  	INTEGER;
+--
+BEGIN 
+	INSERT INTO t03salesperson (nik, sales, sales_name, version, created_by, created_on, updated_by, updated_on)
+	SELECT  '000' as nik, X.sales, X.sales_name,
+		1 as version, 'AUTO' as created_by, current_timestamp as created_on, 'AUTO' as updated_by, current_timestamp as updated_on
+	FROM	(
+			SELECT DISTINCT sales, sales_name
+			FROM tmp06invoicelunas tmp06
+			WHERE 	tmp06.proses_id = processId AND
+				tmp06.reg = 'INV'
+		) X
+	LEFT JOIN t03salesperson t03 ON t03.sales = x.sales
+	WHERE t03.sales IS NULL;
+	--
+	SELECT COUNT(tmp06.no_invoice) INTO jmlInv
+	FROM tmp06invoicelunas tmp06
+	LEFT JOIN t05downloadinvoice t05 ON t05.no_invoice =  tmp06.no_invoice
+	WHERE 	tmp06.proses_id = processId AND
+		tmp06.reg = 'INV' AND
+		t05.no_invoice IS NULL;
+	--
+	INSERT INTO t02rekapcosting (company, sales, no_bso, no_so, tgl_so, customer, no_po_cust, amount, no_invoice, tgl_invoice, tgl_lunas, 
+					pcn_komisi, amount_komisi, flag_komisi, pcn_tqs, amount_tqs, flag_tqs,
+					version, created_by, created_on, updated_by, updated_on)
+	SELECT 	tmp06.company, tmp06.sales, tmp06.no_bso, tmp06.no_so, tmp06.tgl_so, tmp06.customer, tmp06.no_po_cust, 
+		tmp06.amount, tmp06.no_invoice, tmp06.tgl_invoice, tmp06.tgl_lunas,
+		0 as pcn_komisi, 0 as amount_komisi, 'N' as flag_komisi, 0 as pcn_tqs, 0 as amount_tqs, 'N' as flag_tqs,
+		1 as version, 'AUTO' as created_by, current_timestamp as created_on, 'AUTO' as updated_by, current_timestamp as updated_on
+	FROM tmp06invoicelunas tmp06
+	LEFT JOIN t05downloadinvoice t05 ON t05.no_invoice =  tmp06.no_invoice
+	WHERE 	tmp06.proses_id = processId AND
+		tmp06.reg = 'INV' AND
+		t05.no_invoice IS NULL;
+	--
+	INSERT INTO t05downloadinvoice (no_invoice) 
+	SELECT tmp06.no_invoice
+	FROM tmp06invoicelunas tmp06
+	LEFT JOIN t05downloadinvoice t05 ON t05.no_invoice =  tmp06.no_invoice
+	WHERE 	tmp06.proses_id = processId AND
+		tmp06.reg = 'INV' AND
+		t05.no_invoice IS NULL;
+	--
+	SELECT 	COUNT(tmp06.no_so) INTO jmlCm
+	FROM tmp06invoicelunas tmp06
+	INNER JOIN t02rekapcosting t02 ON t02.no_invoice =  tmp06.no_so
+	WHERE 	tmp06.proses_id = processId AND
+		tmp06.no_so <> '' AND
+		tmp06.reg = 'CRM' AND
+		t02.flag_komisi = 'N' AND
+	        t02.flag_tqs = 'N';
+	--
+	DELETE FROM t02rekapcosting 
+	WHERE no_invoice IN 	(
+					SELECT 	tmp06.no_so
+					FROM tmp06invoicelunas tmp06
+					INNER JOIN t02rekapcosting t02 ON t02.no_invoice =  tmp06.no_so
+					WHERE 	tmp06.proses_id = processId AND
+						tmp06.no_so <> '' AND
+						tmp06.reg = 'CRM'
+				) AND
+	      flag_komisi = 'N' AND
+	      flag_tqs = 'N';
+	--
+	--
+	DELETE FROM tmp06invoicelunas 
+	WHERE proses_id = processId ;
+	--
+	hasil := 'Telah terdownload '||jmlInv||' Invoice dan terhapus '||jmlCm||' Invoice karena Credit Memo'; 
+	RETURN hasil;
+--
+END ; 
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;

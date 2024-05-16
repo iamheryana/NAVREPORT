@@ -1,0 +1,164 @@
+USE [NavBI]
+GO
+
+/****** Object:  StoredProcedure [dbo].[P_WEBINAR_EVENT]    Script Date: 12-10-2020 2:53:37 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[P_WEBINAR_EVENT] 
+	@ProsesId  nvarchar(100) ,    
+	@UserId  nvarchar(15) 
+AS   
+BEGIN
+	DECLARE @T05Id bigint;
+	DECLARE @ActualDuration int;
+	DECLARE @SudahAdaWebinarId int;
+	DECLARE @DataSudahMasuk int;
+	--
+	SET @SudahAdaWebinarId = ISNULL((
+										SELECT CASE WHEN [WEBINAR_ID] IS NOT NULL THEN 1 ELSE 0 END
+										FROM [dbo].[T05_WEBINAR_EVENT]
+										WHERE [WEBINAR_ID]  =	(
+																	SELECT	[WEBINAR_ID]
+																	FROM [dbo].[TEMP01_WEBINAR_EVENT]
+																	WHERE [PROSES_ID] = @ProsesId
+																)) ,0) ; 
+	--
+	--SELECT 'EAAA';
+	--
+	IF @SudahAdaWebinarId = 0 
+		BEGIN
+			SET @T05Id = NEXT VALUE FOR dbo.T05_id_SEQ;
+			--
+			--
+			INSERT INTO [dbo].[T05_WEBINAR_EVENT]
+				   ([T05_ID]
+				   ,[TOPIC]
+				   ,[WEBINAR_ID]
+				   ,[ACTUAL_START_TIME]
+				   ,[ACTUAL_DURATION]
+				   ,[NUM_REGISTERED]
+				   ,[NUM_CANCELLED]
+				   ,[UNIQUE_VIEWERS]
+				   ,[TOTAL_USERS]
+				   ,[MAX_CONCURRENT_VIEWS]
+				   ,[VERSION]
+				   ,[CREATED_BY]
+				   ,[CREATED_ON]
+				   ,[UPDATED_BY]
+				   ,[UPDATED_ON])
+			SELECT	@T05Id 
+					,[TOPIC]
+					,[WEBINAR_ID]
+					,[ACTUAL_START_TIME]
+					,[ACTUAL_DURATION]
+					,[NUM_REGISTERED]
+					,[NUM_CANCELLED]
+					,[UNIQUE_VIEWERS]
+					,[TOTAL_USERS]
+					,[MAX_CONCURRENT_VIEWS]
+					,1
+					,@UserId
+					,GETDATE()
+					,@UserId
+					,GETDATE()
+		  FROM [dbo].[TEMP01_WEBINAR_EVENT]
+		  WHERE [PROSES_ID] = @ProsesId;
+		  --
+		  SELECT @ActualDuration = [ACTUAL_DURATION] FROM [dbo].[T05_WEBINAR_EVENT] WHERE [T05_ID] = @T05Id;
+		  --
+		  INSERT INTO [dbo].[T06_WEBINAR_ATTENDEE]
+					   ([T05_ID]
+					   ,[ATTENDED]
+					   ,[FIRST_NAME]
+					   ,[LAST_NAME]
+					   ,[EMAIL]
+					   ,[EMAIL_CORPORATE]
+					   ,[COUNTRY_REGION]
+					   ,[STATE_PROVINCE]
+					   ,[PHONE]
+					   ,[INDUSTRY]
+					   ,[ORGANIZATION]
+					   ,[JOB_TITLE]
+					   ,[QUESTIONS_AND_COMMENTS]
+					   ,[REGISTRATION_TIME]
+					   ,[APPROVAL_STATUS]
+					   ,[TIME_IN_SESSION]
+					   ,[NOMOR_GOPAY_OVO]
+					   ,[COUNTRY_REGION_NAME]
+					   ,[JOIN_TIME]
+					   ,[LEAVE_TIME]
+					   ,[VERSION]
+					   ,[CREATED_BY]
+					   ,[CREATED_ON]
+					   ,[UPDATED_BY]
+					   ,[UPDATED_ON])
+			SELECT @T05Id
+				  ,[ATTENDED]
+				  ,[FIRST_NAME]
+				  ,[LAST_NAME]
+				  ,[EMAIL]
+				  ,MAX([EMAIL_CORPORATE]) AS [EMAIL_CORPORATE]
+				  ,MAX([COUNTRY_REGION]) AS [COUNTRY_REGION]
+				  ,MAX([STATE_PROVINCE]) AS [STATE_PROVINCE]
+				  ,MAX([PHONE]) AS [PHONE]
+				  ,MAX([INDUSTRY]) AS [INDUSTRY]
+				  ,MAX([ORGANIZATION]) AS [ORGANIZATION]
+				  ,MAX([JOB_TITLE]) AS [JOB_TITLE] 
+				  ,MAX([QUESTIONS_AND_COMMENTS]) AS [QUESTIONS_AND_COMMENTS]
+				  ,MAX([REGISTRATION_TIME]) AS [REGISTRATION_TIME]
+				  ,MAX([APPROVAL_STATUS]) AS [APPROVAL_STATUS]
+				  ,CASE WHEN SUM([TIME_IN_SESSION]) <= @ActualDuration THEN SUM([TIME_IN_SESSION]) ELSE @ActualDuration END  AS [TIME_IN_SESSION]
+				  ,MAX([NOMOR_GOPAY_OVO]) AS [NOMOR_GOPAY_OVO]
+				  ,MAX([COUNTRY_REGION_NAME]) AS [COUNTRY_REGION_NAME]
+				  ,MIN([JOIN_TIME]) AS [JOIN_TIME]
+				  ,MAX([LEAVE_TIME]) AS [LEAVE_TIME]
+				  ,1
+				  ,@UserId
+				  ,GETDATE()
+				  ,@UserId
+				  ,GETDATE()
+			FROM [dbo].[TEMP02_WEBINAR_ATTENDEE]
+			WHERE [PROSES_ID] = @ProsesId
+			GROUP BY [ATTENDED]
+					  ,[FIRST_NAME]
+					  ,[LAST_NAME]
+					  ,[EMAIL] ;
+			--
+			--SELECT 'DATA BERHASIL DI SIMPAN';
+			DELETE FROM [dbo].[TEMP01_WEBINAR_EVENT] WHERE [PROSES_ID] = @ProsesId;
+			DELETE FROM [dbo].[TEMP02_WEBINAR_ATTENDEE] WHERE [PROSES_ID] = @ProsesId;
+			--
+			
+			SELECT @DataSudahMasuk = COUNT(T06_ID)
+			FROM [dbo].[T06_WEBINAR_ATTENDEE]
+			WHERE T05_ID = @T05Id;
+			--
+			IF @DataSudahMasuk = 0 
+				BEGIN
+					INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'TIDAK ADA DATA YANG BERHASIL DI SIMPAN', GETDATE());
+					RETURN ;
+				END
+			ELSE
+				BEGIN
+					INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'DATA BERHASIL DI SIMPAN', GETDATE());
+					RETURN ;
+				END;
+			--
+		END;
+	--
+	IF @SudahAdaWebinarId = 1 
+		BEGIN
+			DELETE FROM [dbo].[TEMP01_WEBINAR_EVENT] WHERE [PROSES_ID] = @ProsesId;
+			DELETE FROM [dbo].[TEMP02_WEBINAR_ATTENDEE] WHERE [PROSES_ID] = @ProsesId;
+			--
+			INSERT INTO  [dbo].[TEMP00_UPLOAD_RESULT] ([PROSES_ID], [RESULT_STRING], [PROCESS_ON]) VALUES (@ProsesId, 'WEBINAR ID SUDAH PERNAH DI UPLOAD SEBELUMNYA', GETDATE());
+			RETURN  ;
+		END;
+END;
+GO
+
+

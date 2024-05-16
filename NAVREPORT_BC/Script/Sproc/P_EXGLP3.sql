@@ -1,0 +1,6 @@
+CREATE OR REPLACE FUNCTION P_EXGLP3(l_TableName1 VARCHAR(8))  RETURNS void AS $$  
+BEGIN  
+	EXECUTE 'SELECT * from l_TableName1';
+END ;
+$$
+LANGUAGE 'plpgsql'; 

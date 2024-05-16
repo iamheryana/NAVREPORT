@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02039_UploadDataPayroll_V2" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="822" leftMargin="0" rightMargin="20" topMargin="0" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.4641000000001363"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="masa" class="java.lang.String"/>
+	<parameter name="tahun" class="java.lang.String"/>
+	<parameter name="kodepdpt" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.COMPANY AS company
+		, CASE WHEN X.COMPANY = 'AJ' THEN '1'+X.NIP ELSE '2'+X.NIP END AS nip
+		, X.SALES_NAME
+		,X.FLGDPPT AS flgdppt
+		,X.KDDPPT AS kddppt
+		,X.PERIODEMULAI AS periodemulai
+		,X.PERIODEAKHIR AS periodeakhir
+		,X.NILAI AS nilai
+		,X.PERSEN AS persen
+		,X.BAYARDIMUKA AS bayardimuka
+		,X.FLAG AS flag
+		,X.STATUSVALIDASI AS statusvalidasi
+FROM	(
+			SELECT 	SUBSTRING(M02.NIK,1,2) AS COMPANY
+					, SUBSTRING(M02.NIK,3,LEN(M02.NIK)-2) AS NIP
+					, M02.SALES_NAME
+					, 'D' AS FLGDPPT
+					, 'KOMS' AS KDDPPT
+					, CAST( (T16.TAHUN_KOMISI+'-'+T16.MASA_KOMISI+'-01') AS DATETIME) AS PERIODEMULAI
+					, DATEADD(MONTH, 1,  CAST( (T16.TAHUN_KOMISI+'-'+T16.MASA_KOMISI+'-01') AS DATETIME)) - 1 AS PERIODEAKHIR
+					, SUM(T16.AMOUNT_KOMISI) AS NILAI
+					, '' AS PERSEN
+					, '' AS BAYARDIMUKA
+					, '' AS FLAG
+					, '' AS STATUSVALIDASI
+					, MAX(M02.PERIODE_RESIGN) AS PERIODE_RESIGN
+			FROM [dbo].[T16_REKAP_COSTING] T16
+			LEFT JOIN [dbo].[M02_SALESPERSON] M02 ON M02.SALES = T16.SALES
+			WHERE T16.FLAG_KOMISI = 'Y' AND T16.TAHUN_KOMISI = $P{tahun} AND T16.MASA_KOMISI = $P{masa}
+			GROUP BY M02.NIK, M02.SALES_NAME, T16.TAHUN_KOMISI, T16.MASA_KOMISI
+			UNION ALL
+			SELECT 	SUBSTRING(XX.NIK,1,2) AS COMPANY
+					, SUBSTRING(XX.NIK,3,LEN(XX.NIK)-2) AS NIP
+					, XX.SALES_NAME
+					,'D' AS FLGDPPT
+					,'BNSA' AS KDDPPT
+					, CAST( (XX.TAHUN_TQS+'-'+XX.MASA_TQS+'-01') AS DATETIME) AS PERIODEMULAI
+					, DATEADD(MONTH, 1,  CAST( (XX.TAHUN_TQS+'-'+XX.MASA_TQS+'-01') AS DATETIME)) - 1 AS PERIODEAKHIR
+					, MAX (
+							CASE WHEN $P{masa} < '01' THEN
+								0
+							ELSE
+								ROUND(((CASE WHEN XX.TOTAL_SALES - XX.[TARGET] <= 0 THEN 0 ELSE XX.TOTAL_SALES - XX.[TARGET] END) * XX.TOTAL_PCN_TQS),0)
+								-
+								ROUND(((CASE WHEN XX.TOTAL_SALES_JAN - XX.[TARGET] <= 0 THEN 0 ELSE XX.TOTAL_SALES_JAN - XX.[TARGET] END) * XX.TOTAL_PCN_TQS_JAN),0)
+							END
+						  ) AS NILAI
+					, '' AS PERSEN
+					, '' AS BAYARDIMUKA
+					, '' AS FLAG
+					, '' AS STATUSVALIDASI
+					, MAX(XX.PERIODE_RESIGN) AS PERIODE_RESIGN
+			FROM	(
+						SELECT	M02.NIK
+								, M02.SALES_NAME
+								, T16.TAHUN_TQS
+								, T16.MASA_TQS
+								, M02.PERIODE_RESIGN
+								, SUM(T16.AMOUNT) OVER (PARTITION BY T16.SALES) AS TOTAL_SALES
+								, CASE WHEN SUM(T16.AMOUNT) OVER (PARTITION BY T16.SALES) = 0 THEN
+									0
+								  ELSE
+									(CAST((SUM(T16.AMOUNT_TQS) OVER (PARTITION BY T16.SALES)) AS NUMERIC(38,20)) / (SUM(T16.AMOUNT) OVER (PARTITION BY T16.SALES)))
+								  END AS TOTAL_PCN_TQS
+								, ISNULL(M03.[TARGET],0) AS [TARGET]
+								, SUM(CASE WHEN T16.MASA_TQS < $P{masa} THEN T16.AMOUNT ELSE 0 END) OVER (PARTITION BY T16.SALES) AS TOTAL_SALES_JAN
+								, CASE WHEN SUM(CASE WHEN T16.MASA_TQS < $P{masa} THEN T16.AMOUNT ELSE 0 END) OVER (PARTITION BY T16.SALES) = 0 THEN
+									0
+								  ELSE
+									(CAST((SUM(CASE WHEN T16.MASA_TQS < $P{masa} THEN T16.AMOUNT_TQS ELSE 0 END) OVER (PARTITION BY T16.SALES)) AS NUMERIC(38,20))/(SUM(CASE WHEN T16.MASA_TQS < $P{masa} THEN T16.AMOUNT ELSE 0 END) OVER (PARTITION BY T16.SALES)))
+								  END AS TOTAL_PCN_TQS_JAN
+						FROM [dbo].[T16_REKAP_COSTING] T16
+						LEFT JOIN [dbo].[M02_SALESPERSON] M02 ON M02.SALES = T16.SALES
+						LEFT JOIN	(
+										SELECT TRG.M02_ID, TRG2.[TARGET]
+										FROM	(
+													SELECT  M02_ID, MAX(TAHUN) as TAHUN
+													FROM [dbo].[M03_TARGETSALES]
+													WHERE tahun <= CAST((CAST($P{tahun} AS INT) - 1) AS NVARCHAR)
+													GROUP BY M02_ID
+												) TRG
+										INNER JOIN [dbo].[M03_TARGETSALES] TRG2 ON TRG2.M02_ID = TRG.M02_ID AND TRG2.TAHUN = TRG.TAHUN
+									) M03 ON M03.M02_ID = M02.M02_ID
+						WHERE T16.TAHUN_TQS = $P{tahun} AND T16.MASA_TQS <= $P{masa}
+					) XX
+			WHERE XX.TAHUN_TQS = $P{tahun} AND XX.MASA_TQS = $P{masa}
+			GROUP BY XX.NIK, XX.SALES_NAME, XX.TAHUN_TQS, XX.MASA_TQS
+		) X
+WHERE	X.NILAI <> 0 AND
+		X.KDDPPT = $P{kodepdpt} AND
+		((X.PERIODEMULAI <= X.PERIODE_RESIGN AND X.PERIODE_RESIGN IS NOT NULL) or (X.PERIODE_RESIGN IS NULL))]]>
+	</queryString>
+	<field name="company" class="java.lang.String"/>
+	<field name="nip" class="java.lang.String"/>
+	<field name="SALES_NAME" class="java.lang.String"/>
+	<field name="flgdppt" class="java.lang.String"/>
+	<field name="kddppt" class="java.lang.String"/>
+	<field name="periodemulai" class="java.sql.Timestamp"/>
+	<field name="periodeakhir" class="java.sql.Timestamp"/>
+	<field name="nilai" class="java.math.BigDecimal"/>
+	<field name="persen" class="java.lang.String"/>
+	<field name="bayardimuka" class="java.lang.String"/>
+	<field name="flag" class="java.lang.String"/>
+	<field name="statusvalidasi" class="java.lang.String"/>
+	<sortField name="nip"/>
+	<title>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="4e290c03-d4cc-46f0-b378-39bd9da0af0c"/>
+				<text><![CDATA[Employee ID]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="0" width="200" height="14" uuid="1a439beb-3c73-486a-a7e3-96821c71d76b"/>
+				<text><![CDATA[Fullname]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="0" width="100" height="14" uuid="6e3efdcf-154a-4e3e-9ea1-d64e0eaee71b"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="100" height="14" uuid="ab37bcc7-d0f3-4ea8-aae8-bc244c86363e"/>
+				<textFieldExpression><![CDATA[$F{nip}]]></textFieldExpression>
+			</textField>
+			<textField pattern="yyyy-MM-dd" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="200" height="14" uuid="50094cb1-ae53-4d97-9754-4fb23aaa6fe0"/>
+				<textFieldExpression><![CDATA[$F{SALES_NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="100" height="14" uuid="d36384b8-30e2-448e-8097-8d7309371351"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{nilai}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="768" height="14" uuid="e762fe98-ae4e-46c4-a6dc-d3d20f52f9ce"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

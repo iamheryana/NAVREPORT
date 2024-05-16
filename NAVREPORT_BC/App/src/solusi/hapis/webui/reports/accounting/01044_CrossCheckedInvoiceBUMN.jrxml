@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01044_CrossCheckedInvoiceBUMN" language="groovy" pageWidth="1250" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1210" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
+	<property name="ireport.zoom" value="1.4641000000000093"/>
+	<property name="ireport.x" value="19"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.COMPANY
+		,XX.NO_INV
+		,XX.TGL_INV
+		,XX.CUST_NO
+		,XX.CUST_NAME
+		,XX.NO_PO_CUST
+		,XX.SALES
+		,XX.NO_FP
+		,XX.AMOUNT_010
+		,XX.AMOUNT_030
+		,XX.VALIDASI
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,X.NO_INV
+					,X.TGL_INV
+					,X.CUST_NO
+					,X.CUST_NAME
+					,X.NO_PO_CUST
+					,X.SALES
+					,X.NO_FP
+					,	CASE WHEN X.EFAK_JNS_PAJAK IN ('EFID0003', 'EFID0020') THEN X.AMOUNT_IDR ELSE 0 END AS AMOUNT_010
+					,	CASE WHEN X.EFAK_JNS_PAJAK IN ('EFID0005', 'EFID0022') THEN X.AMOUNT_IDR ELSE 0 END AS AMOUNT_030
+					,	CASE WHEN X.AMOUNT_IDR < 10000000 AND X.EFAK_JNS_PAJAK NOT IN ('EFID0003', 'EFID0020') THEN 'TIDAK VALID' ELSE
+							CASE WHEN X.AMOUNT_IDR >= 10000000 AND X.EFAK_JNS_PAJAK NOT IN ('EFID0005', 'EFID0022') THEN 'TIDAK VALID' ELSE '' END
+						END AS VALIDASI
+			FROM	(
+						SELECT	SIH.[No_] AS NO_INV
+								,SIH.[Posting Date] AS TGL_INV
+								,SIH.[Bill-to Customer No_] AS CUST_NO
+								,SIH.[Bill-to Name] AS CUST_NAME
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,SIH.[Salesperson Code] AS SALES
+								,CASE WHEN SIH.[Currency Code] <> '' THEN SIL.AMOUNT/SIH.[Currency Factor] ELSE SIL.AMOUNT END AS AMOUNT_IDR
+								,EFK.[E-Faktur Register Mapping ID] AS EFAK_JNS_PAJAK
+								,CASE WHEN LEN(EFK.NO_FP) <= 4 THEN (EFK.NO_FP + SIH.[Faktur Pajak No_]) ELSE EFK.NO_FP END AS NO_FP
+						FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+						INNER JOIN	(
+										SELECT [Document No_] AS NO_INV
+												, SUM([Amount]) AS AMOUNT
+										FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line]
+										GROUP BY [Document No_]
+									) SIL ON SIL.NO_INV = SIH.[No_]
+						LEFT JOIN	(
+										SELECT	FRH.[Document Type]
+												  ,FRH.[No_]
+												  ,FRH.[E-Faktur Register Mapping ID]
+												  ,	(
+														CAST(FRM.[CSV - Jenis Dokumen] AS VARCHAR(2))+
+														CAST(FRM.[CSV - Kode Jenis Transaksi] AS VARCHAR(2))+
+														CAST(FRM.[CSV - FG Pengganti] AS VARCHAR(2)) + '.' +
+														CAST(FRH.[Faktur Pajak No_] AS VARCHAR(20))
+													) AS NO_FP
+										FROM [dbo].[BC_AUTOJAYA$E-Faktur Register Header - n] FRH
+										LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Register Mapping - n] FRM ON FRM.[E-Faktur ID] = FRH.[E-Faktur Register Mapping ID]
+										WHERE FRH.[Document Type] = 5
+									) EFK ON EFK.[No_] = SIH.[No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[Applies-to Doc_ No_] = SIH.[No_]
+						WHERE	CMH.[Applies-to Doc_ No_] IS NULL AND
+								SIH.[Bill-to Customer No_] IN	(
+																	SELECT	[No_]
+																	FROM [dbo].[BC_AUTOJAYA$Customer]
+																	WHERE [Customer Posting Group] = 'BUMN'
+																)
+					) X
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,X.NO_INV
+					,X.TGL_INV
+					,X.CUST_NO
+					,X.CUST_NAME
+					,X.NO_PO_CUST
+					,X.SALES
+					,X.NO_FP
+					,	CASE WHEN X.EFAK_JNS_PAJAK IN ('EFID0003', 'EFID0020') THEN X.AMOUNT_IDR ELSE 0 END AS AMOUNT_010
+					,	CASE WHEN X.EFAK_JNS_PAJAK IN ('EFID0005', 'EFID0022') THEN X.AMOUNT_IDR ELSE 0 END AS AMOUNT_030
+					,	CASE WHEN X.AMOUNT_IDR < 10000000 AND X.EFAK_JNS_PAJAK NOT IN ('EFID0003', 'EFID0020') THEN 'TIDAK VALID' ELSE
+							CASE WHEN X.AMOUNT_IDR >= 10000000 AND X.EFAK_JNS_PAJAK NOT IN ('EFID0005', 'EFID0022') THEN 'TIDAK VALID' ELSE '' END
+						END AS VALIDASI
+			FROM	(
+						SELECT	SIH.[No_] AS NO_INV
+								,SIH.[Posting Date] AS TGL_INV
+								,SIH.[Bill-to Customer No_] AS CUST_NO
+								,SIH.[Bill-to Name] AS CUST_NAME
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,SIH.[Salesperson Code] AS SALES
+								,CASE WHEN SIH.[Currency Code] <> '' THEN SIL.AMOUNT/SIH.[Currency Factor] ELSE SIL.AMOUNT END AS AMOUNT_IDR
+								,EFK.[E-Faktur Register Mapping ID] AS EFAK_JNS_PAJAK
+								,CASE WHEN LEN(EFK.NO_FP) <= 4 THEN (EFK.NO_FP + SIH.[Faktur Pajak No_]) ELSE EFK.NO_FP END AS NO_FP
+						FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+						INNER JOIN	(
+										SELECT [Document No_] AS NO_INV
+												, SUM([Amount]) AS AMOUNT
+										FROM [dbo].[BC_SOLUSI$Sales Invoice Line]
+										GROUP BY [Document No_]
+									) SIL ON SIL.NO_INV = SIH.[No_]
+						LEFT JOIN	(
+										SELECT	FRH.[Document Type]
+												  ,FRH.[No_]
+												  ,FRH.[E-Faktur Register Mapping ID]
+												  ,	(
+														CAST(FRM.[CSV - Jenis Dokumen] AS VARCHAR(2))+
+														CAST(FRM.[CSV - Kode Jenis Transaksi] AS VARCHAR(2))+
+														CAST(FRM.[CSV - FG Pengganti] AS VARCHAR(2)) + '.' +
+														CAST(FRH.[Faktur Pajak No_] AS VARCHAR(20))
+													) AS NO_FP
+										FROM [dbo].[BC_SOLUSI$E-Faktur Register Header - n] FRH
+										LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Register Mapping - n] FRM ON FRM.[E-Faktur ID] = FRH.[E-Faktur Register Mapping ID]
+										WHERE FRH.[Document Type] = 5
+									) EFK ON EFK.[No_] = SIH.[No_]
+						LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CMH ON CMH.[Applies-to Doc_ No_] = SIH.[No_]
+						WHERE	CMH.[Applies-to Doc_ No_] IS NULL AND
+								SIH.[Bill-to Customer No_] IN	(
+																	SELECT	[No_]
+																	FROM [dbo].[BC_AUTOJAYA$Customer]
+																	WHERE [Customer Posting Group] = 'BUMN'
+																)
+					) X
+		) XX
+WHERE (XX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
+	(XX.TGL_INV >= $P{TglFrom} AND XX.TGL_INV <= $P{TglUpto})]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="CUST_NO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="SALES" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="AMOUNT_010" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_030" class="java.math.BigDecimal"/>
+	<field name="VALIDASI" class="java.lang.String"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_INV"/>
+	<title>
+		<band height="109" splitType="Stretch">
+			<staticText>
+				<reportElement x="6" y="10" width="60" height="14" uuid="71025b29-f428-457a-918c-be5890f8beda"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(01044) ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="94" width="60" height="14" uuid="ce4993e9-83c5-4acb-bb12-9b7a54b6db46"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="171" y="94" width="67" height="14" uuid="544919e9-7559-4345-83bb-b448d17c35f4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="647" y="94" width="180" height="14" uuid="24269d45-75b5-40ed-83b1-11dfc446e6ad"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="66" y="94" width="105" height="14" uuid="2d82dd45-dccd-45c4-9638-73162fad687d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="281" y="94" width="100" height="14" uuid="acba8ece-508c-4b27-9f3d-d1f9c92869f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="381" y="94" width="266" height="14" uuid="9b476249-361d-4bb7-8cd8-d498fee6a3ea"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="66" y="10" width="172" height="14" uuid="052ee4c2-e73c-4576-9da8-7d3ac0a9a2ee"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cross Checked Invoice BUMN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="80" width="60" height="14" uuid="e68bcd71-8304-42b8-8aa0-ea070334c1a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="66" y="80" width="172" height="14" uuid="31bbb922-f452-40be-a899-7a62afef7ad6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="66" y="24" width="172" height="14" uuid="3fb9e67b-53dd-4cf6-af4a-a5e596002919"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="24" width="60" height="14" uuid="164558fb-ebb0-450b-aae5-50a41b840161"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="66" width="60" height="14" uuid="e8e60ba1-4083-4203-baec-02bd77f39d37"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="66" y="66" width="172" height="14" uuid="318a1e9e-f52d-4205-9cf2-c227795b1c45"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="238" y="94" width="43" height="14" uuid="992cb297-2d03-4d6a-992d-d61a42154d74"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<line>
+				<reportElement x="6" y="108" width="1195" height="1" uuid="85d9ee49-071f-452f-ac1e-27698265c148"/>
+			</line>
+			<staticText>
+				<reportElement x="6" y="38" width="60" height="14" uuid="72ac6c1a-7c76-4106-903c-3a9430f1550f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="66" y="38" width="172" height="14" uuid="1bfa13bd-519d-49a5-98a3-e8b5f1f822a3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="66" y="52" width="172" height="14" uuid="43f6eec4-af75-4588-a648-2ea5f0c5545c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="281" y="52" width="100" height="14" uuid="4eb0ea2b-5bef-46d0-90bb-8ea1df829c40"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="6" y="52" width="60" height="14" uuid="6262dc57-1cc8-46d6-808b-eca531f840f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl SO :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="238" y="52" width="43" height="14" uuid="982b6b42-e266-4d19-b836-8b50b991adc5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="827" y="94" width="82" height="14" uuid="56af3d7d-49b9-46c9-b218-e53c857cec22"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Amount (010)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="909" y="94" width="82" height="14" uuid="34e55cb4-1fba-4c6e-aff6-4524e8a62bd6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Amount (030)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="991" y="94" width="105" height="14" uuid="950b687e-61f4-48e5-bea6-ec7e257ca99f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1096" y="94" width="105" height="14" uuid="92e33e58-2673-425c-b246-30a9aa7d9987"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Validasi]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="6" y="1" width="60" height="14" uuid="9ec35e7a-c3e4-4d96-92e1-d1c1f70e71fc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="66" y="1" width="105" height="14" uuid="94d0e9ec-e705-4147-be23-bd9ae12e973f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="281" y="1" width="100" height="14" uuid="9a00b670-6241-46f4-acf7-4a0e8c0b4c91"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="381" y="1" width="266" height="14" uuid="0a83aba7-fa3b-4e6d-b8f8-357727b4ffd8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="171" y="1" width="67" height="14" uuid="4690ea4f-ffa8-4e1e-859a-a4bdaf3db752"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="647" y="1" width="180" height="14" uuid="d48b927b-b7c5-4a13-b4aa-67f23be3e9ba"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="238" y="1" width="43" height="14" uuid="02bf06c1-de6c-4254-a53c-d6b10999c361"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALES}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="827" y="1" width="82" height="14" uuid="62b05ed4-b6b7-4192-a57b-c26bd56961f5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_010}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="909" y="1" width="82" height="14" uuid="68718f9c-55fd-4972-b2d3-23176a381ca8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_030}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1096" y="1" width="105" height="14" uuid="10873024-fc73-499e-8be4-6163cd17e5d5"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VALIDASI}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="991" y="1" width="105" height="14" uuid="43742faf-f000-4cf6-a59c-78134c050d4a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="11" y="17" width="204" height="14" uuid="b33fc35d-b608-4759-9a89-2a1ad4befafe"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

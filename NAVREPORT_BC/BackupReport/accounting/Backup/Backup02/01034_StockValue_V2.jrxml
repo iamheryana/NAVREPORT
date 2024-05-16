@@ -1,0 +1,1027 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01034_StockValue" language="groovy" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
+	<property name="ireport.zoom" value="1.4641000000000068"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="bulan" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[WITH STOCK (COMPANY, AMOUNT_FREE, AMOUNT_RESERVE, AMOUNT_FREE_OTP_STOCK,AMOUNT_FREE_OTP_ALLOCATED , AMOUNT_RESERVE_OTP, AMOUNT_IN_ACTIVE)
+AS
+(
+SELECT	XX.COMPANY
+		, XX.AMOUNT_FREE
+		, XX.AMOUNT_RESERVE
+		, XX.AMOUNT_FREE_OTP_STOCK
+		, XX.AMOUNT_FREE_OTP_ALLOCATED
+		, XX.AMOUNT_RESERVE_OTP
+		, XX.AMOUNT_IN_ACTIVE
+FROM	(
+SELECT	'AUTOJAYA' AS COMPANY
+		, SUM(X.AMOUNT - X.AMOUNT_RESERVE) AS AMOUNT_FREE
+		, SUM(X.AMOUNT_RESERVE) AS AMOUNT_RESERVE
+		, SUM(X.AMOUNT) AS AMOUNT
+		, SUM(X.AMOUNT_OTP_STOCK - X.AMOUNT_RESERVE_OTP_STOCK) AS AMOUNT_FREE_OTP_STOCK
+		, SUM(X.AMOUNT_OTP_ALLOCATED - X.AMOUNT_RESERVE_OTP_ALLOCATED) AS AMOUNT_FREE_OTP_ALLOCATED
+		, SUM(X.AMOUNT_RESERVE_OTP_STOCK + X.AMOUNT_RESERVE_OTP_ALLOCATED) AS AMOUNT_RESERVE_OTP
+		, SUM(X.AMOUNT_OTP_STOCK+X.AMOUNT_OTP_ALLOCATED) AS AMOUNT_OTP
+		, SUM(X.AMOUNT_IN_ACTIVE) AS AMOUNT_IN_ACTIVE
+FROM	(
+			SELECT 	'.'  AS ITEM_NO
+					, '.' AS LOC_CODE
+					, 0 AS STOCK_OH
+					, 0 AS STOCK_OTP_STOCK
+					, 0 AS STOCK_OTP_ALLOCATED
+					, 0 AS RSRV_OH
+					, 0 AS RSRV_OTP_STOCK
+					, 0 AS RSRV_OTP_ALLOCATED
+					, ISNULL(SUM([Amount]),0) AS AMOUNT_RESERVE
+					, 0 AS AMOUNT
+					, 0 AS AMOUNT_RESERVE_OTP_STOCK
+					, 0 AS AMOUNT_RESERVE_OTP_ALLOCATED
+					, 0 AS AMOUNT_OTP_STOCK
+					, 0 AS AMOUNT_OTP_ALLOCATED
+					, 0 AS AMOUNT_IN_ACTIVE
+			FROM [AUTOJAYA].[dbo].[AJ-ADJ$G_L Entry]
+			WHERE [G_L Account No_] ='116.199.03'
+			UNION ALL
+			SELECT
+					STKG.ITEM_NO
+					, STKG.LOC_CODE
+					, STKG.STOCK_OH
+					, STKG.STOCK_OTP_STOCK
+					, STKG.STOCK_OTP_ALLOCATED
+					, STKG.RSRV_OH
+					, STKG.RSRV_OTP_STOCK
+					, STKG.RSRV_OTP_ALLOCATED
+					,	CASE WHEN STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+							CASE WHEN STKG.RSRV_OH > 0 THEN
+								(STKG.RSRV_OH) * (STKG.AMOUNT / STKG.STOCK_OH)
+							ELSE
+								0
+							END
+						ELSE
+							STKG.AMOUNT
+						END AS AMOUNT_RESERVE
+					 , STKG.AMOUNT
+					 ,	CASE WHEN STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+							CASE WHEN STKG.RSRV_OTP_STOCK > 0 THEN
+								(STKG.RSRV_OTP_STOCK) * (STKG.AMOUNT_OTP_STOCK / STKG.STOCK_OTP_STOCK)
+							ELSE
+								0
+							END
+						ELSE
+							STKG.AMOUNT_OTP_STOCK
+						END AS AMOUNT_RESERVE_OTP_STOCK
+					 ,	CASE WHEN STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+							CASE WHEN STKG.RSRV_OTP_ALLOCATED > 0 THEN
+								(STKG.RSRV_OTP_ALLOCATED) * (STKG.AMOUNT_OTP_ALLOCATED / STKG.STOCK_OTP_ALLOCATED)
+							ELSE
+								0
+							END
+						ELSE
+							STKG.AMOUNT_OTP_ALLOCATED
+						END AS AMOUNT_RESERVE_OTP_ALLOCATED
+					 , STKG.AMOUNT_OTP_STOCK
+					 , STKG.AMOUNT_OTP_ALLOCATED
+					 , 0 AS AMOUNT_IN_ACTIVE
+			FROM	(
+						SELECT STK.ITEM_NO
+								, STK.LOC_CODE
+								, SUM(STK.STOCK_OH) AS STOCK_OH
+								, SUM(STK.AMOUNT) AS AMOUNT
+								, SUM(STK.STOCK_OTP_STOCK) AS STOCK_OTP_STOCK
+								, SUM(STK.STOCK_OTP_ALLOCATED) AS STOCK_OTP_ALLOCATED
+								, SUM(STK.AMOUNT_OTP_STOCK) AS AMOUNT_OTP_STOCK
+								, SUM(STK.AMOUNT_OTP_ALLOCATED) AS AMOUNT_OTP_ALLOCATED
+								, SUM(STK.RSRV_OH) AS RSRV_OH
+								, SUM(STK.RSRV_OTP_STOCK) AS RSRV_OTP_STOCK
+								, SUM(STK.RSRV_OTP_ALLOCATED)AS RSRV_OTP_ALLOCATED
+						FROM (
+								SELECT
+										ILE.[Item No_] AS ITEM_NO
+										,ILE.[Location Code] AS LOC_CODE
+										,SUM(ILE.[Quantity]) AS STOCK_OH
+										,SUM(ISNULL(VLE.AMOUNT,0)) AS AMOUNT
+										, 0 AS STOCK_OTP_STOCK
+										, 0 AS STOCK_OTP_ALLOCATED
+										, 0 AS AMOUNT_OTP_STOCK
+										, 0 AS AMOUNT_OTP_ALLOCATED
+										, 0 AS RSRV_OH
+										, 0 AS RSRV_OTP_STOCK
+										, 0 AS RSRV_OTP_ALLOCATED
+								FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] ILE
+								LEFT JOIN	(
+												SELECT [Item Ledger Entry No_]
+													  ,SUM([Cost Amount (Actual)]) + SUM([Cost Amount (Expected)]) AS AMOUNT
+												FROM [AUTOJAYA].[dbo].[AUTOJAYA$Value Entry]
+												GROUP BY [Item Ledger Entry No_]
+											) VLE ON VLE.[Item Ledger Entry No_] = ILE.[Entry No_]
+								GROUP BY ILE.[Item No_],ILE.[Location Code]
+								UNION ALL
+								SELECT	BPO.ITEM_NO
+										,BPO.LOC_CODE
+										, 0 AS STOCK_OH
+										, 0 AS AMOUNT
+										, SUM(BPO.ON_ORDER_STOCK) AS STOCK_OTP_STOCK
+										, SUM(BPO.ON_ORDER_ALLOCATED) AS STOCK_OTP_ALLOCATED
+										, SUM(BPO.AMOUNT_OTP_STOCK) AS AMOUNT_OTP_STOCK
+										, SUM(BPO.AMOUNT_OTP_ALLOCATED) AS AMOUNT_OTP_ALLOCATED
+										, 0 AS RSRV_OH
+										, 0 AS RSRV_OTP_STOCK
+										, 0 AS RSRV_OTP_ALLOCATED
+								FROM	(
+											SELECT	POD.[No_] AS ITEM_NO
+													,POD.[Location Code] AS LOC_CODE
+													,CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) ELSE 0 END AS ON_ORDER_STOCK
+													,CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) ELSE 0 END AS ON_ORDER_ALLOCATED
+													,CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														(	(POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0)) *
+															CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END
+														)
+													 ELSE
+														0
+													 END AS AMOUNT_OTP_STOCK
+													,CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														(	(POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0)) *
+															CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END
+														)
+													 ELSE
+														0
+													 END AS AMOUNT_OTP_ALLOCATED
+											FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+											INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+											LEFT JOIN	(
+															SELECT	PD.[Blanket Order No_] AS NO_BPO
+																,PD.[Blanket Order Line No_] AS NO_BPO_LINE
+																,SUM(PD.[Quantity (Base)]) AS QTY_PO
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] PH
+															INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+															WHERE PH.[Document Type] = 1 AND
+																  PD.[Blanket Order No_] <> ''
+															GROUP BY PD.[Blanket Order No_], PD.[Blanket Order Line No_]
+														) POO ON POO.NO_BPO = POD.[Document No_] AND POO.NO_BPO_LINE = POD.[Line No_]
+											WHERE POH.[Document Type] = 4 AND
+														SUBSTRING( POH.[No_], 6, 1) = 'P' AND
+														POD.[Type] = 2
+										) BPO
+								GROUP BY BPO.ITEM_NO, BPO.LOC_CODE
+								UNION ALL
+								SELECT	OTP.ITEM_NO
+										,OTP.LOC_CODE
+										, 0 AS STOCK_OH
+										, 0 AS AMOUNT
+										, (SUM(OTP.ON_ORDER_OTP_STOCK) + SUM(OTP.OTP_READY_STOCK)) AS STOCK_OTP_STOCK
+										, (SUM(OTP.ON_ORDER_OTP_ALLOCATED) + SUM(OTP.OTP_READY_ALLOCATED)) AS STOCK_OTP_ALLOCATED
+										, (SUM(OTP.AMOUNT_ON_ORDER_OTP_STOCK) + SUM(OTP.AMOUNT_OTP_READY_STOCK)) AS AMOUNT_OTP_STOCK
+										, (SUM(OTP.AMOUNT_ON_ORDER_OTP_ALLOCATED) + SUM(OTP.AMOUNT_OTP_READY_ALLOCATED)) AS AMOUNT_OTP_ALLOCATED
+										, 0 AS RSRV_OH
+										, 0 AS RSRV_OTP_STOCK
+										, 0 AS RSRV_OTP_ALLOCATED
+								FROM	(
+											SELECT POD.[No_] AS ITEM_NO
+													,POD.[Location Code] AS LOC_CODE
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS ON_ORDER_OTP_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS ON_ORDER_OTP_ALLOCATED
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+														ELSE 0
+													  END AS AMOUNT_ON_ORDER_OTP_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+														ELSE 0
+													  END AS AMOUNT_ON_ORDER_OTP_ALLOCATED
+
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0 END AS OTP_READY_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0 END AS OTP_READY_ALLOCATED
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+													  ELSE 0 END AS AMOUNT_OTP_READY_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+													  ELSE 0 END AS AMOUNT_OTP_READY_ALLOCATED
+											FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+											INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+											WHERE POH.[Document Type] = 1 AND
+												SUBSTRING( POH.[No_], 5, 1) = 'P' AND
+												POD.[Type] = 2
+										) OTP
+								GROUP BY OTP.ITEM_NO, OTP.LOC_CODE
+								UNION ALL
+								SELECT	RSV.ITEM_NO
+										, RSV.LOC_CODE
+										, 0 AS STOCK_OH
+										, 0 AS AMOUNT
+										, 0 AS STOCK_OTP_STOCK
+										, 0 AS STOCK_OTP_ALLOCATED
+										, 0 AS AMOUNT_OTP_STOCK
+										, 0 AS AMOUNT_OTP_ALLOCATED
+										, SUM(RSV.RSRV_OH) AS RSRV_OH
+										, SUM(RSV.RSRV_ON_ORDER_OTP_STOCK) + SUM(RSV.RSRV_OTP_READY_STOCK) AS RSRV_OTP_STOCK
+										, SUM(RSV.RSRV_ON_ORDER_OTP_ALLOCATED) + SUM(RSV.RSRV_OTP_READY_ALLOCATED) AS RSRV_OTP_ALLOCATED
+								FROM	(
+											SELECT  RES.[Item No_] AS ITEM_NO
+													, RES.[Location Code] AS LOC_CODE
+													, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+													, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) <> 'P' AND RES.[Source ID] <> '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+													, CASE WHEN PUR.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS RSRV_OTP_READY_STOCK
+													, CASE WHEN PUR.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS RSRV_OTP_READY_ALLOCATED
+													, CASE WHEN PUR.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0 END
+													  AS RSRV_ON_ORDER_OTP_STOCK
+													, CASE WHEN PUR.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0 END
+													  AS RSRV_ON_ORDER_OTP_ALLOCATED
+											FROM [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] RES
+											LEFT JOIN	(
+															SELECT MAX(DTL.[Expected Receipt Date]) AS EXP_RCP_DATE,  DTL.[Document No_], DTL.[Line No_], MAX(HDR.[Ship-to Name]) AS [Ship-to Name]
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] DTL
+															INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] HDR ON HDR.[No_] = DTL.[Document No_] AND HDR.[Document Type] = DTL.[Document Type]
+															GROUP BY DTL.[Document No_], DTL.[Line No_]
+														) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
+											WHERE RES.[Reservation Status] = 0 AND
+												  RES.[Positive] = 1 AND
+												  SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+										) RSV
+								GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+							 ) STK
+						GROUP BY STK.ITEM_NO, STK.LOC_CODE
+					)STKG
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+			UNION ALL
+			SELECT	X.ITEM_NO
+					, X.LOC_CODE
+					, 0 AS STOCK_OH
+					, 0 AS STOCK_OTP_STOCK
+					, 0 AS STOCK_OTP_ALLOCATED
+					, 0 AS RSRV_OH
+					, 0 AS RSRV_OTP_STOCK
+					, 0 AS RSRV_OTP_ALLOCATED
+					, 0 AS AMOUNT_RESERVE
+					, 0 AS AMOUNT
+					, 0 AS AMOUNT_RESERVE_OTP_STOCK
+					, 0 AS AMOUNT_RESERVE_OTP_ALLOCATED
+					, 0 AS AMOUNT_OTP_STOCK
+					, 0 AS AMOUNT_OTP_ALLOCATED
+					, X.AMOUNT AS AMOUNT_IN_ACTIVE
+			FROM (
+					SELECT STK.ITEM_NO
+							, STK.LOC_CODE
+							, SUM(STK.STOCK_OH) AS STOCK_OH
+							, SUM(STK.RSRV_OH) AS RSRV_OH
+							, SUM(STK.AMOUNT) AS AMOUNT
+					FROM (
+							SELECT
+									ILE.[Item No_] AS ITEM_NO
+									,ILE.[Location Code] AS LOC_CODE
+									,SUM(ILE.[Quantity]) AS STOCK_OH
+									, 0 AS RSRV_OH
+									,SUM(ISNULL(VLE.AMOUNT,0)) AS AMOUNT
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry] ILE
+							LEFT JOIN	(
+											SELECT [Item Ledger Entry No_]
+												  ,SUM([Cost Amount (Actual)]) + SUM([Cost Amount (Expected)]) AS AMOUNT
+											FROM [AUTOJAYA].[dbo].[AUTOJAYA$Value Entry]
+											GROUP BY [Item Ledger Entry No_]
+										) VLE ON VLE.[Item Ledger Entry No_] = ILE.[Entry No_]
+							GROUP BY ILE.[Item No_], ILE.[Location Code]
+							UNION ALL
+							SELECT	RSV.ITEM_NO
+									, RSV.LOC_CODE
+									, 0 AS STOCK_OH
+									, SUM(RSV.RSRV_OH) AS RSRV_OH
+									, 0 AS AMOUNT
+							FROM	(
+										SELECT  RES.[Item No_] AS ITEM_NO
+												, RES.[Location Code] AS LOC_CODE
+												, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+												, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) <> 'P' AND RES.[Source ID] <> '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+												, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_OTP_READY
+												, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
+										FROM [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] RES
+										LEFT JOIN	(
+														SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
+														FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line]
+														GROUP BY [Document No_], [Line No_]
+													) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
+										WHERE RES.[Reservation Status] = 0 AND
+											  RES.[Positive] = 1 AND
+											  SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+									) RSV
+							GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+						 ) STK
+					WHERE STK.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
+					GROUP BY STK.ITEM_NO, STK.LOC_CODE
+				) X
+			LEFT JOIN	(
+							SELECT [Item No_] AS ITEM_NO
+									,[Location Code] AS LOC_CODE
+									,COUNT([Item No_]) AS SALES
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry]
+							WHERE [Entry Type] IN (1,8) AND
+								  [Posting Date] >= DATEADD(month, (-1*$P{bulan}), GETDATE()) AND
+								  [Location Code] IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
+							GROUP BY [Item No_], [Location Code]
+						) Y ON Y.ITEM_NO = X.ITEM_NO AND Y.LOC_CODE = X.LOC_CODE
+			LEFT JOIN	(
+							SELECT [Item No_] AS ITEM_NO
+									,[Location Code] AS LOC_CODE
+									,COUNT([Item No_]) AS PURCHASE
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry]
+							WHERE [Entry Type] IN (0) AND
+								  [Posting Date] >= DATEADD(month, -3, GETDATE()) AND
+								  [Location Code] IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
+							GROUP BY [Item No_], [Location Code]
+						) Z ON Z.ITEM_NO = X.ITEM_NO AND Z.LOC_CODE = X.LOC_CODE
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = X.ITEM_NO
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item Category] ITC ON ITC.[Code] = ITM.[Item Category Code]
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Product Group] IPG ON IPG.[Code] = ITM.[Product Group Code]
+			WHERE	X.STOCK_OH > 0
+					AND X.RSRV_OH = 0
+					AND (Y.SALES IS NULL)
+					AND (Z.PURCHASE IS NULL)
+		) X
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		, SUM(X.AMOUNT - X.AMOUNT_RESERVE) AS AMOUNT_FREE
+		, SUM(X.AMOUNT_RESERVE) AS AMOUNT_RESERVE
+		, SUM(X.AMOUNT) AS AMOUNT
+		, SUM(X.AMOUNT_OTP_STOCK - X.AMOUNT_RESERVE_OTP_STOCK) AS AMOUNT_FREE_OTP_STOCK
+		, SUM(X.AMOUNT_OTP_ALLOCATED - X.AMOUNT_RESERVE_OTP_ALLOCATED) AS AMOUNT_FREE_OTP_ALLOCATED
+		, SUM(X.AMOUNT_RESERVE_OTP_STOCK + X.AMOUNT_RESERVE_OTP_ALLOCATED) AS AMOUNT_RESERVE_OTP
+		, SUM(X.AMOUNT_OTP_STOCK+X.AMOUNT_OTP_ALLOCATED) AS AMOUNT_OTP
+		, SUM(X.AMOUNT_IN_ACTIVE) AS AMOUNT_IN_ACTIVE
+FROM	(
+			SELECT 	'.'  AS ITEM_NO
+					, '.' AS LOC_CODE
+					, 0 AS STOCK_OH
+					, 0 AS STOCK_OTP_STOCK
+					, 0 AS STOCK_OTP_ALLOCATED
+					, 0 AS RSRV_OH
+					, 0 AS RSRV_OTP_STOCK
+					, 0 AS RSRV_OTP_ALLOCATED
+					, ISNULL(SUM([Amount]),0) AS AMOUNT_RESERVE
+					, 0 AS AMOUNT
+					, 0 AS AMOUNT_RESERVE_OTP_STOCK
+					, 0 AS AMOUNT_RESERVE_OTP_ALLOCATED
+					, 0 AS AMOUNT_OTP_STOCK
+					, 0 AS AMOUNT_OTP_ALLOCATED
+					, 0 AS AMOUNT_IN_ACTIVE
+			FROM [AUTOJAYA].[dbo].[AJ-ADJ$G_L Entry]
+			WHERE [G_L Account No_] ='116.199.03'
+			UNION ALL
+			SELECT
+					STKG.ITEM_NO
+					, STKG.LOC_CODE
+					, STKG.STOCK_OH
+					, STKG.STOCK_OTP_STOCK
+					, STKG.STOCK_OTP_ALLOCATED
+					, STKG.RSRV_OH
+					, STKG.RSRV_OTP_STOCK
+					, STKG.RSRV_OTP_ALLOCATED
+					,	CASE WHEN STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+							CASE WHEN STKG.RSRV_OH > 0 THEN
+								(STKG.RSRV_OH) * (STKG.AMOUNT / STKG.STOCK_OH)
+							ELSE
+								0
+							END
+						ELSE
+							STKG.AMOUNT
+						END AS AMOUNT_RESERVE
+					 , STKG.AMOUNT
+					 ,	CASE WHEN STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+							CASE WHEN STKG.RSRV_OTP_STOCK > 0 THEN
+								(STKG.RSRV_OTP_STOCK) * (STKG.AMOUNT_OTP_STOCK / STKG.STOCK_OTP_STOCK)
+							ELSE
+								0
+							END
+						ELSE
+							STKG.AMOUNT_OTP_STOCK
+						END AS AMOUNT_RESERVE_OTP_STOCK
+					 ,	CASE WHEN STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+							CASE WHEN STKG.RSRV_OTP_ALLOCATED > 0 THEN
+								(STKG.RSRV_OTP_ALLOCATED) * (STKG.AMOUNT_OTP_ALLOCATED / STKG.STOCK_OTP_ALLOCATED)
+							ELSE
+								0
+							END
+						ELSE
+							STKG.AMOUNT_OTP_ALLOCATED
+						END AS AMOUNT_RESERVE_OTP_ALLOCATED
+					 , STKG.AMOUNT_OTP_STOCK
+					 , STKG.AMOUNT_OTP_ALLOCATED
+					 , 0 AS AMOUNT_IN_ACTIVE
+			FROM	(
+						SELECT STK.ITEM_NO
+								, STK.LOC_CODE
+								, SUM(STK.STOCK_OH) AS STOCK_OH
+								, SUM(STK.AMOUNT) AS AMOUNT
+								, SUM(STK.STOCK_OTP_STOCK) AS STOCK_OTP_STOCK
+								, SUM(STK.STOCK_OTP_ALLOCATED) AS STOCK_OTP_ALLOCATED
+								, SUM(STK.AMOUNT_OTP_STOCK) AS AMOUNT_OTP_STOCK
+								, SUM(STK.AMOUNT_OTP_ALLOCATED) AS AMOUNT_OTP_ALLOCATED
+								, SUM(STK.RSRV_OH) AS RSRV_OH
+								, SUM(STK.RSRV_OTP_STOCK) AS RSRV_OTP_STOCK
+								, SUM(STK.RSRV_OTP_ALLOCATED)AS RSRV_OTP_ALLOCATED
+						FROM (
+								SELECT
+										ILE.[Item No_] AS ITEM_NO
+										,ILE.[Location Code] AS LOC_CODE
+										,SUM(ILE.[Quantity]) AS STOCK_OH
+										,SUM(ISNULL(VLE.AMOUNT,0)) AS AMOUNT
+										, 0 AS STOCK_OTP_STOCK
+										, 0 AS STOCK_OTP_ALLOCATED
+										, 0 AS AMOUNT_OTP_STOCK
+										, 0 AS AMOUNT_OTP_ALLOCATED
+										, 0 AS RSRV_OH
+										, 0 AS RSRV_OTP_STOCK
+										, 0 AS RSRV_OTP_ALLOCATED
+								FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry] ILE
+								LEFT JOIN	(
+												SELECT [Item Ledger Entry No_]
+													  ,SUM([Cost Amount (Actual)]) + SUM([Cost Amount (Expected)]) AS AMOUNT
+												FROM [AUTOJAYA].[dbo].[SOLUSI$Value Entry]
+												GROUP BY [Item Ledger Entry No_]
+											) VLE ON VLE.[Item Ledger Entry No_] = ILE.[Entry No_]
+								GROUP BY ILE.[Item No_],ILE.[Location Code]
+								UNION ALL
+								SELECT	BPO.ITEM_NO
+										,BPO.LOC_CODE
+										, 0 AS STOCK_OH
+										, 0 AS AMOUNT
+										, SUM(BPO.ON_ORDER_STOCK) AS STOCK_OTP_STOCK
+										, SUM(BPO.ON_ORDER_ALLOCATED) AS STOCK_OTP_ALLOCATED
+										, SUM(BPO.AMOUNT_OTP_STOCK) AS AMOUNT_OTP_STOCK
+										, SUM(BPO.AMOUNT_OTP_ALLOCATED) AS AMOUNT_OTP_ALLOCATED
+										, 0 AS RSRV_OH
+										, 0 AS RSRV_OTP_STOCK
+										, 0 AS RSRV_OTP_ALLOCATED
+								FROM	(
+											SELECT	POD.[No_] AS ITEM_NO
+													,POD.[Location Code] AS LOC_CODE
+													,CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) ELSE 0 END AS ON_ORDER_STOCK
+													,CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) ELSE 0 END AS ON_ORDER_ALLOCATED
+													,CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														(	(POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0)) *
+															CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END
+														)
+													 ELSE
+														0
+													 END AS AMOUNT_OTP_STOCK
+													,CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														(	(POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0)) *
+															CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END
+														)
+													 ELSE
+														0
+													 END AS AMOUNT_OTP_ALLOCATED
+											FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] POH
+											INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+											LEFT JOIN	(
+															SELECT	PD.[Blanket Order No_] AS NO_BPO
+																,PD.[Blanket Order Line No_] AS NO_BPO_LINE
+																,SUM(PD.[Quantity (Base)]) AS QTY_PO
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] PH
+															INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+															WHERE PH.[Document Type] = 1 AND
+																  PD.[Blanket Order No_] <> ''
+															GROUP BY PD.[Blanket Order No_], PD.[Blanket Order Line No_]
+														) POO ON POO.NO_BPO = POD.[Document No_] AND POO.NO_BPO_LINE = POD.[Line No_]
+											WHERE POH.[Document Type] = 4 AND
+														SUBSTRING( POH.[No_], 6, 1) = 'P' AND
+														POD.[Type] = 2
+										) BPO
+								GROUP BY BPO.ITEM_NO, BPO.LOC_CODE
+								UNION ALL
+								SELECT	OTP.ITEM_NO
+										,OTP.LOC_CODE
+										, 0 AS STOCK_OH
+										, 0 AS AMOUNT
+										, (SUM(OTP.ON_ORDER_OTP_STOCK) + SUM(OTP.OTP_READY_STOCK)) AS STOCK_OTP_STOCK
+										, (SUM(OTP.ON_ORDER_OTP_ALLOCATED) + SUM(OTP.OTP_READY_ALLOCATED)) AS STOCK_OTP_ALLOCATED
+										, (SUM(OTP.AMOUNT_ON_ORDER_OTP_STOCK) + SUM(OTP.AMOUNT_OTP_READY_STOCK)) AS AMOUNT_OTP_STOCK
+										, (SUM(OTP.AMOUNT_ON_ORDER_OTP_ALLOCATED) + SUM(OTP.AMOUNT_OTP_READY_ALLOCATED)) AS AMOUNT_OTP_ALLOCATED
+										, 0 AS RSRV_OH
+										, 0 AS RSRV_OTP_STOCK
+										, 0 AS RSRV_OTP_ALLOCATED
+								FROM	(
+											SELECT POD.[No_] AS ITEM_NO
+													,POD.[Location Code] AS LOC_CODE
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS ON_ORDER_OTP_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS ON_ORDER_OTP_ALLOCATED
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+														ELSE 0
+													  END AS AMOUNT_ON_ORDER_OTP_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+														ELSE 0
+													  END AS AMOUNT_ON_ORDER_OTP_ALLOCATED
+
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0 END AS OTP_READY_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END
+													  ELSE 0 END AS OTP_READY_ALLOCATED
+													, CASE WHEN POH.[Ship-to Name] = 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+													  ELSE 0 END AS AMOUNT_OTP_READY_STOCK
+													, CASE WHEN POH.[Ship-to Name] <> 'STOCK' THEN
+														(
+															(CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END) *
+															(CASE WHEN POH.[Currency Code] <> '' THEN POD.[Direct Unit Cost]/POH.[Currency Factor] ELSE POD.[Direct Unit Cost] END)
+														)
+													  ELSE 0 END AS AMOUNT_OTP_READY_ALLOCATED
+											FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] POH
+											INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+											WHERE POH.[Document Type] = 1 AND
+												SUBSTRING( POH.[No_], 5, 1) = 'P' AND
+												POD.[Type] = 2
+										) OTP
+								GROUP BY OTP.ITEM_NO, OTP.LOC_CODE
+								UNION ALL
+								SELECT	RSV.ITEM_NO
+										, RSV.LOC_CODE
+										, 0 AS STOCK_OH
+										, 0 AS AMOUNT
+										, 0 AS STOCK_OTP_STOCK
+										, 0 AS STOCK_OTP_ALLOCATED
+										, 0 AS AMOUNT_OTP_STOCK
+										, 0 AS AMOUNT_OTP_ALLOCATED
+										, SUM(RSV.RSRV_OH) AS RSRV_OH
+										, SUM(RSV.RSRV_ON_ORDER_OTP_STOCK) + SUM(RSV.RSRV_OTP_READY_STOCK) AS RSRV_OTP_STOCK
+										, SUM(RSV.RSRV_ON_ORDER_OTP_ALLOCATED) + SUM(RSV.RSRV_OTP_READY_ALLOCATED) AS RSRV_OTP_ALLOCATED
+								FROM	(
+											SELECT  RES.[Item No_] AS ITEM_NO
+													, RES.[Location Code] AS LOC_CODE
+													, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+													, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) <> 'P' AND RES.[Source ID] <> '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+													, CASE WHEN PUR.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS RSRV_OTP_READY_STOCK
+													, CASE WHEN PUR.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0
+													  END AS RSRV_OTP_READY_ALLOCATED
+													, CASE WHEN PUR.[Ship-to Name] = 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0 END
+													  AS RSRV_ON_ORDER_OTP_STOCK
+													, CASE WHEN PUR.[Ship-to Name] <> 'STOCK' THEN
+														CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END
+													  ELSE 0 END
+													  AS RSRV_ON_ORDER_OTP_ALLOCATED
+											FROM [AUTOJAYA].[dbo].[SOLUSI$Reservation Entry] RES
+											LEFT JOIN	(
+															SELECT MAX(DTL.[Expected Receipt Date]) AS EXP_RCP_DATE,  DTL.[Document No_], DTL.[Line No_], MAX(HDR.[Ship-to Name]) AS [Ship-to Name]
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Line] DTL
+															INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Purchase Header] HDR ON HDR.[No_] = DTL.[Document No_] AND HDR.[Document Type] = DTL.[Document Type]
+															GROUP BY DTL.[Document No_], DTL.[Line No_]
+														) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
+											WHERE RES.[Reservation Status] = 0 AND
+												  RES.[Positive] = 1 AND
+												  SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+										) RSV
+								GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+							 ) STK
+						GROUP BY STK.ITEM_NO, STK.LOC_CODE
+					)STKG
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+			UNION ALL
+			SELECT	X.ITEM_NO
+					, X.LOC_CODE
+					, 0 AS STOCK_OH
+					, 0 AS STOCK_OTP_STOCK
+					, 0 AS STOCK_OTP_ALLOCATED
+					, 0 AS RSRV_OH
+					, 0 AS RSRV_OTP_STOCK
+					, 0 AS RSRV_OTP_ALLOCATED
+					, 0 AS AMOUNT_RESERVE
+					, 0 AS AMOUNT
+					, 0 AS AMOUNT_RESERVE_OTP_STOCK
+					, 0 AS AMOUNT_RESERVE_OTP_ALLOCATED
+					, 0 AS AMOUNT_OTP_STOCK
+					, 0 AS AMOUNT_OTP_ALLOCATED
+					, X.AMOUNT AS AMOUNT_IN_ACTIVE
+			FROM (
+					SELECT STK.ITEM_NO
+							, STK.LOC_CODE
+							, SUM(STK.STOCK_OH) AS STOCK_OH
+							, SUM(STK.RSRV_OH) AS RSRV_OH
+							, SUM(STK.AMOUNT) AS AMOUNT
+					FROM (
+							SELECT
+									ILE.[Item No_] AS ITEM_NO
+									,ILE.[Location Code] AS LOC_CODE
+									,SUM(ILE.[Quantity]) AS STOCK_OH
+									, 0 AS RSRV_OH
+									,SUM(ISNULL(VLE.AMOUNT,0)) AS AMOUNT
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry] ILE
+							LEFT JOIN	(
+											SELECT [Item Ledger Entry No_]
+												  ,SUM([Cost Amount (Actual)]) + SUM([Cost Amount (Expected)]) AS AMOUNT
+											FROM [AUTOJAYA].[dbo].[SOLUSI$Value Entry]
+											GROUP BY [Item Ledger Entry No_]
+										) VLE ON VLE.[Item Ledger Entry No_] = ILE.[Entry No_]
+							GROUP BY ILE.[Item No_], ILE.[Location Code]
+							UNION ALL
+							SELECT	RSV.ITEM_NO
+									, RSV.LOC_CODE
+									, 0 AS STOCK_OH
+									, SUM(RSV.RSRV_OH) AS RSRV_OH
+									, 0 AS AMOUNT
+							FROM	(
+										SELECT  RES.[Item No_] AS ITEM_NO
+												, RES.[Location Code] AS LOC_CODE
+												, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+												, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) <> 'P' AND RES.[Source ID] <> '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+												, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_OTP_READY
+												, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
+										FROM [AUTOJAYA].[dbo].[SOLUSI$Reservation Entry] RES
+										LEFT JOIN	(
+														SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
+														FROM [AUTOJAYA].[dbo].[SOLUSI$Purchase Line]
+														GROUP BY [Document No_], [Line No_]
+													) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
+										WHERE RES.[Reservation Status] = 0 AND
+											  RES.[Positive] = 1 AND
+											  SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+									) RSV
+							GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+						 ) STK
+					WHERE STK.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
+					GROUP BY STK.ITEM_NO, STK.LOC_CODE
+				) X
+			LEFT JOIN	(
+							SELECT [Item No_] AS ITEM_NO
+									,[Location Code] AS LOC_CODE
+									,COUNT([Item No_]) AS SALES
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry]
+							WHERE [Entry Type] IN (1,8) AND
+								  [Posting Date] >= DATEADD(month, (-1*$P{bulan}), GETDATE()) AND
+								  [Location Code] IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
+							GROUP BY [Item No_], [Location Code]
+						) Y ON Y.ITEM_NO = X.ITEM_NO AND Y.LOC_CODE = X.LOC_CODE
+			LEFT JOIN	(
+							SELECT [Item No_] AS ITEM_NO
+									,[Location Code] AS LOC_CODE
+									,COUNT([Item No_]) AS PURCHASE
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Item Ledger Entry]
+							WHERE [Entry Type] IN (0) AND
+								  [Posting Date] >= DATEADD(month, -3, GETDATE()) AND
+								  [Location Code] IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
+							GROUP BY [Item No_], [Location Code]
+						) Z ON Z.ITEM_NO = X.ITEM_NO AND Z.LOC_CODE = X.LOC_CODE
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = X.ITEM_NO
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Item Category] ITC ON ITC.[Code] = ITM.[Item Category Code]
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Product Group] IPG ON IPG.[Code] = ITM.[Product Group Code]
+			WHERE	X.STOCK_OH > 0
+					AND X.RSRV_OH = 0
+					AND (Y.SALES IS NULL)
+					AND (Z.PURCHASE IS NULL)
+		) X
+		) XX
+)
+SELECT	XXX.GRP_NO
+		, XXX.GRP
+		, XXX.SRT
+		, XXX.KET
+		, ROUND((SUM(XXX.AMOUNT_AJ) / 1000000000),2) AS AMOUNT_AJ
+		, ROUND((SUM(XXX.AMOUNT_SP) / 1000000000),2) AS AMOUNT_SP
+		, (ROUND((SUM(XXX.AMOUNT_AJ) / 1000000000),2) + ROUND((SUM(XXX.AMOUNT_SP) / 1000000000),2)) AS AMOUNT_TOTAL
+FROM (
+SELECT  1 AS GRP_NO
+		,'Stock On Hand' AS GRP
+		, 1 AS SRT
+		,'Free Stock' AS KET
+		,CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT_FREE ELSE 0  END AS AMOUNT_AJ
+		,CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT_FREE ELSE 0  END AS AMOUNT_SP
+FROM STOCK
+UNION ALL
+SELECT  1 AS GRP_NO
+		,'Stock On Hand' AS GRP
+		, 2 AS SRT
+		,'Reserve Stock' AS KET
+		,CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT_RESERVE ELSE 0  END AS AMOUNT_AJ
+		,CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT_RESERVE ELSE 0  END AS AMOUNT_SP
+FROM STOCK
+UNION ALL
+SELECT  2 AS GRP_NO
+		,'Stock OTP' AS GRP
+		, 1 AS SRT
+		,'Free Stock' AS KET
+		,CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT_FREE_OTP_STOCK ELSE 0  END AS AMOUNT_AJ
+		,CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT_FREE_OTP_STOCK ELSE 0  END AS AMOUNT_SP
+FROM STOCK
+UNION ALL
+SELECT  2 AS GRP_NO
+		,'Stock OTP' AS GRP
+		, 2 AS SRT
+		,'Allocated Stock' AS KET
+		,CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT_FREE_OTP_ALLOCATED ELSE 0  END AS AMOUNT_AJ
+		,CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT_FREE_OTP_ALLOCATED ELSE 0  END AS AMOUNT_SP
+FROM STOCK
+UNION ALL
+SELECT  2 AS GRP_NO
+		,'Stock OTP' AS GRP
+		, 3 AS SRT
+		,'Reserve Stock' AS KET
+		,CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT_RESERVE_OTP ELSE 0  END AS AMOUNT_AJ
+		,CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT_RESERVE_OTP ELSE 0  END AS AMOUNT_SP
+FROM STOCK
+UNION ALL
+SELECT  3 AS GRP_NO
+		,'In Active Stock on Hand' AS GRP
+		, 1 AS SRT
+		,'In Active Stock on Hand' AS KET
+		,CASE WHEN COMPANY = 'AUTOJAYA' THEN AMOUNT_IN_ACTIVE ELSE 0  END AS AMOUNT_AJ
+		,CASE WHEN COMPANY = 'SOLUSI' THEN AMOUNT_IN_ACTIVE ELSE 0  END AS AMOUNT_SP
+FROM STOCK
+) XXX
+GROUP BY XXX.GRP_NO, XXX.GRP, XXX.KET, XXX.SRT]]>
+	</queryString>
+	<field name="GRP_NO" class="java.lang.Integer"/>
+	<field name="GRP" class="java.lang.String"/>
+	<field name="SRT" class="java.lang.Integer"/>
+	<field name="KET" class="java.lang.String"/>
+	<field name="AMOUNT_AJ" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_SP" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_TOTAL" class="java.math.BigDecimal"/>
+	<sortField name="GRP_NO"/>
+	<sortField name="SRT"/>
+	<sortField name="KET"/>
+	<variable name="AMOUNT_AJ_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_AJ}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_SP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_SP}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_TOTAL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_TOTAL}]]></variableExpression>
+	</variable>
+	<group name="Grp">
+		<groupExpression><![CDATA[$F{GRP_NO}]]></groupExpression>
+		<groupHeader>
+			<band height="15">
+				<printWhenExpression><![CDATA[$F{GRP_NO} < 3]]></printWhenExpression>
+				<textField>
+					<reportElement x="6" y="1" width="145" height="14" uuid="434f6d8f-9627-4f0e-8ffb-c7f4e1f2ba0c"/>
+					<textElement>
+						<font size="8" isBold="true" isItalic="false" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{GRP}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="15">
+				<printWhenExpression><![CDATA[$F{GRP_NO} == 3]]></printWhenExpression>
+				<staticText>
+					<reportElement x="6" y="1" width="145" height="14" uuid="743c4111-7db2-499c-b1ff-8a51ee1446f7"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Note :]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="29">
+				<printWhenExpression><![CDATA[$F{GRP_NO} < 3]]></printWhenExpression>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="151" y="1" width="66" height="14" uuid="0c058545-4b3c-4be3-9c0e-464b6dd3db12"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_AJ_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="217" y="1" width="66" height="14" uuid="e80ebe35-ceb4-46c0-818a-45a358fddfb1"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_SP_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="283" y="1" width="66" height="14" uuid="95e13c04-ea5a-4db0-bbbf-55ff38c4807c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_TOTAL_1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="6" y="1" width="145" height="14" uuid="d7e08fc6-5c1e-45d5-ba4e-7efb63afd8cb"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true" isItalic="false" isUnderline="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Total "+$F{GRP}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="6" y="15" width="145" height="14" uuid="6fad6181-7092-4adb-8f5e-1e06bd253bcf"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="15">
+				<printWhenExpression><![CDATA[$F{GRP_NO} == 3]]></printWhenExpression>
+				<textField>
+					<reportElement x="6" y="1" width="145" height="14" uuid="1bff4c78-17db-4368-9e80-a5132e239d9e"/>
+					<textElement>
+						<font size="8" isBold="false" isItalic="false" isUnderline="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA["(not sold since "+$P{bulan}+" Months)"]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="94" splitType="Stretch">
+			<staticText>
+				<reportElement x="6" y="10" width="145" height="14" uuid="71025b29-f428-457a-918c-be5890f8beda"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(01034) ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="38" width="145" height="14" uuid="be2eb229-0790-434e-86db-27c11cdfca3d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Stock Value as per Today]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="80" width="66" height="14" uuid="a899610a-68c4-4633-97ba-ad4952381979"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AJ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="217" y="80" width="66" height="14" uuid="a29ff230-a7d2-4cd4-9869-557456d23f21"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="283" y="80" width="66" height="14" uuid="671ca764-f1af-491c-a735-aeb9e3d76b2e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="6" y="52" width="145" height="14" uuid="d6f3ae45-8e1e-44b0-a8b9-6ef2b6a8abde"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="6" y="24" width="145" height="14" uuid="84bdab3d-3386-450f-97d7-69ebf532cda4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="66" width="145" height="14" uuid="7dcb8464-a87d-4e54-80eb-fa6420be9b26"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="6" y="80" width="145" height="14" uuid="c2909e5e-4d50-46b1-b321-37fde028fd18"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="10" width="66" height="14" uuid="fba9700e-e3d4-4905-a6bf-c97ac312e5ae"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="24" width="66" height="14" uuid="4daad337-6c21-4793-8971-da31a6ee6db0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="38" width="66" height="14" uuid="9be96000-7289-4cf1-9382-8b319a480121"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ (In Billion Rp)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="52" width="66" height="14" uuid="a57fe8e4-f7cd-49da-88c6-ea9e200bd9b8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="151" y="66" width="66" height="14" uuid="1aa18afc-ba36-42a6-b764-59e63ed15d86"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="6" y="1" width="145" height="14" uuid="7302864e-ee6f-4b58-bb78-c83148fc9d17"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KET}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="151" y="1" width="66" height="14" uuid="a5e91fac-eb8c-43a4-a8b2-1ce51ed10d3b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_AJ}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="217" y="1" width="66" height="14" uuid="c5d85675-31ea-4c51-a251-9e19a0d31a29"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_SP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="283" y="1" width="66" height="14" uuid="2700aeae-73ad-45ae-8d43-1583a996c320"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_TOTAL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="11" y="17" width="204" height="14" uuid="b33fc35d-b608-4759-9a89-2a1ad4befafe"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

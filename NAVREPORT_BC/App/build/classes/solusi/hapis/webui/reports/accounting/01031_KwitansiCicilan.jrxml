@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01031_KwitansiCicilan" language="groovy" pageWidth="612" pageHeight="468" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="0" bottomMargin="5" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.331000000000041"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="NoInvoice" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Jml" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Terbilang" class="java.lang.String"/>
+	<parameter name="TTD" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<parameter name="Total" class="java.lang.Long"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NoKontrak" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglMulaiCicilan" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.COMPANY
+		,XX.ALAMAT
+		,XX.NO_NPWP
+		,	(CAST ((CAST( SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 1,2) AS INT)) AS VARCHAR)
+			+ ' '  +
+			CASE	WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '01' THEN 'JANUARI'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '02' THEN 'PEBRUARI'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '03' THEN 'MARET'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '04' THEN 'APRIL'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '05' THEN 'MEI'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '06' THEN 'JUNI'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '07' THEN 'JULI'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '08' THEN 'AGUSTUS'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '09' THEN 'SEPTEMBER'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '10' THEN 'OKTOBER'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '11' THEN 'NOVEMBER'
+					WHEN SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 4,2) = '12' THEN 'DESEMBER'
+					ELSE ''	 END
+			) AS TGL_INV
+		,SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 9,2) AS TAHUN_INV
+		,XX.NO_INV
+		,XX.CUST_NAME
+		,XX.PO_NO
+		,XX.KETERANGAN
+		,XX.NO_URUT
+FROM	(
+			SELECT	Y.NO_URUT
+					,INV.COMPANY
+					,INV.ALAMAT
+					,INV.NO_NPWP
+					,DATEADD(month, (Y.NO_URUT-1), INV.TGL_INV) AS TGL_INV
+					,(INV.NO_INV+'-'+CAST(Y.NO_URUT AS VARCHAR)) AS NO_INV
+					,INV.CUST_NAME
+					,INV.PO_NO
+					,('INSTALLMENT KE-'+CAST(Y.NO_URUT AS VARCHAR)+' DARI '+CAST($P{Jml} AS VARCHAR)+'. ('+$P{NoKontrak}+')') AS KETERANGAN
+			FROM	(
+						SELECT  CMP.COMPANY
+								,CMP.ALAMAT
+								,CMP.NO_NPWP
+								,X.TGL_INV
+								,X.NO_INV
+								,X.CUST_NAME
+								,X.PO_NO
+						FROM	(
+									SELECT 	SIH.[No_] AS NO_INV
+											,$P{TglMulaiCicilan} AS TGL_INV
+											,SIH.[Bill-to Name] AS CUST_NAME
+											,SIH.[External Document No_] AS PO_NO
+									FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+								) X
+						LEFT JOIN	(
+										SELECT [Name] AS COMPANY
+											  ,([Address] +', '+ [Address 2] +', '+ [City]) AS ALAMAT
+											  ,[VAT Registration No_] AS NO_NPWP
+										FROM [dbo].[BC_AUTOJAYA$Company Information]
+									) CMP ON 1=1
+						UNION ALL
+						SELECT  CMP.COMPANY
+								,CMP.ALAMAT
+								,CMP.NO_NPWP
+								,X.TGL_INV
+								,X.NO_INV
+								,X.CUST_NAME
+								,X.PO_NO
+						FROM	(
+									SELECT 	SIH.[No_] AS NO_INV
+											,$P{TglMulaiCicilan} AS TGL_INV
+											,SIH.[Bill-to Name] AS CUST_NAME
+											,SIH.[External Document No_] AS PO_NO
+									FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+								) X
+						LEFT JOIN	(
+										SELECT [Name] AS COMPANY
+											  ,([Address] +', '+ [Address 2] +', '+ [City]) AS ALAMAT
+											  ,[VAT Registration No_] AS NO_NPWP
+										FROM [dbo].[BC_SOLUSI$Company Information]
+									) CMP ON 1=1
+					) INV
+			LEFT JOIN	(
+							SELECT 1 AS NO_URUT
+							UNION ALL
+							SELECT 2 AS NO_URUT
+							UNION ALL
+							SELECT 3 AS NO_URUT
+							UNION ALL
+							SELECT 4 AS NO_URUT
+							UNION ALL
+							SELECT 5 AS NO_URUT
+							UNION ALL
+							SELECT 6 AS NO_URUT
+							UNION ALL
+							SELECT 7 AS NO_URUT
+							UNION ALL
+							SELECT 8 AS NO_URUT
+							UNION ALL
+							SELECT 9 AS NO_URUT
+							UNION ALL
+							SELECT 10 AS NO_URUT
+							UNION ALL
+							SELECT 11 AS NO_URUT
+							UNION ALL
+							SELECT 12 AS NO_URUT
+							UNION ALL
+							SELECT 13 AS NO_URUT
+							UNION ALL
+							SELECT 14 AS NO_URUT
+							UNION ALL
+							SELECT 15 AS NO_URUT
+							UNION ALL
+							SELECT 16 AS NO_URUT
+							UNION ALL
+							SELECT 17 AS NO_URUT
+							UNION ALL
+							SELECT 18 AS NO_URUT
+							UNION ALL
+							SELECT 19 AS NO_URUT
+							UNION ALL
+							SELECT 20 AS NO_URUT
+							UNION ALL
+							SELECT 21 AS NO_URUT
+							UNION ALL
+							SELECT 22 AS NO_URUT
+							UNION ALL
+							SELECT 23 AS NO_URUT
+							UNION ALL
+							SELECT 24 AS NO_URUT
+							UNION ALL
+							SELECT 25 AS NO_URUT
+							UNION ALL
+							SELECT 26 AS NO_URUT
+							UNION ALL
+							SELECT 27 AS NO_URUT
+							UNION ALL
+							SELECT 28 AS NO_URUT
+							UNION ALL
+							SELECT 29 AS NO_URUT
+							UNION ALL
+							SELECT 30 AS NO_URUT
+							UNION ALL
+							SELECT 31 AS NO_URUT
+							UNION ALL
+							SELECT 32 AS NO_URUT
+							UNION ALL
+							SELECT 33 AS NO_URUT
+							UNION ALL
+							SELECT 34 AS NO_URUT
+							UNION ALL
+							SELECT 35 AS NO_URUT
+							UNION ALL
+							SELECT 36 AS NO_URUT
+							UNION ALL
+							SELECT 37 AS NO_URUT
+							UNION ALL
+							SELECT 38 AS NO_URUT
+							UNION ALL
+							SELECT 39 AS NO_URUT
+							UNION ALL
+							SELECT 40 AS NO_URUT
+							UNION ALL
+							SELECT 41 AS NO_URUT
+							UNION ALL
+							SELECT 42 AS NO_URUT
+							UNION ALL
+							SELECT 43 AS NO_URUT
+							UNION ALL
+							SELECT 44 AS NO_URUT
+							UNION ALL
+							SELECT 45 AS NO_URUT
+							UNION ALL
+							SELECT 46 AS NO_URUT
+							UNION ALL
+							SELECT 47 AS NO_URUT
+							UNION ALL
+							SELECT 48 AS NO_URUT
+							UNION ALL
+							SELECT 49 AS NO_URUT
+							UNION ALL
+							SELECT 50 AS NO_URUT
+							UNION ALL
+							SELECT 51 AS NO_URUT
+							UNION ALL
+							SELECT 52 AS NO_URUT
+							UNION ALL
+							SELECT 53 AS NO_URUT
+							UNION ALL
+							SELECT 54 AS NO_URUT
+							UNION ALL
+							SELECT 55 AS NO_URUT
+							UNION ALL
+							SELECT 56 AS NO_URUT
+							UNION ALL
+							SELECT 57 AS NO_URUT
+							UNION ALL
+							SELECT 58 AS NO_URUT
+							UNION ALL
+							SELECT 59 AS NO_URUT
+							UNION ALL
+							SELECT 60 AS NO_URUT
+							UNION ALL
+							SELECT 61 AS NO_URUT
+							UNION ALL
+							SELECT 62 AS NO_URUT
+							UNION ALL
+							SELECT 63 AS NO_URUT
+							UNION ALL
+							SELECT 64 AS NO_URUT
+							UNION ALL
+							SELECT 65 AS NO_URUT
+							UNION ALL
+							SELECT 66 AS NO_URUT
+							UNION ALL
+							SELECT 67 AS NO_URUT
+							UNION ALL
+							SELECT 68 AS NO_URUT
+							UNION ALL
+							SELECT 69 AS NO_URUT
+							UNION ALL
+							SELECT 70 AS NO_URUT
+							UNION ALL
+							SELECT 71 AS NO_URUT
+							UNION ALL
+							SELECT 72 AS NO_URUT
+							UNION ALL
+							SELECT 73 AS NO_URUT
+							UNION ALL
+							SELECT 74 AS NO_URUT
+							UNION ALL
+							SELECT 75 AS NO_URUT
+							UNION ALL
+							SELECT 76 AS NO_URUT
+							UNION ALL
+							SELECT 77 AS NO_URUT
+							UNION ALL
+							SELECT 78 AS NO_URUT
+							UNION ALL
+							SELECT 79 AS NO_URUT
+							UNION ALL
+							SELECT 80 AS NO_URUT
+							UNION ALL
+							SELECT 81 AS NO_URUT
+							UNION ALL
+							SELECT 82 AS NO_URUT
+							UNION ALL
+							SELECT 83 AS NO_URUT
+							UNION ALL
+							SELECT 84 AS NO_URUT
+							UNION ALL
+							SELECT 85 AS NO_URUT
+							UNION ALL
+							SELECT 86 AS NO_URUT
+							UNION ALL
+							SELECT 87 AS NO_URUT
+							UNION ALL
+							SELECT 88 AS NO_URUT
+							UNION ALL
+							SELECT 89 AS NO_URUT
+							UNION ALL
+							SELECT 90 AS NO_URUT
+							UNION ALL
+							SELECT 91 AS NO_URUT
+							UNION ALL
+							SELECT 92 AS NO_URUT
+							UNION ALL
+							SELECT 93 AS NO_URUT
+							UNION ALL
+							SELECT 94 AS NO_URUT
+							UNION ALL
+							SELECT 95 AS NO_URUT
+							UNION ALL
+							SELECT 96 AS NO_URUT
+							UNION ALL
+							SELECT 97 AS NO_URUT
+							UNION ALL
+							SELECT 98 AS NO_URUT
+							UNION ALL
+							SELECT 99 AS NO_URUT
+						) Y ON 1=1
+			WHERE INV.NO_INV = $P{NoInvoice} AND Y.NO_URUT <= $P{Jml}
+		) XX]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="ALAMAT" class="java.lang.String"/>
+	<field name="NO_NPWP" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.lang.String"/>
+	<field name="TAHUN_INV" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="PO_NO" class="java.lang.String"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="NO_URUT" class="java.lang.Integer"/>
+	<sortField name="NO_URUT"/>
+	<group name="Invoice" isStartNewPage="true">
+		<groupExpression><![CDATA[$F{NO_URUT}]]></groupExpression>
+	</group>
+	<detail>
+		<band height="404">
+			<textField>
+				<reportElement x="407" y="288" width="124" height="14" uuid="21d9cf69-86ed-40bc-bb17-ee5dfd147a85"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="20" y="10" width="404" height="14" uuid="a9d981cc-5431-4d9c-881c-815fb8f75b63"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="24" width="44" height="14" uuid="a31a8c65-b153-4889-a346-ae8b6cfdda5e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Alamat]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="69" y="24" width="355" height="28" uuid="d7bf7ef3-0ff7-490c-a11d-8c4a993c9a7a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALAMAT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="69" y="52" width="355" height="14" uuid="8d4973d8-4921-476c-ad23-4dfa16f65a1f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_NPWP}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="20" y="38" width="44" height="14" uuid="55bcd488-a2ad-4215-a8ae-435cd30ef156"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="52" width="44" height="14" uuid="12ca46ee-3e6b-4d37-a05e-fa869363fcf2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. NPWP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="52" width="5" height="14" uuid="79bed444-290c-48a7-ac68-ab6378e0a720"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="38" width="5" height="14" uuid="ecefd646-36cd-43bc-9e70-a563fa6fec76"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="64" y="24" width="5" height="14" uuid="3fde81a7-075e-499d-8546-b0fcee913323"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="51" y="104" width="134" height="16" uuid="6e3e6803-21d9-44e1-9166-43a5c4c76455"/>
+				<textElement>
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="142" y="131" width="399" height="16" uuid="c6c3ea95-25dd-484c-bf07-b5b377e3026d"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="142" y="162" width="399" height="16" uuid="4197910f-9900-4126-b742-4cf21f9a7137"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+					<paragraph lineSpacing="Proportional" lineSpacingSize="5.0"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Terbilang}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="142" y="224" width="399" height="16" uuid="fa6d4d4e-8985-41d0-90bf-016105ad9076"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="541" y="288" width="25" height="14" uuid="33fe9248-62bd-4a74-925f-d3b0b22ba894"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TAHUN_INV}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="405" y="375" width="161" height="14" uuid="26fb61b0-0840-4523-95e6-5b0949a8192f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TTD}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="405" y="390" width="161" height="14" uuid="14a3e98c-f53c-4e66-aca5-89e53dd332af"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="128" y="340" width="128" height="20" uuid="aaee354a-8126-410d-93d1-a96197592e93"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Total}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="405" y="389" width="161" height="1" uuid="cdd4df29-bc78-48b2-a9be-6e2d84954e8c"/>
+			</line>
+			<subreport>
+				<reportElement x="132" y="372" width="273" height="14" uuid="f8fc95d2-341c-47ce-817f-ff152acef65b"/>
+				<subreportParameter name="Company">
+					<subreportParameterExpression><![CDATA[$F{COMPANY}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "01031_00_Bank.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+</jasperReport>

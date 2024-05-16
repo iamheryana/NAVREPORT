@@ -1,0 +1,11 @@
+DROP FUNCTION FN_ISNUMERIC(text); 
+--
+CREATE FUNCTION FN_ISNUMERIC(text) 
+RETURNS boolean 
+--
+AS
+-- 
+'
+SELECT $1 ~ ''^[0-9]+$''
+' LANGUAGE 'sql';
+

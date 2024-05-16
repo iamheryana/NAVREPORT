@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01037_HasilStockOpnameTemuan" language="groovy" pageWidth="500" pageHeight="612" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="460" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bb222875-de20-464e-86b4-ded095620ca9">
+	<property name="ireport.zoom" value="1.46410000000001"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="l_proses_id" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	tmp03.item AS item_no
+	,tmp03.qty
+FROM	(
+		SELECT X.item
+			,SUM(X.qty) AS qty
+		FROM	(
+				SELECT upper(SUBSTRING(item_no,((CASE WHEN prefix ~ '^[0-9\.]+$' THEN CAST(nullif(prefix, '') AS integer) ELSE 0 END) + 1), char_length(item_no))) AS item
+					,(CASE WHEN qty ~ '^[0-9]*.?[0-9]*$' THEN CAST(nullif(qty, '') AS integer) ELSE 0 END) AS qty
+				FROM tmp03hasilopname
+				WHERE proses_id= $P{l_proses_id}
+			) X
+		GROUP BY X.item
+	) tmp03
+LEFT JOIN  tmp02kertaskerja tmp02 ON tmp03.item = tmp02.item_no AND tmp02.proses_id= $P{l_proses_id}
+WHERE tmp02.item_no IS NULL AND tmp03.qty > 0]]>
+	</queryString>
+	<field name="item_no" class="java.lang.String"/>
+	<field name="qty" class="java.lang.Long"/>
+	<sortField name="item_no"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="15">
+			<staticText>
+				<reportElement x="118" y="1" width="50" height="14" uuid="734ca8aa-cebc-4911-a09f-0891a6b23de3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Qty.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="1" width="113" height="14" uuid="47279c9b-f732-4d10-adbf-7249d89e2561"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item No]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="5" y="1" width="113" height="14" uuid="511001bd-c64a-46b2-b237-86dffd011202"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{item_no}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="118" y="1" width="50" height="14" uuid="cc260b04-5d3f-475c-aefb-0ebc55800c7e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qty}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="46">
+			<staticText>
+				<reportElement x="14" y="15" width="204" height="14" uuid="5bcc0cce-153c-4431-9d1f-9c13ab903f84"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

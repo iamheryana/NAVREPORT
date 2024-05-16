@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06013_02_NamaPerusahaan" language="groovy" pageWidth="535" pageHeight="590" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="535" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="2.853116706110153"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="18"/>
+	<parameter name="T05Id" class="java.lang.Long">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.T05_ID
+		, X.WEBINAR_ID
+		, X.TOPIC
+		, X.ACTUAL_START_TIME
+		, X.ORGANIZATION
+		, X.ATTENDED
+		,	CASE WHEN X.ATTENDED = 'HADIR' THEN
+				SUM(X.HADIR) OVER (PARTITION BY X.T05_ID)
+			ELSE
+				SUM(X.TIDAK_HADIR) OVER (PARTITION BY X.T05_ID)
+			END AS JML
+		, ROW_NUMBER() OVER (PARTITION BY X.ATTENDED ORDER BY X.ATTENDED, X.ORGANIZATION) AS NO_URUT
+FROM	(
+			SELECT	T06.T05_ID
+					, T05.WEBINAR_ID
+					, T05.TOPIC
+					, T05.ACTUAL_START_TIME
+					, T06.ORGANIZATION
+					, CASE WHEN T06.ATTENDED = 'Yes' THEN 'HADIR' ELSE 'TIDAK HADIR' END AS ATTENDED
+					, CASE WHEN T06.ATTENDED = 'Yes' THEN 1 ELSE 0 END AS HADIR
+					, CASE WHEN T06.ATTENDED = 'No' THEN 1 ELSE 0 END AS TIDAK_HADIR
+			FROM [dbo].[T06_WEBINAR_ATTENDEE] T06
+			INNER JOIN [dbo].[T05_WEBINAR_EVENT] T05 ON T05.T05_ID = T06.T05_ID
+			WHERE T06.ORGANIZATION NOT LIKE 'ACS%' AND T06.T05_ID = $P{T05Id}
+			GROUP BY T06.T05_ID, T06.ATTENDED, T06.ORGANIZATION, T05.WEBINAR_ID, T05.TOPIC, T05.ACTUAL_START_TIME
+		) X]]>
+	</queryString>
+	<field name="T05_ID" class="java.lang.Long"/>
+	<field name="WEBINAR_ID" class="java.lang.String"/>
+	<field name="TOPIC" class="java.lang.String"/>
+	<field name="ACTUAL_START_TIME" class="java.sql.Timestamp"/>
+	<field name="ORGANIZATION" class="java.lang.String"/>
+	<field name="ATTENDED" class="java.lang.String"/>
+	<field name="JML" class="java.lang.Integer"/>
+	<field name="NO_URUT" class="java.lang.Long"/>
+	<sortField name="ATTENDED"/>
+	<sortField name="NO_URUT"/>
+	<group name="Attended">
+		<groupExpression><![CDATA[$F{ATTENDED}]]></groupExpression>
+		<groupHeader>
+			<band height="42">
+				<textField>
+					<reportElement x="35" y="0" width="250" height="14" uuid="f9271546-6bb9-4836-97d0-2cd7008a996c"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ATTENDED}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="285" y="0" width="250" height="14" uuid="b56bce8e-1dd9-4dda-af65-744efe5e1645"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JML}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="35" height="14" uuid="90f17aa0-2a07-4a4e-9842-af9812a3a964"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="35" height="14" uuid="03fe2f52-21fb-43fa-8eea-79ef66e64b57"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="35" height="14" uuid="4c67ed5d-0b67-4670-a5f8-c7035bb4b543"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[No]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="35" y="28" width="250" height="14" uuid="2bcba2e4-788b-4174-9b89-c1c3f062dc3e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Nama Perusahaan]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<staticText>
+					<reportElement x="0" y="0" width="35" height="14" uuid="70a35984-b2d9-46a8-b259-64a449de943f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="35" height="14" uuid="5fd68411-bafa-4270-b597-8b8b61013b93"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="112" splitType="Stretch">
+			<staticText>
+				<reportElement x="35" y="28" width="250" height="14" uuid="4af46689-5397-4183-90c6-e864ea15f342"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="35" height="14" uuid="4d1d08e6-6da7-43f4-9d0a-08b172eaa12e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="14" width="250" height="14" uuid="2cb6cba7-98b8-48a7-ad39-a98a16efe639"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(06013) - Summary - Webinar]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="35" height="14" uuid="bec47490-b96b-45cb-acf2-129d6e2aa01d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="35" height="14" uuid="f1c01092-ff78-4ef2-a70d-4e9e08ee466a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="0" width="250" height="14" uuid="d34bd624-310a-43e3-8324-8fb747cea6fa"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="285" y="70" width="250" height="14" uuid="29a6b077-0448-4b8a-9621-fea3a3a69461"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOPIC}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="35" y="56" width="250" height="14" uuid="859c7ed7-1511-4e0a-84fa-3f10cb2581d3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Webinar ID :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="35" height="14" uuid="643992fe-888e-4895-ac09-dfe6c8019414"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="35" height="14" uuid="25f15cda-df5d-4316-a22e-8ab1c08958c6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="285" y="84" width="250" height="14" uuid="919c318e-dd34-4361-b3ef-80f753254b8c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACTUAL_START_TIME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="285" y="56" width="250" height="14" uuid="44d7f814-0d70-4d19-9c07-ba5cdc1a24f4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{WEBINAR_ID}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="35" y="70" width="250" height="14" uuid="f8413cf6-033a-4be8-b83f-72627b920ee6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Topic :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="35" height="14" uuid="073af9a1-1646-48fd-ad83-9077a58d018f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="84" width="250" height="14" uuid="f91d14b1-1bab-4ba6-b2e9-df57b63538e1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Webinar :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="35" height="14" uuid="3a2e468b-c951-4db3-84fa-1fa68c82d700"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="98" width="250" height="14" uuid="fd956f89-1195-40a4-91b1-6ebd4aa5968b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="35" height="14" uuid="d1b98b02-a3ae-42b8-a495-a8fd25e4afe6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="42" width="250" height="14" uuid="7540d00b-5c6d-4568-8db6-e41e1a1445e3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sub (06013_02) :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="285" y="42" width="250" height="14" uuid="082631f2-ae7b-43ad-bd50-78b64bd92ec4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Detail - Jml. Perusahaan]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="35" y="0" width="250" height="14" uuid="fe3cda0e-0869-47fa-985f-13b115b033f4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ORGANIZATION}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="35" height="14" uuid="db7b079c-2b94-44af-a68b-afaf614cf79f"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_URUT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="400" height="14" uuid="4cf99f22-e334-4460-8044-7e9c81554694"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tidak ada data]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

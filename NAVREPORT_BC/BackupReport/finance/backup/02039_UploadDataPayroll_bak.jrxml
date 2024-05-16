@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02039_UploadDataPayroll" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="822" leftMargin="0" rightMargin="20" topMargin="0" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.4641000000001363"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="masa" class="java.lang.String"/>
+	<parameter name="tahun" class="java.lang.String"/>
+	<parameter name="company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT x.company
+	,x.nip
+	,x.FlgDppt
+	,x.KdDpPt
+	,x.periodemulai
+	,x.periodeakhir
+	,x.nilai
+	,x.persen
+	,x.bayardimuka
+	,x.flag
+	,x.statusvalidasi
+FROM	(
+		SELECT 	substring(t03.nik,1,2) AS company
+			,substring(t03.nik,3,length(t03.nik)-2) AS nip
+			,'D' as FlgDppt
+			,'KOMS' as KdDpPt
+			,to_date(t02.tahun_komisi||t02.masa_komisi||'01','YYYYMMDD') as periodemulai
+			,cast((((to_date(t02.tahun_komisi||t02.masa_komisi||'01','YYYYMMDD') ) + INTERVAL '1 month') - INTERVAL '1 day') as date )as periodeakhir
+			,sum(t02.amount_komisi) as nilai
+			,'' as persen
+			,'' as bayardimuka
+			,'' as flag
+			,'' as statusvalidasi
+			,max(t03.periode_resign) as periode_resign
+		FROM t02rekapcosting t02
+		LEFT JOIN t03salesperson t03 ON t03.sales = t02.sales
+		WHERE t02.flag_komisi = 'Y' AND t02.tahun_komisi = $P{tahun} AND t02.masa_komisi = $P{masa}
+		GROUP BY t03.nik, t02.tahun_komisi,t02.masa_komisi
+		UNION ALL
+		SELECT 	substring(XX.nik,1,2) AS company
+			,substring(XX.nik,3,length(XX.nik)-2) AS nip
+			,'D' as FlgDppt
+			,'BNSA' as KdDpPt
+			,to_date(XX.tahun_tqs||XX.masa_tqs||'01','YYYYMMDD') as periodemulai
+			,cast((((to_date(XX.tahun_tqs||XX.masa_tqs||'01','YYYYMMDD') ) + INTERVAL '1 month') - INTERVAL '1 day') as date )as periodeakhir
+			,MAX
+				(
+					CASE WHEN $P{masa} < '01' THEN
+						0
+					ELSE
+						ROUND((CASE WHEN XX.total_sales - XX.target <= 0 THEN 0 ELSE XX.total_sales - XX.target END) * XX.total_pcn_tqs)
+						-
+						ROUND((CASE WHEN XX.total_sales_jan - XX.target <= 0 THEN 0 ELSE XX.total_sales_jan - XX.target END) * XX.total_pcn_tqs_jan)
+					END
+				) as nilai
+			,'' as persen
+			,'' as bayardimuka
+			,'' as flag
+			,'' as statusvalidasi
+			,max(XX.periode_resign) as periode_resign
+		FROM	(
+				SELECT
+					t03.nik,
+					t02.tahun_tqs,
+					t02.masa_tqs,
+					t03.periode_resign,
+					SUM(t02.amount) OVER (PARTITION BY t02.sales) AS total_sales,
+					CASE WHEN SUM(t02.amount) OVER (PARTITION BY t02.sales) = 0 THEN
+						0
+					ELSE
+						((SUM(t02.amount_tqs) OVER (PARTITION BY t02.sales))/(SUM(t02.amount) OVER (PARTITION BY t02.sales)))
+					END as total_pcn_tqs,
+					t03.target,
+					SUM(CASE WHEN t02.masa_tqs < $P{masa} THEN t02.amount ELSE 0 END) OVER (PARTITION BY t02.sales) AS total_sales_jan,
+					CASE WHEN SUM(CASE WHEN t02.masa_tqs < $P{masa} THEN t02.amount ELSE 0 END) OVER (PARTITION BY t02.sales) = 0 THEN
+						0
+					ELSE
+						((SUM(CASE WHEN t02.masa_tqs < $P{masa} THEN t02.amount_tqs ELSE 0 END) OVER (PARTITION BY t02.sales))/(SUM(CASE WHEN t02.masa_tqs < $P{masa} THEN t02.amount ELSE 0 END) OVER (PARTITION BY t02.sales)))
+					END as total_pcn_tqs_jan
+				FROM t02rekapcosting t02
+				LEFT JOIN t03salesperson t03 ON t03.sales = t02.sales
+				WHERE t02.tahun_tqs = $P{tahun} AND t02.masa_tqs <= $P{masa}
+			) XX
+		WHERE XX.tahun_tqs = $P{tahun} AND XX.masa_tqs = $P{masa}
+		GROUP BY XX.nik, XX.tahun_tqs, XX.masa_tqs
+	) x
+WHERE x.nilai <> 0 AND
+	x.company = $P{company}
+	and ((x.periodemulai <= x.periode_resign AND x.periode_resign is not null) or (x.periode_resign is null))]]>
+	</queryString>
+	<field name="company" class="java.lang.String"/>
+	<field name="nip" class="java.lang.String"/>
+	<field name="flgdppt" class="java.lang.String"/>
+	<field name="kddppt" class="java.lang.String"/>
+	<field name="periodemulai" class="java.sql.Date"/>
+	<field name="periodeakhir" class="java.sql.Date"/>
+	<field name="nilai" class="java.math.BigDecimal"/>
+	<field name="persen" class="java.lang.String"/>
+	<field name="bayardimuka" class="java.lang.String"/>
+	<field name="flag" class="java.lang.String"/>
+	<field name="statusvalidasi" class="java.lang.String"/>
+	<sortField name="nip"/>
+	<title>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="66" height="14" uuid="4e290c03-d4cc-46f0-b378-39bd9da0af0c"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[NIP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="66" y="0" width="53" height="14" uuid="35edc405-f23b-46a2-aa0b-e2e048fe93a4"/>
+				<text><![CDATA[FlgDppt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="119" y="0" width="58" height="14" uuid="9af81bba-02ad-4139-b9b5-eee434368d5b"/>
+				<text><![CDATA[KdDpPt]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="0" width="87" height="14" uuid="1a439beb-3c73-486a-a7e3-96821c71d76b"/>
+				<text><![CDATA[Periode Mulai]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="264" y="0" width="87" height="14" uuid="d2aa5d3d-5f61-458c-88ce-c931850256d6"/>
+				<text><![CDATA[Periode s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="0" width="93" height="14" uuid="6e3efdcf-154a-4e3e-9ea1-d64e0eaee71b"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Nilai]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="444" y="0" width="56" height="14" uuid="2dcaf67d-50ce-41a4-8b3b-a2bda74dfc3a"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="0" width="56" height="14" uuid="42b0e6d0-2406-4639-8435-6f5906e5e69c"/>
+				<text><![CDATA[Persen]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="0" width="80" height="14" uuid="61f0bc16-fe7d-499a-99db-fb4ed740f46f"/>
+				<text><![CDATA[Bayar Dimuka]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="636" y="0" width="52" height="14" uuid="ff1ed416-de72-4de4-b49b-c499c4939305"/>
+				<text><![CDATA[Flag]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="688" y="0" width="80" height="14" uuid="a519f3d3-1349-41d9-8749-7c6bcf9b78dc"/>
+				<text><![CDATA[Status Validasi]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="66" height="14" uuid="ab37bcc7-d0f3-4ea8-aae8-bc244c86363e"/>
+				<textFieldExpression><![CDATA[$F{nip}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="66" y="0" width="53" height="14" uuid="facabf8b-c7ed-47ed-9379-5eebb27d6ef2"/>
+				<textFieldExpression><![CDATA[$F{flgdppt}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="119" y="0" width="58" height="14" uuid="dbe76c07-405a-4787-b1af-c1079f9752e0"/>
+				<textFieldExpression><![CDATA[$F{kddppt}]]></textFieldExpression>
+			</textField>
+			<textField pattern="yyyy-MM-dd" isBlankWhenNull="true">
+				<reportElement x="177" y="0" width="87" height="14" uuid="50094cb1-ae53-4d97-9754-4fb23aaa6fe0"/>
+				<textFieldExpression><![CDATA[$F{periodemulai}]]></textFieldExpression>
+			</textField>
+			<textField pattern="yyyy-MM-dd" isBlankWhenNull="true">
+				<reportElement x="264" y="0" width="87" height="14" uuid="d2be6a6e-300e-43bf-b1c5-6c15269c52d0"/>
+				<textFieldExpression><![CDATA[$F{periodeakhir}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="351" y="0" width="93" height="14" uuid="d36384b8-30e2-448e-8097-8d7309371351"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{nilai}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="500" y="0" width="56" height="14" uuid="42861f91-b6b7-4e15-bc09-3592999ca080"/>
+				<textFieldExpression><![CDATA[$F{persen}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="444" y="0" width="56" height="14" uuid="32a09a95-1185-4192-8747-2cb6901ded31"/>
+				<text><![CDATA[IDR]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="556" y="0" width="80" height="14" uuid="92f64f67-6883-45ae-96ed-bc0b3d2f1900"/>
+				<textFieldExpression><![CDATA[$F{bayardimuka}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="636" y="0" width="52" height="14" uuid="c9c5233c-9ba6-4630-b477-09c8717ea30a"/>
+				<textFieldExpression><![CDATA[$F{flag}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="688" y="0" width="80" height="14" uuid="235431bb-aed1-4a1c-a8ce-3c9f422a804b"/>
+				<textFieldExpression><![CDATA[$F{statusvalidasi}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="84">
+			<staticText>
+				<reportElement x="0" y="0" width="177" height="14" uuid="98e9cfd3-0ad4-40e3-a767-0c1d228c2f1a"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="177" height="14" uuid="4dfb164f-7db5-461c-abcd-a1ca1632bc90"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Prepared By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="0" width="174" height="14" uuid="ae3c88dd-bb13-49f1-8eee-6f25958203e4"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="14" width="174" height="14" uuid="51da9d7e-fe19-4c36-ab4e-e8d81b38cdee"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Checked By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="0" width="205" height="14" uuid="f069e968-37c9-4876-820e-6266780ee8e9"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="14" width="205" height="14" uuid="53cf128f-087a-40b8-bf3d-c5f99e4b3598"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Checked By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="0" width="212" height="14" uuid="96c896a5-b3e4-409a-b85d-212e21caf457"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="14" width="212" height="14" uuid="5dca05d3-d7da-43b9-9c4a-f32755c4e082"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Approved By]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="177" height="14" uuid="fb266305-fc55-4a13-8979-62d3899e45f5"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="28" width="205" height="14" uuid="c47f204e-542e-4401-92ed-312c75b0a8ec"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="28" width="174" height="14" uuid="1bb4308c-fc1c-4a21-94d7-513da69e1ce4"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="28" width="212" height="14" uuid="003c00ad-879b-4957-bdf2-484055c7e541"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="42" width="212" height="14" uuid="bfb97adc-44c4-41d9-ac78-2dfa4e826d96"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="177" height="14" uuid="d6744b1c-e525-4dc0-8f63-6f170e9e5514"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="42" width="205" height="14" uuid="df31e5ba-2b8f-4a4f-aadf-59147ddb09a2"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="42" width="174" height="14" uuid="528563af-fa58-4934-852b-0bec17e9563a"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="56" width="212" height="14" uuid="e3b05647-5cb7-4c0b-933a-3e678444be04"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="177" height="14" uuid="99350443-8a5d-41fd-aff4-45515d2b0b9b"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="56" width="205" height="14" uuid="4edbbf54-cab3-4d9b-9b77-073e75cef38e"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="56" width="174" height="14" uuid="b3bac435-8908-4bd7-98b7-7a348cf741e5"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="556" y="70" width="212" height="14" uuid="991f685f-51bc-4447-9c93-0bb287db18fe"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="177" height="14" uuid="0d1e30fa-6ad6-4997-8773-3d40ba3090b7"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="351" y="70" width="205" height="14" uuid="68003c88-a291-4015-a40c-6cd9bc909671"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="177" y="70" width="174" height="14" uuid="07dec87f-5ff7-4de4-ba9d-1b36236a0b63"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</summary>
+	<noData>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="768" height="14" uuid="e762fe98-ae4e-46c4-a6dc-d3d20f52f9ce"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ItemValidationList" language="groovy" pageWidth="1380" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1340" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.771561000000017"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.COMPANY
+		,X.ITEM_NO
+		,X.ITEM_DESC
+		,X.UOM
+		,X.ITEM_CATEGORY
+		,X.PRODUCT_GROUP
+        ,X.DIM_ITEM_CATEGORY
+		,X.DIM_PRODUCT
+		,X.DIM_PRINCIPAL
+		,X.DIM_MODEL_PRODUCT
+        ,X.LAST_MODIFIED
+        ,X.VALIDASI
+FROM	(
+SELECT	'AUTOJAYA' AS COMPANY
+		,ITM.[No_] AS ITEM_NO
+		,ITM.[Description] AS ITEM_DESC
+		,ITM.[Base Unit of Measure] AS UOM
+		,ITM.[Item Category Code] AS ITEM_CATEGORY
+		,ITM.[Product Group Code] AS PRODUCT_GROUP
+        , DIM.DIM_ITEM_CATEGORY
+		, DIM.DIM_PRODUCT
+		, DIM.DIM_PRINCIPAL
+		, DIM.DIM_MODEL_PRODUCT
+        , ITM.[Last Date Modified] AS LAST_MODIFIED
+        ,	CASE WHEN ITM.[Item Category Code] <> DIM.DIM_ITEM_CATEGORY OR
+					ITM.[Product Group Code] <> DIM.DIM_PRODUCT THEN 'BEDA ANTARA DIMENSION DAN DATA DI GENERAL'
+			ELSE
+				CASE WHEN DIM.DIM_ITEM_CATEGORY IS NULL OR DIM.DIM_ITEM_CATEGORY = '' THEN 'DIMENSION ITEM CATEGORY BELUM DIISI'
+				ELSE
+					CASE WHEN DIM.DIM_PRODUCT IS NULL OR DIM.DIM_PRODUCT = '' THEN 'DIMENSION PRODUCT GROUP BELUM DIISI'
+					ELSE
+						CASE WHEN DIM.DIM_PRINCIPAL IS NULL OR DIM.DIM_PRINCIPAL = '' THEN 'DIMENSION PRINCIPAL BELUM DIISI'
+						ELSE
+							CASE WHEN ITM.[Description] IS NULL OR ITM.[Description] = '' THEN 'DESCRIPTION BELUM DIISI'
+							ELSE
+								CASE WHEN DIM.DIM_PRINCIPAL = 'NONE' THEN 'PRINCIPAL NONE'
+								ELSE
+								NULL
+								END
+							END
+						END
+					END
+				END
+			END AS VALIDASI
+FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item] ITM
+LEFT JOIN	(
+				SELECT	DIMS.ITEM_NO
+						, MAX(DIMS.DIM_ITEM_CATEGORY) AS DIM_ITEM_CATEGORY
+						, MAX(DIMS.DIM_PRODUCT) AS DIM_PRODUCT
+						, MAX(DIMS.DIM_PRINCIPAL) AS DIM_PRINCIPAL
+						, MAX(DIMS.DIM_MODEL_PRODUCT) AS DIM_MODEL_PRODUCT
+				FROM	(
+							SELECT
+								  [No_] AS ITEM_NO
+								  , CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS DIM_ITEM_CATEGORY
+								  , CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS DIM_PRODUCT
+								  , CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END AS DIM_PRINCIPAL
+								  , CASE WHEN [Dimension Code] = 'MODEL PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS DIM_MODEL_PRODUCT
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Default Dimension]
+							WHERE [Table ID] = 27
+						) DIMS
+				GROUP BY DIMS.ITEM_NO
+			) DIM ON ITM.[No_] = DIM.ITEM_NO
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		,ITM.[No_] AS ITEM_NO
+		,ITM.[Description] AS ITEM_DESC
+		,ITM.[Base Unit of Measure] AS UOM
+		,ITM.[Item Category Code] AS ITEM_CATEGORY
+		,ITM.[Product Group Code] AS PRODUCT_GROUP
+        , DIM.DIM_ITEM_CATEGORY
+		, DIM.DIM_PRODUCT
+		, DIM.DIM_PRINCIPAL
+		, DIM.DIM_MODEL_PRODUCT
+        , ITM.[Last Date Modified] AS LAST_MODIFIED
+        ,	CASE WHEN ITM.[Item Category Code] <> DIM.DIM_ITEM_CATEGORY OR
+					ITM.[Product Group Code] <> DIM.DIM_PRODUCT THEN 'BEDA ANTARA DIMENSION DAN DATA DI GENERAL'
+			ELSE
+				CASE WHEN DIM.DIM_ITEM_CATEGORY IS NULL OR DIM.DIM_ITEM_CATEGORY = '' THEN 'DIMENSION ITEM CATEGORY BELUM DIISI'
+				ELSE
+					CASE WHEN DIM.DIM_PRODUCT IS NULL OR DIM.DIM_PRODUCT = '' THEN 'DIMENSION PRODUCT GROUP BELUM DIISI'
+					ELSE
+						CASE WHEN DIM.DIM_PRINCIPAL IS NULL OR DIM.DIM_PRINCIPAL = '' THEN 'DIMENSION PRINCIPAL BELUM DIISI'
+						ELSE
+							CASE WHEN ITM.[Description] IS NULL OR ITM.[Description] = '' THEN 'DESCRIPTION BELUM DIISI'
+							ELSE
+								CASE WHEN DIM.DIM_PRINCIPAL = 'NONE' THEN 'PRINCIPAL NONE'
+								ELSE
+								NULL
+								END
+							END
+						END
+					END
+				END
+			END AS VALIDASI
+FROM [AUTOJAYA].[dbo].[SOLUSI$Item] ITM
+LEFT JOIN	(
+				SELECT	DIMS.ITEM_NO
+						, MAX(DIMS.DIM_ITEM_CATEGORY) AS DIM_ITEM_CATEGORY
+						, MAX(DIMS.DIM_PRODUCT) AS DIM_PRODUCT
+						, MAX(DIMS.DIM_PRINCIPAL) AS DIM_PRINCIPAL
+						, MAX(DIMS.DIM_MODEL_PRODUCT) AS DIM_MODEL_PRODUCT
+				FROM	(
+							SELECT
+								  [No_] AS ITEM_NO
+								  , CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS DIM_ITEM_CATEGORY
+								  , CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS DIM_PRODUCT
+								  , CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END AS DIM_PRINCIPAL
+								  , CASE WHEN [Dimension Code] = 'MODEL PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS DIM_MODEL_PRODUCT
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Default Dimension]
+							WHERE [Table ID] = 27
+						) DIMS
+				GROUP BY DIMS.ITEM_NO
+			) DIM ON ITM.[No_] = DIM.ITEM_NO
+) X
+WHERE (X.COMPANY = $P{Company}) AND
+	(X.LAST_MODIFIED >= $P{TglFrom} AND X.LAST_MODIFIED <=$P{TglUpto})]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="ITEM_DESC" class="java.lang.String"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="ITEM_CATEGORY" class="java.lang.String"/>
+	<field name="PRODUCT_GROUP" class="java.lang.String"/>
+	<field name="DIM_ITEM_CATEGORY" class="java.lang.String"/>
+	<field name="DIM_PRODUCT" class="java.lang.String"/>
+	<field name="DIM_PRINCIPAL" class="java.lang.String"/>
+	<field name="DIM_MODEL_PRODUCT" class="java.lang.String"/>
+	<field name="LAST_MODIFIED" class="java.sql.Timestamp"/>
+	<field name="VALIDASI" class="java.lang.String"/>
+	<sortField name="COMPANY"/>
+	<sortField name="ITEM_NO"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="85" splitType="Stretch">
+			<staticText>
+				<reportElement x="13" y="1" width="133" height="14" uuid="19af8fd1-8dc2-4eba-a85a-be94171f3c91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ITEM VALIDATION LIST]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="15" width="133" height="14" uuid="b50a35e5-a29d-419b-8526-44c66e9c421e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Updated From :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="146" y="43" width="273" height="14" uuid="625063cd-217b-47d4-8204-a71466c56a88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="29" width="133" height="14" uuid="5991f8d3-cb24-43ab-b3e8-ec8fa22ea4b5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="57" width="133" height="14" uuid="168aa3a7-29fb-4223-b820-fea66cb4a62a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="146" y="29" width="273" height="14" uuid="27aab05f-2619-4719-82e2-37b10ed3b90e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="71" width="133" height="14" uuid="9d6466a0-cbb0-4e56-8177-01ce4ca133a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item No]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="146" y="71" width="273" height="14" uuid="6767d1de-07a9-4b80-98f2-06504f0a8209"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item Description]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="419" y="71" width="69" height="14" uuid="9da7d7b1-a8c1-4d17-8f72-2c31cc2a29eb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[UOM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="488" y="71" width="87" height="14" uuid="5a181cb2-2959-4b8d-ad77-f176191622fc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Item Category]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="575" y="71" width="87" height="14" uuid="9ea86002-99ea-45e6-8d70-e84565847e76"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Product Group]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="662" y="71" width="87" height="14" uuid="a92456e4-be29-42af-b699-03251f592f8a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dims. Item Category]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="749" y="71" width="87" height="14" uuid="06b653a3-069d-44d4-818d-864f9d1fb5d1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dims. Product Group]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="836" y="71" width="87" height="14" uuid="b6e59cee-f711-42d8-aad2-cc8d63a937cb"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dims. Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="923" y="71" width="87" height="14" uuid="7a4bbc46-2d95-4a24-8114-4a8d48bc939e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Dims. Model Product]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1010" y="71" width="64" height="14" uuid="e7c457e3-7001-4bca-ba00-ef0852daf6d9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Last Modified]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1074" y="71" width="248" height="14" uuid="185816bb-c1ad-4509-82b1-6b805e4d5d71"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Validasi]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="146" y="57" width="273" height="14" uuid="dc0f6100-0009-44ad-86cb-8b383c6cd120"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="43" width="133" height="14" uuid="939a5021-3e6b-4a27-888f-8d63b126f89b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="146" y="15" width="273" height="14" uuid="ce6ea06b-5c0c-4ed8-8dee-fa0d020082b5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="419" y="15" width="69" height="14" uuid="d678e384-7214-4da9-b4fc-1b643e2d3af9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[upto]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="488" y="15" width="87" height="14" uuid="1efbbe50-1d11-49eb-b1e4-c71c7b8d4ee0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="419" y="29" width="69" height="14" uuid="05f2efaa-0373-4948-b905-03aac5fef230"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="419" y="43" width="69" height="14" uuid="a929fd98-7770-4995-84af-05f5a7d85446"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="488" y="57" width="87" height="14" uuid="693a981d-fd86-41ec-9ab1-10f49f08e15b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="419" y="57" width="69" height="14" uuid="d2ed7688-32d4-4c1d-80cc-2a4da1355585"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="488" y="29" width="87" height="14" uuid="b8155fdd-2ae8-4355-80c5-f8993f82f7cb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="488" y="43" width="87" height="14" uuid="01f365c9-eaeb-4800-ac45-91b40a5f5dc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="13" y="1" width="133" height="14" uuid="79ab9d1a-d40c-4f2c-8b11-9036b14d81a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="146" y="1" width="273" height="14" uuid="1b8a0ac6-f4e5-4c99-a8c1-82315c2d2fd9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_DESC}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="419" y="1" width="69" height="14" uuid="0730ed53-b17a-4f74-8343-75f9d1ba8a81"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UOM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="575" y="1" width="87" height="14" uuid="3f53a8e3-7e38-4512-882e-628faae365fc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCT_GROUP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="488" y="1" width="87" height="14" uuid="5ba7e300-86bd-4391-b659-a45c6451f409"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CATEGORY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="662" y="1" width="87" height="14" uuid="ef37507f-526f-42d4-a7c8-52bd2a874cb6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_ITEM_CATEGORY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="749" y="1" width="87" height="14" uuid="e708db3f-ca02-4777-9777-a6241e6c4bc3"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="923" y="1" width="87" height="14" uuid="52d59472-df22-472a-adad-fa012dc73911"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_MODEL_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="1010" y="1" width="64" height="14" uuid="b96e358c-894b-4b51-9bc6-49f33c46ab05"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LAST_MODIFIED}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="836" y="1" width="87" height="14" uuid="051a1093-3afe-4b4d-9b52-482246b12ad5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1074" y="1" width="248" height="14" uuid="311d78f9-0f80-4d91-aa6b-86a070ef1100"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VALIDASI}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="13" y="12" width="204" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

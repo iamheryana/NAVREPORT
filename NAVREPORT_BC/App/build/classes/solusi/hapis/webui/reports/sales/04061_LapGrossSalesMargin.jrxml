@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04061_LapGrossSalesMargin" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.464100000000024"/>
+	<property name="ireport.x" value="73"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="PeriodeFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="PeriodeUpto" class="java.util.Date"/>
+	<parameter name="ParamValue" class="java.math.BigDecimal"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProsesId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProsesId_2" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	'A' AS MAIN_GRP
+		, CASE WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (1,2,3,4,5,6,10,11,12) THEN 'PER QTR. - UPTO CURR. PERIOD' ELSE 'PER SEM. - UPTO CURR. PERIOD' END AS LABEL_TITLE
+		, CASE	WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (1,2,3,4,5,6) THEN 'Q-1'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (7,8,9) THEN 'SEM. I'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (10,11,12) THEN 'Q-1 to Q-3'
+				ELSE 'Q-1' END AS LABEL_KEL_1
+		, CASE	WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (1,2,3,4,5,6) THEN 'Q-2'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (7,8,9) THEN 'SEM. II'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (10,11,12) THEN 'Q-4'
+				ELSE 'Q-1' END AS LABEL_KEL_2
+		, XIX.GROUP_NO
+		, XIX.GROUP_DESC
+		, ROUND((XIX.UPTO_PREV_MONTH / 1000000),2) AS UPTO_PREV_MONTH
+		, ROUND((XIX.CURR_MONTH / 1000000),2) AS CURR_MONTH
+		, ROUND((XIX.UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.CURR_MONTH / 1000000),2) AS  UPTO_CURR_MONTH
+		, ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2) AS HIT_UPTO_PREV_MONTH
+		, ROUND((XIX.HIT_CURR_MONTH / 1000000),2) AS HIT_CURR_MONTH
+		, ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2) AS HIT_UPTO_CURR_MONTH
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN ROUND((XIX.UPTO_PREV_MONTH / 1000000),2) ELSE 0 END AS UPTO_PREV_MONTH_SALES
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN ROUND((XIX.CURR_MONTH / 1000000),2) ELSE 0 END AS CURR_MONTH_SALES
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN (ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)) ELSE 0 END AS UPTO_CURR_MONTH_SALES
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				ROUND((XIX.UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.CURR_MONTH / 1000000),2)
+			ELSE
+				(ROUND((XIX.UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.CURR_MONTH / 1000000),2) ) - ROUND((XIX.SEM / 1000000),2)
+			END AS SEM_1
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				0
+			ELSE
+				ROUND((XIX.SEM / 1000000),2)
+			END AS SEM_2
+		, ROUND((XIX.UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.CURR_MONTH / 1000000),2)  AS ALL_SEM
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)
+			ELSE
+				(ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2) ) - ROUND((XIX.HIT_SEM / 1000000),2)
+			END AS HIT_SEM_1
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				0
+			ELSE
+				ROUND((XIX.HIT_SEM / 1000000),2)
+			END AS HIT_SEM_2
+		, ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)  AS HIT_ALL_SEM
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				CASE	WHEN XIX.GROUP_NO = 1 THEN (ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)) ELSE 0 END
+			ELSE
+				(CASE	WHEN XIX.GROUP_NO = 1 THEN (ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)) ELSE 0 END) - (CASE	WHEN XIX.GROUP_NO = 1 THEN ROUND((XIX.SEM / 1000000),2) ELSE 0 END)
+			END AS SEM_1_SALES
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				0
+			ELSE
+				CASE	WHEN XIX.GROUP_NO = 1 THEN ROUND((XIX.SEM / 1000000),2) ELSE 0 END
+			END AS SEM_2_SALES
+		, CASE	WHEN XIX.GROUP_NO = 1 THEN (ROUND((XIX.HIT_UPTO_PREV_MONTH / 1000000),2)  +  ROUND((XIX.HIT_CURR_MONTH / 1000000),2)) ELSE 0 END AS ALL_SEM_SALES
+FROM	(
+			SELECT	XXX.GROUP_NO
+					, XXX.GROUP_DESC
+					, SUM(XXX.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+					, SUM(XXX.CURR_MONTH) AS CURR_MONTH
+					, CASE	WHEN XXX.GROUP_NO = 1 THEN SUM(XXX.UPTO_PREV_MONTH)
+							WHEN XXX.GROUP_NO = 2 THEN SUM(XXX.UPTO_PREV_MONTH) * -1
+							WHEN XXX.GROUP_NO = 3 THEN SUM(XXX.UPTO_PREV_MONTH)
+							ELSE 0 END AS HIT_UPTO_PREV_MONTH
+					, CASE	WHEN XXX.GROUP_NO = 1 THEN SUM(XXX.CURR_MONTH)
+							WHEN XXX.GROUP_NO = 2 THEN SUM(XXX.CURR_MONTH) * -1
+							WHEN XXX.GROUP_NO = 3 THEN SUM(XXX.CURR_MONTH)
+							ELSE 0 END AS HIT_CURR_MONTH
+					, SUM(XXX.SEM) AS SEM
+					, CASE	WHEN XXX.GROUP_NO = 1 THEN SUM(XXX.SEM)
+							WHEN XXX.GROUP_NO = 2 THEN SUM(XXX.SEM) * -1
+							WHEN XXX.GROUP_NO = 3 THEN SUM(XXX.SEM)
+							ELSE 0 END AS HIT_SEM
+			FROM	(
+						SELECT	MAIN_GRP
+								, GROUP_NO
+								, GROUP_DESC
+								, SUM(UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+								, SUM(CURR_MONTH) AS CURR_MONTH
+								, 0 AS SEM
+						FROM [dbo].[TEMP11_GROSS_SALES_MARGIN]
+						WHERE	PROSES_ID = $P{ProsesId} AND
+								MAIN_GRP = 'A'
+						GROUP BY MAIN_GRP, GROUP_NO, GROUP_DESC
+						UNION ALL
+						SELECT	MAIN_GRP
+								, GROUP_NO
+								, GROUP_DESC
+								, 0 AS UPTO_PREV_MONTH
+								, 0 AS CURR_MONTH
+								, SUM(CURR_MONTH) AS SEM
+						FROM [dbo].[TEMP11_GROSS_SALES_MARGIN]
+						WHERE	PROSES_ID = $P{ProsesId_2} AND
+								MAIN_GRP = 'A'
+						GROUP BY MAIN_GRP, GROUP_NO, GROUP_DESC
+					) XXX
+			GROUP BY XXX.GROUP_NO, XXX.GROUP_DESC
+		) XIX
+UNION ALL
+SELECT	MAIN_GRP
+		, CASE WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (1,2,3,4,5,6,10,11,12) THEN 'PER QTR. - UPTO CURR. PERIOD' ELSE 'PER SEM. - UPTO CURR. PERIOD' END AS LABEL_TITLE
+		, CASE	WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (1,2,3,4,5,6) THEN 'Q-1'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (7,8,9) THEN 'SEM. I'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (10,11,12) THEN 'Q-1 to Q-3'
+				ELSE 'Q-1' END AS LABEL_KEL_1
+		, CASE	WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (1,2,3,4,5,6) THEN 'Q-2'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (7,8,9) THEN 'SEM. II'
+				WHEN DATEPART(MONTH,$P{PeriodeUpto}) IN (10,11,12) THEN 'Q-4'
+				ELSE 'Q-1' END AS LABEL_KEL_2
+		,GROUP_NO
+		,GROUP_DESC
+		, ROUND((SUM(UPTO_PREV_MONTH)/1000000),2) AS UPTO_PREV_MONTH
+		, ROUND((SUM(CURR_MONTH)/1000000),2) AS CURR_MONTH
+		, ROUND((SUM(UPTO_PREV_MONTH)/1000000),2)  + ROUND((SUM(CURR_MONTH)/1000000),2) AS UPTO_CURR_MONTH
+		, 0 AS HIT_UPTO_PREV_MONTH
+		, 0 AS HIT_CURR_MONTH
+		, 0 AS HIT_UPTO_CURR_MONTH
+		, 0 AS UPTO_PREV_MONTH_SALES
+		, 0 AS CURR_MONTH_SALES
+		, 0 AS UPTO_CURR_MONTH_SALES
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				ROUND((SUM(UPTO_PREV_MONTH)/1000000),2)  + ROUND((SUM(CURR_MONTH)/1000000),2)
+			ELSE
+				(ROUND((SUM(UPTO_PREV_MONTH)/1000000),2)  + ROUND((SUM(CURR_MONTH)/1000000),2)) - ROUND((SUM(SEM)/1000000),2)
+			END AS SEM_1
+		,	CASE WHEN $P{PeriodeUpto} <= CAST(CAST(DATEPART(YEAR,$P{PeriodeUpto}) AS NVARCHAR)+'-03-31' AS DATETIME) THEN
+				0
+			ELSE
+				ROUND((SUM(SEM)/1000000),2)
+			END AS SEM_2
+		, ROUND((SUM(UPTO_PREV_MONTH)/1000000),2)  + ROUND((SUM(CURR_MONTH)/1000000),2) AS ALL_SEM
+		, 0 AS HIT_SEM_1
+		, 0 AS HIT_SEM_2
+		, 0 AS  HIT_ALL_SEM
+		, 0 AS SEM_1_SALES
+		, 0 AS SEM_2_SALES
+		, 0 AS ALL_SEM_SALES
+FROM	(
+			SELECT	MAIN_GRP
+					, GROUP_NO
+					, GROUP_DESC
+					, SUM(UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+					, SUM(CURR_MONTH) AS CURR_MONTH
+					, 0 AS SEM
+			FROM [dbo].[TEMP11_GROSS_SALES_MARGIN]
+			WHERE	PROSES_ID = $P{ProsesId} AND
+					MAIN_GRP = 'B'
+			GROUP BY MAIN_GRP, GROUP_NO, GROUP_DESC
+			UNION ALL
+			SELECT	MAIN_GRP
+					, GROUP_NO
+					, GROUP_DESC
+					, 0 AS UPTO_PREV_MONTH
+					, 0 AS CURR_MONTH
+					, SUM(CURR_MONTH) AS SEM
+			FROM [dbo].[TEMP11_GROSS_SALES_MARGIN]
+			WHERE	PROSES_ID = $P{ProsesId_2} AND
+					MAIN_GRP = 'B'
+			GROUP BY MAIN_GRP, GROUP_NO, GROUP_DESC
+		) XXX
+GROUP BY MAIN_GRP, GROUP_NO, GROUP_DESC]]>
+	</queryString>
+	<field name="MAIN_GRP" class="java.lang.String"/>
+	<field name="LABEL_TITLE" class="java.lang.String"/>
+	<field name="LABEL_KEL_1" class="java.lang.String"/>
+	<field name="LABEL_KEL_2" class="java.lang.String"/>
+	<field name="GROUP_NO" class="java.lang.Integer"/>
+	<field name="GROUP_DESC" class="java.lang.String"/>
+	<field name="UPTO_PREV_MONTH" class="java.math.BigDecimal"/>
+	<field name="CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="UPTO_CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="HIT_UPTO_PREV_MONTH" class="java.math.BigDecimal"/>
+	<field name="HIT_CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="HIT_UPTO_CURR_MONTH" class="java.math.BigDecimal"/>
+	<field name="UPTO_PREV_MONTH_SALES" class="java.math.BigDecimal"/>
+	<field name="CURR_MONTH_SALES" class="java.math.BigDecimal"/>
+	<field name="UPTO_CURR_MONTH_SALES" class="java.math.BigDecimal"/>
+	<field name="SEM_1" class="java.math.BigDecimal"/>
+	<field name="SEM_2" class="java.math.BigDecimal"/>
+	<field name="ALL_SEM" class="java.math.BigDecimal"/>
+	<field name="HIT_SEM_1" class="java.math.BigDecimal"/>
+	<field name="HIT_SEM_2" class="java.math.BigDecimal"/>
+	<field name="HIT_ALL_SEM" class="java.math.BigDecimal"/>
+	<field name="SEM_1_SALES" class="java.math.BigDecimal"/>
+	<field name="SEM_2_SALES" class="java.math.BigDecimal"/>
+	<field name="ALL_SEM_SALES" class="java.math.BigDecimal"/>
+	<sortField name="MAIN_GRP"/>
+	<sortField name="GROUP_NO"/>
+	<variable name="UPTO_PREV_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_PREV_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="UPTO_CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="HIT_UPTO_PREV_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_UPTO_PREV_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="HIT_CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="HIT_UPTO_CURR_MONTH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_UPTO_CURR_MONTH}]]></variableExpression>
+	</variable>
+	<variable name="UPTO_PREV_MONTH_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_PREV_MONTH_SALES}]]></variableExpression>
+	</variable>
+	<variable name="CURR_MONTH_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{CURR_MONTH_SALES}]]></variableExpression>
+	</variable>
+	<variable name="UPTO_CURR_MONTH_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{UPTO_CURR_MONTH_SALES}]]></variableExpression>
+	</variable>
+	<variable name="pcnUptoPrevMonth" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{UPTO_PREV_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_UPTO_PREV_MONTH_1}/$V{UPTO_PREV_MONTH_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{UPTO_PREV_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_UPTO_PREV_MONTH_1}/$V{UPTO_PREV_MONTH_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="pcnCurrMonth" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{CURR_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_CURR_MONTH_1}/$V{CURR_MONTH_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{CURR_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_CURR_MONTH_1}/$V{CURR_MONTH_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="pcnUptoCurrMonth" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{UPTO_CURR_MONTH_SALES_1} == 0.0 ? 0.0 : ($V{HIT_UPTO_CURR_MONTH_1}/$V{UPTO_CURR_MONTH_SALES_1}) )]]></variableExpression>
+	</variable>
+	<variable name="HIT_SEM_1_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_SEM_1}]]></variableExpression>
+	</variable>
+	<variable name="HIT_SEM_2_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_SEM_2}]]></variableExpression>
+	</variable>
+	<variable name="HIT_ALL_SEM_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{HIT_ALL_SEM}]]></variableExpression>
+	</variable>
+	<variable name="SEM_1_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{SEM_1_SALES}]]></variableExpression>
+	</variable>
+	<variable name="SEM_2_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{SEM_2_SALES}]]></variableExpression>
+	</variable>
+	<variable name="ALL_SEM_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{ALL_SEM_SALES}]]></variableExpression>
+	</variable>
+	<variable name="pcnSem1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{SEM_1_SALES_1} == 0.0 ? 0.0 : ($V{HIT_SEM_1_1}/$V{SEM_1_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{SEM_1_SALES_1} == 0.0 ? 0.0 : ($V{HIT_SEM_1_1}/$V{SEM_1_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="pncSem2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{SEM_2_SALES_1} == 0.0 ? 0.0 : ($V{HIT_SEM_2_1}/$V{SEM_2_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{SEM_2_SALES_1} == 0.0 ? 0.0 : ($V{HIT_SEM_2_1}/$V{SEM_2_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="pcnAllSem" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[( $V{ALL_SEM_SALES_1} == 0.0 ? 0.0 : ($V{HIT_ALL_SEM_1}/$V{ALL_SEM_SALES_1}) )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $V{ALL_SEM_SALES_1} == 0.0 ? 0.0 : ($V{HIT_ALL_SEM_1}/$V{ALL_SEM_SALES_1}) )]]></initialValueExpression>
+	</variable>
+	<variable name="SEM_1_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{SEM_1}]]></variableExpression>
+	</variable>
+	<variable name="SEM_2_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{SEM_2}]]></variableExpression>
+	</variable>
+	<variable name="ALL_SEM_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{ALL_SEM}]]></variableExpression>
+	</variable>
+	<group name="MainGrp">
+		<groupExpression><![CDATA[$F{MAIN_GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{MAIN_GRP}.equals( "A" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="300" y="14" width="80" height="14" uuid="70b1d2e9-c2af-42a4-be49-aca0f41c2cc3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PERIOD]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="0" width="80" height="14" uuid="4a90d668-a012-48ac-ab6f-4acf7e50ce32"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[UPTO PREV. ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="380" y="14" width="80" height="14" uuid="0aca4400-1100-4b2e-84fd-67738869dd66"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PERIOD]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="380" y="0" width="80" height="14" uuid="5c5c339a-1bfa-41b3-b5a7-71fcf875e4d4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[CURRENT]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="460" y="14" width="80" height="14" uuid="f537b66f-001f-428a-9991-7dbd669ee8b9"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PERIOD]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="460" y="0" width="80" height="14" uuid="97ed5944-2704-4f50-853d-3186745a295d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[UPTO CURR.]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="600" y="14" width="80" height="14" uuid="71bd1b65-8c35-47da-94c8-7084012e9ded"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{LABEL_KEL_1}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="680" y="14" width="80" height="14" uuid="51e5129c-305e-4489-9cba-2692f9c5c684"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{LABEL_KEL_2}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="600" y="0" width="160" height="14" uuid="9b1890cd-e7e1-4be1-bc02-af1b4c8e2671"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{LABEL_TITLE}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="56">
+				<printWhenExpression><![CDATA[$F{MAIN_GRP}.equals( "A" ) == true]]></printWhenExpression>
+				<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="300" y="14" width="80" height="14" uuid="fab5e47e-8b01-45ad-9a8e-00766c1be6ed"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_UPTO_PREV_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="380" y="14" width="80" height="14" uuid="009a6c07-033a-47e8-b343-133435db6375"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_CURR_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="460" y="14" width="80" height="14" uuid="7a37ad4d-b935-42a1-90ff-82c47e295a6b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_UPTO_CURR_MONTH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00%" isBlankWhenNull="true">
+					<reportElement x="300" y="28" width="80" height="14" uuid="02021e85-3331-4311-a0ec-e9e249bdcb12"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnUptoPrevMonth}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00%">
+					<reportElement x="380" y="28" width="80" height="14" uuid="81e0eaa0-e40f-4680-9c1b-6eacade6242e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnCurrMonth}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00%">
+					<reportElement x="460" y="28" width="80" height="14" uuid="793f30a5-d58b-468d-ba9b-78334365632b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnUptoCurrMonth}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="19ee85cd-8b05-4ff2-90d6-3743eba33901"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[GROSS MARGIN]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="300" height="14" uuid="aa394d13-1d72-4e56-b540-e60a657322b1"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="0" width="80" height="14" uuid="357a3dc8-e476-418a-9db1-ddb255c97ff4"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="380" y="0" width="80" height="14" uuid="1f263b6b-c14e-483d-964e-be5328d674fa"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="460" y="0" width="80" height="14" uuid="7998c0cc-2dd9-4eef-9e7a-4db54b343ebf"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="300" height="14" uuid="264d3818-6746-45ec-ba2e-f77e99af6854"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="42" width="300" height="14" uuid="2bf052d3-3c68-4e57-89a3-504a14dd3b91"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="600" y="14" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="33898785-3971-40cb-8094-0cd71c03c41d"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_SEM_1_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+					<reportElement x="680" y="14" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="8610fdd8-8f3e-49ca-8e42-a81bd85ba488"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{HIT_SEM_2_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="600" y="0" width="80" height="14" uuid="929c48a9-9c81-4b5d-a888-6ee818cdc32e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="680" y="0" width="80" height="14" uuid="9a9e2b5a-4f0a-46f0-8507-d36d0cc931c0"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="540" y="0" width="35" height="14" uuid="b59070b4-68f0-4e27-9d02-e559a4297a66"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="575" y="0" width="25" height="14" uuid="f478a59a-c745-492b-8565-fd1d761d17d5"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="540" y="14" width="35" height="14" uuid="72e07aca-397e-48a6-8e03-52f852dc36b8"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="575" y="14" width="25" height="14" uuid="fc243594-47a0-401f-8d1c-a705b2c86999"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00%" isBlankWhenNull="true">
+					<reportElement x="600" y="28" width="80" height="14" uuid="9b2decdc-0e21-4de2-b198-60d489396b61"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pcnSem1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00%" isBlankWhenNull="true">
+					<reportElement x="680" y="28" width="80" height="14" uuid="6b772a1b-558a-4a8c-b11b-e2c98eda05eb"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{pncSem2}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{MAIN_GRP}.equals( "B" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="908ab5cb-7019-43a9-b419-a56e197ba4c7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="300" height="14" uuid="7619d42e-6433-42ab-913f-61035451c10e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="126" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="300" y="56" width="160" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="300" height="14" uuid="2416e567-b590-46cd-b14e-f9281133ba81"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak Pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="b3e39015-60b7-4554-84b0-56f951c68c37"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04061) Gross Sales Margin]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="300" height="14" uuid="4eb2c989-0b8b-464e-9e93-b047e47ba9df"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Current Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="300" height="14" uuid="c2958fed-a0e5-405b-876d-a86598f384bc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="460" y="28" width="80" height="14" uuid="e2c01df6-3d02-4a09-835c-4f47a195324f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="300" height="14" uuid="632771e1-0b93-4533-acf6-3b301e7923bc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Customer dgn Amount >= :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="300" y="28" width="80" height="14" uuid="d4fbb64b-cadc-4a25-a1cd-46de3274b7fe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="f5ed5cd0-3c95-4cf4-9f5f-f0e2afb510a4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="300" height="14" uuid="0b6206ef-38a4-44ca-bc50-82b09bac0760"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Amount in Million (1,000,000 IDR)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="300" height="14" uuid="144c7558-ecba-4c1c-bd05-cc755f25dd5a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="28" width="80" height="14" uuid="44804861-3a07-40ed-b72d-086a3ad01d14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="42" width="80" height="14" uuid="ad3ced75-1d46-4b76-aa96-2ac9bd1cc073"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{ParamValue}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="300" height="14" uuid="7ad8a806-dfff-4d13-9bdb-44d4c8d28b5f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="300" height="14" uuid="ac6d2840-d809-4498-8238-869b81fa1258"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{GROUP_DESC}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="80" height="14" uuid="67957301-b8a6-4200-8cad-84c2a2e3e4f1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UPTO_PREV_MONTH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="380" y="0" width="80" height="14" uuid="dbe3544d-bf21-4200-96b4-5e97ef98e05c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CURR_MONTH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="460" y="0" width="80" height="14" uuid="53ab1c9f-0168-4b95-92ae-8d9dafb155d9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UPTO_CURR_MONTH}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="540" y="0" width="35" height="14" uuid="9c5f02a9-99da-438f-8a66-ac74dfe7f246"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="600" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="2a1a6f88-28d6-4d69-bcc8-31ae150b2a3a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SEM_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00;(#,##0.00)" isBlankWhenNull="true">
+				<reportElement x="680" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="4322108d-51e7-4aef-8d7e-ee665a47299a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SEM_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="575" y="0" width="25" height="14" uuid="fc844995-da35-4260-9e31-18d03ee0cb32"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<summary>
+		<band height="25" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="575" height="25" uuid="973fba6d-82ba-414c-9f53-2bc62001fa60"/>
+				<subreportParameter name="ProsesId">
+					<subreportParameterExpression><![CDATA[$P{ProsesId}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="ParamValue">
+					<subreportParameterExpression><![CDATA[$P{ParamValue}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "04061_LapGrossSalesMargin_SUB.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+</jasperReport>

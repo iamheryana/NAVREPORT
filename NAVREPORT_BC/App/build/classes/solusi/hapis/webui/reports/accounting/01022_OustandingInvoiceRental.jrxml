@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01022_OustandingInvoiceRental" language="groovy" pageWidth="850" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="810" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.9487171000000285"/>
+	<property name="ireport.x" value="340"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvTo" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.COMPANY
+		,XX.NO_SO
+		,XX.CUST_NO
+		,XX.CUST_NAME
+		,XX.TGL_INV
+		,XX.PO_CUST
+		,XX.LINE_NO
+		,XX.DESCRIP
+		,XX.DPP
+FROM	(
+			SELECT 'AUTOJAYA' AS COMPANY
+					,SSH.[No_] AS NO_SO
+					,SSH.[Bill-to Customer No_] AS CUST_NO
+					,SSH.[Bill-to Name] AS CUST_NAME
+					,SSH.[Posting Date] AS TGL_INV
+					,SSH.[External Document No_] AS PO_CUST
+					,SSD.[Line No_] AS LINE_NO
+					,SSD.[Description]	AS DESCRIP
+					,SUM(SSD.[Amount]) OVER(PARTITION BY SSH.[No_] ORDER BY SSH.[No_]) AS DPP
+			FROM [dbo].[BC_AUTOJAYA$Sales Header] SSH
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Line] SSD ON SSH.[No_] = SSD.[Document No_]
+			WHERE SUBSTRING(SSH.[No_],1,4) = 'SOAR'
+					AND SSH.[Status] = 1
+			UNION ALL
+			SELECT 'SOLUSI' AS COMPANY
+					,SSH.[No_] AS NO_SO
+					,SSH.[Bill-to Customer No_] AS CUST_NO
+					,SSH.[Bill-to Name] AS CUST_NAME
+					,SSH.[Posting Date] AS TGL_INV
+					,SSH.[External Document No_] AS PO_CUST
+					,SSD.[Line No_] AS LINE_NO
+					,SSD.[Description]	AS DESCRIP
+					,SUM(SSD.[Amount]) OVER(PARTITION BY SSH.[No_] ORDER BY SSH.[No_]) AS DPP
+			FROM [dbo].[BC_SOLUSI$Sales Header] SSH
+			LEFT JOIN [dbo].[BC_SOLUSI$Sales Line] SSD ON SSH.[No_] = SSD.[Document No_]
+			WHERE SUBSTRING(SSH.[No_],1,4) = 'SOSR'
+					AND SSH.[Status] = 1
+		) XX
+WHERE (XX.COMPANY = $P{Company} OR $P{Company} = 'ALL')
+	AND XX.TGL_INV <= $P{TglInvTo}]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_SO" class="java.lang.String"/>
+	<field name="CUST_NO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="PO_CUST" class="java.lang.String"/>
+	<field name="LINE_NO" class="java.lang.Integer"/>
+	<field name="DESCRIP" class="java.lang.String"/>
+	<field name="DPP" class="java.math.BigDecimal"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_SO"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="LINE_NO"/>
+	<group name="NoSO">
+		<groupExpression><![CDATA[$F{NO_SO}]]></groupExpression>
+		<groupHeader>
+			<band height="15">
+				<textField>
+					<reportElement x="420" y="1" width="259" height="14" uuid="c4e0ff1f-4e86-47c6-8fe5-1a646216c444"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+				</textField>
+				<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="98" y="1" width="60" height="14" uuid="6b04cc56-51e4-4436-a919-b926c23f825b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="13" y="1" width="85" height="14" uuid="552d7efc-a717-45db-82d3-7a5da13ee404"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_SO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="311" y="1" width="109" height="14" uuid="a253674a-6d86-4826-b7ba-0c8fcd3bf63e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="158" y="1" width="153" height="14" uuid="450d7569-0d47-4c11-95c2-72f8a3994cdf"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PO_CUST}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="679" y="1" width="112" height="14" uuid="2ea73447-04b4-4e8e-ba61-2ea09a0380d5"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DPP}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="2">
+				<line>
+					<reportElement x="13" y="1" width="778" height="1" uuid="43b0a899-bc52-493f-aa41-51249fe25f47"/>
+				</line>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="100" splitType="Stretch">
+			<staticText>
+				<reportElement x="13" y="57" width="85" height="14" uuid="273acc50-f860-4b9b-a35d-1ee0d9baf160"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="158" y="57" width="153" height="14" uuid="48585bdb-7da3-41b6-a457-c994cab22a69"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="1" width="85" height="14" uuid="2e08eb20-19f1-4a41-a3e2-6c3ef12d3503"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="29" width="85" height="14" uuid="203d9da5-d530-4d6f-8500-f0739d4e575e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="15" width="60" height="14" uuid="60ae6fbd-02c7-494a-aa17-539370a790fe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="158" y="29" width="153" height="14" uuid="770f4d4c-aa42-4964-8f4f-5f51de86316c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="13" y="71" width="85" height="14" uuid="ba47a370-44c4-48e1-97e9-50de6e6e3dc7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="85" width="85" height="14" uuid="703d16ea-324e-4635-bb5b-53067ecc3daa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No SO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="85" width="60" height="14" uuid="de0f3dbb-8fbd-453b-a38f-ccd8f5e13ff9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="311" y="85" width="109" height="14" uuid="efaa001c-2f6f-45f0-9acd-fc1b10b694ae"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="420" y="85" width="259" height="14" uuid="dbaa9dd3-f77d-40ac-bc77-8a797fe5f3a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Customer Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="158" y="85" width="153" height="14" uuid="a2e41368-bdb3-4f90-a00c-e7c74fc8de9e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="679" y="85" width="112" height="14" uuid="97ef6ec0-6dd9-4055-8241-be701b1d3d6d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[DPP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="43" width="85" height="14" uuid="3599b418-cc00-4d18-9c57-460f7ad32011"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Invoice s/d:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="1" width="60" height="14" uuid="1fd9dedc-2701-4d8b-8002-61d657852a09"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01022)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="158" y="1" width="153" height="14" uuid="020b6b29-18df-49d7-8289-f4df2c7aea52"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Outstanding Invoice Rental]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="13" y="15" width="85" height="14" uuid="1b3db7e0-6931-44d1-95d9-2c49df65d168"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="158" y="15" width="153" height="14" uuid="f70e1075-1b45-4379-8437-99990537cebc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="29" width="60" height="14" uuid="377ef7f3-9ebd-401c-9692-9895a40e320b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="43" width="60" height="14" uuid="9532918e-b11d-484a-b058-478f82170797"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="158" y="43" width="153" height="14" uuid="cb5eb172-6537-4b99-8a2b-6f7d1c25b0d2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="311" y="57" width="109" height="14" uuid="9bc9d8a1-f369-43d4-b0ca-c26bfe700aa4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="57" width="60" height="14" uuid="004887bf-7893-4b17-a0d1-ad1eb435c722"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="98" y="71" width="60" height="14" uuid="e0d47040-b17b-4366-8f54-ea2a95d12e78"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="158" y="71" width="153" height="14" uuid="61a9376b-df81-4565-ae5b-eaf123d136d6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="311" y="71" width="109" height="14" uuid="c9618ad7-fefc-4fab-994a-c4450e40c84e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="420" y="71" width="259" height="14" uuid="a41fa6d9-a54a-43e0-902d-a84e6635eef9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="420" y="57" width="259" height="14" uuid="3e3ffa4c-e993-4483-8257-6036568ff914"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<line>
+				<reportElement x="13" y="99" width="778" height="1" uuid="b1c3f6a5-1927-4ba5-9bce-e7b547576139"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="15">
+			<textField>
+				<reportElement x="98" y="1" width="322" height="14" uuid="e65cce4c-dd58-4426-a1c4-1176c0b82b48"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DESCRIP}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="13" y="12" width="204" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

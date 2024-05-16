@@ -1,0 +1,1168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01012_AJLapPembelian_detail_V2" language="groovy" pageWidth="1625" pageHeight="595" orientation="Landscape" columnWidth="1585" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b6a5138b-17b0-4950-b07b-e160a136f8fd">
+	<property name="ireport.zoom" value="1.3310000000000086"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="59"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Tipe" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorTo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.REG
+		, CASE WHEN X.AMOUNT_PPN <> 0 THEN 'PPN' ELSE 'NON PPN' END AS TIPE_PPN
+		, CASE WHEN X.TIPE = 'TRADE' THEN X.TIPE ELSE 'NTRADE' END AS TIPE
+		, X.NO_INV
+		, X.TGL_INV
+		, X.NO_INV_CANCEL
+		, X.KODE_SUPP
+		, X.NAMA_SUPP
+		, X.NO_INV_SUPP
+		, X.NO_FP
+		, X.AMOUNT_OTHERS AS AMOUNT_OTHERS_SUM
+		, X.AMOUNT_FGOODS AS AMOUNT_FGOODS_SUM
+		, X.AMOUNT_DCOST AS AMOUNT_DCOST_SUM
+		, X.AMOUNT_PEMBELIAN AS AMOUNT_PEMBELIAN_SUM
+	    , X.AMOUNT_UM AS AMOUNT_UM_SUM
+	    , (X.AMOUNT_OTHERS + X.AMOUNT_FGOODS + X.AMOUNT_DCOST + X.AMOUNT_PEMBELIAN + X.AMOUNT_UM) AS DPP_SUM
+	 	, X.AMOUNT_PPN AS AMOUNT_PPN_SUM
+	 	, (X.AMOUNT_OTHERS + X.AMOUNT_FGOODS + X.AMOUNT_DCOST + X.AMOUNT_PEMBELIAN + X.AMOUNT_UM + X.AMOUNT_PPN) AS TOTAL_SUM
+		, DTL.ACC_NO
+		, DTL.ACC_NAME
+		, DTL.ITEM_CAT
+		, DTL.ITEM_CAT_DESC
+		, DTL.AMOUNT_OTHERS
+		, DTL.AMOUNT_FGOODS
+		, DTL.AMOUNT_DCOST
+		, DTL.AMOUNT_PEMBELIAN
+	    , DTL.AMOUNT_UM
+	    , DTL.DPP
+	 	, DTL.AMOUNT_PPN
+	 	, DTL.TOTAL
+
+FROM (
+SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'INVOICE UM' ELSE 'INVOICE' END AS REG
+		, MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+		, GLE.[Document No_] AS NO_INV
+		, PIH.[Posting Date] AS TGL_INV
+		, '' AS NO_INV_CANCEL
+		, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+		, PIH.[Pay-to Name] AS NAMA_SUPP
+		, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+		, PIH.[Vendor Tax Invoice No_] AS NO_FP
+		, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00')  THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_OTHERS
+		, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_FGOODS
+	 	, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_DCOST
+		, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_PEMBELIAN
+	    , SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_UM
+	 	, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_PPN
+FROM [AUTOJAYA].[dbo].[AUTOJAYA$G_L Entry] GLE
+INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_], PIH.[Vendor Tax Invoice No_], PIH.[Posting Date]
+UNION ALL
+SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
+		, MAX(GLE.[Gen_ Bus_ Posting Group]) AS TIPE
+		, GLE.[Document No_] AS NO_INV
+		, CIH.[Posting Date] AS TGL_INV
+		, CIH.[Applies-to Doc_ No_]  AS NO_INV_CANCEL
+		, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+		, CIH.[Pay-to Name] AS NAMA_SUPP
+		, '' AS NO_INV_SUPP
+		, CIH.[Vendor Tax Invoice No_] AS NO_FP
+		, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00')  THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_OTHERS
+		, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_FGOODS
+	 	, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_DCOST
+		, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_PEMBELIAN
+	    , SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_UM
+	 	, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 		GLE.[Amount] ELSE 0
+	 	  END ) AS AMOUNT_PPN
+FROM [AUTOJAYA].[dbo].[AUTOJAYA$G_L Entry] GLE
+INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_], CIH.[Applies-to Doc_ No_] , CIH.[Posting Date]
+) X
+INNER JOIN (
+			SELECT	XD.NO_INV
+					, XD.ACC_NO
+					, GL.[Name] AS ACC_NAME
+					, XD.ITEM_CAT
+					, IC.[Description] AS ITEM_CAT_DESC
+					, SUM(XD.AMOUNT_OTHERS) AS AMOUNT_OTHERS
+					, SUM(XD.AMOUNT_FGOODS) AS AMOUNT_FGOODS
+					, SUM(XD.AMOUNT_DCOST) AS AMOUNT_DCOST
+					, SUM(XD.AMOUNT_PEMBELIAN) AS AMOUNT_PEMBELIAN
+					, SUM(XD.AMOUNT_UM) AS AMOUNT_UM
+					, SUM(XD.AMOUNT_PPN) AMOUNT_PPN
+					, (SUM(XD.AMOUNT_OTHERS) + SUM(XD.AMOUNT_FGOODS) + SUM(XD.AMOUNT_DCOST) + SUM(XD.AMOUNT_PEMBELIAN) + SUM(XD.AMOUNT_UM)) AS DPP
+	 		 		, (SUM(XD.AMOUNT_OTHERS) + SUM(XD.AMOUNT_FGOODS) + SUM(XD.AMOUNT_DCOST) + SUM(XD.AMOUNT_PEMBELIAN) + SUM(XD.AMOUNT_UM) + SUM(XD.AMOUNT_PPN)) AS TOTAL
+
+			FROM (
+			SELECT	CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+					, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+							GLE.[Global Dimension 2 Code] ELSE NULL
+					  END AS ITEM_CAT
+					, GLE.[Document No_] AS NO_INV
+					, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00')  THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_OTHERS
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_FGOODS
+	 				, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_DCOST
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_PEMBELIAN
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_UM
+	 				, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_PPN
+			FROM [AUTOJAYA].[dbo].[AUTOJAYA$G_L Entry] GLE
+			INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+			WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+			GROUP BY GLE.[Document No_], GLE.[Global Dimension 2 Code], GLE.[G_L Account No_]
+			UNION ALL
+			SELECT	CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN '510.200.00' ELSE GLE.[G_L Account No_] END AS ACC_NO
+					, CASE WHEN GLE.[G_L Account No_] IN ('116.199.00') THEN
+							GLE.[Global Dimension 2 Code] ELSE NULL
+					  END AS ITEM_CAT
+					, GLE.[Document No_] AS NO_INV
+					, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00')  THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_OTHERS
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_FGOODS
+	 				, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_DCOST
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_PEMBELIAN
+					, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_UM
+	 				, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+	 					GLE.[Amount] ELSE 0
+	 				  END ) AS AMOUNT_PPN
+			FROM [AUTOJAYA].[dbo].[AUTOJAYA$G_L Entry] GLE
+			INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+			WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+			GROUP BY GLE.[Document No_], GLE.[Global Dimension 2 Code], GLE.[G_L Account No_]
+			) XD
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$G_L Account] GL ON GL.[No_] = XD.ACC_NO
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item Category] IC ON IC.[Code] = XD.ITEM_CAT
+			GROUP BY XD.NO_INV, XD.ACC_NO, XD.ITEM_CAT, GL.[Name], IC.[Description]
+		  ) DTL ON DTL.NO_INV = X.NO_INV
+WHERE  (X.TGL_INV >= $P{TglFrom} AND X.TGL_INV <= $P{TglUpto}) AND
+	($P{Tipe} = 'ALL' OR X.TIPE = $P{Tipe}) AND
+	(X.KODE_SUPP >= $P{VendorFrom} AND X.KODE_SUPP <= $P{VendorTo}) AND
+	DTL.TOTAL <>0]]>
+	</queryString>
+	<field name="REG" class="java.lang.String"/>
+	<field name="TIPE_PPN" class="java.lang.String"/>
+	<field name="TIPE" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_INV_CANCEL" class="java.lang.String"/>
+	<field name="KODE_SUPP" class="java.lang.String"/>
+	<field name="NAMA_SUPP" class="java.lang.String"/>
+	<field name="NO_INV_SUPP" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="AMOUNT_OTHERS_SUM" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_FGOODS_SUM" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_DCOST_SUM" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_PEMBELIAN_SUM" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_UM_SUM" class="java.math.BigDecimal"/>
+	<field name="DPP_SUM" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_PPN_SUM" class="java.math.BigDecimal"/>
+	<field name="TOTAL_SUM" class="java.math.BigDecimal"/>
+	<field name="ACC_NO" class="java.lang.String"/>
+	<field name="ACC_NAME" class="java.lang.String"/>
+	<field name="ITEM_CAT" class="java.lang.String"/>
+	<field name="ITEM_CAT_DESC" class="java.lang.String"/>
+	<field name="AMOUNT_OTHERS" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_FGOODS" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_DCOST" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_PEMBELIAN" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_UM" class="java.math.BigDecimal"/>
+	<field name="DPP" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_PPN" class="java.math.BigDecimal"/>
+	<field name="TOTAL" class="java.math.BigDecimal"/>
+	<sortField name="TIPE"/>
+	<sortField name="TIPE_PPN"/>
+	<sortField name="KODE_SUPP"/>
+	<sortField name="REG"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="NO_INV"/>
+	<sortField name="ACC_NO"/>
+	<sortField name="ITEM_CAT"/>
+	<variable name="AMOUNT_OTHERS_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OTHERS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_OTHERS_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OTHERS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_OTHERS_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OTHERS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_OTHERS_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OTHERS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_FGOODS_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_FGOODS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_FGOODS_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_FGOODS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_FGOODS_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_FGOODS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_FGOODS_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_FGOODS}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="DPP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{DPP}]]></variableExpression>
+	</variable>
+	<variable name="DPP_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{DPP}]]></variableExpression>
+	</variable>
+	<variable name="DPP_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{DPP}]]></variableExpression>
+	</variable>
+	<variable name="DPP_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{DPP}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="TOTAL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="TOTAL_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="TOTAL_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="TOTAL_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_DCOST_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_DCOST}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_DCOST_2" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_DCOST}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_DCOST_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_DCOST}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_DCOST_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_DCOST}]]></variableExpression>
+	</variable>
+	<group name="Tipe">
+		<groupExpression><![CDATA[$F{TIPE}]]></groupExpression>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="10" y="1" width="50" height="14" uuid="ec13eb3f-eff7-4fa6-bad1-96b642e4f289"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="60" y="1" width="47" height="14" uuid="6f2a7700-1621-437c-bafc-933f69629cfd"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="881" y="1" width="87" height="14" uuid="39b538bd-774e-4657-8dbc-efb50309bda1"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_OTHERS_3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="968" y="1" width="87" height="14" uuid="ff8ce269-05b7-45b1-a96a-50538f5cd7de"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_FGOODS_3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1142" y="1" width="87" height="14" uuid="ddd6104a-a054-420e-82d9-108577434aa0"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1229" y="1" width="87" height="14" uuid="e5d6916d-1072-421c-8c13-263e38b808ea"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_UM_3}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1316" y="1" width="87" height="14" uuid="0a71c641-ee83-434f-a78b-d2291446656d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{DPP_3}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1403" y="1" width="87" height="14" uuid="cec02d0d-54eb-40a6-b0b2-42e0cb80a9e5"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PPN_3}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1490" y="1" width="87" height="14" uuid="f38e0fdc-f609-4892-a836-a2d7c928e436"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TOTAL_3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1055" y="1" width="87" height="14" uuid="12f6a1f5-360f-4a3f-b90d-a3f3d7c5a8e0"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_DCOST_3}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="PPN">
+		<groupExpression><![CDATA[$F{TIPE_PPN}]]></groupExpression>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="60" y="1" width="47" height="14" uuid="b3e9c797-9e3c-4065-b76d-0cc993db7973"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="107" y="1" width="76" height="14" uuid="8f488c17-59a1-481b-a0a3-5aedb60eedde"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE_PPN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="881" y="1" width="87" height="14" uuid="8941ac5c-9116-469b-87c9-10cc5273e21c"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_OTHERS_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="968" y="1" width="87" height="14" uuid="792920e8-6b7e-49a8-8d95-c8df3383f9ee"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_FGOODS_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1142" y="1" width="87" height="14" uuid="5e9f2bea-e992-4272-ad30-9053cca728c7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1229" y="1" width="87" height="14" uuid="70489597-8eb9-4bf9-a6c9-0219d8dac920"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_UM_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1316" y="1" width="87" height="14" uuid="e82024b2-472a-49e7-ba61-3f88908de6ab"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{DPP_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1403" y="1" width="87" height="14" uuid="a8c91740-eba7-4b1a-ac8a-7c8e58c318ed"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PPN_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1490" y="1" width="87" height="14" uuid="a4c349fd-4179-4ae2-bc25-5353b527b69a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TOTAL_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1055" y="1" width="87" height="14" uuid="08291fff-4655-4ed5-a62e-de6220a49aae"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_DCOST_2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Supplier">
+		<groupExpression><![CDATA[$F{KODE_SUPP}]]></groupExpression>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="332" y="1" width="99" height="14" uuid="1634119c-5d3b-4c88-88e9-6cd5336596c8"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="431" y="1" width="49" height="14" uuid="f19d9c99-c327-4c06-a77e-417a677e4344"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="480" y="1" width="247" height="14" uuid="3eeca51b-6662-4901-be45-44fadf587929"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="881" y="1" width="87" height="14" uuid="8a5d9602-85b5-44f3-8099-d1dae6e6acf9"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_OTHERS_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="968" y="1" width="87" height="14" uuid="4121854a-3654-4322-9995-ddbb94233219"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_FGOODS_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1142" y="1" width="87" height="14" uuid="7ed247ca-71dd-441f-89c8-da23adec9492"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1229" y="1" width="87" height="14" uuid="ede3ac01-1121-475c-be4c-8e536e07b0c3"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_UM_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1316" y="1" width="87" height="14" uuid="e436b652-169c-482e-a3fc-1faf566ca272"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{DPP_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1403" y="1" width="87" height="14" uuid="58e4d7ee-c7a9-4a40-aa33-20ad383d5a21"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PPN_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1490" y="1" width="87" height="14" uuid="0fd6836e-bd86-4d82-b2c0-2e769d0f1d77"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TOTAL_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1055" y="1" width="87" height="14" uuid="c3dee853-4db7-4fb4-a543-62d9c96de6b8"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_DCOST_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Invoice">
+		<groupExpression><![CDATA[$F{NO_INV}]]></groupExpression>
+		<groupHeader>
+			<band height="34">
+				<textField pattern="dd-MM-yyyy">
+					<reportElement x="183" y="1" width="50" height="14" uuid="a2bbe284-e6ed-44b3-97cb-894273d5fd7c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="233" y="1" width="99" height="14" uuid="98aee937-2fb4-42d7-a17c-c7cfc400338f"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="431" y="1" width="49" height="14" uuid="ac195b01-2a5c-4213-85df-72f63aafb2ae"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="480" y="1" width="198" height="14" uuid="2fcd8486-3fd6-4c42-9a71-51a037d4fcb2"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="678" y="1" width="111" height="14" uuid="3d6062a1-a13a-4593-8ff8-639cc25e5189"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="789" y="1" width="92" height="14" uuid="9cce8180-211c-45e3-a00b-59e4366933ab"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="332" y="1" width="99" height="14" uuid="ea35028e-ceaf-44ae-ad26-30ef7137ecc8"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV_CANCEL}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="107" y="1" width="76" height="14" uuid="48a59034-25cb-4060-8a03-e63b5abc2289"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{REG}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="10" y="1" width="50" height="14" uuid="b4fa91bc-a78e-45a7-9486-eb8b6d939883"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="60" y="1" width="47" height="14" uuid="9129b44d-3b58-4ac6-bd27-f9879ab0320d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE_PPN}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="469" y="20" width="248" height="14" uuid="f4310c6a-0ceb-46fb-80a3-84feba2deece"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Account]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="717" y="20" width="164" height="14" uuid="069b494c-6941-40b3-8e71-a4b1258e7b8b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Item Category]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="881" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="7139f6f1-f4c7-4582-895e-271dd5c9733c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_OTHERS_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="968" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="79da2d89-738c-4bf6-8274-cf239f2a1f33"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_FGOODS_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1055" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="df1a8f8d-3adb-4747-9c08-80c9bee23e11"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_DCOST_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1142" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="e3a82f49-f31e-4e35-a11c-0f622de1a8a4"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_PEMBELIAN_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1229" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="4fc69e7f-5d6a-4805-81a1-3d9a8494e5f6"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_UM_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1316" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="47076ebe-f20e-43e4-bf28-b8e6904204e3"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DPP_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1403" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="d48b604f-67e3-4fe4-8f39-8ed7e21fa6d5"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_PPN_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1490" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="5b8b9cd4-edba-4b5f-9fa5-0a23285bbdf2"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TOTAL_SUM}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="6"/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="73" splitType="Stretch">
+			<staticText>
+				<reportElement x="2" y="10" width="1500" height="20" uuid="0fb68337-4b71-450f-b190-8e62c209dc35"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01012) LAPORAN REGISTER PEMBELIAN (DETAIL)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="614" y="30" width="53" height="16" uuid="4db4f912-8486-49a9-8f69-635753bdfbf9"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PERIODE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="667" y="30" width="10" height="16" uuid="ab863aeb-d0d8-4065-a9ef-9d28af21c8de"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="677" y="30" width="107" height="16" uuid="b49c341d-6f80-4b70-aa42-f4b627288787"/>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="808" y="30" width="107" height="16" uuid="2a93a660-5c7d-4e4d-9b2b-36cb36181669"/>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="784" y="30" width="24" height="16" uuid="cec8b49b-559d-4050-a317-9bad6340e76b"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="784" y="46" width="24" height="16" uuid="bf2d720c-b06b-4f23-83b8-24081ee5d5ba"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="614" y="46" width="53" height="16" uuid="16c4bc35-c4e5-4de7-97c2-f7e303c5cbb2"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SUPPLIER]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="677" y="46" width="107" height="16" uuid="a30501a0-8501-496e-bf4e-b034604b3f12"/>
+				<textFieldExpression><![CDATA[$P{VendorFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="808" y="46" width="107" height="16" uuid="9a6f9ee1-07b7-4405-a66a-3d27f95a269f"/>
+				<textFieldExpression><![CDATA[$P{VendorTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="667" y="46" width="10" height="16" uuid="065f54aa-c485-4c67-9853-da8798e38760"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch">
+			<staticText>
+				<reportElement x="1428" y="3" width="14" height="14" uuid="c96ba2ac-bdbb-4b79-9c29-394c03e8772b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1345" y="18" width="49" height="14" uuid="699da850-24e4-4b6d-b07c-bf35efcdf735"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Print On]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1345" y="3" width="49" height="14" uuid="9cb1b630-5b85-40e7-a892-b3bf6ecd1169"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Page]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="1402" y="18" width="100" height="14" uuid="3ef1c5cb-0aaa-4847-b9e7-946df2114225"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1402" y="3" width="23" height="14" uuid="2eaeafcb-dfbc-4c28-bc18-656bc44c62bf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="1443" y="3" width="23" height="14" uuid="bd1a3294-985c-4459-80a7-a451a8bd211a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1394" y="3" width="8" height="14" uuid="6c5b8c06-caca-4ba4-a61d-28daa51b58cf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1394" y="18" width="8" height="14" uuid="bdc539aa-646b-45c1-9414-8b4bc00e4cbd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="3" width="232" height="14" uuid="5383c939-abf9-4462-8ab2-f926d5fbd0a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT. AUTOJAYA IDETECH]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="15" splitType="Stretch">
+			<staticText>
+				<reportElement x="183" y="1" width="50" height="14" uuid="e0f1e87a-d123-4c33-a5d4-7a55b408c9b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="233" y="1" width="99" height="14" uuid="9fdfeeb0-cc7a-4cf8-ae7e-36a9d6006765"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="480" y="1" width="198" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Nama Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="678" y="1" width="111" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="431" y="1" width="49" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kode]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1403" y="1" width="87" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PPN Masukan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1229" y="1" width="87" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Uang Muka]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1142" y="1" width="87" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pembelian]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="789" y="1" width="92" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="332" y="1" width="99" height="14" uuid="5b315147-c3bd-476d-a548-374ee2e130db"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice di Cancel]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="107" y="1" width="76" height="14" uuid="d21a4a57-efb7-40dc-a469-80116df99538"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tipe Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="1" width="50" height="14" uuid="242a7532-f2d2-43c3-a546-572acfd5a62e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tipe]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="60" y="1" width="47" height="14" uuid="6c112bb2-3e4a-4b10-aed0-235627b71202"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Jenis PPN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="881" y="1" width="87" height="14" uuid="ae66d703-6897-4c62-92db-b14b9a4a5f60"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Others]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="968" y="1" width="87" height="14" uuid="08213197-6144-4dec-954d-62398eeb1c61"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[F.Goods/Inventory]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1316" y="1" width="87" height="14" uuid="579a8ad6-e46b-4268-b863-193c7bdbd3a0"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[DPP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1490" y="1" width="87" height="14" uuid="086bdb65-3b4a-41c1-8fbc-dfcc10cf2e68"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1055" y="1" width="87" height="14" uuid="bd862e3e-bbac-409b-92e8-5fed6fc5a77a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Direct Cost]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="1142" y="1" width="87" height="14" uuid="62870dbd-9367-4eed-9df4-0a4f4684dbee"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="1229" y="1" width="87" height="14" uuid="c832f016-cb1c-4d88-aadc-2602dbe9362f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_UM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="1403" y="1" width="87" height="14" uuid="b51c78bf-e8d3-4bb4-9259-c0e4496e7810"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_PPN}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="881" y="1" width="87" height="14" uuid="163a3400-c785-4f0f-8e88-4c04237c93fd"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_OTHERS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="968" y="1" width="87" height="14" uuid="090631bc-2a9e-4d6f-84f7-12b49f5b8bb7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_FGOODS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1316" y="1" width="87" height="14" uuid="58c7d685-00af-46fc-b083-2214884218c1"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DPP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1490" y="1" width="87" height="14" uuid="e42b2b6e-f758-4b59-bdda-6ca4ec705d43"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1055" y="1" width="87" height="14" isPrintWhenDetailOverflows="true" uuid="e8225ac6-46dd-4829-a091-40cd4ac515ab"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_DCOST}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="469" y="1" width="70" height="14" uuid="bbdc37d8-317f-4438-8b7f-20358b42e6c9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACC_NO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="539" y="1" width="178" height="14" uuid="62adc8bd-79cb-4542-b270-47d74ca43acc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACC_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="717" y="1" width="40" height="14" uuid="5d86576d-dc0b-478a-8a36-3723ba34a91a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CAT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="757" y="1" width="124" height="14" uuid="9fd5b02f-ddb7-44e8-a1c3-a5f9dc784847"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CAT_DESC}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="55" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="1" width="97" height="14" uuid="824c20a2-3ff8-48dc-af9d-0cc1374660ac"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRAND TOTAL]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="881" y="1" width="87" height="14" uuid="3f206c6c-e955-4922-b6e7-7bef80ae2795"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_OTHERS_4}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="968" y="1" width="87" height="14" uuid="9db791ac-2f51-4c90-95b9-d63106e897f3"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_FGOODS_4}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1142" y="1" width="87" height="14" uuid="b4807111-b7bb-405a-8fcc-c75a45eb5771"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_4}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1229" y="1" width="87" height="14" uuid="0fabfe4d-76e5-42fd-9d3a-a00afde67258"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_UM_4}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1316" y="1" width="87" height="14" uuid="1c1cda34-8ca9-42cb-a9fd-57601fa97e70"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{DPP_4}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1403" y="1" width="87" height="14" uuid="60511629-ee59-4284-9c95-03d905f9fdcc"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_PPN_4}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1490" y="1" width="87" height="14" uuid="6ef8f203-e840-40c1-8f47-7371427319f2"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{TOTAL_4}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement x="10" y="24" width="668" height="19" uuid="f7b81309-14bf-4525-9e18-0dc1fdee6acd"/>
+				<subreportParameter name="TglFrom">
+					<subreportParameterExpression><![CDATA[$P{TglFrom}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglUpto">
+					<subreportParameterExpression><![CDATA[$P{TglUpto}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Tipe">
+					<subreportParameterExpression><![CDATA[$P{Tipe}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="VendorFrom">
+					<subreportParameterExpression><![CDATA[$P{VendorFrom}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="VendorTo">
+					<subreportParameterExpression><![CDATA[$P{VendorTo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "01011_01_AJLapPembelian_sub_rpt.jasper"]]></subreportExpression>
+			</subreport>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1055" y="1" width="87" height="14" uuid="1f7acf17-7a13-41ad-a335-325f251d23b9"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_DCOST_4}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

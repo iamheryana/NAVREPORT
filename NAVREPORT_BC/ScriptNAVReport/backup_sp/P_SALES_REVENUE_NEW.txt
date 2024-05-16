@@ -1,0 +1,28 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_SALES_REVENUE_NEW]    Script Date: 07-02-2023 5:01:52 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[P_SALES_REVENUE_NEW] 
+	@ProsesId  nvarchar(100) ,   
+	@TglFrom  datetime , 
+	@TglUpto  datetime , 
+	@Company  nvarchar(15) ,
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	DECLARE @TglInvFrom DATETIME = CAST(@TglFrom AS DATETIME);
+	DECLARE @CurrYear int = DATEPART(YEAR, @TglInvFrom);
+	--
+	IF @CurrYear < 2022 
+	BEGIN
+		EXEC [dbo].[P_SALES_REVENUE_2021]  @ProsesId, @TglFrom, @TglUpto, @Company, @Action;
+	END;
+	--
+	IF @CurrYear >= 2022 
+	BEGIN
+		EXEC [dbo].[P_SALES_REVENUE_2022]  @ProsesId, @TglFrom, @TglUpto, @Company, @Action;
+	END;
+END;

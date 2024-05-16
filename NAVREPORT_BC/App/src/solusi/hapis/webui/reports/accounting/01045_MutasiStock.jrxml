@@ -1,0 +1,1002 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01045_MutasiStock" language="groovy" pageWidth="1715" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1675" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a53b757b-d6fd-4d62-bcbe-9cbdffa89d2f">
+	<property name="ireport.zoom" value="1.464100000000005"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Location" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ItemNo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.*
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,X.GROUP_SORT
+					,X.JUDUL_GROUP
+					,X.TGL_POSTING
+					,X.ITEM_NO
+					,X.DOCUMENT
+					,X.EXT_DOCUMENT_NO
+					,X.LOC_CODE
+					,X.TIPE
+					,X.URUTAN
+					,X.QTY_NEG
+					,X.QTY_POS
+					,SUM(X.QTY) OVER(ORDER BY X.ITEM_NO, X.LOC_CODE,  X.GROUP_SORT, X.TGL_POSTING, X.URUTAN
+						ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+					  AS QTY_TOTAL
+					, Y.TGL_DOK
+					, Y.NO_DOK
+					, Y.NO_SUMBER_TRANS
+					, Y.CUST_VENDOR
+					, Y.CUST_VENDOR_NAME
+					, Y.EXT_DOC_NO
+			FROM	(
+						SELECT	SA.GROUP_SORT
+								, SA.JUDUL_GROUP
+								, SA.TGL_POSTING
+								, SA.ITEM_NO
+								, SA.DOCUMENT
+								, SA.EXT_DOCUMENT_NO
+								, SA.LOC_CODE
+								, SA.TIPE
+								, SA.URUTAN
+								, SUM(SA.QTY) AS QTY
+								, SUM(SA.QTY_NEG) AS QTY_NEG
+								, SUM(SA.QTY_POS) AS QTY_POS
+						FROM	(
+									SELECT	'A' AS GROUP_SORT
+											, 'STOCK S/D TGL. '+CONVERT(varchar, $P{TglFrom}, 105) AS JUDUL_GROUP
+											, $P{TglFrom} AS TGL_POSTING
+											, $P{ItemNo} AS ITEM_NO
+											, 'STOCK AWAL' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, $P{Location} AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, 0 AS QTY
+											, 0 AS QTY_NEG
+											, 0 AS QTY_POS
+									UNION ALL
+									SELECT	'A' AS GROUP_SORT
+											, 'STOCK S/D TGL. '+CONVERT(varchar, $P{TglFrom}, 105) AS JUDUL_GROUP
+											, $P{TglFrom} AS TGL_POSTING
+											, [Item No_] AS ITEM_NO
+											, 'STOCK AWAL' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, [Location Code] AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, SUM([Quantity]) AS QTY
+											, SUM(CASE WHEN [Quantity] < 0 THEN [Quantity] ELSE 0 END) AS QTY_NEG
+											, SUM(CASE WHEN [Quantity] >= 0 THEN [Quantity] ELSE 0 END) AS QTY_POS
+									FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry]
+									WHERE	[Posting Date] < $P{TglFrom}
+											AND [Item No_] = $P{ItemNo}
+											AND [Location Code] = $P{Location}
+									GROUP BY [Item No_], [Location Code]
+								) SA
+						GROUP BY SA.GROUP_SORT
+								, SA.JUDUL_GROUP
+								, SA.TGL_POSTING
+								, SA.ITEM_NO
+								, SA.DOCUMENT
+								, SA.EXT_DOCUMENT_NO
+								, SA.LOC_CODE
+								, SA.TIPE
+								, SA.URUTAN
+						UNION ALL
+						SELECT	'B' AS GROUP_SORT
+								, 'MUTASI STOCK' JUDUL_GROUP
+								, [Posting Date] AS TGL_POSTING
+								, [Item No_] AS ITEM_NO
+								, [Document No_] AS DOCUMENT
+								, [External Document No_] AS EXT_DOCUMENT_NO
+								, [Location Code] AS LOC_CODE
+								, CASE	WHEN [Entry Type] = 0 THEN 'Purchase'
+										WHEN [Entry Type] = 1 THEN 'Sales'
+										WHEN [Entry Type] = 2 THEN 'Positive Adj.'
+										WHEN [Entry Type] = 3 THEN 'Negative Adj.'
+										WHEN [Entry Type] = 4 THEN 'Transfer'
+										WHEN [Entry Type] = 5 THEN 'Consumption'
+										WHEN [Entry Type] = 6 THEN 'Output'
+										WHEN [Entry Type] = 8 THEN 'Assembly Consumption'
+										WHEN [Entry Type] = 9 THEN 'Assembly Output'
+										ELSE 'Unknown' END AS TIPE
+								, CASE	WHEN [Entry Type] = 0 THEN 1
+										WHEN [Entry Type] = 1 THEN 5
+										WHEN [Entry Type] = 2 THEN 2
+										WHEN [Entry Type] = 3 THEN 6
+										WHEN [Entry Type] = 4 THEN 4
+										WHEN [Entry Type] = 5 THEN 8
+										WHEN [Entry Type] = 6 THEN 9
+										WHEN [Entry Type] = 8 THEN 7
+										WHEN [Entry Type] = 9 THEN 3
+										ELSE 10 END AS URUTAN
+								, SUM([Quantity]) AS QTY
+								, SUM(CASE WHEN [Quantity] < 0 THEN [Quantity] ELSE 0 END) AS QTY_NEG
+								, SUM(CASE WHEN [Quantity] >= 0 THEN [Quantity] ELSE 0 END) AS QTY_POS
+						FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry]
+						WHERE 	[Item No_] = $P{ItemNo}
+							AND [Location Code] = $P{Location}
+							AND ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+						GROUP BY [Item No_]
+								, [Posting Date]
+								, [Document No_]
+								, [External Document No_]
+								, [Location Code]
+								, [Entry Type]
+						UNION ALL
+						SELECT	SAK.GROUP_SORT
+								, SAK.JUDUL_GROUP
+								, SAK.TGL_POSTING
+								, SAK.ITEM_NO
+								, SAK.DOCUMENT
+								, SAK.EXT_DOCUMENT_NO
+								, SAK.LOC_CODE
+								, SAK.TIPE
+								, SAK.URUTAN
+								, SUM(SAK.QTY) AS QTY
+								, SUM(SAK.QTY_NEG) AS QTY_NEG
+								, SUM(SAK.QTY_POS) AS QTY_POS
+						FROM	(
+									SELECT	'C' AS GROUP_SORT
+											, 'STOCK S/D HARI INI '+CONVERT(varchar, GETDATE(), 105) AS JUDUL_GROUP
+											, GETDATE() AS TGL_POSTING
+											, $P{ItemNo} AS ITEM_NO
+											, 'STOCK AKHIR' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, $P{Location} AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, 0 AS QTY
+											, 0 AS QTY_NEG
+											, 0 AS QTY_POS
+									UNION ALL
+									SELECT	'C' AS GROUP_SORT
+											, 'STOCK S/D HARI INI '+CONVERT(varchar, GETDATE(), 105) AS JUDUL_GROUP
+											, GETDATE() AS TGL_POSTING
+											, [Item No_] AS ITEM_NO
+											, 'STOCK AKHIR' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, [Location Code] AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, SUM([Quantity]) AS QTY
+											, SUM(CASE WHEN [Quantity] < 0 THEN [Quantity] ELSE 0 END) AS QTY_NEG
+											, SUM(CASE WHEN [Quantity] >= 0 THEN [Quantity] ELSE 0 END) AS QTY_POS
+									FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry]
+									WHERE	([Posting Date] > $P{TglUpto} AND [Posting Date] <= GETDATE())
+											AND [Item No_] = $P{ItemNo}
+											AND [Location Code] = $P{Location}
+									GROUP BY [Item No_], [Location Code]
+								) SAK
+						GROUP BY SAK.GROUP_SORT
+								, SAK.JUDUL_GROUP
+								, SAK.TGL_POSTING
+								, SAK.ITEM_NO
+								, SAK.DOCUMENT
+								, SAK.EXT_DOCUMENT_NO
+								, SAK.LOC_CODE
+								, SAK.TIPE
+								, SAK.URUTAN
+					) X
+			LEFT JOIN	(
+							SELECT  [Posting Date] AS TGL_DOK
+									, [No_] AS NO_DOK
+									, [Order No_] AS NO_SUMBER_TRANS
+									, [Bill-to Customer No_] AS CUST_VENDOR
+									, [Bill-to Name] AS CUST_VENDOR_NAME
+									, [External Document No_]  AS EXT_DOC_NO
+							FROM [dbo].[BC_AUTOJAYA$Sales Shipment Header]
+							WHERE ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+							UNION ALL
+							SELECT	[Posting Date] AS TGL_DOK
+									, [No_] AS NO_DOK
+									, [Order No_] AS NO_SUMBER_TRANS
+									, [Pay-to Vendor No_] AS CUST_VENDOR
+									, [Pay-to Name] AS CUST_VENDOR_NAME
+									, [Vendor Shipment No_]  AS EXT_DOC_NO
+							FROM [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header]
+							WHERE ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+						) Y ON Y.NO_DOK = X.DOCUMENT
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,X.GROUP_SORT
+					,X.JUDUL_GROUP
+					,X.TGL_POSTING
+					,X.ITEM_NO
+					,X.DOCUMENT
+					,X.EXT_DOCUMENT_NO
+					,X.LOC_CODE
+					,X.TIPE
+					,X.URUTAN
+					,X.QTY_NEG
+					,X.QTY_POS
+					,SUM(X.QTY) OVER(ORDER BY X.ITEM_NO, X.LOC_CODE,  X.GROUP_SORT, X.TGL_POSTING, X.URUTAN
+						ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+						AS QTY_TOTAL
+					, Y.TGL_DOK
+					, Y.NO_DOK
+					, Y.NO_SUMBER_TRANS
+					, Y.CUST_VENDOR
+					, Y.CUST_VENDOR_NAME
+					, Y.EXT_DOC_NO
+			FROM	(
+						SELECT	SA.GROUP_SORT
+								, SA.JUDUL_GROUP
+								, SA.TGL_POSTING
+								, SA.ITEM_NO
+								, SA.DOCUMENT
+								, SA.EXT_DOCUMENT_NO
+								, SA.LOC_CODE
+								, SA.TIPE
+								, SA.URUTAN
+								, SUM(SA.QTY) AS QTY
+								, SUM(SA.QTY_NEG) AS QTY_NEG
+								, SUM(SA.QTY_POS) AS QTY_POS
+						FROM	(
+									SELECT	'A' AS GROUP_SORT
+											, 'STOCK S/D TGL. '+CONVERT(varchar, $P{TglFrom}, 105) AS JUDUL_GROUP
+											, $P{TglFrom} AS TGL_POSTING
+											, $P{ItemNo} AS ITEM_NO
+											, 'STOCK AWAL' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, $P{Location} AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, 0 AS QTY
+											, 0 AS QTY_NEG
+											, 0 AS QTY_POS
+									UNION ALL
+									SELECT	'A' AS GROUP_SORT
+											, 'STOCK S/D TGL. '+CONVERT(varchar, $P{TglFrom}, 105) AS JUDUL_GROUP
+											, $P{TglFrom} AS TGL_POSTING
+											, [Item No_] AS ITEM_NO
+											, 'STOCK AWAL' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, [Location Code] AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, SUM([Quantity]) AS QTY
+											, SUM(CASE WHEN [Quantity] < 0 THEN [Quantity] ELSE 0 END) AS QTY_NEG
+											, SUM(CASE WHEN [Quantity] >= 0 THEN [Quantity] ELSE 0 END) AS QTY_POS
+									FROM [dbo].[BC_SOLUSI$Item Ledger Entry]
+									WHERE	[Posting Date] < $P{TglFrom}
+											AND [Item No_] = $P{ItemNo}
+											AND [Location Code] = $P{Location}
+									GROUP BY [Item No_], [Location Code]
+								) SA
+						GROUP BY SA.GROUP_SORT
+								, SA.JUDUL_GROUP
+								, SA.TGL_POSTING
+								, SA.ITEM_NO
+								, SA.DOCUMENT
+								, SA.EXT_DOCUMENT_NO
+								, SA.LOC_CODE
+								, SA.TIPE
+								, SA.URUTAN
+						UNION ALL
+						SELECT	'B' AS GROUP_SORT
+								, 'MUTASI STOCK' JUDUL_GROUP
+								, [Posting Date] AS TGL_POSTING
+								, [Item No_] AS ITEM_NO
+								, [Document No_] AS DOCUMENT
+								, [External Document No_] AS EXT_DOCUMENT_NO
+								, [Location Code] AS LOC_CODE
+								, CASE	WHEN [Entry Type] = 0 THEN 'Purchase'
+										WHEN [Entry Type] = 1 THEN 'Sales'
+										WHEN [Entry Type] = 2 THEN 'Positive Adj.'
+										WHEN [Entry Type] = 3 THEN 'Negative Adj.'
+										WHEN [Entry Type] = 4 THEN 'Transfer'
+										WHEN [Entry Type] = 5 THEN 'Consumption'
+										WHEN [Entry Type] = 6 THEN 'Output'
+										WHEN [Entry Type] = 8 THEN 'Assembly Consumption'
+										WHEN [Entry Type] = 9 THEN 'Assembly Output'
+										ELSE 'Unknown' END AS TIPE
+								, CASE	WHEN [Entry Type] = 0 THEN 1
+										WHEN [Entry Type] = 1 THEN 5
+										WHEN [Entry Type] = 2 THEN 2
+										WHEN [Entry Type] = 3 THEN 6
+										WHEN [Entry Type] = 4 THEN 4
+										WHEN [Entry Type] = 5 THEN 8
+										WHEN [Entry Type] = 6 THEN 9
+										WHEN [Entry Type] = 8 THEN 7
+										WHEN [Entry Type] = 9 THEN 3
+										ELSE 10 END AS URUTAN
+								, SUM([Quantity]) AS QTY
+								, SUM(CASE WHEN [Quantity] < 0 THEN [Quantity] ELSE 0 END) AS QTY_NEG
+								, SUM(CASE WHEN [Quantity] >= 0 THEN [Quantity] ELSE 0 END) AS QTY_POS
+						FROM [dbo].[BC_SOLUSI$Item Ledger Entry]
+						WHERE 	[Item No_] = $P{ItemNo}
+							AND [Location Code] = $P{Location}
+							AND ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+						GROUP BY [Item No_]
+								, [Posting Date]
+								, [Document No_]
+								, [External Document No_]
+								, [Location Code]
+								, [Entry Type]
+						UNION ALL
+						SELECT	SAK.GROUP_SORT
+								, SAK.JUDUL_GROUP
+								, SAK.TGL_POSTING
+								, SAK.ITEM_NO
+								, SAK.DOCUMENT
+								, SAK.EXT_DOCUMENT_NO
+								, SAK.LOC_CODE
+								, SAK.TIPE
+								, SAK.URUTAN
+								, SUM(SAK.QTY) AS QTY
+								, SUM(SAK.QTY_NEG) AS QTY_NEG
+								, SUM(SAK.QTY_POS) AS QTY_POS
+						FROM	(
+									SELECT	'C' AS GROUP_SORT
+											, 'STOCK S/D HARI INI '+CONVERT(varchar, GETDATE(), 105) AS JUDUL_GROUP
+											, GETDATE() AS TGL_POSTING
+											, $P{ItemNo} AS ITEM_NO
+											, 'STOCK AKHIR' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, $P{Location} AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, 0 AS QTY
+											, 0 AS QTY_NEG
+											, 0 AS QTY_POS
+									UNION ALL
+									SELECT	'C' AS GROUP_SORT
+											, 'STOCK S/D HARI INI '+CONVERT(varchar, GETDATE(), 105) AS JUDUL_GROUP
+											, GETDATE() AS TGL_POSTING
+											, [Item No_] AS ITEM_NO
+											, 'STOCK AKHIR' AS DOCUMENT
+											, '' AS EXT_DOCUMENT_NO
+											, [Location Code] AS LOC_CODE
+											, '' AS TIPE
+											, 0 AS URUTAN
+											, SUM([Quantity]) AS QTY
+											, SUM(CASE WHEN [Quantity] < 0 THEN [Quantity] ELSE 0 END) AS QTY_NEG
+											, SUM(CASE WHEN [Quantity] >= 0 THEN [Quantity] ELSE 0 END) AS QTY_POS
+									FROM [dbo].[BC_SOLUSI$Item Ledger Entry]
+									WHERE	([Posting Date] > $P{TglUpto} AND [Posting Date] <= GETDATE())
+											AND [Item No_] = $P{ItemNo}
+											AND [Location Code] = $P{Location}
+									GROUP BY [Item No_], [Location Code]
+								) SAK
+						GROUP BY SAK.GROUP_SORT
+								, SAK.JUDUL_GROUP
+								, SAK.TGL_POSTING
+								, SAK.ITEM_NO
+								, SAK.DOCUMENT
+								, SAK.EXT_DOCUMENT_NO
+								, SAK.LOC_CODE
+								, SAK.TIPE
+								, SAK.URUTAN
+					) X
+			LEFT JOIN	(
+							SELECT  [Posting Date] AS TGL_DOK
+									, [No_] AS NO_DOK
+									, [Order No_] AS NO_SUMBER_TRANS
+									, [Bill-to Customer No_] AS CUST_VENDOR
+									, [Bill-to Name] AS CUST_VENDOR_NAME
+									, [External Document No_]  AS EXT_DOC_NO
+							FROM [dbo].[BC_SOLUSI$Sales Shipment Header]
+							WHERE ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+							UNION ALL
+							SELECT	[Posting Date] AS TGL_DOK
+									, [No_] AS NO_DOK
+									, [Order No_] AS NO_SUMBER_TRANS
+									, [Pay-to Vendor No_] AS CUST_VENDOR
+									, [Pay-to Name] AS CUST_VENDOR_NAME
+									, [Vendor Shipment No_]  AS EXT_DOC_NO
+							FROM [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header]
+							WHERE ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+						) Y ON Y.NO_DOK = X.DOCUMENT
+		) XX
+WHERE XX.COMPANY = $P{Company}]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="GROUP_SORT" class="java.lang.String"/>
+	<field name="JUDUL_GROUP" class="java.lang.String"/>
+	<field name="TGL_POSTING" class="java.sql.Timestamp"/>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="DOCUMENT" class="java.lang.String"/>
+	<field name="EXT_DOCUMENT_NO" class="java.lang.String"/>
+	<field name="LOC_CODE" class="java.lang.String"/>
+	<field name="TIPE" class="java.lang.String"/>
+	<field name="URUTAN" class="java.lang.Integer"/>
+	<field name="QTY_NEG" class="java.math.BigDecimal"/>
+	<field name="QTY_POS" class="java.math.BigDecimal"/>
+	<field name="QTY_TOTAL" class="java.math.BigDecimal"/>
+	<field name="TGL_DOK" class="java.sql.Timestamp"/>
+	<field name="NO_DOK" class="java.lang.String"/>
+	<field name="NO_SUMBER_TRANS" class="java.lang.String"/>
+	<field name="CUST_VENDOR" class="java.lang.String"/>
+	<field name="CUST_VENDOR_NAME" class="java.lang.String"/>
+	<field name="EXT_DOC_NO" class="java.lang.String"/>
+	<sortField name="ITEM_NO"/>
+	<sortField name="LOC_CODE"/>
+	<sortField name="GROUP_SORT"/>
+	<sortField name="TGL_POSTING"/>
+	<sortField name="URUTAN"/>
+	<group name="Group">
+		<groupExpression><![CDATA[$F{GROUP_SORT}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField>
+					<reportElement x="0" y="0" width="150" height="14" uuid="85da3765-92a6-4c81-a660-4cd68f346589"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUDUL_GROUP}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<staticText>
+					<reportElement x="0" y="0" width="150" height="14" uuid="8b051c31-1ee2-4af4-a163-88447c5848fd"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="112" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="131005ea-a785-475b-80ee-cc662b836723"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[(01045) Mutasi Stock]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="75" height="14" uuid="5973bfcc-7356-4510-8ed1-8c6482852f97"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="150" height="14" uuid="55e0fd73-1ee1-43de-ab73-78ce353a0951"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="150" height="14" uuid="832e6156-4de8-40f7-9a87-4196180ff680"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Periode Mutasi Stock :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="14" width="75" height="14" uuid="4cb4c69c-2c4b-4792-8175-d6d973b340d4"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="150" height="14" uuid="4231572d-5fa8-44ab-966a-681511772b3c"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Location (Gudang) :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="70" width="75" height="14" uuid="0fe8ce41-79f2-4112-9c5b-21d631f591a4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Location}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="150" height="14" uuid="e0ed50b8-621e-4bbe-97fe-02edc142aaa1"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="84" width="75" height="14" uuid="299f16c4-1541-461e-8f46-bd9aaa07bd7d"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="150" y="56" width="75" height="14" uuid="8171cec2-445f-4bf5-ba94-c5e34b35b652"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="325" y="56" width="150" height="14" uuid="83ec9a50-9789-47fd-8336-b4f0c91e2721"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="225" y="56" width="100" height="14" uuid="b2889445-f65d-4367-96bb-370e6f363d04"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="150" height="14" uuid="5e84d4ea-db19-467d-9ed5-6d144994ec41"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Item :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="42" width="175" height="14" uuid="846fa04b-ad83-4d57-97e9-05a12b13f238"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{ItemNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="225" y="70" width="100" height="14" uuid="9f352082-2c04-4865-8166-a236fc852ee7"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="84" width="100" height="14" uuid="f287e939-f463-4f3e-98f7-7a0c0d3760ee"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="325" y="70" width="150" height="14" uuid="22838fff-cec2-4b47-93c1-a4bdb7836fe1"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="150" height="14" uuid="e1c7a2e3-8ffc-4c77-8e54-56a7a3a9f21d"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="98" width="75" height="14" uuid="8f6afb6e-34fd-4214-8b91-4d8214f0ac65"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Tanggal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="700" y="98" width="75" height="14" uuid="815b71ab-132b-4409-934b-4bdc463a492b"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Keluar]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="775" y="98" width="75" height="14" uuid="09871b58-cea4-4ff4-be19-8c4b103face4"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="98" width="100" height="14" uuid="750c63a5-4818-4185-b9f4-87ff8f713490"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Tipe Transaksi]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="325" y="98" width="150" height="14" uuid="e56c2a3d-3202-4db8-8067-eecb1f28f3ec"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[No Dokumen Transaksi]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="475" y="98" width="150" height="14" uuid="8290018a-dcb9-4261-a4a2-b21bc24a80e0"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[No External Dokumen]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="625" y="98" width="75" height="14" uuid="459bacb5-48be-4b7b-9a36-a639fcf647ee"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Masuk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="150" height="14" uuid="ce9b14f1-7da4-4999-bd30-a0be47b6a442"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="28" width="75" height="14" uuid="714bd39e-2903-4c97-bc5f-4e03521e18e7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="325" y="84" width="150" height="14" uuid="f849c06b-ffb9-42f2-990a-0706af5d3930"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="325" y="42" width="150" height="14" uuid="8308cf46-1715-4a87-a766-b796430a044a"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="850" y="98" width="25" height="14" uuid="0099a65a-80d7-42f9-a5fe-5b7eef40a9cb"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="875" y="98" width="75" height="14" uuid="09ad0a5e-d578-4544-9471-efb429692f9a"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Tgl. DO / GR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="950" y="98" width="100" height="14" uuid="54a4ce21-a407-430a-b5f1-df64b107a534"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[No. DO / GR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1050" y="98" width="100" height="14" uuid="c23bd8a5-ed7a-4504-9f9a-2a4e1b6bdabd"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[No. SO / PO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1150" y="98" width="150" height="14" uuid="a8110a02-fa13-44fe-a8ec-2b102b5152ed"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Ext. Doc. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1300" y="98" width="75" height="14" uuid="2e32d05f-d66b-4a2d-9b55-77337afbd45c"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[No. Cust / Vendor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1375" y="98" width="300" height="14" uuid="38cb0b41-4926-4a6c-921a-3611ecdfce8b"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Nama Cust / Vendor]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" uuid="c587876f-3e63-4acc-9f8f-d1ce2114d0db"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_POSTING}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="225" y="0" width="100" height="14" uuid="c80883a3-2cfc-4b7a-9799-45f752df3cce"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="325" y="0" width="150" height="14" uuid="1e5780ec-15fc-49bf-a259-20f85d43b8e8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DOCUMENT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="475" y="0" width="150" height="14" uuid="5a0b07f5-bc55-4e83-8623-cbaebc8d179b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXT_DOCUMENT_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="775" y="0" width="75" height="14" uuid="9bf1a615-798c-48cc-ac9b-cd4d8974777d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_TOTAL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="7ce9e19d-625d-455a-945c-dc0e94f9ee7d"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="700" y="0" width="75" height="14" uuid="e7c54499-7cf2-4d0d-8075-2218d87c5c9f">
+					<printWhenExpression><![CDATA[$F{QTY_NEG} != 0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_NEG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="625" y="0" width="75" height="14" uuid="dbd900fe-eed7-431c-b172-161e327dd90a">
+					<printWhenExpression><![CDATA[$F{QTY_POS} != 0]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_POS}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="850" y="0" width="25" height="14" uuid="20013fb1-4b05-4037-b800-e0bc87aca405"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="950" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="53d4ee77-34d7-43c9-bf98-6688c24902c1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_DOK}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1050" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="2896386d-2d5c-4771-b5de-f4393c1ad6b5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_SUMBER_TRANS}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="875" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="36cffe21-d4ec-4d09-bf0a-629c53c22bb8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_DOK}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1300" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="7a1a08b9-ed7e-43f4-af1d-6f1212732b05"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_VENDOR}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1375" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="1a727a89-763c-4d42-afc2-20baf6a32a4a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CUST_VENDOR_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1150" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="910dd248-d6e4-4435-bf8e-0a6cc54683a0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXT_DOC_NO}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="14">
+			<subreport>
+				<reportElement x="0" y="0" width="225" height="14" uuid="07768449-12c3-4c82-865e-c18455512b68"/>
+				<subreportParameter name="ItemNo">
+					<subreportParameterExpression><![CDATA[$P{ItemNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Company">
+					<subreportParameterExpression><![CDATA[$P{Company}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "01045_01_SummaryStock.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+	<noData>
+		<band height="112">
+			<staticText>
+				<reportElement x="0" y="98" width="225" height="14" uuid="d8f70473-d8ce-4c9e-a681-29cab4afa9a5"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="84" width="75" height="14" uuid="36825dcf-0900-4135-a17a-05a31207c5a7"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="325" y="56" width="150" height="14" uuid="dd18ce94-7de5-4c03-8eae-e97915e919af"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="325" y="84" width="150" height="14" uuid="71fb182d-fb7f-48a5-8ced-1245ba9f54db"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="150" height="14" uuid="dc6e639e-84c5-4f4b-a30f-f1d106ba19b3"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Periode Mutasi Stock :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="56" width="100" height="14" uuid="492f23c1-3eb2-4aed-a7e7-a75655fcdca7"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="325" y="70" width="150" height="14" uuid="59da016b-549d-4e76-8364-ae0fcda26c41"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="42" width="175" height="14" uuid="e57bef53-8e0e-4082-87b5-0af927f8b51d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{ItemNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="150" height="14" uuid="5062184a-879a-4789-b721-1bc184efdee1"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="84" width="100" height="14" uuid="90b5c2d3-474f-40d3-a635-dadb1a393df5"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="28" width="75" height="14" uuid="158d4c62-bb1e-4c20-ba4d-14cbe5a264ad"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="225" y="70" width="100" height="14" uuid="6dee0a5f-96ed-4d3b-86ca-ee2bc6b9d2c7"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="150" height="14" uuid="97114f15-a343-4aef-acf1-438ed0c29a81"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[(01045) Mutasi Stock]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="150" height="14" uuid="55860ce1-ecb0-4a3d-97bb-95e29b3bcf47"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Item :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="150" height="14" uuid="445685e3-dee5-4347-bed0-e20941db8363"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Location (Gudang) :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="75" height="14" uuid="a572c09c-fed8-4bc8-82c3-2f8a44d44acb"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="150" height="14" uuid="877ccce9-e4bd-49d3-bbcc-df13982f77c0"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="150" height="14" uuid="aac36162-f3e9-4ddc-949e-5ab354a716d8"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="325" y="42" width="150" height="14" uuid="958e01f0-74da-44b5-80b4-e45678f979f3"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="150" y="70" width="75" height="14" uuid="5b839de8-ef63-4716-9aa3-7dde45b6c611"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Location}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="150" y="56" width="75" height="14" uuid="ba40856a-88a8-4090-b013-9e9f8160190b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="150" y="14" width="75" height="14" uuid="feda48b0-a57f-4dbe-baa8-6a0b9511e364"/>
+				<textElement>
+					<font size="8" isBold="false"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03041_SamsungClaimIMEI" language="groovy" pageWidth="1240" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1240" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
+	<property name="ireport.zoom" value="1.4641000000000068"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XXX.PRODUCT_NAME
+		, XXX.END_USER_NAME
+		, XXX.IMEI
+		, XXX.NO_PO
+		, XXX.TGL_PO
+		, XXX.NO_PO_USER
+		, XXX.TGL_PO_USER
+FROM	(
+			SELECT	ITM.[Description] AS PRODUCT_NAME
+					, CASE WHEN SUBSTRING (PRH.[Order No_],5,1) = 'P' THEN BPH.[Your Reference] ELSE PH.[Your Reference] END AS END_USER_NAME
+					, DTL.[Serial No_] AS IMEI
+					, CASE WHEN SUBSTRING (PRH.[Order No_],5,1) = 'P' THEN BPO.NO_BPO ELSE PRH.[Order No_] END AS NO_PO
+					, CASE WHEN SUBSTRING (PRH.[Order No_],5,1) = 'P' THEN BPH.[Order Date] ELSE PH.[Order Date] END AS TGL_PO
+					, '' AS NO_PO_USER
+					, '' AS TGL_PO_USER
+			FROM	(
+						SELECT	ILE.[Item No_]
+								, ILE.[Document No_]
+								, SUM(ILE.Quantity) AS QTY
+								, ILE.[Serial No_]
+						FROM [dbo].[BC_AUTOJAYA$Item Ledger Entry] ILE
+						LEFT JOIN	(
+										SELECT [Dimension Set ID]
+												,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+												,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+												,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+										FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+										GROUP BY [Dimension Set ID]
+									) DIM ON DIM.[Dimension Set ID] = ILE.[Dimension Set ID]
+						WHERE	DIM.DIM_PRINCIPAL = 'SAMSUNG' AND
+								ILE.[Entry Type] = 0 AND
+								[Serial No_] <> ''
+						GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Serial No_]
+					) DTL
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Item] ITM ON ITM.[No_] = DTL.[Item No_]
+			LEFT JOIN	(
+							SELECT	DISTINCT PIL.[Receipt No_]
+									, CMH.[No_] AS NO_CM
+							FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PIL
+							LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CMH ON CMH.[Applies-to Doc_ No_] = PIL.[Document No_]
+							WHERE PIL.[Receipt No_] <> ''
+						) CM ON CM.[Receipt No_] = DTL.[Document No_]
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = DTL.[Document No_]
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] PH ON PH.[Document Type] = 1 AND PH.[No_] = PRH.[Order No_]
+			LEFT JOIN	(
+							SELECT PH.[No_] AS NO_PO, MAX(PD.[Blanket Order No_]) AS NO_BPO
+							FROM [dbo].[BC_AUTOJAYA$Purchase Header] PH
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+							WHERE PH.[Document Type] = 1
+							GROUP BY PH.[No_]
+						)  BPO ON BPO.NO_PO = PH.[No_]
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] BPH ON BPH.[Document Type] = 4 AND BPH.[No_] = BPO.NO_BPO
+			WHERE	DTL.QTY <> 0 AND
+					(PRH.[Order No_] IS NOT NULL AND PRH.[Order No_] <> '') AND
+					CM.NO_CM IS NULL
+			UNION ALL
+			SELECT	ITM.[Description] AS PRODUCT_NAME
+					, CASE WHEN SUBSTRING (PRH.[Order No_],5,1) = 'P' THEN BPH.[Your Reference] ELSE PH.[Your Reference] END AS END_USER_NAME
+					, DTL.[Serial No_] AS IMEI
+					, CASE WHEN SUBSTRING (PRH.[Order No_],5,1) = 'P' THEN BPO.NO_BPO ELSE PRH.[Order No_] END AS NO_PO
+					, CASE WHEN SUBSTRING (PRH.[Order No_],5,1) = 'P' THEN BPH.[Order Date] ELSE PH.[Order Date] END AS TGL_PO
+					, '' AS NO_PO_USER
+					, '' AS TGL_PO_USER
+			FROM	(
+						SELECT	ILE.[Item No_]
+								, ILE.[Document No_]
+								, SUM(ILE.Quantity) AS QTY
+								, ILE.[Serial No_]
+						FROM [dbo].[BC_SOLUSI$Item Ledger Entry] ILE
+						LEFT JOIN	(
+										SELECT [Dimension Set ID]
+												,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+												,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+												,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+										FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+										GROUP BY [Dimension Set ID]
+									) DIM ON DIM.[Dimension Set ID] = ILE.[Dimension Set ID]
+						WHERE	DIM.DIM_PRINCIPAL = 'SAMSUNG' AND
+								ILE.[Entry Type] = 0 AND
+								[Serial No_] <> ''
+						GROUP BY ILE.[Item No_], ILE.[Document No_], ILE.[Serial No_]
+					) DTL
+			LEFT JOIN [dbo].[BC_SOLUSI$Item] ITM ON ITM.[No_] = DTL.[Item No_]
+			LEFT JOIN	(
+							SELECT	DISTINCT PIL.[Receipt No_]
+									, CMH.[No_] AS NO_CM
+							FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PIL
+							LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CMH ON CMH.[Applies-to Doc_ No_] = PIL.[Document No_]
+							WHERE PIL.[Receipt No_] <> ''
+						) CM ON CM.[Receipt No_] = DTL.[Document No_]
+			LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = DTL.[Document No_]
+			LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] PH ON PH.[Document Type] = 1 AND PH.[No_] = PRH.[Order No_]
+			LEFT JOIN	(
+							SELECT PH.[No_] AS NO_PO, MAX(PD.[Blanket Order No_]) AS NO_BPO
+							FROM [dbo].[BC_SOLUSI$Purchase Header] PH
+							INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+							WHERE PH.[Document Type] = 1
+							GROUP BY PH.[No_]
+						)  BPO ON BPO.NO_PO = PH.[No_]
+			LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] BPH ON BPH.[Document Type] = 4 AND BPH.[No_] = BPO.NO_BPO
+			WHERE	DTL.QTY <> 0 AND
+					(PRH.[Order No_] IS NOT NULL AND PRH.[Order No_] <> '') AND
+					CM.NO_CM IS NULL
+		) XXX
+WHERE XXX.TGL_PO >= $P{TglFrom} AND XXX.TGL_PO <= $P{TglUpto}]]>
+	</queryString>
+	<field name="PRODUCT_NAME" class="java.lang.String"/>
+	<field name="END_USER_NAME" class="java.lang.String"/>
+	<field name="IMEI" class="java.lang.String"/>
+	<field name="NO_PO" class="java.lang.String"/>
+	<field name="TGL_PO" class="java.sql.Timestamp"/>
+	<field name="NO_PO_USER" class="java.lang.String"/>
+	<field name="TGL_PO_USER" class="java.lang.String"/>
+	<sortField name="TGL_PO"/>
+	<sortField name="NO_PO"/>
+	<title>
+		<band height="28" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="ce4993e9-83c5-4acb-bb12-9b7a54b6db46"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Material/Product Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="750" y="14" width="150" height="14" uuid="24269d45-75b5-40ed-83b1-11dfc446e6ad"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. PO Partner to Distributor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="14" width="300" height="14" uuid="1e1e601f-9434-4812-b2d5-dea50ef830cc"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[End User Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="600" y="14" width="150" height="14" uuid="7377173b-3f86-430e-ba9c-bfae442bf88e"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Imei]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="900" y="14" width="75" height="14" uuid="62fe942c-7eb1-4409-b943-d9b690d060e8"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1125" y="14" width="75" height="14" uuid="31e59cb6-583f-4781-b0f4-0b1d2861fc31"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="975" y="14" width="150" height="14" uuid="8ba12d52-a520-4230-a379-3231af47fb83"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. PO User to Partner]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="cc10f1ec-861d-4de6-82d6-bcecf204f969"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03041) SAMSUNG - Claim Format]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="300" height="14" uuid="aebc1acb-994c-44cd-a3df-c632445ebef5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCT_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="0" width="300" height="14" uuid="d53ddf3f-f761-4a22-9f30-37f3b9b90183"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{END_USER_NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="600" y="0" width="150" height="14" uuid="0d1a3852-8b8d-46ce-97c4-98d480bf7aba"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{IMEI}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="750" y="0" width="150" height="14" uuid="afc681ee-f2dc-4e04-a260-532c58a6af33"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MMM-yyyy" isBlankWhenNull="true">
+				<reportElement x="900" y="0" width="75" height="14" uuid="54dc92b1-621a-4ce4-bc6f-350ca6c6b908"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_PO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="975" y="0" width="150" height="14" uuid="0b986e65-4b79-4a3b-a9f8-87a35951a539"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_USER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1125" y="0" width="75" height="14" uuid="8898a630-2fba-4bf2-95a4-44223fc8db1c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_PO_USER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="28">
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="b33fc35d-b608-4759-9a89-2a1ad4befafe"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="369dfe0a-e110-4649-b861-d5812974ba0a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03041) SAMSUNG - Claim Format]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

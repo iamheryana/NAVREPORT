@@ -1,0 +1,2122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04050_ForecastSalesACSSum" language="groovy" pageWidth="900" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="860" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.2100000000001236"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="48"/>
+	<parameter name="Tahun" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Sem" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Sem1Akhir" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AmtBig" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	1 AS NO_JUDUL
+		,('PIPELINE ' +
+			CASE	WHEN $P{Sem} = 'ALL' THEN 'ALL SEMESTER '
+					WHEN $P{Sem} = 'S1' THEN 'SEMESTER I '
+					WHEN $P{Sem} = 'S2' THEN 'SEMESTER II '
+			END + CAST( $P{Tahun} as varchar(4))) AS JUDUL
+		, XXI.CABANG_NO AS URUT
+		, XXI.CABANG_NAMA AS KETERANGAN
+		, SUM(XXI.AMOUNT_POTENSI) AS AMOUNT_POTENSI
+		, ROUND(
+					(
+						CASE WHEN SUM(XXI.AMOUNT_POTENSI) = 0 THEN
+							0
+						ELSE
+							(SUM(XXI.AMOUNT_POTENSI) / (SUM(SUM(XXI.AMOUNT_POTENSI)) OVER (PARTITION BY 1)) * 100 )
+						END
+					),2) AS PCN_POTENSI
+
+		, ROUND(
+					(
+						CASE WHEN MAX(XXI.JML_SALES) = 0 THEN
+							0
+						ELSE
+							((MAX(XXI.JML_SALES) * 100.00)/ (SUM(MAX(XXI.JML_SALES)) OVER (PARTITION BY 1)))
+						END
+					),2) AS PCN_JML_SALES
+		, MAX(XXI.JML_SALES) AS JML_SALES
+		, CASE WHEN MAX(XXI.JML_SALES) = 0 THEN 0 ELSE SUM(XXI.AMOUNT_POTENSI) / MAX(XXI.JML_SALES) END AS AVG_PER_SALES
+		, 0 AS JML_CUST
+FROM	(
+			SELECT	SLS.[Global Dimension 1 Code] AS CABANG_NO
+					,CAB.[Name] AS CABANG_NAMA
+					, XXX.SALES_CODE
+					, COUNT(XXX.SALES_CODE) OVER(PARTITION BY CAB.[Name]) AS JML_SALES
+					, CASE	WHEN $P{Sem} = 'ALL' THEN (SUM(XXX.AMOUNT_S1) + SUM(XXX.AMOUNT_S2))
+							WHEN $P{Sem} = 'S1' THEN SUM(XXX.AMOUNT_S1)
+							WHEN $P{Sem} = 'S2' THEN SUM(XXX.AMOUNT_S2)
+							ELSE 0
+					  END AMOUNT_POTENSI
+
+			FROM	(
+						SELECT	CMP.[Salesperson Code] AS SALES_CODE
+								, DATEPART(year, GETDATE()) AS YEAR_SUM
+								, 0 AS AMOUNT_S1
+								, 0 AS AMOUNT_S2
+						FROM [AUTOJAYA].[dbo].[AUTOJAYA$Campaign]  CMP
+						WHERE CMP.[Status Code] = 'ACTIVE' AND CMP.[Salesperson Code] <> ''
+						UNION ALL
+						SELECT	 XX.SALES_CODE
+								, XX.YEAR_SUM
+								, SUM(XX.AMOUNT_S1) AS AMOUNT_S1
+								, SUM(XX.AMOUNT_S2) AS AMOUNT_S2
+						FROM	(
+									SELECT	X.SALES_CODE
+											,X.EST_YEAR AS YEAR_SUM
+											,X.AMOUNT_S1
+											,X.AMOUNT_S2
+									FROM	(
+												SELECT	'AJ' AS COMPANY
+														,MAD.SALES_CODE
+														,MAD.CABANG
+														,MAD.SIZE_PROJECT
+														,MAD.POTENSIAL_PROJECT
+														,MAD.ITEM
+														,MAD.ITEM_CAT
+														,MAD.HW_PS
+														,ROUND((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN  MAD.EST_Q = 1234 THEN
+																	((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																ELSE
+																	CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																			WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																			WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE 0
+																	END
+																END
+															ELSE
+																(MAD.UNIT_PRICE * MAD.QTY_OUT)
+															END
+															/ 1 ),2) AS AMOUNT
+														,ROUND(((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															+
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															) / 1),2) AS AMOUNT_S1
+														,ROUND(((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															+
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															) / 1),2) AS AMOUNT_S2
+														,MAD.DIM_PRINCIPAL
+														,MAD.EST_YEAR
+												FROM	(
+															SELECT	SOH.[Salesperson Code] AS SALES_CODE
+																	,SOH.[Responsibility Center] AS CABANG
+																	, CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) NOT IN ('B','R','P') THEN
+																		'R'
+																	  ELSE
+																		CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) = 'P' THEN 'B' ELSE SUBSTRING(SOH.[Posting Description], 1,1) END
+																	  END AS SIZE_PROJECT
+																	, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																	,SOL.[No_] AS ITEM
+																	,SOL.[Description] AS ITEM_DESC
+																	,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																	,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																	,SOL.[Quantity] AS QTY_OUT
+																	,SOL.[Unit Price] AS UNIT_PRICE
+																	,DIMD.DIM_PRINCIPAL
+																	,SOH.[Payment Discount _] AS JML_TAHUN
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																						$P{Tahun}
+																					ELSE
+																						0
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																					ELSE
+																						0
+																					END
+																				END
+																			ELSE
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																						$P{Tahun}
+																					ELSE
+																						0
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																					ELSE
+																						0
+																					END
+																				END
+																			END
+																		ELSE
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																			END
+																		END AS EST_YEAR
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																						1234
+																					ELSE
+																						CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																							CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																									WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																									WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																									ELSE 4
+																							END
+																						ELSE
+																							0
+																						END
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																							 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																							 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																							 ELSE 123
+																						END
+																					ELSE
+																						0
+																					END
+																				END
+																			ELSE
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																						1234
+																					ELSE
+																						CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																							CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 1234
+																									WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 234
+																									WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 34
+																									ELSE 4
+																							END
+																						ELSE
+																							0
+																						END
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 0
+																							 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 1
+																							 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 12
+																							 ELSE 123
+																						END
+																					ELSE
+																						0
+																					END
+																				END
+																			END
+																		ELSE
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				DATEPART(quarter, GETDATE())
+																			ELSE
+																				DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																			END
+																		END AS EST_Q
+															FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Header] SOH
+															INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+															LEFT JOIN	(
+																			SELECT X.[Dimension Set ID]
+																				  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																			FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry] X
+																			GROUP BY [Dimension Set ID]
+																		) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+															WHERE SOH.[No_ Series] = 'SBOM'
+														) MAD
+												UNION ALL
+												SELECT	'SP' AS COMPANY
+														,MAD.SALES_CODE
+														,MAD.CABANG
+														,MAD.SIZE_PROJECT
+														,MAD.POTENSIAL_PROJECT
+														,MAD.ITEM
+														,MAD.ITEM_CAT
+														,MAD.HW_PS
+														,ROUND((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN  MAD.EST_Q = 1234 THEN
+																	((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																ELSE
+																	CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																			WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																			WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE 0
+																	END
+																END
+															ELSE
+																(MAD.UNIT_PRICE * MAD.QTY_OUT)
+															END
+															/ 1 ),2) AS AMOUNT
+														,ROUND(((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															+
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															) / 1),2) AS AMOUNT_S1
+														,ROUND(((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															+
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																	(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																ELSE
+																	0
+																END
+															ELSE
+																CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+															END
+															) / 1),2) AS AMOUNT_S2
+														,MAD.DIM_PRINCIPAL
+														,MAD.EST_YEAR
+												FROM	(
+															SELECT	SOH.[Salesperson Code] AS SALES_CODE
+																	,SOH.[Responsibility Center] AS CABANG
+																	, CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) NOT IN ('B','R','P') THEN
+																		'R'
+																	  ELSE
+																		CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) = 'P' THEN 'B' ELSE SUBSTRING(SOH.[Posting Description], 1,1) END
+																	  END AS SIZE_PROJECT
+																	, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																	,SOL.[No_] AS ITEM
+																	,SOL.[Description] AS ITEM_DESC
+																	,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																	,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																	,SOL.[Quantity] AS QTY_OUT
+																	,SOL.[Unit Price] AS UNIT_PRICE
+																	,DIMD.DIM_PRINCIPAL
+																	,SOH.[Payment Discount _] AS JML_TAHUN
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																						$P{Tahun}
+																					ELSE
+																						0
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																					ELSE
+																						0
+																					END
+																				END
+																			ELSE
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																						$P{Tahun}
+																					ELSE
+																						0
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																					ELSE
+																						0
+																					END
+																				END
+																			END
+																		ELSE
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																			END
+																		END AS EST_YEAR
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																						1234
+																					ELSE
+																						CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																							CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																									WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																									WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																									ELSE 4
+																							END
+																						ELSE
+																							0
+																						END
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																							 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																							 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																							 ELSE 123
+																						END
+																					ELSE
+																						0
+																					END
+																				END
+																			ELSE
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																						1234
+																					ELSE
+																						CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																							CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 1234
+																									WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 234
+																									WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 34
+																									ELSE 4
+																							END
+																						ELSE
+																							0
+																						END
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 0
+																							 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 1
+																							 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 12
+																							 ELSE 123
+																						END
+																					ELSE
+																						0
+																					END
+																				END
+																			END
+																		ELSE
+																			CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				DATEPART(quarter, GETDATE())
+																			ELSE
+																				DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																			END
+																		END AS EST_Q
+															FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Header] SOH
+															INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+															LEFT JOIN	(
+																			SELECT X.[Dimension Set ID]
+																				  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																			FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry] X
+																			GROUP BY [Dimension Set ID]
+																		) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+															WHERE SOH.[No_ Series] = 'SBOM'
+														) MAD
+											) X
+								) XX
+						GROUP BY XX.SALES_CODE, XX.YEAR_SUM
+					) XXX
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = XXX.SALES_CODE
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
+			WHERE	XXX.YEAR_SUM = $P{Tahun}
+					AND SLS.[Global Dimension 1 Code] IS NOT NULL
+			GROUP BY SLS.[Global Dimension 1 Code], CAB.[Name], XXX.SALES_CODE
+		) XXI
+GROUP BY XXI.CABANG_NAMA, XXI.CABANG_NO
+UNION ALL
+SELECT	2 AS NO_JUDUL
+		,('TOTAL POTENSI ' +
+			CASE	WHEN $P{Sem} = 'ALL' THEN 'ALL SEMESTER '
+					WHEN $P{Sem} = 'S1' THEN 'SEMESTER I '
+					WHEN $P{Sem} = 'S2' THEN 'SEMESTER II '
+			END + CAST( $P{Tahun} as varchar(4))) AS JUDUL
+		,XII.KATEGORI AS URUT
+		, CASE	WHEN XII.KATEGORI = 1 THEN 'Potensi >= 10M'
+				WHEN XII.KATEGORI = 2 THEN '5M >= Potensi < 10M'
+				WHEN XII.KATEGORI = 3 THEN '1M >= Potensi < 5M'
+				WHEN XII.KATEGORI = 4 THEN 'Potensi < 1M'
+		  END AS KETERANGAN
+		, SUM(XII.AMOUNT_POTENSI) AS AMOUNT_POTENSI
+		, ROUND(
+					(
+						CASE WHEN SUM(XII.AMOUNT_POTENSI) = 0 THEN
+							0
+						ELSE
+							(SUM(XII.AMOUNT_POTENSI) / (SUM(SUM(XII.AMOUNT_POTENSI)) OVER (PARTITION BY 1)) * 100 )
+						END
+					),2) AS PCN_POTENSI
+		, 0 AS PCN_JML_SALES
+		, MAX(XII.JML_SALES) AS JML_SALES
+		, 0 AS AVG_PER_SALES
+		, 0 AS JML_CUST
+FROM	(
+			SELECT	XXI.KATEGORI
+					, SUM(XXI.AMOUNT_POTENSI) AS AMOUNT_POTENSI
+					, COUNT(XXI.SALES_CODE) OVER (PARTITION BY XXI.KATEGORI) AS JML_SALES
+			FROM	(
+						SELECT	XI.SALES_CODE
+								,XI.AMOUNT_POTENSI
+								,CASE WHEN XI.AMOUNT_POTENSI >= 10000.00 THEN 1
+									  WHEN XI.AMOUNT_POTENSI >= 5000.00 AND XI.AMOUNT_POTENSI < 10000.00 THEN 2
+									  WHEN XI.AMOUNT_POTENSI >= 1000.00 AND XI.AMOUNT_POTENSI < 5000.00 THEN 3
+									  ELSE 4 END AS KATEGORI
+						FROM	(
+									SELECT	 XXX.SALES_CODE
+											, CASE	WHEN $P{Sem} = 'ALL' THEN (SUM(XXX.AMOUNT_S1) + SUM(XXX.AMOUNT_S2))
+													WHEN $P{Sem} = 'S1' THEN SUM(XXX.AMOUNT_S1)
+													WHEN $P{Sem} = 'S2' THEN SUM(XXX.AMOUNT_S2)
+													ELSE 0
+											  END AMOUNT_POTENSI
+
+									FROM	(
+												SELECT	CMP.[Salesperson Code] AS SALES_CODE
+														, DATEPART(year, GETDATE()) AS YEAR_SUM
+														, 0 AS AMOUNT_S1
+														, 0 AS AMOUNT_S2
+												FROM [AUTOJAYA].[dbo].[AUTOJAYA$Campaign]  CMP
+												WHERE CMP.[Status Code] = 'ACTIVE' AND CMP.[Salesperson Code] <> ''
+												UNION ALL
+												SELECT	 XX.SALES_CODE
+														, XX.YEAR_SUM
+														, SUM(XX.AMOUNT_S1) AS AMOUNT_S1
+														, SUM(XX.AMOUNT_S2) AS AMOUNT_S2
+												FROM	(
+															SELECT	X.SALES_CODE
+																	,X.EST_YEAR AS YEAR_SUM
+																	,X.AMOUNT_S1
+																	,X.AMOUNT_S2
+															FROM	(
+																		SELECT	'AJ' AS COMPANY
+																				,MAD.SALES_CODE
+																				,MAD.CABANG
+																				,MAD.SIZE_PROJECT
+																				,MAD.POTENSIAL_PROJECT
+																				,MAD.ITEM
+																				,MAD.ITEM_CAT
+																				,MAD.HW_PS
+																				,ROUND((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN  MAD.EST_Q = 1234 THEN
+																							((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																						ELSE
+																							CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																									WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																									WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE 0
+																							END
+																						END
+																					ELSE
+																						(MAD.UNIT_PRICE * MAD.QTY_OUT)
+																					END
+																					/ 1 ),2) AS AMOUNT
+																				,ROUND(((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					+
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					) / 1),2) AS AMOUNT_S1
+																				,ROUND(((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					+
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					) / 1),2) AS AMOUNT_S2
+																				,MAD.DIM_PRINCIPAL
+																				,MAD.EST_YEAR
+																		FROM	(
+																					SELECT	SOH.[Salesperson Code] AS SALES_CODE
+																							,SOH.[Responsibility Center] AS CABANG
+																							, CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) NOT IN ('B','R','P') THEN
+																								'R'
+																							  ELSE
+																								CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) = 'P' THEN 'B' ELSE SUBSTRING(SOH.[Posting Description], 1,1) END
+																							  END AS SIZE_PROJECT
+																							, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																							,SOL.[No_] AS ITEM
+																							,SOL.[Description] AS ITEM_DESC
+																							,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																							,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																							,SOL.[Quantity] AS QTY_OUT
+																							,SOL.[Unit Price] AS UNIT_PRICE
+																							,DIMD.DIM_PRINCIPAL
+																							,SOH.[Payment Discount _] AS JML_TAHUN
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_YEAR
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																															WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																															WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																													 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																													 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 1234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 0
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 1
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(quarter, GETDATE())
+																									ELSE
+																										DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_Q
+																					FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Header] SOH
+																					INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+																					LEFT JOIN	(
+																									SELECT X.[Dimension Set ID]
+																										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																									FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry] X
+																									GROUP BY [Dimension Set ID]
+																								) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+																					WHERE SOH.[No_ Series] = 'SBOM'
+																				) MAD
+																		UNION ALL
+																		SELECT	'SP' AS COMPANY
+																				,MAD.SALES_CODE
+																				,MAD.CABANG
+																				,MAD.SIZE_PROJECT
+																				,MAD.POTENSIAL_PROJECT
+																				,MAD.ITEM
+																				,MAD.ITEM_CAT
+																				,MAD.HW_PS
+																				,ROUND((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN  MAD.EST_Q = 1234 THEN
+																							((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																						ELSE
+																							CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																									WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																									WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE 0
+																							END
+																						END
+																					ELSE
+																						(MAD.UNIT_PRICE * MAD.QTY_OUT)
+																					END
+																					/ 1 ),2) AS AMOUNT
+																				,ROUND(((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					+
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					) / 1),2) AS AMOUNT_S1
+																				,ROUND(((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					+
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																							(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																						ELSE
+																							0
+																						END
+																					ELSE
+																						CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																					END
+																					) / 1),2) AS AMOUNT_S2
+																				,MAD.DIM_PRINCIPAL
+																				,MAD.EST_YEAR
+																		FROM	(
+																					SELECT	SOH.[Salesperson Code] AS SALES_CODE
+																							,SOH.[Responsibility Center] AS CABANG
+																							, CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) NOT IN ('B','R','P') THEN
+																								'R'
+																							  ELSE
+																								CASE WHEN SUBSTRING(SOH.[Posting Description], 1,1) = 'P' THEN 'B' ELSE SUBSTRING(SOH.[Posting Description], 1,1) END
+																							  END AS SIZE_PROJECT
+																							, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																							,SOL.[No_] AS ITEM
+																							,SOL.[Description] AS ITEM_DESC
+																							,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																							,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																							,SOL.[Quantity] AS QTY_OUT
+																							,SOL.[Unit Price] AS UNIT_PRICE
+																							,DIMD.DIM_PRINCIPAL
+																							,SOH.[Payment Discount _] AS JML_TAHUN
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_YEAR
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																															WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																															WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																													 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																													 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 1234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 0
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 1
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(quarter, GETDATE())
+																									ELSE
+																										DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_Q
+																					FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Header] SOH
+																					INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+																					LEFT JOIN	(
+																									SELECT X.[Dimension Set ID]
+																										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																									FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry] X
+																									GROUP BY [Dimension Set ID]
+																								) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+																					WHERE SOH.[No_ Series] = 'SBOM'
+																				) MAD
+																	) X
+														) XX
+												GROUP BY XX.SALES_CODE, XX.YEAR_SUM
+											) XXX
+									LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = XXX.SALES_CODE
+									WHERE	XXX.YEAR_SUM = $P{Tahun}
+											AND SLS.[Global Dimension 1 Code] IS NOT NULL
+									GROUP BY XXX.SALES_CODE
+								) XI
+					) XXI
+			GROUP BY XXI.KATEGORI, XXI.SALES_CODE
+		) XII
+GROUP BY XII.KATEGORI
+UNION ALL
+SELECT	3 AS NO_JUDUL
+		,('BIG & PILOT PROJ. ' +
+			CASE	WHEN $P{Sem} = 'ALL' THEN 'ALL SEMESTER '
+					WHEN $P{Sem} = 'S1' THEN 'SEMESTER I '
+					WHEN $P{Sem} = 'S2' THEN 'SEMESTER II '
+			END + CAST( $P{Tahun} as varchar(4))) AS JUDUL
+		, 0 AS URUT
+		, XII.SPV_BY AS KETERANGAN
+		, SUM(XII.AMOUNT_POTENSI) AS AMOUNT_POTENSI
+		, 0 AS PCN_POTENSI
+		, 0 AS PCN_JML_SALES
+		, MAX(XII.JML_SALES) AS JML_SALES
+		, 0 AS AVG_PER_SALES
+		, MAX(XII.JML_CUST) AS JML_CUST
+FROM	(
+			SELECT	XXI.SPV_BY
+					,XXI.SALES_CODE
+					, COUNT(XXI.SALES_CODE) OVER (PARTITION BY XXI.SPV_BY) AS JML_SALES
+					, MAX(XXI.JML_CUST) AS JML_CUST
+					, SUM(XXI.AMOUNT_POTENSI) AS AMOUNT_POTENSI
+			FROM	(
+						SELECT	 XI.SALES_CODE
+								, MAX(XI.SPV_BY) AS SPV_BY
+								, XI.CUSTOMER
+								, COUNT(XI.CUSTOMER) OVER (PARTITION BY MAX(XI.SPV_BY)) AS JML_CUST
+								, CASE	WHEN $P{Sem} = 'ALL' THEN (SUM(XI.AMOUNT_S1) + SUM(XI.AMOUNT_S2))
+										WHEN $P{Sem} = 'S1' THEN SUM(XI.AMOUNT_S1)
+										WHEN $P{Sem} = 'S2' THEN SUM(XI.AMOUNT_S2)
+										ELSE 0
+								  END AMOUNT_POTENSI
+						FROM	(
+
+									SELECT	X2.GROUP_NO
+											,	CASE	WHEN X2.GROUP_NO =  2 THEN	'PROJECT PILOTING'
+														WHEN X2.GROUP_NO =  3 THEN	'POTENSIAL BIG PROJECT'
+														ELSE 'OTHERS PIPELINE'
+												END AS GROUP_DESC
+											, CASE WHEN X2.GROUP_NO <> 4 THEN X2.CUSTOMER ELSE X2.BRANCHES_NAME END AS SUBGROUP_DESC
+											, CASE WHEN X2.GROUP_NO <> 4 THEN X2.SALES_CODE ELSE '' END AS SALES_CODE_URUT
+											, CASE WHEN X2.GROUP_NO <> 4 THEN X2.SPV_BY ELSE '' END AS SPV_BY_URUT
+											, X2.BRANCHES
+											, X2.BRANCHES_NAME
+											, X2.SALES_CODE
+											, X2.SPV_BY
+											, X2.BSO_NO
+											, X2.CUSTOMER
+											, X2.SIZE_POTENSIAL
+											, X2.ITEM
+											, X2.ITEM_DESC
+											, X2.QTY_OUT
+											, X2.UNIT_PRICE
+											, X2.AMOUNT_ORI
+											, X2.AMOUNT
+											, X2.AMOUNT_S1
+											, X2.AMOUNT_S2
+									FROM	(
+
+												SELECT	MIN(X1.GROUP_NO) OVER (PARTITION BY X1.CUSTOMER
+																							,X1.BRANCHES_NAME
+																							,X1.SPV_BY
+																							,X1.SALES_CODE
+																							,X1.BRANCHES
+																							,X1.GROUP_PIPELINE) AS 	GROUP_NO
+														, X1.BRANCHES
+														, X1.BRANCHES_NAME
+														, X1.SALES_CODE
+														, X1.SPV_BY
+														, X1.BSO_NO
+														, X1.CUSTOMER
+														, X1.SIZE_POTENSIAL
+														, X1.ITEM
+														, X1.ITEM_DESC
+														, X1.QTY_OUT
+														, X1.UNIT_PRICE
+														, X1.AMOUNT_ORI
+														, X1.AMOUNT
+														, X1.AMOUNT_S1
+														, X1.AMOUNT_S2
+												FROM	(
+															SELECT		CASE WHEN X.SIZE_PROJECT = 'P' THEN
+																			2
+																		ELSE
+																			CASE WHEN X.SIZE_PROJECT = 'B' THEN
+																				3
+																			ELSE
+																				CASE WHEN ($P{AmtBig}) <= 0 THEN 4 ELSE
+																					CASE WHEN SUM(X.AMOUNT) OVER (PARTITION BY CAB.[Name]
+																																,X.SALES_CODE
+																																,X.CUSTOMER
+																																,X.SIZE_PROJECT
+																																,X.SPV_BY
+																																,SLS.[Global Dimension 1 Code])
+
+																								>= ($P{AmtBig}) THEN 3 ELSE 4 END
+																				END
+																			END
+																		END AS GROUP_NO
+																	,	CASE WHEN X.SIZE_PROJECT = 'P' THEN
+																			'P1' ELSE 'P2'
+																		END AS GROUP_PIPELINE
+																	,SLS.[Global Dimension 1 Code] AS BRANCHES
+																	,CAB.[Name] AS BRANCHES_NAME
+																	, X.SALES_CODE
+																	, X.SPV_BY
+																	, X.BSO_NO
+																	, X.CUSTOMER
+																	, X.SIZE_POTENSIAL
+																	, X.ITEM
+																	, X.ITEM_DESC
+																	, X.QTY_OUT
+																	, X.UNIT_PRICE
+																	, X.AMOUNT_ORI
+																	, X.AMOUNT
+																	, X.AMOUNT_S1
+																	, X.AMOUNT_S2
+															FROM	(
+																		SELECT	'AJ' AS COMPANY
+																				,MAD.BSO_NO
+																				,MAD.SALES_CODE
+																				,MAD.CABANG
+																				,MAD.CUSTOMER
+																				,MAD.SIZE_POTENSIAL
+																				,MAD.SIZE_PROJECT
+																				,MAD.POTENSIAL_PROJECT
+																				,MAD.SPV_BY
+																				,MAD.ITEM
+																				,MAD.ITEM_DESC
+																				,MAD.QTY_OUT
+																				,MAD.UNIT_PRICE
+																				,(MAD.UNIT_PRICE * MAD.QTY_OUT) AS AMOUNT_ORI
+																				,ROUND((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN  MAD.EST_Q = 1234 THEN
+																							((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																						ELSE
+																							CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																									WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																									WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE 0
+																							END
+																						END
+																					ELSE
+																						(MAD.UNIT_PRICE * MAD.QTY_OUT)
+																					END
+																					/ 1 ),2) AS AMOUNT
+																				,	ROUND(((
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																								+
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																					) / 1) ,2) AS AMOUNT_S1
+																				,	ROUND(((
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																								+
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																					) / 1) ,2) AS AMOUNT_S2
+																				,MAD.DIM_PRINCIPAL
+																				,MAD.EST_YEAR
+																		FROM	(
+																					SELECT	SOH.[No_] AS BSO_NO
+																							,SOH.[Salesperson Code] AS SALES_CODE
+																							,SOH.[Responsibility Center] AS CABANG
+																							,SOH.[Sell-to Customer Name] AS CUSTOMER
+																							,SOH.[Posting Description] AS SIZE_POTENSIAL
+																							, SUBSTRING(SOH.[Posting Description], 1,1) AS SIZE_PROJECT
+																							, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																							,SOH.[Sell-to County] AS SPV_BY
+																							,SOL.[No_] AS ITEM
+																							,SOL.[Description] AS ITEM_DESC
+																							,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																							,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																							,SOL.[Quantity] AS QTY_OUT
+																							,SOL.[Unit Price] AS UNIT_PRICE
+																							,DIMD.DIM_PRINCIPAL
+																							,SOH.[Payment Discount _] AS JML_TAHUN
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_YEAR
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																															WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																															WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																													 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																													 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 1234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 0
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 1
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(quarter, GETDATE())
+																									ELSE
+																										DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_Q
+																					FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Header] SOH
+																					INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+																					LEFT JOIN	(
+																									SELECT X.[Dimension Set ID]
+																										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																									FROM [AUTOJAYA].[dbo].[AUTOJAYA$Dimension Set Entry] X
+																									GROUP BY [Dimension Set ID]
+																								) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+																					WHERE SOH.[No_ Series] = 'SBOM'
+																				) MAD
+																		UNION ALL
+																		SELECT	'SP' AS COMPANY
+																				,MAD.BSO_NO
+																				,MAD.SALES_CODE
+																				,MAD.CABANG
+																				,MAD.CUSTOMER
+																				,MAD.SIZE_POTENSIAL
+																				,MAD.SIZE_PROJECT
+																				,MAD.POTENSIAL_PROJECT
+																				,MAD.SPV_BY
+																				,MAD.ITEM
+																				,MAD.ITEM_DESC
+																				,MAD.QTY_OUT
+																				,MAD.UNIT_PRICE
+																				,(MAD.UNIT_PRICE * MAD.QTY_OUT) AS AMOUNT_ORI
+																				,ROUND((
+																					CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																						CASE WHEN  MAD.EST_Q = 1234 THEN
+																							((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																						ELSE
+																							CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																									WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																									WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE 0
+																							END
+																						END
+																					ELSE
+																						(MAD.UNIT_PRICE * MAD.QTY_OUT)
+																					END
+																					/ 1 ),2) AS AMOUNT
+																				,	ROUND(((
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																								+
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																					) / 1) ,2) AS AMOUNT_S1
+																				,	ROUND(((
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																								+
+																								CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																									CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																										(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																								END
+																					) / 1) ,2) AS AMOUNT_S2
+																				,MAD.DIM_PRINCIPAL
+																				,MAD.EST_YEAR
+																		FROM	(
+																					SELECT	SOH.[No_] AS BSO_NO
+																							,SOH.[Salesperson Code] AS SALES_CODE
+																							,SOH.[Responsibility Center] AS CABANG
+																							,SOH.[Sell-to Customer Name] AS CUSTOMER
+																							,SOH.[Posting Description] AS SIZE_POTENSIAL
+																							, SUBSTRING(SOH.[Posting Description], 1,1) AS SIZE_PROJECT
+																							, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																							,SOH.[Sell-to County] AS SPV_BY
+																							,SOL.[No_] AS ITEM
+																							,SOL.[Description] AS ITEM_DESC
+																							,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																							,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																							,SOL.[Quantity] AS QTY_OUT
+																							,SOL.[Unit Price] AS UNIT_PRICE
+																							,DIMD.DIM_PRINCIPAL
+																							,SOH.[Payment Discount _] AS JML_TAHUN
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																												$P{Tahun}
+																											ELSE
+																												0
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_YEAR
+																							,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																															WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																															WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																													 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																													 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									ELSE
+																										CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																											CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																												1234
+																											ELSE
+																												CASE WHEN DATEPART(year, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																													CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 1234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 234
+																															WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 34
+																															ELSE 4
+																													END
+																												ELSE
+																													0
+																												END
+																											END
+																										ELSE
+																											CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																												CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 1 THEN 0
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 2 THEN 1
+																													 WHEN DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date])) = 3 THEN 12
+																													 ELSE 123
+																												END
+																											ELSE
+																												0
+																											END
+																										END
+																									END
+																								ELSE
+																									CASE WHEN DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																										DATEPART(quarter, GETDATE())
+																									ELSE
+																										DATEPART(quarter, DATEADD(MONTH, (6-$P{Sem1Akhir}) , SOL.[Shipment Date]))
+																									END
+																								END AS EST_Q
+																					FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Header] SOH
+																					INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+																					LEFT JOIN	(
+																									SELECT X.[Dimension Set ID]
+																										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																									FROM [AUTOJAYA].[dbo].[SOLUSI$Dimension Set Entry] X
+																									GROUP BY [Dimension Set ID]
+																								) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+																					WHERE SOH.[No_ Series] = 'SBOM'
+																				) MAD
+																	) X
+															LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = X.SALES_CODE
+															LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
+															WHERE	X.EST_YEAR = $P{Tahun}
+																	AND SLS.[Global Dimension 1 Code] IS NOT NULL
+														) X1
+											) X2
+								) XI
+						WHERE XI.GROUP_NO <> 4
+						GROUP BY  XI.SALES_CODE,  XI.CUSTOMER
+					) XXI
+			GROUP BY XXI.SPV_BY, XXI.SALES_CODE
+		) XII
+GROUP BY XII.SPV_BY]]>
+	</queryString>
+	<field name="NO_JUDUL" class="java.lang.Integer"/>
+	<field name="JUDUL" class="java.lang.String"/>
+	<field name="URUT" class="java.lang.Integer"/>
+	<field name="KETERANGAN" class="java.lang.String"/>
+	<field name="AMOUNT_POTENSI" class="java.math.BigDecimal"/>
+	<field name="PCN_POTENSI" class="java.math.BigDecimal"/>
+	<field name="PCN_JML_SALES" class="java.math.BigDecimal"/>
+	<field name="JML_SALES" class="java.lang.Integer"/>
+	<field name="AVG_PER_SALES" class="java.math.BigDecimal"/>
+	<field name="JML_CUST" class="java.lang.Integer"/>
+	<sortField name="NO_JUDUL"/>
+	<sortField name="URUT"/>
+	<variable name="vSemester" class="java.lang.String">
+		<variableExpression><![CDATA[( $P{Sem}.equals( "S1" ) == true? "SEMESTER I"  : ($P{Sem}.equals( "S2" ) == true ? "SEMESTER II" : "ALL SEMESTER") )]]></variableExpression>
+		<initialValueExpression><![CDATA[( $P{Sem}.equals( "S1" ) == true? "SEMESTER I"  : ($P{Sem}.equals( "S2" ) == true ? "SEMESTER II" : "ALL SEMESTER") )]]></initialValueExpression>
+	</variable>
+	<variable name="vSemesterAkhir" class="java.lang.String">
+		<variableExpression><![CDATA[( $P{Sem1Akhir} == 1 ? "JANUARI" :
+( $P{Sem1Akhir} == 2 ? "FEBRUARI" :
+( $P{Sem1Akhir} == 3 ? "MARET" :
+( $P{Sem1Akhir} == 4 ? "APRIL" :
+( $P{Sem1Akhir} == 5 ? "MEI" :
+( $P{Sem1Akhir} == 6 ? "JUNI" :
+( $P{Sem1Akhir} == 7 ? "JULI" :
+( $P{Sem1Akhir} == 8 ? "AGUSTUS" :
+( $P{Sem1Akhir} == 9 ? "SEPTEMBER" :
+( $P{Sem1Akhir} == 10 ? "OKTOBER" :
+( $P{Sem1Akhir} == 11 ? "NOVEMBER" : "DESEMBER"
+)))))))))))]]></variableExpression>
+		<initialValueExpression><![CDATA[( $P{Sem1Akhir} == 1 ? "JANUARI" :
+( $P{Sem1Akhir} == 2 ? "FEBRUARI" :
+( $P{Sem1Akhir} == 3 ? "MARET" :
+( $P{Sem1Akhir} == 4 ? "APRIL" :
+( $P{Sem1Akhir} == 5 ? "MEI" :
+( $P{Sem1Akhir} == 6 ? "JUNI" :
+( $P{Sem1Akhir} == 7 ? "JULI" :
+( $P{Sem1Akhir} == 8 ? "AGUSTUS" :
+( $P{Sem1Akhir} == 9 ? "SEPTEMBER" :
+( $P{Sem1Akhir} == 10 ? "OKTOBER" :
+( $P{Sem1Akhir} == 11 ? "NOVEMBER" : "DESEMBER"
+)))))))))))]]></initialValueExpression>
+	</variable>
+	<variable name="AMOUNT_POTENSI_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Judul" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_POTENSI}]]></variableExpression>
+	</variable>
+	<variable name="PCN_POTENSI_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Judul" calculation="Sum">
+		<variableExpression><![CDATA[$F{PCN_POTENSI}]]></variableExpression>
+	</variable>
+	<variable name="PCN_JML_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Judul" calculation="Sum">
+		<variableExpression><![CDATA[$F{PCN_JML_SALES}]]></variableExpression>
+	</variable>
+	<variable name="JML_SALES_1" class="java.lang.Integer" resetType="Group" resetGroup="Judul" calculation="Sum">
+		<variableExpression><![CDATA[$F{JML_SALES}]]></variableExpression>
+	</variable>
+	<variable name="AVG_PER_SALES_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Judul" calculation="Average">
+		<variableExpression><![CDATA[$F{AVG_PER_SALES}]]></variableExpression>
+	</variable>
+	<variable name="JML_CUST_1" class="java.lang.Integer" resetType="Group" resetGroup="Judul" calculation="Sum">
+		<variableExpression><![CDATA[$F{JML_CUST}]]></variableExpression>
+	</variable>
+	<group name="Judul">
+		<groupExpression><![CDATA[$F{NO_JUDUL}]]></groupExpression>
+		<groupHeader>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{NO_JUDUL} == 1]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="0" width="225" height="14" uuid="7cfdbbda-4a51-498c-8446-8ae7387ee82b"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUDUL}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="225" y="14" width="50" height="14" uuid="b7adacd1-a159-4645-ba23-8c6d787a666d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[%]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="275" y="14" width="50" height="14" uuid="9c3f99da-58b4-4eb9-9b99-11a3472efe37"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Jumlah]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="325" y="0" width="75" height="14" uuid="05224777-8844-4eda-81d7-2aeeeb60da64"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Average / Sales]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="0" width="100" height="14" uuid="e51b1035-b8d8-4d1f-b7df-7eca59677f43"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="030fbc9e-d57a-4d21-995f-dfc7bbca5c82"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="325" y="14" width="75" height="14" uuid="4b984feb-6577-4e3b-82cc-356c4e089b8a"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="100" y="14" width="75" height="14" uuid="444edbf9-3f06-4946-adb1-8ae6a4c744ef"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Million Rp.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="175" y="14" width="50" height="14" uuid="8aa8b194-96cf-46fb-ac01-a85fa9ceda74"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[%]]></text>
+				</staticText>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{NO_JUDUL} == 2]]></printWhenExpression>
+				<staticText>
+					<reportElement x="150" y="14" width="75" height="14" uuid="f9180603-3987-4165-917d-f6cd87123d32"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Million Rp.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="100" y="14" width="50" height="14" uuid="01b35ebe-b0dc-4d63-acb2-90e4a3230702"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[# Sales]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="650ca276-7cfb-4839-b572-9b504fc66630"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="14" width="50" height="14" uuid="7f2f77aa-d72a-46af-b73c-779dc677edd8"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[%]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="100" y="0" width="175" height="14" uuid="175e9c27-c282-4f91-98eb-31ec41afe657"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUDUL}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="d021f4a1-ce42-49c5-a375-718e63a789d8"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{NO_JUDUL} == 3]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="0" width="175" height="14" uuid="c56018c9-c8b5-47ab-97b8-c891d36c489d"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JUDUL}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="175" y="0" width="50" height="14" uuid="e22dc518-7b60-45e7-b312-ef08e2dbb94f"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[# Sales]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="0" width="50" height="14" uuid="7d5d4213-0b8c-4292-945a-5ee6fdb13691"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[# Cust]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{NO_JUDUL} == 1]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="f7d83f33-f38a-4de0-a14b-f758c6d7815f"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_POTENSI_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="175" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="a026c684-5059-4bad-ba33-0aa6f11da073"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PCN_POTENSI_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="0793ab39-576e-4fff-a3d1-77dae85aeb1d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PCN_JML_SALES_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##" isBlankWhenNull="true">
+					<reportElement x="275" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="3b60988e-940c-4d93-b149-191e233aaa1b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{JML_SALES_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="325" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="a880ca6c-44d9-4de0-9605-325193246098"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AVG_PER_SALES_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="37370355-655a-4fc5-aa1f-5cc32da120a8"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="59b6bc6f-e434-4d6e-b1c1-cc52411fb5df"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="29">
+				<printWhenExpression><![CDATA[$F{NO_JUDUL} == 2]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="5199fce2-05b2-4e41-9202-79ddf46514d3"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="a0804fbe-7039-4d6c-8a14-c6c93d10999b"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="35443ead-d26c-460f-acf7-c2644b4920f5"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_POTENSI_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="e46ce8f7-40e0-42a4-af08-19d82f6f6c54"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{JML_SALES_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="fcb992a0-160e-4921-afb4-209b004a0dc6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PCN_POTENSI_1}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{NO_JUDUL} == 3]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="4bb76ac6-a595-4ada-9210-909026f97636"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="0a6f8733-3d86-45c8-aad6-df14f462b254"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="5114e1c6-5364-406c-8247-a5ee5d28f061"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_POTENSI_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="b28fc435-3196-4cb3-938d-5ecfedf35333"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{JML_CUST_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="175" y="0" width="50" height="14" uuid="60ca58ec-cac2-4b1f-8d47-a5dacb34281b"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="112">
+			<staticText>
+				<reportElement x="0" y="0" width="225" height="14" uuid="acd4205f-277b-4ec2-ada9-5a79458adb73"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04050) FORECAST SALES ACS-SUMMARY]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="14" width="125" height="14" uuid="d4400665-9c25-4138-b12f-910908625b6a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="e89ce257-f955-45e4-a80e-6cab058ed45a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="100" height="14" uuid="5d516873-20c7-48a6-86a6-3aeae26f97ad"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed on :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="100" y="84" width="125" height="14" uuid="4dc4a503-b27e-439e-b1ae-c79bf378ce8f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="2c8a0df7-dc37-4e35-92c1-f757b469bf68"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="28" width="125" height="14" uuid="66282874-183e-42fd-a70b-3c72c237d244"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="98" width="100" height="14" uuid="c8404edf-05d2-4cea-8408-fb98a70d4245"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="98" width="125" height="14" uuid="a07d29f1-a2db-4c3d-a037-6fceade291ee"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="354369a8-b8af-45f2-a888-b25999bb4c64"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Semester :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="56" width="125" height="14" uuid="dbeede28-f59f-4ab8-888f-23d734a9ce31"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vSemester}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="1a5e7bf3-6de7-43a5-88f8-0480e388737f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Akhir Sem I :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="42" width="125" height="14" uuid="134f10e2-6bb8-42f9-b32c-9cb39576df4a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vSemesterAkhir}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="100" y="70" width="125" height="14" uuid="b123dcda-6cbe-405c-9c25-824429443fbc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{AmtBig}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="100" height="14" uuid="48839c2e-9cca-4b47-b8d8-1268c3e0e7cf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Amt Big Proj. :]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{NO_JUDUL} == 1]]></printWhenExpression>
+			<textField>
+				<reportElement x="0" y="0" width="100" height="14" uuid="c5321b00-c36f-4075-8102-a5dcf15081ec"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="0ac173f3-6074-4477-a2e2-ec51ad6a333b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_POTENSI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="175" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="def1642f-bb10-485f-b86f-f944c658b516"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_POTENSI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="9bfa5010-534e-40f8-9ef6-b2c06ade3c72"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_JML_SALES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="275" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="7c20ebfa-0578-4155-a273-e49b1716bd63"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_SALES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="325" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e1e66851-4694-4833-b039-36523fc55ff2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AVG_PER_SALES}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{NO_JUDUL} == 2]]></printWhenExpression>
+			<textField>
+				<reportElement x="0" y="0" width="100" height="14" uuid="50c8bb6e-003f-4868-9ca9-35f45751c241"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="8090319e-3d2d-4d3b-8cb7-de1498bb864a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_POTENSI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="8d40b78c-565e-4b0b-accf-d524d2aa3325"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_POTENSI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="5b28e4d6-cdd2-4737-8ed3-94e960b3da8e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_SALES}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{NO_JUDUL} == 3]]></printWhenExpression>
+			<textField>
+				<reportElement x="0" y="0" width="100" height="14" uuid="1a88f5d3-fabd-4e24-beb4-16dff2a50ca6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KETERANGAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="14859955-6c3d-49ae-b2d2-474e364b2907"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_POTENSI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="175" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="34acd408-cc4a-4a3d-994d-41d02d498aab"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_SALES}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="f2d5caf7-f3d7-4fdd-b02b-ea136b0e7642"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_CUST}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="126">
+			<staticText>
+				<reportElement x="100" y="112" width="285" height="14" uuid="e762fe98-ae4e-46c4-a6dc-d3d20f52f9ce"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA YANG MEMENUHI KRITERIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="100" height="14" uuid="6a6cc73f-4591-44a1-bab5-6a29a48c0d3c"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="100" height="14" uuid="f1993306-4813-4a5a-ab03-42d8150b555d"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="1802ffbd-5816-4a46-8973-3b21d7fff35d"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="92b91104-e943-4a17-b397-5facbe206678"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="b52af8c0-a21c-4e29-aeec-def304b1abdb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Akhir Sem I :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="28" width="125" height="14" uuid="03dc2813-ef09-4e91-a809-abb71399dc38"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="100" height="14" uuid="a89bb41a-8c5d-484a-a1d7-0d5fde186fd5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Amt Big P :]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="100" y="70" width="125" height="14" uuid="ff9b2a7d-7675-46f8-b8be-bce7ab531646"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{AmtBig}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="100" height="14" uuid="aafd0096-6fe8-413a-9366-61df9f648d3b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed on :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="42" width="125" height="14" uuid="5d0e33da-c563-4ef2-91ab-648f4c675abd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vSemesterAkhir}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="98" width="125" height="14" uuid="2d11a6c9-d86b-43b7-9178-3b87078f8500"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="86334322-c2df-44f0-819a-26da8db12e14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Semester :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="100" y="84" width="125" height="14" uuid="493bbcfa-7e30-403a-8815-2ab2dc7f0b10"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="100" y="56" width="125" height="14" uuid="7a793990-95dc-43a1-9d68-ca5a80b6e5a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vSemester}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="225" height="14" uuid="e164f056-44a3-4aa3-870c-f1bd59c0be00"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04050) FORECAST SALES ACS-SUMMARY]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="14" width="125" height="14" uuid="c4910ab0-f3fa-4fcd-8b1f-e62ea1d3c03a"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

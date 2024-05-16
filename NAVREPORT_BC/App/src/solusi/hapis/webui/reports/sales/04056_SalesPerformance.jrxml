@@ -1,0 +1,1374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04056_SalesPerformance" language="groovy" pageWidth="850" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="810" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.4641000000001543"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Tahun" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AmtBig" class="java.math.BigDecimal">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SemAkhir" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvFrom" class="java.util.Date"/>
+	<parameter name="TglInvTo" class="java.util.Date"/>
+	<parameter name="ProsesId" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XXX.BRANCHES
+		, XXX.BRANCHES_NAME
+		, XXX.SALESMAN
+		, XXX.AMT_REV
+		, XXX.AMT_UM_OSO
+		, XXX.AMT_REV_TTL
+		, CASE WHEN XXX.AMT_REV_NATIONAL <> 0 THEN ( XXX.AMT_REV_TTL/ XXX.AMT_REV_NATIONAL ) * 100  ELSE ( XXX.AMT_REV_TTL / 1 ) * 100 END PCN_REV
+		, CASE WHEN XXX.AMT_REV_NATIONAL <> 0 THEN ( XXX.AMT_REV_BRANCHES/ XXX.AMT_REV_NATIONAL ) * 100  ELSE ( XXX.AMT_REV_BRANCHES / 1 ) * 100 END PCN_REV_BRANCHES
+		, XXX.AMT_PIPELINE_A
+		, XXX.AMT_PIPELINE_C
+		, XXX.AMT_PIPELINE_P
+		, XXX.AMT_PIPELINE_B
+		, XXX.AMT_PIPELINE_R
+		, (XXX.AMT_REV_TTL + XXX.AMT_PIPELINE_A + XXX.AMT_PIPELINE_C + XXX.AMT_PIPELINE_P + XXX.AMT_PIPELINE_B + XXX.AMT_PIPELINE_R) AS AMT_GT_WITH_R
+		, (XXX.AMT_REV_TTL + XXX.AMT_PIPELINE_A + XXX.AMT_PIPELINE_C + XXX.AMT_PIPELINE_P + XXX.AMT_PIPELINE_B) AS AMT_GT
+FROM	(
+SELECT	XX.BRANCHES
+		, CAB.[Name] AS BRANCHES_NAME
+		, XX.SALESMAN
+		, SUM(XX.AMT_REV) AS AMT_REV
+		, SUM(XX.AMT_UM_OSO) AS AMT_UM_OSO
+		, ( SUM(XX.AMT_REV) + SUM(XX.AMT_UM_OSO) ) AS AMT_REV_TTL
+		, SUM(XX.AMT_PIPELINE_A) AS AMT_PIPELINE_A
+		, SUM(XX.AMT_PIPELINE_C) AS AMT_PIPELINE_C
+		, SUM(XX.AMT_PIPELINE_P) AS AMT_PIPELINE_P
+		, SUM(XX.AMT_PIPELINE_B) AS AMT_PIPELINE_B
+		, SUM(XX.AMT_PIPELINE_R) AS AMT_PIPELINE_R
+		, SUM( SUM(XX.AMT_REV) + SUM(XX.AMT_UM_OSO) ) OVER (PARTITION BY XX.BRANCHES) AS AMT_REV_BRANCHES
+		, SUM( SUM(XX.AMT_REV) + SUM(XX.AMT_UM_OSO) ) OVER (PARTITION BY 1) AS AMT_REV_NATIONAL
+FROM	(
+			SELECT	X2.BRANCHES
+					, X2.SALESMAN
+					, X2.AMT_REV
+					, X2.AMT_UM_OSO
+					, 0 AS AMT_PIPELINE_A
+					, 0 AS AMT_PIPELINE_C
+					, 0 AS AMT_PIPELINE_P
+					, 0 AS AMT_PIPELINE_B
+					, 0 AS AMT_PIPELINE_R
+			FROM	(
+						SELECT	X.BRANCHES
+								, X.SALESMAN
+								, X.AMT AS AMT_REV
+								, 0 AS AMT_UM_OSO
+						FROM	(
+									SELECT	BRANCHES
+											, SALESMAN
+											, ROUND((SUM(AMOUNT) / 1000000) ,2)AS AMT
+									FROM [dbo].[TEMP08_SALES_REVENUE]
+									WHERE	PROSES_ID = $P{ProsesId} AND
+											GROUP_NO = 1
+									GROUP BY BRANCHES, SALESMAN
+								) X
+						WHERE X.AMT <> 0.00
+						UNION ALL
+						SELECT	X.BRANCHES
+								, X.SALESMAN
+								, 0 AS MT_REV
+								, X.AMT AS AMT_UM_OSO
+						FROM	(
+									SELECT	BRANCHES
+											, SALESMAN
+											, ROUND((SUM(AMOUNT) / 1000000) ,2)AS AMT
+									FROM [dbo].[TEMP08_SALES_REVENUE]
+									WHERE	PROSES_ID = $P{ProsesId} AND
+											GROUP_NO = 2 AND
+											YEAR_OUT_SO = $P{Tahun}
+									GROUP BY BRANCHES, SALESMAN
+								) X
+						WHERE X.AMT <> 0.00
+						UNION ALL
+						SELECT	X.BRANCHES
+								, X.SALESMAN
+								, 0 AS MT_REV
+								, X.AMT AS AMT_UM_OSO
+						FROM	(
+									SELECT	 CASE	WHEN BRANCHES = 'JAKARTA' THEN '10'
+																WHEN BRANCHES = 'SURABAYA' THEN '15'
+																WHEN BRANCHES = 'CIKARANG' THEN '16'
+																WHEN BRANCHES = 'SEMARANG' THEN '17'
+																WHEN BRANCHES = 'BALI' THEN '19'
+																ELSE 'NA' END AS BRANCHES
+											, SALESMAN
+											, ROUND((SUM(AMOUNT) / 1000000) ,2)AS AMT
+									FROM [dbo].[TEMP08_SALES_REVENUE]
+									WHERE	PROSES_ID = $P{ProsesId} AND
+											GROUP_NO = 3 AND
+											YEAR_OUT_SO = $P{Tahun}
+									GROUP BY BRANCHES, SALESMAN
+								) X
+						WHERE X.AMT <> 0.00
+					) X2
+			UNION ALL
+			SELECT	SLS.[Global Dimension 1 Code]   AS BRANCHES
+					,CMP.SALES AS SALESMAN
+					, 0 AS AMT_REV
+					, 0 AS AMT_UM_OSO
+					, 0 AS AMT_PIPELINE_A
+					, 0 AS AMT_PIPELINE_C
+					, 0 AS AMT_PIPELINE_P
+					, 0 AS AMT_PIPELINE_B
+					, 0 AS AMT_PIPELINE_R
+			FROM	(
+						SELECT	DISTINCT M06.SLS_OR_CAB  AS SALES
+						FROM	[dbo].[M06_TARGET_PIPELINE] M06
+						WHERE	(M06.TAHUN = $P{Tahun} OR M06.TAHUN = $P{Tahun} - 1)  AND
+								M06.JENIS = 'SALES' AND
+								M06.[STATUS] =  'ACTIVE'
+					) CMP
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = CMP.SALES
+			UNION ALL
+			SELECT	XI.BRANCHES   AS BRANCHES
+					, XI.SALESMAN  AS SALESMAN
+					, 0 AS AMT_REV
+					, 0 AS AMT_UM_OSO
+					, CASE WHEN XI.SUBGROUP_NO = 1 THEN  SUM(XI.AMOUNT) ELSE 0 END AS AMT_PIPELINE_A
+					, CASE WHEN XI.SUBGROUP_NO = 2 THEN  SUM(XI.AMOUNT) ELSE 0 END AS AMT_PIPELINE_C
+					, CASE WHEN XI.SUBGROUP_NO = 3 THEN  SUM(XI.AMOUNT) ELSE 0 END AS AMT_PIPELINE_P
+					, CASE WHEN XI.SUBGROUP_NO = 4 THEN  SUM(XI.AMOUNT) ELSE 0 END AS AMT_PIPELINE_B
+					, CASE WHEN XI.SUBGROUP_NO = 5 THEN  SUM(XI.AMOUNT) ELSE 0 END AS AMT_PIPELINE_R
+			FROM	(
+						SELECT	CASE WHEN MIN(X1.GROUP_NO) = 1 THEN 1 ELSE 2 END AS MAIN_GRP
+								,CASE WHEN MIN(X1.GROUP_NO) = 1 THEN 2 ELSE MIN(X1.GROUP_NO)END AS GROUP_NO
+								,MIN(X1.GROUP_NO) AS SUBGROUP_NO
+								,X1.GROUP_PIPELINE
+								,	CASE	WHEN MIN(X1.GROUP_NO) =  1 THEN	'AWARDED (A) '
+											WHEN MIN(X1.GROUP_NO) =  2 THEN	'HIGH POTENTIAL (H) '
+											WHEN MIN(X1.GROUP_NO) =  3 THEN	'MEDIUM POTENTIAL (M)'
+											WHEN MIN(X1.GROUP_NO) =  4 THEN	'LOW POTENTIAL (L)'
+											ELSE 'OTHERS PIPELINE (R)'
+									END AS GROUP_DESC
+								,	CASE WHEN MIN(X1.GROUP_NO) = 1 THEN
+										'AWARDED (H)'
+									ELSE
+										CASE WHEN MIN(X1.GROUP_NO) <> 5 THEN X1.CUSTOMER ELSE X1.BRANCHES_NAME END
+									END AS SUBGROUP_DESC
+								,	CASE WHEN MIN(X1.GROUP_NO) <> 5 THEN X1.SPV_BY ELSE '' END AS SPV_BY
+								,	CASE WHEN MIN(X1.GROUP_NO) <> 5 THEN X1.SALES_CODE ELSE '' END AS SALES_CODE
+								, X1.SALES_CODE AS SALESMAN
+								, X1.BRANCHES
+								, SUM(X1.AMOUNT) AS AMOUNT
+								, SUM(X1.AMOUNT_S1) AS AMOUNT_S1
+								, SUM(X1.AMOUNT_S2) AS AMOUNT_S2
+						FROM	(
+									SELECT	SLS.[Global Dimension 1 Code] AS BRANCHES
+											, CAB.[Name] AS BRANCHES_NAME
+											, X.SALES_CODE
+											, X.CUSTOMER
+											, X.CUSTOMER_REAL
+											, MAX(MAX(X.SPV_BY)) OVER (PARTITION BY X.CUSTOMER_REAL) AS SPV_BY
+											,	CASE WHEN X.SIZE_PROJECT = 'A' THEN
+													1
+												ELSE
+													CASE WHEN X.SIZE_PROJECT = 'H' THEN
+														2
+													ELSE
+														CASE WHEN X.SIZE_PROJECT = 'M' THEN
+															3
+														ELSE
+															CASE WHEN X.SIZE_PROJECT = 'L' THEN
+																4
+															ELSE
+																CASE WHEN ($P{AmtBig}*1) <= 0 THEN
+																	CASE WHEN SUM(ISNULL(CUST.ADA,0)) > 0 THEN 4 ELSE 5 END
+																ELSE
+																	CASE WHEN SUM(X.AMOUNT) >= ($P{AmtBig}*1) THEN 4
+																	ELSE
+																		CASE WHEN SUM(ISNULL(CUST.ADA,0)) > 0 THEN 4 ELSE 5 END
+																	END
+																END
+															END
+														END
+													END
+												END AS GROUP_NO
+											,	CASE	WHEN X.SIZE_PROJECT = 'A' THEN 'P1'
+														WHEN X.SIZE_PROJECT = 'H' THEN 'P2'
+														WHEN X.SIZE_PROJECT = 'M' THEN 'P3'
+														ELSE 'P4'
+												END AS GROUP_PIPELINE
+											,SUM(X.AMOUNT) AS AMOUNT
+											,SUM(X.AMOUNT_S1) AS AMOUNT_S1
+											,SUM(X.AMOUNT_S2) AS AMOUNT_S2
+									FROM	(
+												SELECT	MAD.COMPANY
+														,MAD.SALES_CODE
+														,MAD.CABANG
+														,MAD.CUSTOMER
+														,MAD.CUSTOMER_REAL
+														,UPPER(MAD.SIZE_PROJECT) AS SIZE_PROJECT
+														,MAD.POTENSIAL_PROJECT
+														,MAD.SPV_BY
+														,MAD.ITEM
+														,MAD.ITEM_CAT
+														,MAD.HW_PS
+														,ROUND((
+															CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																CASE WHEN  MAD.EST_Q = 1234 THEN
+																	((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN)
+																ELSE
+																	CASE	WHEN MAD.EST_Q IN (123, 234) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4) * 3
+																			WHEN MAD.EST_Q IN (12, 34) THEN ((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 2
+																			WHEN MAD.EST_Q IN (1,2,3,4) THEN (((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE 0
+																	END
+																END
+															ELSE
+																(MAD.UNIT_PRICE * MAD.QTY_OUT)
+															END
+															/ 1000000 ),2) AS AMOUNT
+														,	ROUND(((
+																		CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																			CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN
+																				(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE
+																				0
+																			END
+																		ELSE
+																			CASE WHEN MAD.EST_Q IN (1, 1234, 123, 12) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																		END
+																		+
+																		CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																			CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN
+																				(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE
+																				0
+																			END
+																		ELSE
+																			CASE WHEN MAD.EST_Q IN (2, 1234, 123, 12, 234) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																		END
+															) / 1000000) ,2) AS AMOUNT_S1
+														,	ROUND(((
+																		CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																			CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN
+																				(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE
+																				0
+																			END
+																		ELSE
+																			CASE WHEN MAD.EST_Q IN (3, 1234, 123, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																		END
+																		+
+																		CASE WHEN MAD.JML_TAHUN <> 0 THEN
+																			CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN
+																				(((MAD.UNIT_PRICE * MAD.QTY_OUT) / MAD.JML_TAHUN) / 4)
+																			ELSE
+																				0
+																			END
+																		ELSE
+																			CASE WHEN MAD.EST_Q IN (4, 1234, 234, 34) THEN (MAD.UNIT_PRICE * MAD.QTY_OUT) ELSE 0 END
+																		END
+															) / 1000000) ,2) AS AMOUNT_S2
+														,MAD.DIM_PRINCIPAL
+														,MAD.EST_YEAR
+												FROM	(
+															SELECT	CASE WHEN SOH.[No_ Series] = 'SBOM' THEN 'AJ' ELSE 'SP' END AS COMPANY
+																	,SOH.[Salesperson Code] AS SALES_CODE
+																	,SOH.[Responsibility Center] AS CABANG
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			'*) '+SOH.[Sell-to Customer Name]
+																		ELSE
+																			SOH.[Sell-to Customer Name]
+																		END AS CUSTOMER
+																	,	SOH.[Sell-to Customer Name] AS CUSTOMER_REAL
+																	, 	CASE WHEN SOL.[Warranty Code] = '' THEN
+																			SUBSTRING(SOH.[Posting Description], 1,1)
+																		ELSE
+																			CASE WHEN SOL.[Warranty Code] = 'CLOSED' THEN 'H' ELSE SUBSTRING(SOH.[Posting Description], 1,1) END
+																		END AS SIZE_PROJECT
+																	, CASE WHEN SUBSTRING(SOH.[Posting Description], 2,1) NOT IN ('1','0') THEN '0' ELSE SUBSTRING(SOH.[Posting Description], 2,1) END AS POTENSIAL_PROJECT
+																	,SOH.[Sell-to County] AS SPV_BY
+																	,SOL.[No_] AS ITEM
+																	,SOL.[Description] AS ITEM_DESC
+																	,SOL.[Shortcut Dimension 2 Code] AS ITEM_CAT
+																	,SUBSTRING(SOL.[Shortcut Dimension 2 Code] , 1,2) AS HW_PS
+																	,SOL.[Quantity] AS QTY_OUT
+																	,SOL.[Unit Price] AS UNIT_PRICE
+																	,DIMD.DIM_PRINCIPAL
+																	,SOH.[Payment Discount _] AS JML_TAHUN
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			CASE WHEN DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																						$P{Tahun}
+																					ELSE
+																						0
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																					ELSE
+																						0
+																					END
+																				END
+																			ELSE
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																						$P{Tahun}
+																					ELSE
+																						0
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																					ELSE
+																						0
+																					END
+																				END
+																			END
+																		ELSE
+																			CASE WHEN DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]))
+																			END
+																		END AS EST_YEAR
+																	,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																			CASE WHEN DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, GETDATE()) < $P{Tahun} THEN
+																						1234
+																					ELSE
+																						CASE WHEN DATEPART(year, GETDATE()) = $P{Tahun} THEN
+																							CASE	WHEN DATEPART(quarter, GETDATE()) = 1 THEN 1234
+																									WHEN DATEPART(quarter, GETDATE()) = 2 THEN 234
+																									WHEN DATEPART(quarter, GETDATE()) = 3 THEN 34
+																									ELSE 4
+																							END
+																						ELSE
+																							0
+																						END
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, GETDATE()) = 1 THEN 0
+																							 WHEN DATEPART(quarter, GETDATE()) = 2 THEN 1
+																							 WHEN DATEPART(quarter, GETDATE()) = 3 THEN 12
+																							 ELSE 123
+																						END
+																					ELSE
+																						0
+																					END
+																				END
+																			ELSE
+																				CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																					CASE WHEN DATEPART(year, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) < $P{Tahun} THEN
+																						1234
+																					ELSE
+																						CASE WHEN DATEPART(year, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = $P{Tahun} THEN
+																							CASE	WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = 1 THEN 1234
+																									WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = 2 THEN 234
+																									WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = 3 THEN 34
+																									ELSE 4
+																							END
+																						ELSE
+																							0
+																						END
+																					END
+																				ELSE
+																					CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																						CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = 1 THEN 0
+																							 WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = 2 THEN 1
+																							 WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) = 3 THEN 12
+																							 ELSE 123
+																						END
+																					ELSE
+																						0
+																					END
+																				END
+																			END
+																		ELSE
+																			CASE WHEN DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																				DATEPART(quarter, GETDATE())
+																			ELSE
+																				DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]))
+																			END
+																		END AS EST_Q
+															FROM [dbo].[BC_AUTOJAYA$Sales Header] SOH
+															INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+															LEFT JOIN	(
+																			SELECT X.[Dimension Set ID]
+																				  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRINCIPAL
+																			FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry] X
+																			GROUP BY [Dimension Set ID]
+																		) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+															WHERE SOH.[No_ Series] IN ('SBOM', 'SBOMS')
+														) MAD
+											) X
+									LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = X.SALES_CODE
+									LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
+									LEFT JOIN	(
+													SELECT	 DISTINCT  X.CUSTOMER_REAL, 1 AS ADA
+													FROM	(
+																SELECT	MAD.CUSTOMER_REAL
+																		,UPPER(MAD.SIZE_PROJECT) AS SIZE_PROJECT
+																		,MAD.EST_YEAR
+																FROM	(
+																			SELECT		SOH.[Sell-to Customer Name] AS CUSTOMER_REAL
+																					, 	CASE WHEN SOL.[Warranty Code] = '' THEN
+																							SUBSTRING(SOH.[Posting Description], 1,1)
+																						ELSE
+																							CASE WHEN SOL.[Warranty Code] = 'CLOSED' THEN 'H' ELSE SUBSTRING(SOH.[Posting Description], 1,1) END
+																						END AS SIZE_PROJECT
+																					,	CASE WHEN SOH.[Payment Discount _] <> 0 THEN
+																							CASE WHEN DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																								CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) > $P{Tahun} THEN
+																									CASE WHEN DATEPART(year, GETDATE()) <= $P{Tahun} THEN
+																										$P{Tahun}
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], GETDATE()) - 1)) = $P{Tahun} THEN
+																										CASE WHEN DATEPART(quarter, GETDATE()) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																									ELSE
+																										0
+																									END
+																								END
+																							ELSE
+																								CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) - 1)) > $P{Tahun} THEN
+																									CASE WHEN DATEPART(year, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) <= $P{Tahun} THEN
+																										$P{Tahun}
+																									ELSE
+																										0
+																									END
+																								ELSE
+																									CASE WHEN DATEPART(year,(DATEADD(year, SOH.[Payment Discount _], DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) - 1)) = $P{Tahun} THEN
+																										CASE WHEN DATEPART(quarter, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date])) IN (1,2) THEN 0 ELSE $P{Tahun} END
+																									ELSE
+																										0
+																									END
+																								END
+																							END
+																						ELSE
+																							CASE WHEN DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]) <=  GETDATE() THEN
+																								DATEPART(year, GETDATE()) ELSE DATEPART(year, DATEADD(MONTH, (6-($P{SemAkhir}-6)) , SOL.[Shipment Date]))
+																							END
+																						END AS EST_YEAR
+																			FROM [dbo].[BC_AUTOJAYA$Sales Header] SOH
+																			INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+																			WHERE SOH.[No_ Series] IN ('SBOM', 'SBOMS')
+																		) MAD
+															) X
+													WHERE	X.EST_YEAR = $P{Tahun}
+															AND X.SIZE_PROJECT IN ('M', 'H', 'L')
+												) CUST ON CUST.CUSTOMER_REAL = X.CUSTOMER_REAL
+									WHERE	X.EST_YEAR = $P{Tahun}
+											AND SLS.[Global Dimension 1 Code] IS NOT NULL
+									GROUP BY CAB.[Name]
+											,X.SALES_CODE
+											,X.CUSTOMER
+											,X.CUSTOMER_REAL
+											,X.SIZE_PROJECT
+											,SLS.[Global Dimension 1 Code]
+								) X1
+						GROUP BY X1.CUSTOMER
+								,X1.BRANCHES_NAME
+								,X1.SPV_BY
+								,X1.SALES_CODE
+								,X1.BRANCHES
+								,X1.GROUP_PIPELINE
+					) XI
+			GROUP BY XI.BRANCHES
+					, XI.SALESMAN
+					,XI.SUBGROUP_NO
+		) XX
+LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XX.BRANCHES
+GROUP BY XX.BRANCHES, XX.SALESMAN, CAB.[Name]
+		) XXX]]>
+	</queryString>
+	<field name="BRANCHES" class="java.lang.String"/>
+	<field name="BRANCHES_NAME" class="java.lang.String"/>
+	<field name="SALESMAN" class="java.lang.String"/>
+	<field name="AMT_REV" class="java.math.BigDecimal"/>
+	<field name="AMT_UM_OSO" class="java.math.BigDecimal"/>
+	<field name="AMT_REV_TTL" class="java.math.BigDecimal"/>
+	<field name="PCN_REV" class="java.math.BigDecimal"/>
+	<field name="PCN_REV_BRANCHES" class="java.math.BigDecimal"/>
+	<field name="AMT_PIPELINE_A" class="java.math.BigDecimal"/>
+	<field name="AMT_PIPELINE_C" class="java.math.BigDecimal"/>
+	<field name="AMT_PIPELINE_P" class="java.math.BigDecimal"/>
+	<field name="AMT_PIPELINE_B" class="java.math.BigDecimal"/>
+	<field name="AMT_PIPELINE_R" class="java.math.BigDecimal"/>
+	<field name="AMT_GT_WITH_R" class="java.math.BigDecimal"/>
+	<field name="AMT_GT" class="java.math.BigDecimal"/>
+	<sortField name="BRANCHES"/>
+	<sortField name="SALESMAN"/>
+	<variable name="vSemester" class="java.lang.String">
+		<variableExpression><![CDATA[( $P{SemAkhir} == 1 ? "JANUARI" : ( $P{SemAkhir} == 2 ? "FEBRUARI" : ( $P{SemAkhir} == 3 ? "MARET" : ( $P{SemAkhir} == 4 ? "APRIL" : ( $P{SemAkhir} == 5 ? "MEI" : ( $P{SemAkhir} == 6 ? "JUNI" : ( $P{SemAkhir} == 7 ? "JULI" : ( $P{SemAkhir} == 8 ? "AGUSTUS" : ( $P{SemAkhir} == 9 ? "SEPTEMBER" : ( $P{SemAkhir} == 10 ? "OKTOBER" : ( $P{SemAkhir} == 11 ? "NOVEMBER" : "DESEMBER" )))))))))))]]></variableExpression>
+		<initialValueExpression><![CDATA[( $P{SemAkhir} == 1 ? "JANUARI" : ( $P{SemAkhir} == 2 ? "FEBRUARI" : ( $P{SemAkhir} == 3 ? "MARET" : ( $P{SemAkhir} == 4 ? "APRIL" : ( $P{SemAkhir} == 5 ? "MEI" : ( $P{SemAkhir} == 6 ? "JUNI" : ( $P{SemAkhir} == 7 ? "JULI" : ( $P{SemAkhir} == 8 ? "AGUSTUS" : ( $P{SemAkhir} == 9 ? "SEPTEMBER" : ( $P{SemAkhir} == 10 ? "OKTOBER" : ( $P{SemAkhir} == 11 ? "NOVEMBER" : "DESEMBER" )))))))))))]]></initialValueExpression>
+	</variable>
+	<variable name="AMT_REV_TTL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_REV_TTL}]]></variableExpression>
+	</variable>
+	<variable name="AMT_REV_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_REV}]]></variableExpression>
+	</variable>
+	<variable name="AMT_UM_OSO_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_UM_OSO}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_C_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_C}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_P_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_P}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_B_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_B}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_R_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_R}]]></variableExpression>
+	</variable>
+	<variable name="AMT_GT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_GT}]]></variableExpression>
+	</variable>
+	<variable name="AMT_REV_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_REV}]]></variableExpression>
+	</variable>
+	<variable name="AMT_UM_OSO_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_UM_OSO}]]></variableExpression>
+	</variable>
+	<variable name="AMT_REV_TTL_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_REV_TTL}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_C_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_C}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_P_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_P}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_B_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_B}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_R_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_R}]]></variableExpression>
+	</variable>
+	<variable name="AMT_GT_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_GT}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_A_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Branches" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_A}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PIPELINE_A_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PIPELINE_A}]]></variableExpression>
+	</variable>
+	<group name="Branches">
+		<groupExpression><![CDATA[$F{BRANCHES}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField>
+					<reportElement x="0" y="0" width="100" height="14" uuid="2dc4c242-9819-4992-944a-30b53d08432c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BRANCHES_NAME}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="7fa6bc41-c3bc-42d0-9a29-6a911df2c097"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_REV_TTL_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="375" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="a13f15c0-116a-499f-9179-061666aaefc4"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PCN_REV_BRANCHES}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="2b9465af-2da9-4c53-924b-6bccfb4fb2cd"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_REV_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e941ee8b-8761-4f49-bc43-d766eddeec52"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_UM_OSO_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="100" y="0" width="50" height="14" uuid="29b645d6-ed7d-4d57-aa43-089e119ab477"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="0" y="0" width="100" height="14" uuid="dc231896-0e30-4939-9543-f12ba5563eab"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Total "+$F{BRANCHES_NAME}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="100" height="14" uuid="7a838235-b7aa-4c15-9d26-f0dbaf92fad7"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="30090a49-7a49-4ba7-ba1d-4048e33123ab"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_PIPELINE_C_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="575" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="79e16514-1353-4e5a-be7c-4fb17f451865"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_PIPELINE_P_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="650" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e8efd6f2-87c1-475f-ae46-693ebb131fa9"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_PIPELINE_B_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="725" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e250f48b-81ec-478c-b691-246733cde1dc"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_GT_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="425" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="c8da1439-844c-486a-80ee-910967a1c13f"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_PIPELINE_A_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="168">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="f97f8d1a-45da-4395-b971-281ecf908f9a"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="0" width="200" height="14" uuid="acd4205f-277b-4ec2-ada9-5a79458adb73"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04056) Sales Achievement]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="14" width="200" height="14" uuid="d4400665-9c25-4138-b12f-910908625b6a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="e89ce257-f955-45e4-a80e-6cab058ed45a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="84" width="200" height="14" uuid="5d516873-20c7-48a6-86a6-3aeae26f97ad"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed on :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="300" y="84" width="125" height="14" uuid="4dc4a503-b27e-439e-b1ae-c79bf378ce8f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="28" width="200" height="14" uuid="2c8a0df7-dc37-4e35-92c1-f757b469bf68"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="28" width="125" height="14" uuid="66282874-183e-42fd-a70b-3c72c237d244"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="97ac2135-90cd-4d07-988b-cf05ebc816fd"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="126" width="100" height="14" uuid="d8424e3d-e41d-4879-afb1-5590285beec3"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="126" width="200" height="14" uuid="99acf5d9-154d-43b3-8c58-04c332d47b62"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="98" width="200" height="14" uuid="0d5436e1-8fc9-4c73-85d8-7dcea2fd906f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="300" y="70" width="125" height="14" uuid="03e085c1-30f4-4d0f-8626-310d3a5549a3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{AmtBig}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="70" width="200" height="14" uuid="4f0f945d-24f9-42b9-864c-ae39d1c62d54"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Amt Big Project (Pipeline) :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="100" height="14" uuid="125c7e9f-206f-47d2-8ce4-0c50c6d1f766"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="112" width="200" height="14" uuid="0ec2ae66-cf8b-4e0b-b9f6-9bb1cde0f587"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Note : Amount in million (1,000,000)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="126" width="125" height="14" uuid="3e6ce657-c47f-4502-9b1a-498c8a2ac65f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="98" width="125" height="14" uuid="04d7d2e6-cd46-4bb3-8e59-268c55d36a8a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="100" height="14" uuid="2fb64e27-d88f-445a-a81e-ef6a5c445c5c"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="100" height="14" uuid="6d012d74-4340-4fe4-81db-de8a6c702b04"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="56" width="200" height="14" uuid="5abc0c4f-426e-42ec-900c-fae9b4ba7f80"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Akhir Tahun (Pipeline) :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="56" width="125" height="14" uuid="ee85c8e1-8a9a-47ae-b4cd-d9560dd160aa"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vSemester}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="100" height="14" uuid="abaa4b09-2377-4e12-abb9-29400a21ec0f"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="e1464992-f685-4783-b5ae-0605ccece899"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="140" width="100" height="14" uuid="2e1081b3-7593-4e99-87ad-0e15686a42db"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="140" width="50" height="14" uuid="28893493-24ac-4954-85cd-aa11374ea77a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="140" width="75" height="14" uuid="596b1804-49a7-49c5-b56b-a8fff0043f34"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Sales Revenue]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="140" width="75" height="14" uuid="1d0ab815-8e93-4c5d-980d-e47a6f7f2752"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[O/S Sales Order]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="154" width="75" height="14" uuid="d06efc5f-abf5-4062-a6e1-c71a0f64b648"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[+ Uang Muka]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="154" width="75" height="14" uuid="52164b19-3ed4-4b0f-b471-1fa7ae127203"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[( Rp.)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="154" width="75" height="14" uuid="282ed8ea-69ac-4a87-b399-8cc84dd8387e"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[( Rp.)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="154" width="50" height="14" uuid="8b67d120-22b8-43d0-9a96-1dff4986c689"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="154" width="50" height="14" uuid="5469c2d8-22b0-425e-8178-adee2d12d0ee"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="154" width="100" height="14" uuid="a45ee7fe-af46-4c37-956e-47d209078a0e"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="140" width="125" height="14" uuid="82061ad8-b5e1-49ce-a0f9-dafaa4bece31"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Total Pencapaian]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="154" width="75" height="14" uuid="bf3eeb19-3033-4212-8179-9213beba47e4"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[=H=]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="575" y="154" width="75" height="14" uuid="eb0fb65c-370d-4a7c-b29b-251f11dab1ae"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[=M=]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="154" width="75" height="14" uuid="4c941034-58a4-44b3-91e6-c2e31cbc0041"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[=L=]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="725" y="140" width="75" height="14" uuid="a04283a7-d5f8-4782-858a-bb4271a17dc3"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="425" y="140" width="300" height="14" uuid="fbbfbbba-9bd4-4733-ba1b-4391fae8eb5d"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pipeline]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="725" y="154" width="75" height="14" uuid="0ae939a4-78fc-46ca-9905-973e0b9c0885"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="112" width="125" height="14" uuid="ca396983-e8b3-4976-a139-5df318f9b808"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="42" width="200" height="14" uuid="bc8916db-ba5b-4484-b65d-26226626eeb6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cut-off Sales Revenue :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="c084c07e-85e6-4536-93d8-c5876cd8a9e9"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="300" y="42" width="125" height="14" isPrintWhenDetailOverflows="true" uuid="68a2ef84-f8f2-4fdb-9471-0dd176eca627"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="425" y="154" width="75" height="14" uuid="5caeea5a-ddd6-453b-bea3-70f8ab236e58"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[=A=]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="04ed3212-76ea-47ff-ae9d-6396901f26e6"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="0" width="50" height="14" uuid="d903c69d-4ba6-4893-a7cf-5b5b1f3011b8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALESMAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="02761952-cf43-4e6f-b505-28bb02f81469"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_REV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="f49ca092-b2d9-4002-8569-5a6dac91a9c5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_UM_OSO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="abffea20-d0dc-4f4c-836e-fdea82bfbfbb"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_REV_TTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="375" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="2ed23865-babf-4a4f-b84b-0926298e13e2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_REV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="500" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="c1ddbb71-2145-49c5-bd26-974a47a6ea92"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_PIPELINE_C}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="575" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="34fa6953-1651-4641-a97e-be29d9d9b18d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_PIPELINE_P}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="650" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="b12ad7c3-d34f-4129-bd75-23050aff2682"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_PIPELINE_B}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="725" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="73136fca-e6e5-419f-92f9-ef973bd478a4"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_GT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="425" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="3922266e-6a56-4142-85d2-2ebaea7dd90a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_PIPELINE_A}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="28">
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="36b642de-6d0e-49f0-ac64-7a99ec499152"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Grand Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="0" width="50" height="14" uuid="3ccdf886-ec6b-47d2-be24-1f7828bd57df"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="3d37a6f8-7e7c-4688-93e3-001ac00fd6f6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_REV_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="08a2a1ee-63c3-4dcd-83ce-ffd54d503e76"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_UM_OSO_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="85cd3524-f5c0-436f-a586-e14d0145c178"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_REV_TTL_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="500" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="ac8c4247-8486-4f6f-a7c0-68b940753762"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_PIPELINE_C_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="575" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="9cd89e5a-55ae-4b96-b28b-6d99cc7282bd"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_PIPELINE_P_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="650" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="ba0ce475-030f-413f-a10f-88caee85a137"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_PIPELINE_B_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="725" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="17ce616c-7849-4f2f-85a5-af5d13565a47"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_GT_2}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="0da96b03-17e5-40af-9a92-6dc2bfe29045"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="0" width="50" height="14" uuid="e5945524-e857-4b25-8b99-04852838fae7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[100.00]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="425" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="bee61b0a-de76-4e68-82c1-69c531a8efad"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_PIPELINE_A_2}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="154">
+			<staticText>
+				<reportElement x="0" y="140" width="100" height="14" uuid="a26e2dfc-461c-4563-9e89-921dc7c2c8d7"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="140" width="200" height="14" uuid="bc2ea4e6-15fb-492b-9d85-73b6cceae0f5"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA SESUAI KRITERIA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="98" width="125" height="14" uuid="891ac66b-9fc0-4c31-94b1-601544f94483"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="300" y="70" width="125" height="14" uuid="02f91f40-ff0e-47b5-933d-6f95a7698bed"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{AmtBig}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="0" width="200" height="14" uuid="219e31d3-d176-459f-8869-b76874a7648a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(04056) Sales Achievement]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="300" y="84" width="125" height="14" uuid="dd3e927a-adb8-4785-9365-f81ecf1a66af"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="28" width="125" height="14" uuid="f337cacb-aced-4de8-a770-48838584c9b4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="100" height="14" uuid="c422e337-3e3c-4f83-a792-fb7c8807d245"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="126" width="200" height="14" uuid="cea17a4f-4192-47cb-932a-4ad69907d980"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="100" height="14" uuid="251bc8be-89ae-4ea3-ab2b-5ee2e79a78e8"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="126" width="125" height="14" uuid="545f171c-0481-4fe0-b06e-9c0ef1968893"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="84" width="200" height="14" uuid="ee03c0c9-fff1-40f8-8161-1045d992d207"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Printed on :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="56" width="125" height="14" uuid="a9041b72-3e0d-4e62-b80a-6b5b3cc4bfbd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vSemester}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="b687c166-a3f5-465d-abb0-25b209c522e3"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="70" width="200" height="14" uuid="da370564-d2d0-4987-8ced-34be8ea50e26"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Amt Big Project (Pipeline) :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="100" height="14" uuid="8e559993-abaa-47ab-bbfd-bfbc421e0f85"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="100" height="14" uuid="e19b3e9e-957d-4582-b059-f56755384d48"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="1fbc5c36-1e78-4838-be36-8dd5d24003e3"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="98" width="200" height="14" uuid="261cd3c9-0e12-46d0-b3ed-c663a5512759"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="112" width="200" height="14" uuid="0b44f082-5fe9-4045-b74a-8b6419ce9c06"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Note : Amount in million (1,000,000)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="56" width="200" height="14" uuid="ed21eb2d-d808-4bf6-a9bb-bfd108771cd1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Batas Akhir Tahun (Pipeline) :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="47508107-a52a-4fc2-bd7f-4c2da9eb574b"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="28" width="200" height="14" uuid="66f553ae-a93d-412e-9dc3-8a817e1a3a5b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="126" width="100" height="14" uuid="731fbf05-0945-4827-aec0-dca1dd548988"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="100" y="14" width="200" height="14" uuid="c1f6c355-c0f8-4abc-b9dd-b20f0422392b"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="100" height="14" uuid="54a72695-544f-4e4d-94d0-d42b577717c1"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="112" width="125" height="14" uuid="111019fc-d4dc-462c-af64-8267c6c4616d"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="89b9badc-ba52-48b0-93d0-729e1e4b5524"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="300" y="42" width="125" height="14" isPrintWhenDetailOverflows="true" uuid="460969a6-6464-432b-999b-6b3e4fcb3dd4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="42" width="200" height="14" uuid="83648cc1-792d-4c3d-a27e-211bfffc72be"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cut-off Sales Revenue :]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,1553 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03039_StatusOutOTP" language="groovy" pageWidth="1960" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1920" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.610510000000052"/>
+	<property name="ireport.x" value="1955"/>
+	<property name="ireport.y" value="104"/>
+	<parameter name="JnsRpt" class="java.lang.String"/>
+	<parameter name="Company" class="java.lang.String"/>
+	<parameter name="PartNo" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	1 AS MAIN_GRP
+		,XXX.COMPANY
+		,XXX.GRP
+		,XXX.NO_URUT
+		,XXX.NO_BPO
+		,XXX.ORDER_DATE
+		,XXX.VENDOR_NAME
+		,XXX.YOUR_REF
+		,XXX.NO_ITEM
+		,XXX.ITEM_DESC
+		,XXX.UOM
+		,XXX.QTY_ORDER
+		,XXX.LANDED_PRICE
+		,XXX.BARIS
+		, CASE WHEN XXX.BARIS = 1 THEN XXX.TOTAL_AMT ELSE 0 END AS TOTAL_AMT
+		,XXX.OVERDUE
+		,XXX.OVERDUE_DATE
+		,XXX.QTY_ON_ORDER_H
+		,XXX.QTY_READY_DISTI_H
+		, CASE WHEN XXX.BARIS = 1 THEN XXX.AMOUNT_OUTS_H ELSE 0 END AS AMOUNT_OUTS_H
+		,XXX.QTY_RSRV_ON_ORDER_H
+		,XXX.QTY_RSRV_READY_DISTI_H
+		, CASE WHEN XXX.BARIS = 1 THEN XXX.AMOUNT_RESERVE_H ELSE 0 END AS AMOUNT_RESERVE_H
+		,XXX.QTY_FREE_H
+		, CASE WHEN XXX.BARIS = 1 THEN XXX.AMOUNT_FREE_H ELSE 0 END AS AMOUNT_FREE_H
+		,XXX.QTY_RSRV_TANPA_PO_H
+		, CASE WHEN XXX.BARIS = 1 THEN XXX.AMOUNT_RESERVE_TANPA_PO_H ELSE 0 END AS AMOUNT_RESERVE_TANPA_PO_H
+		,XXX.QTY_ON_ORDER
+		,XXX.EXP_RCV
+		,XXX.QTY_READY_DISTI
+		,XXX.DUE_DATE_OTP
+		,XXX.QTY_RSRV_ON_ORDER
+		,XXX.QTY_RSRV_READY_DISTI
+		,XXX.QTY_RSRV_TANPA_PO
+		,XXX.QTY_FREE
+		,XXX.SALES
+		,CAB.[Name] BRANCH_NAME
+FROM	(
+SELECT	XOX.COMPANY
+		,XOX.GRP
+		,DENSE_RANK() OVER (ORDER BY XOX.GRP) AS NO_URUT
+		,XOX.NO_BPO
+		,XOX.ORDER_DATE
+		,XOX.VENDOR_NAME
+		,XOX.YOUR_REF
+		,XOX.NO_ITEM
+		,XOX.ITEM_DESC
+		,XOX.UOM
+		,XOX.QTY_ORDER
+		,XOX.LANDED_PRICE
+		,XOX.TOTAL_AMT
+		,DATEDIFF ( DAY , GETDATE() ,  MIN(XOX.DUE_DATE_OTP) OVER (PARTITION BY XOX.GRP)) AS OVERDUE
+		, MIN(XOX.DUE_DATE_OTP) OVER (PARTITION BY XOX.GRP) AS OVERDUE_DATE
+		,SUM(XOX.QTY_ON_ORDER) OVER (PARTITION BY XOX.GRP) AS QTY_ON_ORDER_H
+		,SUM(XOX.QTY_READY_DISTI) OVER (PARTITION BY XOX.GRP) AS QTY_READY_DISTI_H
+		, (SUM(XOX.QTY_ON_ORDER) OVER (PARTITION BY XOX.GRP) + SUM(XOX.QTY_READY_DISTI) OVER (PARTITION BY XOX.GRP)) * XOX.LANDED_PRICE AS AMOUNT_OUTS_H
+		,SUM(XOX.QTY_RSRV_ON_ORDER) OVER (PARTITION BY XOX.GRP) AS QTY_RSRV_ON_ORDER_H
+		,SUM(XOX.QTY_RSRV_READY_DISTI) OVER (PARTITION BY XOX.GRP) AS QTY_RSRV_READY_DISTI_H
+		, (SUM(XOX.QTY_RSRV_ON_ORDER) OVER (PARTITION BY XOX.GRP) + SUM(XOX.QTY_RSRV_READY_DISTI) OVER (PARTITION BY XOX.GRP)) * XOX.LANDED_PRICE AS AMOUNT_RESERVE_H
+		,SUM(XOX.QTY_FREE) OVER (PARTITION BY XOX.GRP) AS QTY_FREE_H
+		, (SUM(XOX.QTY_FREE) OVER (PARTITION BY XOX.GRP) * XOX.LANDED_PRICE) AS AMOUNT_FREE_H
+		,SUM(XOX.QTY_RSRV_TANPA_PO) OVER (PARTITION BY XOX.GRP) AS QTY_RSRV_TANPA_PO_H
+		, (SUM(XOX.QTY_RSRV_TANPA_PO) OVER (PARTITION BY XOX.GRP)) * XOX.LANDED_PRICE AS AMOUNT_RESERVE_TANPA_PO_H
+		,XOX.QTY_ON_ORDER
+		,XOX.EXP_RCV
+		,XOX.QTY_READY_DISTI
+		,XOX.DUE_DATE_OTP
+		,XOX.QTY_RSRV_ON_ORDER
+		,XOX.QTY_RSRV_READY_DISTI
+		,XOX.QTY_RSRV_TANPA_PO
+		,XOX.QTY_FREE
+		, ROW_NUMBER() OVER(PARTITION BY XOX.GRP ORDER BY XOX.GRP) AS BARIS
+		,XOX.SALES
+		,XOX.BRANCH
+FROM	(
+SELECT	'AJ' AS COMPANY
+		,HDR.GRP
+		,HDR.NO_BPO
+		,HDR.ORDER_DATE
+		,HDR.VENDOR_NAME
+		,HDR.YOUR_REF
+		,HDR.NO_ITEM
+		,HDR.ITEM_DESC
+		,HDR.UOM
+		,HDR.QTY_ORDER
+		,HDR.LANDED_PRICE
+		,HDR.TOTAL_AMT
+		,DTL.QTY_ON_ORDER
+		,DTL.EXP_RCV
+		,DTL.QTY_READY_DISTI
+		,DTL.DUE_DATE_OTP
+		,DTL.QTY_RSRV_READY_DISTI
+		,DTL.QTY_RSRV_ON_ORDER
+		,DTL.QTY_RSRV_TANPA_PO
+		,((DTL.QTY_ON_ORDER + DTL.QTY_READY_DISTI) - (DTL.QTY_RSRV_READY_DISTI+DTL.QTY_RSRV_ON_ORDER)) AS QTY_FREE
+		,DTL.SALES
+		,DTL.BRANCH
+FROM	(
+			SELECT	(BPOH.[No_] + CONVERT(VARCHAR,BPOL.[Line No_]) + BPOL.[No_]) AS GRP
+					,BPOH.[No_] AS NO_BPO
+					,BPOH.[Order Date] AS ORDER_DATE
+					,BPOH.[Pay-to Name] AS VENDOR_NAME
+					,BPOH.[Your Reference] AS YOUR_REF
+					,BPOL.[No_] AS NO_ITEM
+					,BPOL.[Line No_] AS NO_LINE_BPO
+					,BPOL.[Description] AS ITEM_DESC
+					,BPOL.[Unit of Measure] AS UOM
+					,BPOL.[Quantity] AS QTY_ORDER
+					,BPOL.[Direct Unit Cost] * 1.025 AS LANDED_PRICE
+					,(BPOL.[Quantity] * (BPOL.[Direct Unit Cost] * 1.025)) AS TOTAL_AMT
+					,BPOL.[Quantity Received] AS QTY_RCV_H
+			FROM [dbo].[BC_AUTOJAYA$Purchase Header] BPOH
+			INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] BPOL ON BPOL.[Document Type] = BPOH.[Document Type] AND BPOL.[Document No_] = BPOH.[No_]
+			WHERE	BPOH.[Document Type] = 4 AND
+					SUBSTRING(BPOH.[No_], 6,1 ) = 'P' AND
+					(BPOL.Quantity <> BPOL.[Quantity Received])
+		) HDR
+LEFT JOIN	(
+				SELECT	X.GRP
+						,SUM(X.QTY_RCV) AS QTY_RCV
+						,SUM(X.QTY_READY_DISTI) AS QTY_READY_DISTI
+						,SUM(X.QTY_ON_ORDER) AS QTY_ON_ORDER
+						,SUM(X.QTY_RSRV_READY_DISTI) AS QTY_RSRV_READY_DISTI
+						,SUM(X.QTY_RSRV_ON_ORDER) AS QTY_RSRV_ON_ORDER
+						,SUM(X.QTY_RSRV_TANPA_PO) AS QTY_RSRV_TANPA_PO
+						,X.EXP_RCV
+						,X.DUE_DATE_OTP
+						,MAX(X.SALES) AS SALES
+						,MAX(X.BRANCH) AS BRANCH
+				FROM	(
+							SELECT	BPH.[No_] + CONVERT(VARCHAR,BPL.[Line No_]) + BPL.[No_] AS GRP
+									,'' AS NO_PO
+									,BPH.[No_] AS NO_BPO
+									,BPL.[Line No_] AS NO_LINE_BPO
+									,BPL.[No_] AS NO_ITEM
+									,0 AS QTY_RCV
+									,0 AS QTY_READY_DISTI
+									,BPL.[Quantity] - ISNULL(BPL2.QTY_PO,0) AS QTY_ON_ORDER
+									,0 AS QTY_RSRV_READY_DISTI
+									,0 AS QTY_RSRV_ON_ORDER
+									,BPL.[Expected Receipt Date] AS EXP_RCV
+									,(BPL.[Expected Receipt Date] + 90) AS DUE_DATE_OTP
+									,NULL AS SALES
+									,NULL AS BRANCH
+									,0 AS QTY_RSRV_TANPA_PO
+							FROM [dbo].[BC_AUTOJAYA$Purchase Header] BPH
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] BPL ON BPL.[Document Type] = BPH.[Document Type] AND BPL.[Document No_] = BPH.[No_]
+							LEFT JOIN	(
+											SELECT	POL.[Blanket Order No_] AS NO_BPO
+													,POL.[Blanket Order Line No_] AS NO_LINE_BPO
+													,POL.[No_] AS NO_ITEM
+													,SUM(POL.[Quantity]) AS QTY_PO
+											FROM [dbo].[BC_AUTOJAYA$Purchase Line] POL
+											INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Header] POH ON POH.[No_] = POL.[Document No_] AND POH.[Document Type] = POL.[Document Type]
+											WHERE	POL.[Document Type] = 1 AND
+													SUBSTRING( POL.[Document No_], 5, 1) = 'P'
+											GROUP BY POL.[Blanket Order No_], POL.[Blanket Order Line No_], POL.[No_]
+										) BPL2 ON BPL2.NO_BPO = BPH.[No_] AND BPL2.NO_LINE_BPO = BPL.[Line No_] AND  BPL2.NO_ITEM = BPL.[No_]
+							WHERE	BPH.[Document Type] = 4 AND
+									SUBSTRING(BPH.[No_], 6,1 ) = 'P' AND
+									BPL.Quantity <> BPL.[Quantity Received] AND
+									(BPL.[Quantity] - ISNULL(BPL2.QTY_PO,0)) <> 0
+							UNION ALL
+							SELECT	POL.[Blanket Order No_] + CONVERT(VARCHAR,POL.[Blanket Order Line No_]) + POL.[No_] AS GRP
+									,POL.[Document No_] AS NO_PO
+									,POL.[Blanket Order No_] AS NO_BPO
+									,POL.[Blanket Order Line No_] AS NO_LINE_BPO
+									,POL.[No_] AS NO_ITEM
+									,POL.[Quantity Received] AS QTY_RCV
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											POL.[Quantity] - POL.[Quantity Received]
+										ELSE
+											0
+										END AS QTY_READY_DISTI
+									,   CASE WHEN POL.[Expected Receipt Date] >= GETDATE() THEN
+											POL.[Quantity] - POL.[Quantity Received]
+										ELSE
+											0
+										END AS QTY_ON_ORDER
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											ISNULL(RSV.RSRV_ON_ORDER,0)
+										ELSE
+											0
+										END AS QTY_RSRV_READY_DISTI
+									,   CASE WHEN POL.[Expected Receipt Date] >= GETDATE() THEN
+											ISNULL(RSV.RSRV_ON_ORDER,0)
+										ELSE
+											0
+										END AS QTY_RSRV_ON_ORDER
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											NULL
+										ELSE
+											CASE WHEN POL.[Quantity] = POL.[Quantity Received] THEN
+												NULL
+											ELSE
+												POL.[Expected Receipt Date]
+											END
+										END AS EXP_RCV
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											CASE WHEN POL.[Quantity] = POL.[Quantity Received] THEN
+												POL.[Expected Receipt Date] + 90
+											ELSE
+												CASE WHEN ISDATE(SUBSTRING(POH.[Ship-to Contact],4,2)+'/'+SUBSTRING(POH.[Ship-to Contact],1,2)+'/'+SUBSTRING(POH.[Ship-to Contact],7,4)) = 0 THEN
+													POL.[Expected Receipt Date] + 90
+												ELSE
+													CONVERT(DATETIME, (SUBSTRING(POH.[Ship-to Contact],4,2)+'/'+SUBSTRING(POH.[Ship-to Contact],1,2)+'/'+SUBSTRING(POH.[Ship-to Contact],7,4)))
+												END
+											END
+										ELSE
+											POL.[Expected Receipt Date] + 90
+										END AS DUE_DATE_OTP
+									, RSV.SALES
+									, RSV.BRANCH
+									, ISNULL(RSV.RSRV_TANPA_PO,0) AS QTY_RSRV_TANPA_PO
+							FROM [dbo].[BC_AUTOJAYA$Purchase Line] POL
+							INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Header] POH ON POH.[No_] = POL.[Document No_] AND POH.[Document Type] = POL.[Document Type]
+							LEFT JOIN	(
+											SELECT	RSV2.ITEM_NO
+													, RSV2.ITEM_LINE
+													, RSV2.NO_PO
+													, SUM(RSV2.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+													, SUM(RSV2.RSRV_TANPA_PO) AS RSRV_TANPA_PO
+													, MAX(CASE WHEN RSV2.NO_URUT = 1 THEN RSV2.SALES ELSE NULL END) AS SALES
+													, MAX(CASE WHEN RSV2.NO_URUT = 1 THEN  RSV2.BRANCH ELSE NULL END) AS BRANCH
+											FROM	(
+														SELECT	RSV1.ITEM_NO
+																, RSV1.ITEM_LINE
+																, RSV1.NO_PO
+																, RSV1.RSRV_ON_ORDER
+																, RSV1.RSRV_TANPA_PO
+																, RSV1.NO_SO
+																, RSV1.SALES
+																, RSV1.BRANCH
+																, ROW_NUMBER() OVER (PARTITION BY RSV1.ITEM_NO,  RSV1.ITEM_LINE, RSV1.NO_PO ORDER BY RSV1.RSRV_ON_ORDER DESC, RSV1.NO_PO) AS NO_URUT
+														FROM	(
+																	SELECT PO.[Item No_] AS ITEM_NO
+																			, PO.[Source Ref_ No_] AS ITEM_LINE
+																			, PO.[Source ID] AS NO_PO
+																			, SUM(PO.[Quantity]) AS RSRV_ON_ORDER
+																			, SO.[Source ID] AS NO_SO
+																			, SOH.[Salesperson Code] AS SALES
+																			, SOH.[Shortcut Dimension 1 Code] AS BRANCH
+																			, CASE WHEN  SOH.[External Document No_]  LIKE '%OTP%' OR SOH.[External Document No_]  LIKE '%BOOKING%' THEN SUM(PO.[Quantity]) ELSE 0 END AS RSRV_TANPA_PO
+																	FROM [dbo].[BC_AUTOJAYA$Reservation Entry] PO
+																	LEFT JOIN [dbo].[BC_AUTOJAYA$Reservation Entry] SO ON PO.[Entry No_] = SO.[Entry No_] AND SO.[Positive] = 0
+																	LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Header] SOH ON SOH.[No_] = SO.[Source ID]
+																	WHERE PO.[Reservation Status] = 0 AND
+																			PO.[Positive] = 1 AND
+																			SUBSTRING(PO.[Source ID], 5, 1) = 'P' AND
+																			PO.[Source ID] <>''
+																	GROUP BY PO.[Item No_],  PO.[Source ID], PO.[Source Ref_ No_], SO.[Source ID],  SOH.[Salesperson Code], SOH.[Shortcut Dimension 1 Code], SOH.[External Document No_]
+																) RSV1
+													) RSV2
+											GROUP BY RSV2.ITEM_NO, RSV2.ITEM_LINE, RSV2.NO_PO
+										) RSV ON RSV.ITEM_NO = POL.[No_] AND RSV.ITEM_LINE = POL.[Line No_] AND RSV.NO_PO = POL.[Document No_]
+							WHERE	POL.[Document Type] = 1 AND
+									POL.[Quantity] <> POL.[Quantity Received] AND
+									SUBSTRING( POL.[Document No_], 5, 1) = 'P'
+						) X
+				GROUP BY X.GRP
+						,X.EXP_RCV
+						,X.DUE_DATE_OTP
+			) DTL ON DTL.GRP = HDR.GRP
+UNION ALL
+SELECT	'SP' AS COMPANY
+		,HDR.GRP
+		,HDR.NO_BPO
+		,HDR.ORDER_DATE
+		,HDR.VENDOR_NAME
+		,HDR.YOUR_REF
+		,HDR.NO_ITEM
+		,HDR.ITEM_DESC
+		,HDR.UOM
+		,HDR.QTY_ORDER
+		,HDR.LANDED_PRICE
+		,HDR.TOTAL_AMT
+		,DTL.QTY_ON_ORDER
+		,DTL.EXP_RCV
+		,DTL.QTY_READY_DISTI
+		,DTL.DUE_DATE_OTP
+		,DTL.QTY_RSRV_READY_DISTI
+		,DTL.QTY_RSRV_ON_ORDER
+		,DTL.QTY_RSRV_TANPA_PO
+		,((DTL.QTY_ON_ORDER + DTL.QTY_READY_DISTI) - (DTL.QTY_RSRV_READY_DISTI+DTL.QTY_RSRV_ON_ORDER)) AS QTY_FREE
+		,DTL.SALES
+		,DTL.BRANCH
+FROM	(
+			SELECT	(BPOH.[No_] + CONVERT(VARCHAR,BPOL.[Line No_]) + BPOL.[No_]) AS GRP
+					,BPOH.[No_] AS NO_BPO
+					,BPOH.[Order Date] AS ORDER_DATE
+					,BPOH.[Pay-to Name] AS VENDOR_NAME
+					,BPOH.[Your Reference] AS YOUR_REF
+					,BPOL.[No_] AS NO_ITEM
+					,BPOL.[Line No_] AS NO_LINE_BPO
+					,BPOL.[Description] AS ITEM_DESC
+					,BPOL.[Unit of Measure] AS UOM
+					,BPOL.[Quantity] AS QTY_ORDER
+					,BPOL.[Direct Unit Cost] * 1.025 AS LANDED_PRICE
+					,(BPOL.[Quantity] * (BPOL.[Direct Unit Cost] * 1.025)) AS TOTAL_AMT
+					,BPOL.[Quantity Received] AS QTY_RCV_H
+			FROM [dbo].[BC_SOLUSI$Purchase Header] BPOH
+			INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] BPOL ON BPOL.[Document Type] = BPOH.[Document Type] AND BPOL.[Document No_] = BPOH.[No_]
+			WHERE	BPOH.[Document Type] = 4 AND
+					SUBSTRING(BPOH.[No_], 6,1 ) = 'P' AND
+					(BPOL.Quantity <> BPOL.[Quantity Received])
+		) HDR
+LEFT JOIN	(
+				SELECT	X.GRP
+						,SUM(X.QTY_RCV) AS QTY_RCV
+						,SUM(X.QTY_READY_DISTI) AS QTY_READY_DISTI
+						,SUM(X.QTY_ON_ORDER) AS QTY_ON_ORDER
+						,SUM(X.QTY_RSRV_READY_DISTI) AS QTY_RSRV_READY_DISTI
+						,SUM(X.QTY_RSRV_ON_ORDER) AS QTY_RSRV_ON_ORDER
+						,SUM(X.QTY_RSRV_TANPA_PO) AS QTY_RSRV_TANPA_PO
+						,X.EXP_RCV
+						,X.DUE_DATE_OTP
+						, MAX(SALES) AS SALES
+						, MAX(BRANCH) AS BRANCH
+				FROM	(
+							SELECT	BPH.[No_] + CONVERT(VARCHAR,BPL.[Line No_]) + BPL.[No_] AS GRP
+									,'' AS NO_PO
+									,BPH.[No_] AS NO_BPO
+									,BPL.[Line No_] AS NO_LINE_BPO
+									,BPL.[No_] AS NO_ITEM
+									,0 AS QTY_RCV
+									,0 AS QTY_READY_DISTI
+									,BPL.[Quantity] - ISNULL(BPL2.QTY_PO,0) AS QTY_ON_ORDER
+									,0 AS QTY_RSRV_READY_DISTI
+									,0 AS QTY_RSRV_ON_ORDER
+									,BPL.[Expected Receipt Date] AS EXP_RCV
+									,(BPL.[Expected Receipt Date] + 90) AS DUE_DATE_OTP
+									,NULL AS SALES
+									,NULL AS BRANCH
+									,0 AS QTY_RSRV_TANPA_PO
+							FROM [dbo].[BC_SOLUSI$Purchase Header] BPH
+							INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] BPL ON BPL.[Document Type] = BPH.[Document Type] AND BPL.[Document No_] = BPH.[No_]
+							LEFT JOIN	(
+											SELECT	POL.[Blanket Order No_] AS NO_BPO
+													,POL.[Blanket Order Line No_] AS NO_LINE_BPO
+													,POL.[No_] AS NO_ITEM
+													,SUM(POL.[Quantity]) AS QTY_PO
+											FROM [dbo].[BC_SOLUSI$Purchase Line] POL
+											INNER JOIN [dbo].[BC_SOLUSI$Purchase Header] POH ON POH.[No_] = POL.[Document No_] AND POH.[Document Type] = POL.[Document Type]
+											WHERE	POL.[Document Type] = 1 AND
+													SUBSTRING( POL.[Document No_], 5, 1) = 'P'
+											GROUP BY POL.[Blanket Order No_], POL.[Blanket Order Line No_], POL.[No_]
+										) BPL2 ON BPL2.NO_BPO = BPH.[No_] AND BPL2.NO_LINE_BPO = BPL.[Line No_] AND  BPL2.NO_ITEM = BPL.[No_]
+							WHERE	BPH.[Document Type] = 4 AND
+									SUBSTRING(BPH.[No_], 6,1 ) = 'P' AND
+									BPL.Quantity <> BPL.[Quantity Received] AND
+									(BPL.[Quantity] - ISNULL(BPL2.QTY_PO,0)) <> 0
+							UNION ALL
+							SELECT	POL.[Blanket Order No_] + CONVERT(VARCHAR,POL.[Blanket Order Line No_]) + POL.[No_] AS GRP
+									,POL.[Document No_] AS NO_PO
+									,POL.[Blanket Order No_] AS NO_BPO
+									,POL.[Blanket Order Line No_] AS NO_LINE_BPO
+									,POL.[No_] AS NO_ITEM
+									,POL.[Quantity Received] AS QTY_RCV
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											POL.[Quantity] - POL.[Quantity Received]
+										ELSE
+											0
+										END AS QTY_READY_DISTI
+									,   CASE WHEN POL.[Expected Receipt Date] >= GETDATE() THEN
+											POL.[Quantity] - POL.[Quantity Received]
+										ELSE
+											0
+										END AS QTY_ON_ORDER
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											ISNULL(RSV.RSRV_ON_ORDER,0)
+										ELSE
+											0
+										END AS QTY_RSRV_READY_DISTI
+									,   CASE WHEN POL.[Expected Receipt Date] >= GETDATE() THEN
+											ISNULL(RSV.RSRV_ON_ORDER,0)
+										ELSE
+											0
+										END AS QTY_RSRV_ON_ORDER
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											NULL
+										ELSE
+											CASE WHEN POL.[Quantity] = POL.[Quantity Received] THEN
+												NULL
+											ELSE
+												POL.[Expected Receipt Date]
+											END
+										END AS EXP_RCV
+									,	CASE WHEN POL.[Expected Receipt Date] < GETDATE() THEN
+											CASE WHEN POL.[Quantity] = POL.[Quantity Received] THEN
+												POL.[Expected Receipt Date] + 90
+											ELSE
+												CASE WHEN ISDATE(SUBSTRING(POH.[Ship-to Contact],4,2)+'/'+SUBSTRING(POH.[Ship-to Contact],1,2)+'/'+SUBSTRING(POH.[Ship-to Contact],7,4)) = 0 THEN
+													POL.[Expected Receipt Date] + 90
+												ELSE
+													CONVERT(DATETIME, (SUBSTRING(POH.[Ship-to Contact],4,2)+'/'+SUBSTRING(POH.[Ship-to Contact],1,2)+'/'+SUBSTRING(POH.[Ship-to Contact],7,4)))
+												END
+											END
+										ELSE
+											POL.[Expected Receipt Date] + 90
+										END AS DUE_DATE_OTP
+									, RSV.SALES
+									, RSV.BRANCH
+									, ISNULL(RSV.RSRV_TANPA_PO,0) AS QTY_RSRV_TANPA_PO
+							FROM [dbo].[BC_SOLUSI$Purchase Line] POL
+							INNER JOIN [dbo].[BC_SOLUSI$Purchase Header] POH ON POH.[No_] = POL.[Document No_] AND POH.[Document Type] = POL.[Document Type]
+							LEFT JOIN	(
+											SELECT	RSV2.ITEM_NO
+													, RSV2.ITEM_LINE
+													, RSV2.NO_PO
+													, SUM(RSV2.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+													, SUM(RSV2.RSRV_TANPA_PO) AS RSRV_TANPA_PO
+													, MAX(CASE WHEN RSV2.NO_URUT = 1 THEN RSV2.SALES ELSE NULL END) AS SALES
+													, MAX(CASE WHEN RSV2.NO_URUT = 1 THEN  RSV2.BRANCH ELSE NULL END) AS BRANCH
+											FROM	(
+														SELECT	RSV1.ITEM_NO
+																, RSV1.ITEM_LINE
+																, RSV1.NO_PO
+																, RSV1.RSRV_ON_ORDER
+																, RSV1.RSRV_TANPA_PO
+																, RSV1.NO_SO
+																, RSV1.SALES
+																, RSV1.BRANCH
+																, ROW_NUMBER() OVER (PARTITION BY RSV1.ITEM_NO,  RSV1.ITEM_LINE, RSV1.NO_PO ORDER BY RSV1.RSRV_ON_ORDER DESC, RSV1.NO_PO) AS NO_URUT
+														FROM	(
+																	SELECT PO.[Item No_] AS ITEM_NO
+																			, PO.[Source Ref_ No_] AS ITEM_LINE
+																			, PO.[Source ID] AS NO_PO
+																			, SUM(PO.[Quantity]) AS RSRV_ON_ORDER
+																			, SO.[Source ID] AS NO_SO
+																			, SOH.[Salesperson Code] AS SALES
+																			, SOH.[Shortcut Dimension 1 Code] AS BRANCH
+																			, CASE WHEN  SOH.[External Document No_]  LIKE '%OTP%' OR SOH.[External Document No_]  LIKE '%BOOKING%' THEN SUM(PO.[Quantity]) ELSE 0 END AS RSRV_TANPA_PO
+																	FROM [dbo].[BC_SOLUSI$Reservation Entry] PO
+																	LEFT JOIN [dbo].[BC_SOLUSI$Reservation Entry] SO ON PO.[Entry No_] = SO.[Entry No_] AND SO.[Positive] = 0
+																	LEFT JOIN [dbo].[BC_SOLUSI$Sales Header] SOH ON SOH.[No_] = SO.[Source ID]
+																	WHERE PO.[Reservation Status] = 0 AND
+																			PO.[Positive] = 1 AND
+																			SUBSTRING(PO.[Source ID], 5, 1) = 'P' AND
+																			PO.[Source ID] <>''
+																	GROUP BY PO.[Item No_],  PO.[Source ID], PO.[Source Ref_ No_], SO.[Source ID],  SOH.[Salesperson Code], SOH.[Shortcut Dimension 1 Code], SOH.[External Document No_]
+																) RSV1
+													) RSV2
+											GROUP BY RSV2.ITEM_NO, RSV2.ITEM_LINE, RSV2.NO_PO
+										) RSV ON RSV.ITEM_NO = POL.[No_] AND RSV.ITEM_LINE = POL.[Line No_] AND RSV.NO_PO = POL.[Document No_]
+							WHERE	POL.[Document Type] = 1 AND
+									POL.[Quantity] <> POL.[Quantity Received] AND
+									SUBSTRING( POL.[Document No_], 5, 1) = 'P'
+						) X
+				GROUP BY X.GRP
+						,X.EXP_RCV
+						,X.DUE_DATE_OTP
+			) DTL ON DTL.GRP = HDR.GRP
+		) XOX
+WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
+ 		(XOX.NO_ITEM like '%'+$P{PartNo}+'%' OR $P{PartNo} = 'ALL')
+		) XXX
+LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XXX.BRANCH]]>
+	</queryString>
+	<field name="MAIN_GRP" class="java.lang.Integer"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="GRP" class="java.lang.String"/>
+	<field name="NO_URUT" class="java.lang.Long"/>
+	<field name="NO_BPO" class="java.lang.String"/>
+	<field name="ORDER_DATE" class="java.sql.Timestamp"/>
+	<field name="VENDOR_NAME" class="java.lang.String"/>
+	<field name="YOUR_REF" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="ITEM_DESC" class="java.lang.String"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="QTY_ORDER" class="java.math.BigDecimal"/>
+	<field name="LANDED_PRICE" class="java.math.BigDecimal"/>
+	<field name="BARIS" class="java.lang.Long"/>
+	<field name="TOTAL_AMT" class="java.math.BigDecimal"/>
+	<field name="OVERDUE" class="java.lang.Integer"/>
+	<field name="OVERDUE_DATE" class="java.sql.Timestamp"/>
+	<field name="QTY_ON_ORDER_H" class="java.math.BigDecimal"/>
+	<field name="QTY_READY_DISTI_H" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_OUTS_H" class="java.math.BigDecimal"/>
+	<field name="QTY_RSRV_ON_ORDER_H" class="java.math.BigDecimal"/>
+	<field name="QTY_RSRV_READY_DISTI_H" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_RESERVE_H" class="java.math.BigDecimal"/>
+	<field name="QTY_FREE_H" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_FREE_H" class="java.math.BigDecimal"/>
+	<field name="QTY_RSRV_TANPA_PO_H" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_RESERVE_TANPA_PO_H" class="java.math.BigDecimal"/>
+	<field name="QTY_ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="EXP_RCV" class="java.sql.Timestamp"/>
+	<field name="QTY_READY_DISTI" class="java.math.BigDecimal"/>
+	<field name="DUE_DATE_OTP" class="java.sql.Timestamp"/>
+	<field name="QTY_RSRV_ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="QTY_RSRV_READY_DISTI" class="java.math.BigDecimal"/>
+	<field name="QTY_RSRV_TANPA_PO" class="java.math.BigDecimal"/>
+	<field name="QTY_FREE" class="java.math.BigDecimal"/>
+	<field name="SALES" class="java.lang.String"/>
+	<field name="BRANCH_NAME" class="java.lang.String"/>
+	<sortField name="GRP"/>
+	<sortField name="NO_BPO"/>
+	<sortField name="NO_ITEM"/>
+	<variable name="vJenisReport" class="java.lang.String">
+		<variableExpression><![CDATA[$P{JnsRpt}.equals( "DTL" ) == true?"Detail":"Summary"]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{JnsRpt}.equals( "DTL" ) == true?"Detail":"Summary"]]></initialValueExpression>
+	</variable>
+	<variable name="TOTAL_AMT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL_AMT}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_OUTS_H_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_OUTS_H}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_RESERVE_H_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_RESERVE_H}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_FREE_H_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_FREE_H}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_RESERVE_TANPA_PO_H_1" class="java.math.BigDecimal" resetType="Group" resetGroup="MainGrp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_RESERVE_TANPA_PO_H}]]></variableExpression>
+	</variable>
+	<group name="MainGrp">
+		<groupExpression><![CDATA[$F{MAIN_GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="29">
+				<staticText>
+					<reportElement x="105" y="0" width="30" height="14" uuid="da1a1ed0-b559-4b6c-a4cf-e1332fddad53"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Co.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="30" y="0" width="75" height="14" uuid="9cae1f9f-1779-419e-9f33-db1ac357482f"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[No OTP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="30" height="14" uuid="051a24fa-9065-425c-a043-87755c6f2e95"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="135" y="0" width="200" height="14" uuid="b8eb54df-01ac-4399-8af1-b71e6019e0d7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Customer Name / "Your Reference"]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="485" y="0" width="180" height="14" uuid="f2d4fd92-be71-4e66-a8b4-f18d6551270f"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Part No.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="665" y="0" width="250" height="14" uuid="944219a8-dd75-4a5d-9611-624cd0af514a"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Desc.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="915" y="0" width="50" height="14" uuid="d70d17bc-10e9-4974-afe1-7a18c4ac12b0"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[UOM]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="965" y="0" width="50" height="14" uuid="684542d6-0e0f-4e8a-b753-7fffa8eb1356"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty Order]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1015" y="0" width="80" height="14" uuid="9d2c61d1-21f1-47e3-bd5d-249b70ad16de"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Landed Price]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1095" y="0" width="80" height="14" uuid="f5cbcdd9-a121-4c56-85be-7561b367ba1c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Total Amount]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1180" y="15" width="50" height="14" uuid="74930128-1367-4ba7-ab56-90d8eb6b85be"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Order]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1230" y="15" width="65" height="14" uuid="6a3a326f-f4ac-4d2d-a0c7-8e1a606063dc"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Ready DISTI]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1180" y="0" width="115" height="14" uuid="083c5f0d-de30-41e6-a18b-27ce29d5cbbf"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Outstanding Qty]]></text>
+				</staticText>
+				<line>
+					<reportElement x="1180" y="14" width="115" height="1" uuid="73eb3521-816c-41c5-b087-7539de7bb2c6"/>
+				</line>
+				<staticText>
+					<reportElement x="1500" y="15" width="50" height="14" uuid="269a699c-d66b-4de3-b01b-111384f63432"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Order]]></text>
+				</staticText>
+				<line>
+					<reportElement x="1500" y="14" width="110" height="1" uuid="1d581a41-2250-4b71-aae9-4cb6f84d411c"/>
+				</line>
+				<staticText>
+					<reportElement x="1550" y="15" width="60" height="14" uuid="df2a8937-7edc-4e23-9590-d334d518ad15"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Ready DISTI]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1500" y="0" width="110" height="14" uuid="86216dce-075c-42c7-bd36-325d45fbcbeb"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Reserve Qty]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1690" y="0" width="70" height="14" uuid="8af46e2a-6c09-482c-b60a-d8bafa348e0e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty Potential]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1690" y="15" width="70" height="14" uuid="3eb6d66b-4331-4149-bc08-dd6163dc2057"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Free Stock]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1295" y="0" width="125" height="14" uuid="9ee1d44e-9bec-4fa4-bc99-8b77d1784b6d"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Overdue]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1295" y="15" width="50" height="14" uuid="fcc59911-d6da-4517-9ba1-cc8bb0e8ace4"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[day(s)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1420" y="0" width="80" height="14" uuid="d8e0918d-a986-414a-b87f-dec073383ae1"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1420" y="15" width="80" height="14" uuid="9e88d180-9407-47a7-94c7-01beafa0f691"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Outstanding]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1610" y="15" width="80" height="14" uuid="4ce8c455-0765-44b6-9235-ad42bf724c6f"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Reserve]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1610" y="0" width="80" height="14" uuid="181a014c-201b-4ed3-9c3f-d4cf61cadf6c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1760" y="15" width="80" height="14" uuid="0c60f683-9de2-498e-aa6f-c433fd314f5f"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Free Stock]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1760" y="0" width="80" height="14" uuid="d4072e13-c7d8-4946-83b3-46e632796cb6"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Amount Potential]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1175" y="0" width="5" height="14" uuid="e10dd971-3858-4cf1-a20f-23fc5979f3c1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1345" y="15" width="75" height="14" uuid="4507e152-95af-4b5c-b9f0-17435538aa1a"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<text><![CDATA[Date]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="335" y="0" width="50" height="14" uuid="82c8ab00-5cf0-472a-9320-11af5be4376b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Sales]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="385" y="0" width="100" height="14" uuid="7e876aea-0d88-43f6-8fd9-5970c18feffb"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Cabang]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1840" y="15" width="80" height="14" uuid="c3c6eeb4-776d-4e1e-9d57-9e24f37c779c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Reserve Tanpa PO]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1840" y="0" width="80" height="14" uuid="ba74c541-f89a-4de8-a3b1-5e1f10df53ad"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1095" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="24f29d79-bd33-40cc-9b08-f8cab4f29c3d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TOTAL_AMT_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="1b12a723-036e-4376-aa48-84771e423839"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_OUTS_H_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1611" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3b03d8a6-e8e6-4a8b-a8a1-2e7fc706021a"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_RESERVE_H_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1760" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3e109f91-1e59-4a5e-8d5c-1d4823a3f353"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_FREE_H_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1840" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="69af1f1a-63d9-4afb-a3bc-c1ac128038af"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_RESERVE_TANPA_PO_H_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Grp">
+		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="30" height="14" isPrintWhenDetailOverflows="true" uuid="816d8332-05f1-4d7c-9db0-5f3edef25486"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_URUT}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="30" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="018e08e3-58ee-40d8-8c85-6046b80bb1bf"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_BPO}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="105" y="0" width="30" height="14" isPrintWhenDetailOverflows="true" uuid="d89179b6-f5dc-4f19-929d-0e493fde56bb"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="135" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="94e5488e-82fd-4eb5-b5da-530ea332942d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{YOUR_REF}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="485" y="0" width="180" height="14" isPrintWhenDetailOverflows="true" uuid="d3dcfae9-1927-4acd-8b49-bc9ce4b3e875"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="665" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="e761b5f8-f7e4-4ac1-bd78-37cd240948da"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ITEM_DESC}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="915" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="f0c0a4d1-1a68-45b6-8a71-97e6443a78da"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{UOM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="965" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="363afb95-5d21-4826-8d13-5e5de1a09cca"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{QTY_ORDER}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1015" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="03be7914-9f97-4e58-a9b0-2596e298e06b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{LANDED_PRICE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1095" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="e913fdf6-c8fb-4fd9-90e6-e329a7f973d1"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TOTAL_AMT}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1180" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="d9aa1ea3-8a9f-4757-8b96-76bb1d00d9e0"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{QTY_ON_ORDER_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1230" y="0" width="65" height="14" isPrintWhenDetailOverflows="true" uuid="79728290-f6c0-4ed6-b85f-6e3daed73378"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{QTY_READY_DISTI_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1500" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="2ea8fbf9-fe26-4a32-a9d4-e7ea8e82e0d8"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{QTY_RSRV_ON_ORDER_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1550" y="0" width="60" height="14" isPrintWhenDetailOverflows="true" uuid="7b4d9202-b0a4-40d9-94d5-8b83f8beec3e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{QTY_RSRV_READY_DISTI_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1690" y="0" width="70" height="14" isPrintWhenDetailOverflows="true" uuid="45613a4d-de4f-48fb-b667-76931b0623f6"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{QTY_FREE_H}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="1175" y="0" width="5" height="14" uuid="785bb5f2-5a8d-4557-bc9e-a663a31d95e1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1295" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="d2fdcc37-37e9-4b6e-b519-918869674022"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{OVERDUE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1420" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="6d033c73-e0e5-45f5-8e58-d0bf63588d7a"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_OUTS_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1610" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="36fffb42-3c75-48f6-bdd3-a78a410fd19f"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_RESERVE_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1760" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="5f22942a-b0bf-4980-8bd6-6c2da01af6c7"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_FREE_H}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="1345" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="54dbb5b1-325a-4c8c-9d35-86c517376504"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{OVERDUE_DATE}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="335" y="0" width="50" height="14" uuid="06055f75-85a3-4bd1-ab35-23685e53e363"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SALES}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="385" y="0" width="100" height="14" uuid="654c23cf-65d7-4c3d-9d92-3a2f626789ea"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BRANCH_NAME}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1840" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="42835db3-61d6-4a0e-a48d-a3b6d72b8083"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{AMOUNT_RESERVE_TANPA_PO_H}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="44">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="665" y="0" width="250" height="14" uuid="1f2ce972-b466-43cc-a17a-f69658e452c7"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="485" y="0" width="175" height="14" uuid="b9d3e5da-d955-4312-ae73-f343fabd3d66"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="485" y="15" width="175" height="14" uuid="e166ec50-a715-4cd9-b820-11fd0f5d285a"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Quantity On Order ]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="485" y="30" width="50" height="14" uuid="e438de48-45a6-4b1e-b3dd-742d911b243b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="535" y="30" width="50" height="14" uuid="a60e1e3b-a8e1-4d4b-9778-ac94aea9113a"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Reserve]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="585" y="30" width="75" height="14" uuid="6b8b9095-176d-4823-aa03-a4072a74f462"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Exp. Recieve]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="665" y="15" width="175" height="14" uuid="dca45ee1-edc0-491c-805e-f3537d3ddfe2"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Quantity Ready DISTI]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="715" y="30" width="50" height="14" uuid="74453191-5ee3-4f8b-bd17-174288b40a7d"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Reserve]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="765" y="30" width="75" height="14" uuid="3e127487-dd5e-4551-af8b-33101ca3b9be"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Due Date OTP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="665" y="30" width="50" height="14" uuid="e58e779e-67c3-43ce-a8a9-108a26183bbb"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty]]></text>
+				</staticText>
+				<line>
+					<reportElement x="485" y="29" width="175" height="1" uuid="704bf905-6886-47cb-89a9-3197d04a63b9"/>
+				</line>
+				<line>
+					<reportElement x="665" y="29" width="175" height="1" uuid="f63bc977-4d8e-49b1-a5e4-0af8468a3e59"/>
+				</line>
+				<staticText>
+					<reportElement x="845" y="15" width="70" height="14" uuid="f065dfff-30d7-409c-b6a2-bbb3670ea977"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty Potential]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="845" y="30" width="70" height="14" uuid="c15db661-54e3-4201-9ec9-d7b0c90c0023"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Free Stock]]></text>
+				</staticText>
+				<line>
+					<reportElement x="485" y="14" width="430" height="1" uuid="c80028b7-8a6f-4ccf-b7cc-eb45063d194f"/>
+				</line>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="15">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="485" y="1" width="179" height="14" uuid="6a5dc613-a3a9-4bf9-9fe4-acf1b6da7002"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<line>
+					<reportElement x="485" y="0" width="430" height="1" uuid="abef6291-4e75-4cee-8c4c-6c76784f7a00"/>
+				</line>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="111" splitType="Stretch">
+			<staticText>
+				<reportElement x="30" y="0" width="75" height="14" uuid="19af8fd1-8dc2-4eba-a85a-be94171f3c91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03039)]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="135" y="70" width="200" height="14" uuid="625063cd-217b-47d4-8204-a71466c56a88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="30" y="70" width="75" height="14" uuid="939a5021-3e6b-4a27-888f-8d63b126f89b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="30" height="14" uuid="1eb28282-4167-4bea-843d-9c16018c8b14"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="30" height="14" uuid="633b98c8-f814-4d1d-971b-1b2d6238141d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="84" width="75" height="14" uuid="5b8e9436-1a63-4471-9252-63a6af0541e1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="30" height="14" uuid="b2d534f6-8801-4c1e-a31f-9b9169199663"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="14" width="75" height="14" uuid="12ffe54b-26ce-44d0-a56a-eed3dd8569ee"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="135" y="84" width="200" height="14" uuid="480b9573-2133-470e-8bdd-f7a4d2cad1fc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="135" y="0" width="200" height="14" uuid="8a3e3d7a-2842-4049-8c22-59c2446b922e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Outstanding BPO - OTP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="56" width="75" height="14" uuid="88e5c0de-d841-47c0-8479-84f8c58032e2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Part Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="30" height="14" uuid="883c247d-fb31-4117-9c6c-4b18baf0e911"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="30" height="14" uuid="70ce2255-d954-48b0-9ec2-5610622a7c7e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="42" width="75" height="14" uuid="021d6361-8f32-4539-95f6-d787e6c42817"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="30" height="14" uuid="92ca899b-9723-4081-84df-bb4e28b3e950"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="14" width="30" height="14" uuid="13df207d-12d7-4ffb-ac49-5991102ecd66"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="42" width="30" height="14" uuid="e3e1164b-700f-47de-8567-696c94004cbe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="56" width="30" height="14" uuid="2ba15b84-b372-4eca-8414-d9d401603aaa"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="70" width="30" height="14" uuid="16d05ec0-3aa0-469b-9ddb-a69d79c4be32"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="84" width="30" height="14" uuid="24fbcd8c-449c-47d0-a37a-6f47ae034b09"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="28" width="30" height="14" uuid="4e116e3f-11ba-44cf-86c8-a9a39816835d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="28" width="75" height="14" uuid="73d19944-adaf-4f56-a71d-7e1cf38cc576"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Report]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="30" height="14" uuid="571b3d1c-372a-41c1-900b-dac570a15bb7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="0" width="30" height="14" uuid="b7f981bf-10c7-4972-b703-4868e280448f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="135" y="28" width="200" height="14" uuid="b4a05cab-2223-4c97-9c9c-aa7c39e1a42a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vJenisReport}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="135" y="56" width="200" height="14" uuid="8d974db9-ca5b-4f63-a704-a1a9625a7fc0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PartNo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="135" y="42" width="200" height="14" uuid="c0887079-d2e8-4a8e-a9e9-68b4c6fc3f78"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="135" y="14" width="200" height="14" uuid="c1074b2a-294d-4abe-a160-54a3f33ef925"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "DTL" ) == true]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="485" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="fa189d79-884c-4233-a2be-b19207ebc176"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="535" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="4bdf348f-320e-4a8d-b75d-b4e7baa06974"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_RSRV_ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="585" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="fcacbdd5-0dc0-4d3e-9027-5af6d4c8e148"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{EXP_RCV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="665" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="5fde0eaa-5fc4-4b90-85c2-6b2ce5713f63"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_READY_DISTI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="715" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="db2b0a84-2cc8-4f4d-a6fa-80d0fcf06a50"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_RSRV_READY_DISTI}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="765" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="be34642d-45e3-401f-b47c-dbddbb80a30d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DUE_DATE_OTP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="845" y="0" width="70" height="14" isPrintWhenDetailOverflows="true" uuid="210477c7-76f9-4526-b29a-4d209ae8b37b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_FREE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="112">
+			<staticText>
+				<reportElement x="0" y="98" width="335" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="42" width="30" height="14" uuid="c9900e06-a341-4a21-a3fc-6357c8a66c42"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="30" height="14" uuid="4478ffe1-5af2-45c4-8843-fcc724c3b41a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="30" height="14" uuid="8f553bb8-8daf-4014-9c20-92932321d013"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="14" width="75" height="14" uuid="b61e181e-d429-46a0-9959-470c48d5c157"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="135" y="70" width="200" height="14" uuid="eb6a83ac-ad1c-415a-9b79-04a19a9baf17"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="84" width="30" height="14" uuid="48fbece1-3b7b-45d7-bc2f-de5f74c89f35"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="70" width="75" height="14" uuid="f89a07e4-c3a5-4a48-a0ef-245a0df42517"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="28" width="75" height="14" uuid="a5ee1312-0127-4f0a-a8fc-a9bc27b8db05"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Jenis Report]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="42" width="75" height="14" uuid="a0e0ac74-de98-4b90-80e3-796abd058478"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="84" width="30" height="14" uuid="05677f09-44d3-457e-8426-19ac43ef93ac"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="135" y="42" width="200" height="14" uuid="8b4d2207-6537-4b06-b8c3-396a9c2a8f29"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="105" y="56" width="30" height="14" uuid="7e7336b2-2bdb-47a1-9b8f-e17b7779b7d4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="30" height="14" uuid="117dfc0d-1374-4545-972e-fd41bd4cf509"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="135" y="56" width="200" height="14" uuid="4a6b40b8-2aa0-43fb-85a1-807675b23c5a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PartNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="135" y="84" width="200" height="14" uuid="8443a769-43c9-47b5-89e9-d805dd3b893e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="30" height="14" uuid="4dcee20a-b4f9-4cea-8e03-14745a3ba681"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="135" y="28" width="200" height="14" uuid="f83df99c-3487-41b3-b967-2addf7c8f6f7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vJenisReport}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="105" y="70" width="30" height="14" uuid="981c3a90-3384-42fe-aeed-6d25999d7af2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="30" height="14" uuid="ba51a95b-36a2-41e0-b375-904dc289de89"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="0" width="30" height="14" uuid="bae9e6f2-079e-4ac9-b972-8bfca93c83b0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="135" y="14" width="200" height="14" uuid="3aa5112b-c06e-46f3-86f5-319ca6124b3f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="14" width="30" height="14" uuid="b2e7c558-818f-4b88-9681-d480f292e035"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="135" y="0" width="200" height="14" uuid="6b298c66-a289-437d-9b6b-1b64f8115b4e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Outstanding BPO - OTP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="0" width="75" height="14" uuid="190afa28-0423-4bc9-a1ca-d418d1534e2e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(03038)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="28" width="30" height="14" uuid="ee9ddbc6-036a-402a-a646-ea75c7439d3e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="84" width="75" height="14" uuid="8abd76e4-a340-47b4-9c38-3c9a1c6e3f75"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="56" width="75" height="14" uuid="076b87f8-ed24-4e8b-8208-4c4f5fc14cf7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Part Number]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="30" height="14" uuid="083224f0-d21b-47c5-93aa-e5f5aa530112"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

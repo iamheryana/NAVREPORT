@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02046_Forecast4PillarBCA" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.000000000000012"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="YearFrom" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="YearUpto" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XI.CATEGORY
+		,XI.AMOUNT_AJ
+		,CASE WHEN XI.CATEGORY = '4. EBS & PS' AND XI.AMOUNT_AJ <> 0 THEN
+			100 - LAG(XI.PCN_AJ_RUN) OVER (ORDER BY XI.CATEGORY)
+		 ELSE XI.PCN_AJ END AS PCN_AJ
+		,XI.AMOUNT_SP
+		,CASE WHEN XI.CATEGORY = '4. EBS & PS' AND XI.AMOUNT_SP <> 0 THEN
+			100 - LAG(XI.PCN_SP_RUN) OVER (ORDER BY XI.CATEGORY) ELSE XI.PCN_SP END AS PCN_SP
+		,XI.AMOUNT
+		,CASE WHEN XI.CATEGORY = '4. EBS & PS' AND XI.AMOUNT <> 0 THEN
+			100 - LAG(XI.PCN_ALL_RUN) OVER (ORDER BY XI.CATEGORY) ELSE XI.PCN_ALL END AS PCN_ALL
+FROM	(
+SELECT	XXX.CATEGORY
+		, XXX.AMOUNT_AJ
+		, XXX.PCN_AJ
+		, SUM(XXX.PCN_AJ) OVER(ORDER BY XXX.CATEGORY) AS PCN_AJ_RUN
+		, XXX.AMOUNT_SP
+		, XXX.PCN_SP
+		, SUM(XXX.PCN_SP) OVER(ORDER BY XXX.CATEGORY) AS PCN_SP_RUN
+		, XXX.AMOUNT
+		, XXX.PCN_ALL
+		, SUM(XXX.PCN_ALL) OVER(ORDER BY XXX.CATEGORY) AS PCN_ALL_RUN
+FROM	(
+			SELECT XX.CATEGORY
+					, XX.AMOUNT_AJ
+					, CASE WHEN SUM(XX.AMOUNT_AJ) OVER () = 0 THEN 0 ELSE
+						ROUND((XX.AMOUNT_AJ / SUM(XX.AMOUNT_AJ) OVER () * 100),2) END AS PCN_AJ
+					, XX.AMOUNT_SP
+					, CASE WHEN SUM(XX.AMOUNT_SP) OVER () = 0 THEN 0 ELSE
+						ROUND((XX.AMOUNT_SP / SUM(XX.AMOUNT_SP) OVER () * 100),2) END AS PCN_SP
+					, XX.AMOUNT
+					, CASE WHEN SUM(XX.AMOUNT) OVER () = 0 THEN 0 ELSE
+						ROUND((XX.AMOUNT / SUM(XX.AMOUNT) OVER () * 100),2) END AS PCN_ALL
+			FROM	(
+						SELECT	X.CATEGORY
+								,SUM(X.AMOUNT_AJ) AS AMOUNT_AJ
+								,SUM(X.AMOUNT_SP) AS AMOUNT_SP
+								,SUM(X.AMOUNT) AS AMOUNT
+						FROM	(
+									SELECT	 '1. AUTOMATIC IDENTIFICATION & DATA COLLECTION (AIDC)' AS CATEGORY
+												,0 AS AMOUNT_AJ
+												,0 AS AMOUNT_SP
+												,0 AS AMOUNT
+												, $P{YearFrom} AS EST_YEAR
+									UNION ALL
+									SELECT	 '2. WIRELESS NETWORK INFRASTRUCTURE & SECURITY' AS CATEGORY
+												,0 AS AMOUNT_AJ
+												,0 AS AMOUNT_SP
+												,0 AS AMOUNT
+												, $P{YearFrom} AS EST_YEAR
+									UNION ALL
+									SELECT	 '3. ENTERPRISE SECURITY SYSTEMS' AS CATEGORY
+												,0 AS AMOUNT_AJ
+												,0 AS AMOUNT_SP
+												,0 AS AMOUNT
+												, $P{YearFrom} AS EST_YEAR
+									UNION ALL
+									SELECT	 '4. EBS & PS' AS CATEGORY
+												,0 AS AMOUNT_AJ
+												,0 AS AMOUNT_SP
+												,0 AS AMOUNT
+												, $P{YearFrom} AS EST_YEAR
+									UNION ALL
+									SELECT	MAM.CATEGORY
+											,SUM(MAM.AMOUNT_AJ) AS AMOUNT_AJ
+											,SUM(MAM.AMOUNT_SP) AS AMOUNT_SP
+											,SUM(MAM.AMOUNT_AJ) + SUM(MAM.AMOUNT_SP) AS AMOUNT
+											,MAM.EST_YEAR
+									FROM	(
+												SELECT
+														CASE WHEN MAD.DIM_ITEM_CATEGORY  = 'HW01' THEN
+															CASE WHEN MAD.DIM_PRODUCT IN ('H005', 'H019', 'H020', 'H021') THEN '2. WIRELESS NETWORK INFRASTRUCTURE & SECURITY'
+																 WHEN MAD.DIM_PRODUCT IN ('H011', 'H022', 'H023', 'H024') THEN '3. ENTERPRISE SECURITY SYSTEMS'
+																 ELSE  '1. AUTOMATIC IDENTIFICATION & DATA COLLECTION (AIDC)'
+															END
+														ELSE
+															'4. EBS & PS'
+														END AS CATEGORY
+														, CASE WHEN MAD.COMPANY = 'AJ' THEN MAD.AMOUNT ELSE 0 END AS AMOUNT_AJ
+														, CASE WHEN MAD.COMPANY = 'SP' THEN MAD.AMOUNT ELSE 0 END AS AMOUNT_SP
+														, MAD.EST_YEAR
+												FROM	(
+															SELECT	CASE WHEN SOH.[No_ Series] = 'SBOM' THEN 'AJ' ELSE 'SP' END AS COMPANY
+																	,ISNULL(DIMD.DIM_ITEM_CATEGORY, 'HW01') AS DIM_ITEM_CATEGORY
+																	,ISNULL(DIMD.DIM_PRODUCT,'H001') AS	DIM_PRODUCT
+																	,(SOL.[Quantity] * SOL.[Unit Price])  AS AMOUNT
+																	, CASE WHEN SOL.[Shipment Date] <= GETDATE() THEN
+																		DATEPART(year, GETDATE()) ELSE  DATEPART(year, SOL.[Shipment Date])
+																	  END AS EST_YEAR
+															FROM [dbo].[BC_AUTOJAYA$Sales Header] SOH
+															INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SOL ON SOL.[Document Type] = SOH.[Document Type] AND SOL.[Document No_] = SOH.[No_]
+															LEFT JOIN	(
+																			SELECT X.[Dimension Set ID]
+																				  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+																				  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+																			FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry] X
+																			LEFT JOIN [dbo].[BC_AUTOJAYA$Dimension Value] Y ON X.[Dimension Code] = Y.[Dimension Code] AND X.[Dimension Value Code] = Y.[Code]
+																			GROUP BY [Dimension Set ID]
+																		) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
+															WHERE SOH.[No_ Series] IN ('SBOM', 'SBOMS')
+														) MAD
+												) MAM
+									GROUP BY MAM.CATEGORY, MAM.EST_YEAR
+								) X
+						WHERE	(X.EST_YEAR >= $P{YearFrom} AND X.EST_YEAR <= $P{YearUpto})
+						GROUP BY X.CATEGORY
+					) XX
+		) XXX
+		) XI]]>
+	</queryString>
+	<field name="CATEGORY" class="java.lang.String"/>
+	<field name="AMOUNT_AJ" class="java.math.BigDecimal"/>
+	<field name="PCN_AJ" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_SP" class="java.math.BigDecimal"/>
+	<field name="PCN_SP" class="java.math.BigDecimal"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="PCN_ALL" class="java.math.BigDecimal"/>
+	<variable name="AMOUNT_AJ_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_AJ}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_SP_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_SP}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="PCN_AJ_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PCN_AJ}]]></variableExpression>
+	</variable>
+	<variable name="PCN_SP_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PCN_SP}]]></variableExpression>
+	</variable>
+	<variable name="PCN_ALL_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PCN_ALL}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="114" splitType="Stretch">
+			<staticText>
+				<reportElement x="5" y="70" width="300" height="14" uuid="9483e424-46c0-4d44-8643-3c3f96650a28"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="70" width="100" height="14" uuid="2ee0cebe-ae03-443f-9841-26c824ef57f2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="28" width="300" height="14" uuid="78b74bd7-b0dd-4aa0-b67b-68c9ee3c2b04"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="56" width="300" height="14" uuid="c7b824aa-c3d5-4648-a393-892ba2ee56ea"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="305" y="56" width="100" height="14" uuid="009f9b99-2bbb-482e-8076-5d5147573804"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="305" y="99" width="100" height="14" uuid="a5438995-dd69-47e7-b6d2-557ced955a7a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[AMOUNT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="84" width="300" height="14" uuid="4dbc278d-71a3-4a86-9141-5f40a7ccf5b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[4 PILAR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="14" width="300" height="14" uuid="94f9f8e7-7ecf-49f2-944c-bcc927a374d3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02046) PROSPECT PROJECT - 4 PILAR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="14" width="100" height="14" uuid="735921a7-a3c8-4b54-9373-f5ac9eaa1daf"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="28" width="100" height="14" uuid="78af134b-8d11-4aa1-a129-2d8b4f8bb675"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="42" width="300" height="14" uuid="95affbfe-b4d8-4852-9e9c-4e794ef02fde"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Perkiraan Realisasi PO : ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="305" y="42" width="100" height="14" uuid="142dcdea-0388-41e9-b703-33e9d4260b4f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{YearFrom}.toString()+" s/d "+$P{YearUpto}.toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="0" width="300" height="14" uuid="c6fb532c-8beb-482c-80c0-133720ff03f9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="0" width="100" height="14" uuid="a28c5a7c-bbcc-4dfb-be03-678bfd7fe03b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="405" y="99" width="50" height="14" uuid="0c0fce03-cafb-43e3-a842-7a4ec60f63a3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[%]]></text>
+			</staticText>
+			<line>
+				<reportElement x="5" y="113" width="750" height="1" uuid="1fc94e9f-19b2-4ba3-a6fb-8fd8ca2793e0"/>
+			</line>
+			<staticText>
+				<reportElement x="305" y="84" width="150" height="14" uuid="32ff0aca-f2ff-4380-bb17-652bdc9f83ac"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[AJ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="99" width="300" height="14" uuid="1bb26c77-2922-46a6-98ae-510884cc88ed"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="555" y="99" width="50" height="14" uuid="bfa3996b-2508-44ec-82e5-342a760f1147"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[%]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="455" y="99" width="100" height="14" uuid="c7fa08b8-3af2-4a73-bd80-f09fdcc58d9a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[AMOUNT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="455" y="84" width="150" height="14" uuid="3a508c7b-5cfe-4266-9e2c-e30e61b7fe82"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="705" y="99" width="50" height="14" uuid="08db52c8-ac63-468a-8221-7609d77b0079"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[%]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="605" y="99" width="100" height="14" uuid="8af94971-503c-4d3b-b27b-d7a78e8140d8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[AMOUNT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="605" y="84" width="150" height="14" uuid="13f63156-6f9e-43d7-92a0-d7e44ae4b491"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<line>
+				<reportElement x="305" y="98" width="150" height="1" uuid="000eaf60-7aa5-4017-a740-85178d03601f"/>
+			</line>
+			<line>
+				<reportElement x="455" y="98" width="150" height="1" uuid="9463e38b-fee6-489b-875e-c7278ec28b70"/>
+			</line>
+			<line>
+				<reportElement x="605" y="98" width="150" height="1" uuid="c34e080d-553a-40d9-8757-1894bbf404f0"/>
+			</line>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="5" y="0" width="300" height="14" uuid="4aa5e97e-0feb-495e-a549-20b53499e4dd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CATEGORY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="305" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="e20b537e-a2b8-4e9e-9caa-d50e6bb7b9ca"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_AJ}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="455" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="75b796f2-2f30-4830-b82a-85cec0b4cb55"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_SP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="605" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="ec7a77fe-97a9-482d-a72c-38c188c9dfd5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="405" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="f5f5138d-926e-495d-9a16-c044c847cb2c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_AJ}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="555" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="1c0a282b-6d7e-4ca3-becc-cb3cc90cd2e9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_SP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="705" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="44759158-1e96-4117-ae27-5618633d16cb"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PCN_ALL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="15" splitType="Stretch">
+			<staticText>
+				<reportElement x="5" y="1" width="300" height="14" uuid="ecb4ac38-953b-425b-bd8e-5c558e892c18"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<line>
+				<reportElement x="5" y="0" width="750" height="1" uuid="45b79deb-eaa4-4ba4-bdc4-41c29c710126"/>
+			</line>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="305" y="1" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="7b26ebc2-5f92-42d6-96aa-f762cd16d3ce"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_AJ_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="455" y="1" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="65cfd94c-caa5-43dc-851f-7870f5d3b68c"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_SP_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="605" y="1" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="684eae39-9f8f-4d53-b3e2-076281f7eee6"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="405" y="1" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="f169fe5d-7632-4104-9ec0-2922e2d26bab"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PCN_AJ_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="555" y="1" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="9418fbf5-cf08-45a8-88b6-d4cde476b7c5"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PCN_SP_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="705" y="1" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="eca32ea9-3bfe-440a-adcd-15d3bfef5c83"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PCN_ALL_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="98">
+			<staticText>
+				<reportElement x="5" y="84" width="300" height="14" uuid="92bf23b7-21fa-477c-a507-40c45eff63b0"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="14" width="100" height="14" uuid="e6c41b32-d761-4eb6-8e2e-b3e8772f9567"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="28" width="100" height="14" uuid="6ac919fb-d82e-4b2e-a59c-e04184775f93"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="305" y="56" width="100" height="14" uuid="4bfbc3e3-f458-4f61-ae9b-c3f8537840fc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="56" width="300" height="14" uuid="8562a4a5-9c2f-401d-8cb4-ecfc5fa0aa0f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="305" y="42" width="100" height="14" uuid="99f9bf41-b365-4e7b-a435-f18e8518ebf3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{YearFrom}.toString()+" s/d "+$P{YearUpto}.toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="5" y="14" width="300" height="14" uuid="8a212425-8617-40c0-8bb0-84e0882fce94"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02046) PROSPECT PROJECT - 4 PILAR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="42" width="300" height="14" uuid="7c3557e6-1d43-4eae-bc2c-95f08a015c71"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Perkiraan Realisasi PO : ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="70" width="100" height="14" uuid="49c775f5-97ce-4e24-a54d-3628321d3757"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="0" width="300" height="14" uuid="7f0a7226-e73f-41fb-9989-558b88629b15"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="70" width="300" height="14" uuid="9a4f04d3-d2ad-4356-89ea-d5ba14857cae"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="0" width="100" height="14" uuid="352be6ae-4068-4978-bcdb-ed307c767e2d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="5" y="28" width="300" height="14" uuid="05125dda-2469-460f-a66a-0c646ef13cf0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="305" y="84" width="100" height="14" uuid="ea167b75-aaaf-4eb8-8b77-c8965faf7376"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

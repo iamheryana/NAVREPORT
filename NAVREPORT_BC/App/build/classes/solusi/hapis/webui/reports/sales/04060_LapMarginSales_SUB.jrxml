@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04060_LapMarginSales_SUB" language="groovy" pageWidth="540" pageHeight="595" orientation="Landscape" columnWidth="540" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.000000000000012"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvTo" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	X.NAMA_ACC
+		,SUM(X.DEBIT) AS DEBIT
+		,SUM(X.CREDIT) AS CREDIT
+		,SUM(X.TOTAL) AS TOTAL
+FROM	(
+			SELECT
+					GLA.[Name] AS NAMA_ACC
+					,SUM([Debit Amount]) AS DEBIT
+					,SUM([Credit Amount]) AS CREDIT
+					,SUM([Amount]) AS TOTAL
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN  [dbo].[AUTOJAYA$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+			WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+					AND (GLE.[Posting Date] >= $P{TglInvFrom} AND GLE.[Posting Date] <= $P{TglInvTo})
+			GROUP BY [G_L Account No_],GLA.[Name]
+			UNION ALL
+			SELECT
+					GLA.[Name] AS NAMA_ACC
+					,SUM([Debit Amount]) AS DEBIT
+					,SUM([Credit Amount]) AS CREDIT
+					,SUM([Amount]) AS TOTAL
+			FROM [dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN  [dbo].[SOLUSI$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+			WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+					AND (GLE.[Posting Date] >= $P{TglInvFrom} AND GLE.[Posting Date] <= $P{TglInvTo})
+			GROUP BY [G_L Account No_],GLA.[Name]
+		) X
+GROUP BY X.NAMA_ACC]]>
+	</queryString>
+	<field name="NAMA_ACC" class="java.lang.String"/>
+	<field name="DEBIT" class="java.math.BigDecimal"/>
+	<field name="CREDIT" class="java.math.BigDecimal"/>
+	<field name="TOTAL" class="java.math.BigDecimal"/>
+	<variable name="DEBIT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{DEBIT}]]></variableExpression>
+	</variable>
+	<variable name="CREDIT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{CREDIT}]]></variableExpression>
+	</variable>
+	<variable name="TOTAL_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="14">
+			<staticText>
+				<reportElement x="300" y="0" width="80" height="14" uuid="f9102a5e-4e7a-42c7-a8cb-e280de2ab1c5"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DEBET]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="0" width="80" height="14" uuid="f78cb958-401f-4602-b84d-a5ddd08e44ea"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[KREDIT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="460" y="0" width="80" height="14" uuid="47c47808-e739-4322-87d7-43c311f27a7f"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+		</band>
+	</title>
+	<summary>
+		<band height="14">
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="cf00fbd2-562c-4d59-a329-93d4d6001196"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[EXCHANGE GAIN/LOSS]]></text>
+			</staticText>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="300" y="0" width="80" height="14" uuid="6ea315cc-8d17-4d30-bddd-ea4db7c181fd"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{DEBIT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="380" y="0" width="80" height="14" uuid="868da272-a1de-47a6-8836-854fd6f22fc5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CREDIT_1}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="460" y="0" width="80" height="14" uuid="c65a4e6c-a913-4209-bcc1-d7d5c35f510e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{TOTAL_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

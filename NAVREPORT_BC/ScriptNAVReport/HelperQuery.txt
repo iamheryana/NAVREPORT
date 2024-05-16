@@ -1,0 +1,176 @@
+SELECT	
+		XX.NO_BSO
+		,XX.NO_INV
+		,'UPDATE t02rekapcosting SET no_bso = '''+XX.NO_BSO+''' WHERE no_invoice = '''+XX.NO_INV+''';' as UPd
+		
+
+FROM	(
+			SELECT
+					'AUTOJAYA' AS COMPANY
+					,SUBSTRING(X.NO_INV,1,4) AS REG
+					,X.SALES
+					,SLS.[Name] AS SALES_NAME
+					,BSO.NO_BSO
+					,X.NO_SO
+					,X.TGL_SO
+					,X.BILL_TO_NAME
+					,X.NO_PO_CUST
+					,CASE WHEN X.VALUTA <> '' THEN X.NILAI_INVOICE ELSE NULL END AS NILAI_INVOICE_USD
+					,CASE WHEN X.VALUTA = '' THEN X.NILAI_INVOICE ELSE NULL END AS NILAI_INVOICE_IDR
+					,X.NO_INV
+					,X.TGL_INV
+					,LN.TGL_LUNAS
+			FROM	(
+						SELECT
+								CASE WHEN SUBSTRING(SSIH.[No_], 1, 2) = 'UM' THEN  SSIH.[Prepayment Order No_] ELSE SSIH.[Order No_] END AS NO_SO
+								,SSIH.[Order Date] AS TGL_SO
+								,SSIH.[Posting Date] AS TGL_INV
+								,SSIH.[No_] AS NO_INV
+								,SSIH.[Salesperson Code] AS SALES
+								,SSIH.[Sell-to Customer No_] AS SELL_TO_CODE
+								,SSIH.[Sell-to Customer Name] AS SELL_TO_NAME
+								,SSIH.[Bill-to Customer No_] AS BILL_TO_CODE
+								,SSIH.[Bill-to Name] AS BILL_TO_NAME
+								,SSIH.[Posting Description] AS DESCRIPTIONS
+								,SSIH.[External Document No_] AS NO_PO_CUST
+								,SSIH.[Faktur Pajak No_] AS NO_FP
+								,SSIH.[Currency Code] AS VALUTA
+								,SSID.NILAI_INVOICE
+						FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Invoice Header] SSIH
+						INNER JOIN (
+										SELECT [Document No_],
+												SUM([Amount]) AS NILAI_INVOICE
+										FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Invoice Line]
+										GROUP BY [Document No_]
+									)SSID ON SSID.[Document No_] = SSIH.[No_]
+						WHERE SUBSTRING(SSIH.[No_], 1, 2) NOT IN ('8S', '9S')
+								AND SUBSTRING(SSIH.[No_], 4, 1) <> 'S'
+								AND SSIH.[Sell-to Customer No_] NOT IN ('AUJA001', 'AUJA002', 'SOPE001')
+					) X
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = X.NO_INV
+			LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = X.SALES
+			LEFT JOIN (
+						SELECT	SLA.[Document No_] AS NO_SO
+								,MAX(SLA.[Blanket Order No_]) AS NO_BSO
+								,SUM(SLA.[Amount]) AS AMT_PO
+						FROM	(
+									SELECT [No_], MAX([Version No_]) AS [Version No_]
+									FROM [AUTOJAYA].[dbo].[AUTOJAYA$Sales Header Archive]
+									GROUP BY [No_]
+								) SHA
+						INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Sales Line Archive] SLA ON SLA.[Document No_] = SHA.[No_] AND SLA.[Version No_] = SHA.[Version No_]
+						GROUP BY SLA.[Document No_]
+					  ) BSO ON BSO.NO_SO = X.NO_SO
+			LEFT JOIN (
+							SELECT
+									   CLE.[Document No_] AS NO_INV
+									  ,CLE.[External Document No_] AS NO_PO_CUST
+									  ,CLD.RMN_AMOUNT
+									  ,CLD2.TGL_LUNAS
+									  ,CLD2.NO_PELUNASAN
+							FROM [AUTOJAYA].[dbo].[AUTOJAYA$Cust_ Ledger Entry] CLE
+							LEFT JOIN (
+										SELECT	CLED.[Cust_ Ledger Entry No_]
+												,SUM(CLED.[Amount]) AS RMN_AMOUNT
+										FROM [AUTOJAYA].[dbo].[AUTOJAYA$Detailed Cust_ Ledg_ Entry] CLED
+										GROUP BY CLED.[Cust_ Ledger Entry No_]
+									  )CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+							LEFT JOIN (
+										SELECT	CLED2.[Cust_ Ledger Entry No_]
+												,MAX(CLED2.[Posting Date]) AS TGL_LUNAS
+												,MAX(CLED2.[Document No_]) AS NO_PELUNASAN
+										FROM [AUTOJAYA].[dbo].[AUTOJAYA$Detailed Cust_ Ledg_ Entry] CLED2
+										WHERE CLED2.[Document Type] <> 2
+										GROUP BY CLED2.[Cust_ Ledger Entry No_]
+									  ) CLD2 ON CLD2.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+							WHERE CLD.RMN_AMOUNT = 0
+					  )	LN ON LN.NO_INV = X.NO_INV
+			WHERE CRM.[No_] IS NULL 
+			UNION ALL
+			SELECT
+					'SOLUSI' AS COMPANY
+					,SUBSTRING(X.NO_INV,1,4) AS REG
+					,X.SALES
+					,SLS.[Name] AS SALES_NAME
+					,BSO.NO_BSO
+					,X.NO_SO
+					,X.TGL_SO
+					,X.BILL_TO_NAME
+					,X.NO_PO_CUST
+					,CASE WHEN X.VALUTA <> '' THEN X.NILAI_INVOICE ELSE NULL END AS NILAI_INVOICE_USD
+					,CASE WHEN X.VALUTA = '' THEN X.NILAI_INVOICE ELSE NULL END AS NILAI_INVOICE_IDR
+					,X.NO_INV
+					,X.TGL_INV
+					,LN.TGL_LUNAS
+			FROM	(
+						SELECT
+								CASE WHEN SUBSTRING(SSIH.[No_], 1, 2) = 'UM' THEN  SSIH.[Prepayment Order No_] ELSE SSIH.[Order No_] END AS NO_SO
+								,SSIH.[Order Date] AS TGL_SO
+								,SSIH.[Posting Date] AS TGL_INV
+								,SSIH.[No_] AS NO_INV
+								,SSIH.[Salesperson Code] AS SALES
+								,SSIH.[Sell-to Customer No_] AS SELL_TO_CODE
+								,SSIH.[Sell-to Customer Name] AS SELL_TO_NAME
+								,SSIH.[Bill-to Customer No_] AS BILL_TO_CODE
+								,SSIH.[Bill-to Name] AS BILL_TO_NAME
+								,SSIH.[Posting Description] AS DESCRIPTIONS
+								,SSIH.[External Document No_] AS NO_PO_CUST
+								,SSIH.[Faktur Pajak No_] AS NO_FP
+								,SSIH.[Currency Code] AS VALUTA
+								,SSID.NILAI_INVOICE
+						FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Invoice Header] SSIH
+						INNER JOIN (
+										SELECT [Document No_],
+												SUM([Amount]) AS NILAI_INVOICE
+										FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Invoice Line]
+										GROUP BY [Document No_]
+									)SSID ON SSID.[Document No_] = SSIH.[No_]
+						WHERE SUBSTRING(SSIH.[No_], 1, 2) NOT IN ('8S', '9S')
+								AND SUBSTRING(SSIH.[No_], 4, 1) <> 'S'
+								AND SSIH.[Sell-to Customer No_] NOT IN ('AUJA001', 'AUJA002', 'SOPE001')
+					) X
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = X.NO_INV
+			LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Salesperson_Purchaser] SLS ON SLS.[Code] = X.SALES
+			LEFT JOIN (
+						SELECT	SLA.[Document No_] AS NO_SO
+								,MAX(SLA.[Blanket Order No_]) AS NO_BSO
+								,SUM(SLA.[Amount]) AS AMT_PO
+						FROM	(
+									SELECT [No_], MAX([Version No_]) AS [Version No_]
+									FROM [AUTOJAYA].[dbo].[SOLUSI$Sales Header Archive]
+									GROUP BY [No_]
+								) SHA
+						INNER JOIN [AUTOJAYA].[dbo].[SOLUSI$Sales Line Archive] SLA ON SLA.[Document No_] = SHA.[No_] AND SLA.[Version No_] = SHA.[Version No_]
+						GROUP BY SLA.[Document No_]
+					  ) BSO ON BSO.NO_SO = X.NO_SO
+			LEFT JOIN (
+							SELECT
+									   CLE.[Document No_] AS NO_INV
+									  ,CLE.[External Document No_] AS NO_PO_CUST
+									  ,CLD.RMN_AMOUNT
+									  ,CLD2.TGL_LUNAS
+									  ,CLD2.NO_PELUNASAN
+							FROM [AUTOJAYA].[dbo].[SOLUSI$Cust_ Ledger Entry] CLE
+							LEFT JOIN (
+										SELECT	CLED.[Cust_ Ledger Entry No_]
+												,SUM(CLED.[Amount]) AS RMN_AMOUNT
+										FROM [AUTOJAYA].[dbo].[SOLUSI$Detailed Cust_ Ledg_ Entry] CLED
+										GROUP BY CLED.[Cust_ Ledger Entry No_]
+									  )CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+							LEFT JOIN (
+										SELECT	CLED2.[Cust_ Ledger Entry No_]
+												,MAX(CLED2.[Posting Date]) AS TGL_LUNAS
+												,MAX(CLED2.[Document No_]) AS NO_PELUNASAN
+										FROM [AUTOJAYA].[dbo].[SOLUSI$Detailed Cust_ Ledg_ Entry] CLED2
+										WHERE CLED2.[Document Type] <> 2
+										GROUP BY CLED2.[Cust_ Ledger Entry No_]
+									  ) CLD2 ON CLD2.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+							WHERE CLD.RMN_AMOUNT = 0
+					  )	LN ON LN.NO_INV = X.NO_INV
+			WHERE CRM.[No_] IS NULL 
+		) XX
+
+WHERE
+	(SUBSTRING(CONVERT(varchar, XX.TGL_INV, 105), 7,4) >= 2017) AND
+	(XX.NILAI_INVOICE_IDR > 0 OR XX.NILAI_INVOICE_USD > 0) and
+	XX.NO_BSO is not null

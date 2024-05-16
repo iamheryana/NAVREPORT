@@ -1,0 +1,1077 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01073_ArusKasPiutang" language="groovy" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="842" leftMargin="0" rightMargin="0" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+	<property name="ireport.zoom" value="1.6105100000000045"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="229"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XXX.GROUP_MAIN
+		, XXX.GROUPS
+		,	CASE	WHEN XXX.GROUPS = 'AA' THEN 'Piutang Sesuai Rumus'
+					WHEN XXX.GROUPS = 'BB' THEN 'Penerimaan  Kas & Bank'
+					WHEN XXX.GROUPS = 'CC' THEN 'Offset Kelebihan Unpplied Payment'
+					WHEN XXX.GROUPS = 'DD' THEN 'Selisih Biaya Bank / Lainnya'
+					WHEN XXX.GROUPS = 'EE' THEN 'Intercoy'
+					WHEN XXX.GROUPS = 'FF' THEN 'PPh Dipotong Pihak Lain / PPn tidak dipungut'
+					ELSE ''
+			END AS GROUPS_DESC
+		, XXX.SUB_GROUP
+		, XXX.SUB_GROUP_DESC
+		, XXX.SUB_DTL
+		, XXX.AMOUNT_TOTAL
+		, XXX.AMT_USAHA
+		, XXX.AMT_USAHA_HIT
+		, XXX.AMT_USAHA_AR
+		, XXX.AMT_USAHA_UP
+		, XXX.AMT_NON_USAHA
+FROM	(
+SELECT	'X1' AS GROUP_MAIN
+		,'AA' AS GROUPS
+		, 1 AS SUB_GROUP
+		,'Saldo Awal - Piutang Dagang' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, SUM([Amount]) AS AMT_USAHA
+		, SUM([Amount]) AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM [dbo].[AUTOJAYA$G_L Entry]
+WHERE	[G_L Account No_] IN ('114.110.00', '114.140.00')
+		AND [Posting Date] < $P{TglFrom}
+UNION ALL
+SELECT	'X1' AS GROUP_MAIN
+		,'AA' AS GROUPS
+		, 2 AS SUB_GROUP
+		,'Sales' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, SUM([Amount]) * -1  AS AMT_USAHA
+		, SUM([Amount]) * -1  AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM [dbo].[AUTOJAYA$G_L Entry]
+WHERE	([G_L Account No_] BETWEEN '400.110.00' AND'420.110.01')
+		AND ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+UNION ALL
+SELECT	'X1' AS GROUP_MAIN
+		,'AA' AS GROUPS
+		, 3 AS SUB_GROUP
+		,'PPN Keluaran' AS SUB_GROUP_DESC
+		,CASE WHEN X.SUB_DTL = 'A' THEN 'A. PPN Keluaran 10 %' ELSE 'B. PPN Keluaran WAPU / KWS. BERIKAT / BENDAHARA' END AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, FLOOR(CASE WHEN X.SUB_DTL = 'A' THEN SUM(SUM(X.AMOUNT)) OVER (PARTITION BY 1) * -1 ELSE SUM(X.AMOUNT) END) AS AMT_USAHA
+		, FLOOR(CASE WHEN X.SUB_DTL = 'A' THEN SUM(SUM(X.AMOUNT)) OVER (PARTITION BY 1) * -1 ELSE SUM(X.AMOUNT) END) AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM	(
+			SELECT 'A' AS SUB_DTL, 0 AS AMOUNT
+			UNION ALL
+			SELECT 'B' AS SUB_DTL, 0 AS AMOUNT
+			UNION ALL
+			SELECT	CASE WHEN PPN.PPN_ID = 'EFID0003' THEN 'A' ELSE 'B' END AS SUB_DTL
+					, GLE.[Amount] AS AMOUNT
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN	(
+							SELECT [No_]
+									, [E-Faktur Register Mapping ID] AS PPN_ID
+							FROM [dbo].[AUTOJAYA$E-Faktur Register Header - n]
+							WHERE [Document Type] = 5
+							UNION ALL
+							SELECT	SCM.[No_]
+									, EFK.[E-Faktur Register Mapping ID] AS PPN_ID
+							FROM [dbo].[AUTOJAYA$Sales Cr_Memo Header] SCM
+							LEFT JOIN  [dbo].[AUTOJAYA$E-Faktur Register Header - n] EFK ON EFK.[No_] = SCM.[Applies-to Doc_ No_] AND  EFK.[Document Type] = 5
+						) PPN ON PPN.[No_] = GLE.[Document No_]
+			WHERE (GLE.[G_L Account No_]='230.190.00')
+					AND (GLE.[Posting Date] >= $P{TglFrom} AND GLE.[Posting Date] <= $P{TglUpto})
+					AND GLE.[Source Code] = 'SALES'
+		) X
+GROUP BY X.SUB_DTL
+UNION ALL
+SELECT	'X1' AS GROUP_MAIN
+		,'AA' AS GROUPS
+		, 4 AS SUB_GROUP
+		,'Saldo Akhir - Piutang Dagang' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, SUM([Amount]) * -1 AS AMT_USAHA
+		, SUM([Amount]) * -1 AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM [dbo].[AUTOJAYA$G_L Entry]
+WHERE [G_L Account No_] IN ('114.110.00', '114.140.00')
+		AND [Posting Date] <= $P{TglUpto}
+UNION ALL
+SELECT	'X2' AS GROUP_MAIN
+		,'BB' AS GROUPS
+		, HDR.NO_URUT AS SUB_GROUP
+		, HDR.KETERANGAN AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, HDR.AMOUNT_TOTAL AS AMOUNT_TOTAL
+		, (DTL.AMT_USAHA_AR + DTL.AMT_USAHA_UP) AS AMT_USAHA
+		, (DTL.AMT_USAHA_AR + DTL.AMT_USAHA_UP) * -1 AS AMT_USAHA_HIT
+		, DTL.AMT_USAHA_AR AS AMT_USAHA_AR
+		, DTL.AMT_USAHA_UP AS AMT_USAHA_UP
+		, DTL.AMT_NON_USAHA
+FROM	(
+			SELECT	ROW_NUMBER() OVER (PARTITION BY 1 ORDER BY  GLE.[G_L Account No_], BAC.[No_]) AS NO_URUT
+					,BAC.[No_] AS KODE_BANK
+					,BAC.[Name] AS KETERANGAN
+					,SUM(GLE.[Debit Amount]) AS AMOUNT_TOTAL
+			FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN [dbo].[AUTOJAYA$Bank Account] BAC ON BAC.[No_] = GLE.[Source No_]
+			WHERE	(
+						(GLE.[G_L Account No_] BETWEEN '110.110.00' AND '110.150.00') OR
+						(GLE.[G_L Account No_] BETWEEN '112.110.00' AND '112.162.00')
+					)
+					AND (GLE.[Posting Date] >= $P{TglFrom} AND GLE.[Posting Date] <= $P{TglUpto})
+					AND GLE.[Debit Amount] <> 0
+			GROUP BY BAC.[Name], BAC.[No_], GLE.[G_L Account No_]
+		) HDR
+LEFT JOIN	(
+				SELECT	XX.[Source No_]
+						, SUM(CASE WHEN (XX.ADA_PIUTANG_DAGANG + XX.ADA_PIUTANG_DAGANG_INTERCOY) > 0 THEN XX.[Debit Amount] ELSE 0 END) AS AMT_USAHA_AR
+						, SUM(CASE WHEN (XX.ADA_UNAPPLIED_PAYMENT) > 0 THEN XX.[Debit Amount] ELSE 0 END) AS AMT_USAHA_UP
+						, SUM(CASE WHEN (XX.ADA_PIUTANG_DAGANG + XX.ADA_PIUTANG_DAGANG_INTERCOY + XX.ADA_UNAPPLIED_PAYMENT) = 0 THEN XX.[Debit Amount] ELSE 0 END) AS AMT_NON_USAHA
+				FROM	(
+							SELECT	X.[Posting Date]
+									, X.[Document No_]
+									, X.[Transaction No_]
+									, X.[G_L Account No_]
+									, X.[Source No_]
+									, X.JENIS_ACC
+									, SUM(X.ADA_PIUTANG_DAGANG) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG
+									, SUM(X.ADA_PIUTANG_DAGANG_INTERCOY) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG_INTERCOY
+									, SUM(X.ADA_UNAPPLIED_PAYMENT) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_UNAPPLIED_PAYMENT
+									, X.[Debit Amount]
+							FROM	(
+										SELECT	[Posting Date]
+												, [Document No_]
+												, [Transaction No_]
+												, [G_L Account No_]
+												, [Source No_]
+												,	CASE WHEN	([G_L Account No_] BETWEEN '110.110.00' AND '110.150.00') OR
+																([G_L Account No_] BETWEEN '112.110.00' AND '112.162.00') THEN
+														'BANK'
+													ELSE
+														'NON' END AS JENIS_ACC
+												, CASE WHEN [G_L Account No_] = '114.110.00' THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG
+												, CASE WHEN [G_L Account No_] = '114.140.00'  THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG_INTERCOY
+												, CASE WHEN [G_L Account No_] = '220.185.00' THEN 1 ELSE 0 END AS ADA_UNAPPLIED_PAYMENT
+												, SUM([Debit Amount]) AS [Debit Amount]
+												, SUM([Credit Amount]) AS [Credit Amount]
+										FROM [dbo].[AUTOJAYA$G_L Entry]
+										WHERE	([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+										GROUP BY [Posting Date]
+												, [Document No_]
+												, [Transaction No_]
+												, [G_L Account No_]
+												, [Source No_]
+									) X
+						) XX
+				WHERE XX.JENIS_ACC =  'BANK'
+				GROUP BY XX.[Source No_]
+			) DTL ON DTL.[Source No_] = HDR.KODE_BANK
+UNION ALL
+SELECT	'X2' AS GROUP_MAIN
+		,'CC' AS GROUPS
+		, 1 AS SUB_GROUP
+		,'Offset Kelebihan Unpplied Payment' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, 0 AS AMT_USAHA
+		, 0 * -1 AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+UNION ALL
+SELECT	'X2' AS GROUP_MAIN
+		,'DD' AS GROUPS
+		, 1 AS SUB_GROUP
+		,'Selisih Biaya Bank / Lainnya' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, SUM(XXX.SELISIH) AS AMT_USAHA
+		, SUM(XXX.SELISIH) * -1 AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM	(
+			SELECT	XX.*
+					,	SUM(XX.[Debit Amount]) OVER  (PARTITION BY XX.[Posting Date], XX.[Document No_] , XX.[Transaction No_], XX.GL_ACC)
+						-
+						SUM(XX.[Credit Amount]) OVER  (PARTITION BY XX.[Posting Date], XX.[Document No_] , XX.[Transaction No_], XX.GL_ACC)
+						AS SELISIH
+			FROM	(
+						SELECT	X.[Posting Date]
+								, X.[Document No_]
+								, X.[Transaction No_]
+								, X.[G_L Account No_]
+								, X.GL_ACC
+								, SUM(X.ADA_KASBANK) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_KASBANK
+								, SUM(X.ADA_AR) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_AR
+								, SUM(X.ADA_AR_IC) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_AR_IC
+								, SUM(X.ADA_UN_PAY) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_UN_PAY
+								, X.[Debit Amount]
+								, X.[Credit Amount]
+						FROM	(
+									SELECT	[Posting Date]
+											, [Document No_]
+											, [Transaction No_]
+											, [G_L Account No_]
+											, CASE WHEN	(	([G_L Account No_] BETWEEN '110.110.00' AND '110.150.00') OR
+															([G_L Account No_] BETWEEN '112.110.00' AND '112.162.00') OR
+															[G_L Account No_] = '114.110.00' OR
+															[G_L Account No_] = '114.140.00' OR
+															[G_L Account No_] = '220.185.00' OR
+															[G_L Account No_] = '118.215.00') THEN 'ACC' ELSE 'NON' END AS GL_ACC
+											, CASE WHEN	(	([G_L Account No_] BETWEEN '110.110.00' AND '110.150.00') OR
+															([G_L Account No_] BETWEEN '112.110.00' AND '112.162.00')
+														) THEN 1 ELSE 0 END AS ADA_KASBANK
+											, CASE WHEN [G_L Account No_] = '114.110.00' THEN 1 ELSE 0 END AS ADA_AR
+											, CASE WHEN [G_L Account No_] = '114.140.00'  THEN 1 ELSE 0 END AS ADA_AR_IC
+											, CASE WHEN [G_L Account No_] = '220.185.00' THEN 1 ELSE 0 END AS ADA_UN_PAY
+											, SUM([Debit Amount]) AS [Debit Amount]
+											, SUM([Credit Amount]) AS [Credit Amount]
+									FROM [dbo].[AUTOJAYA$G_L Entry]
+									WHERE	([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+											AND [Source Code] NOT IN ( 'SALES' , 'INVTPCOST', 'PURCHASES', 'FAGLJNL', 'PAYMENTJNL')
+									GROUP BY [Posting Date]
+											, [Document No_]
+											, [Transaction No_]
+											, [G_L Account No_]
+								) X
+		) XX
+WHERE	(
+			(XX.ADA_KASBANK > 0 AND XX.ADA_AR_IC > 0)
+			OR
+			(XX.ADA_KASBANK > 0 AND XX.ADA_UN_PAY > 0)
+			OR
+			(XX.ADA_KASBANK > 0 AND XX.ADA_AR > 0)
+		)
+		) XXX
+WHERE	XXX.SELISIH <> 0 AND
+		XXX.GL_ACC = 'NON'
+UNION ALL
+SELECT	'X2' AS GROUP_MAIN
+		,'EE' AS GROUPS
+		, X.URUTAN AS SUB_GROUP
+		, CASE	WHEN X.URUTAN = 1 THEN 'Pelunasan Piutang - Non Bank (Intern)'
+				WHEN X.URUTAN = 2 THEN 'Pelunasan Piutang - Non Bank (Antar Company)'
+				ELSE '' END AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, SUM(X.AMOUNT) AS AMT_USAHA
+		, SUM(X.AMOUNT) * -1 AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM	(
+			SELECT 1 AS URUTAN, 0 AS AMOUNT
+			UNION ALL
+			SELECT 2 AS URUTAN, 0 AS AMOUNT
+			UNION ALL
+			SELECT	 CASE	WHEN [Source No_] IN ('AUJA001', 'AUJA002') THEN 1
+							WHEN [Source No_] = 'SOPE001' THEN 2
+							ELSE 3 END AS URUTAN
+					, [Amount] * -1 AS AMOUNT
+			FROM [dbo].[AUTOJAYA$G_L Entry]
+			WHERE	(
+						([G_L Account No_] BETWEEN '400.110.00' AND'420.110.01') OR
+						[G_L Account No_] ='230.190.00'
+					)
+					AND ([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+					AND [Source No_] IN ('AUJA001', 'AUJA002','SOPE001')
+		) X
+GROUP BY X.URUTAN
+UNION ALL
+SELECT	'X3' AS GROUP_MAIN
+		,'FF' AS GROUPS
+		, 1 AS SUB_GROUP
+		, 'PPh Pasal 22 Bendahara' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+		, 0 AS AMT_USAHA
+		, 0 AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+UNION ALL
+SELECT	'X3' AS GROUP_MAIN
+		,'FF' AS GROUPS
+		, 2 AS SUB_GROUP
+		, 'PPh Pasal 23' AS SUB_GROUP_DESC
+		, '' AS SUB_DTL
+		, 0 AS AMOUNT_TOTAL
+			, SUM(CASE WHEN (XX.ADA_PIUTANG_DAGANG + XX.ADA_PIUTANG_DAGANG_INTERCOY + XX.ADA_UNAPPLIED_PAYMENT) > 0 THEN XX.[Debit Amount] ELSE 0 END) AS AMT_USAHA
+		, SUM(CASE WHEN (XX.ADA_PIUTANG_DAGANG + XX.ADA_PIUTANG_DAGANG_INTERCOY + XX.ADA_UNAPPLIED_PAYMENT) > 0 THEN XX.[Debit Amount] ELSE 0 END) * -1 AS AMT_USAHA_HIT
+		, 0 AS AMT_USAHA_AR
+		, 0 AS AMT_USAHA_UP
+		, 0 AS AMT_NON_USAHA
+FROM	(
+			SELECT	X.[Posting Date]
+					, X.[Document No_]
+					, X.[Transaction No_]
+					, X.[G_L Account No_]
+					, X.[Source No_]
+					, X.JENIS_ACC
+					, SUM(X.ADA_PIUTANG_DAGANG) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG
+					, SUM(X.ADA_PIUTANG_DAGANG_INTERCOY) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_PIUTANG_DAGANG_INTERCOY
+					, SUM(X.ADA_UNAPPLIED_PAYMENT) OVER (PARTITION BY X.[Posting Date], X.[Document No_] , X.[Transaction No_]) AS ADA_UNAPPLIED_PAYMENT
+					, X.[Debit Amount]
+			FROM	(
+						SELECT	[Posting Date]
+								, [Document No_]
+								, [Transaction No_]
+								, [G_L Account No_]
+								, [Source No_]
+								,	CASE WHEN [G_L Account No_] = '118.215.00' THEN
+										'PPH23'
+									ELSE
+										'NON' END AS JENIS_ACC
+								, CASE WHEN [G_L Account No_] = '114.110.00' THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG
+								, CASE WHEN [G_L Account No_] = '114.140.00'  THEN 1 ELSE 0 END AS ADA_PIUTANG_DAGANG_INTERCOY
+								, CASE WHEN [G_L Account No_] = '220.185.00' THEN 1 ELSE 0 END AS ADA_UNAPPLIED_PAYMENT
+								, SUM([Debit Amount]) AS [Debit Amount]
+								, SUM([Credit Amount]) AS [Credit Amount]
+						FROM [dbo].[AUTOJAYA$G_L Entry]
+						WHERE	([Posting Date] >= $P{TglFrom} AND [Posting Date] <= $P{TglUpto})
+						GROUP BY [Posting Date]
+								, [Document No_]
+								, [Transaction No_]
+								, [G_L Account No_]
+								, [Source No_]
+					) X
+		) XX
+WHERE XX.JENIS_ACC =  'PPH23'
+		) XXX
+WHERE $P{Company} = 'AUTOJAYA']]>
+	</queryString>
+	<field name="GROUP_MAIN" class="java.lang.String"/>
+	<field name="GROUPS" class="java.lang.String"/>
+	<field name="GROUPS_DESC" class="java.lang.String"/>
+	<field name="SUB_GROUP" class="java.lang.Long"/>
+	<field name="SUB_GROUP_DESC" class="java.lang.String"/>
+	<field name="SUB_DTL" class="java.lang.String"/>
+	<field name="AMOUNT_TOTAL" class="java.math.BigDecimal"/>
+	<field name="AMT_USAHA" class="java.math.BigDecimal"/>
+	<field name="AMT_USAHA_HIT" class="java.math.BigDecimal"/>
+	<field name="AMT_USAHA_AR" class="java.math.BigDecimal"/>
+	<field name="AMT_USAHA_UP" class="java.math.BigDecimal"/>
+	<field name="AMT_NON_USAHA" class="java.math.BigDecimal"/>
+	<sortField name="GROUP_MAIN"/>
+	<sortField name="GROUPS"/>
+	<sortField name="SUB_GROUP"/>
+	<sortField name="SUB_DTL"/>
+	<variable name="AMT_USAHA_1" class="java.math.BigDecimal" resetType="Group" resetGroup="SubGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_TOTAL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="SubGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_AR_1" class="java.math.BigDecimal" resetType="Group" resetGroup="SubGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA_AR}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_UP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="SubGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA_UP}]]></variableExpression>
+	</variable>
+	<variable name="AMT_NON_USAHA_1" class="java.math.BigDecimal" resetType="Group" resetGroup="SubGroup" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_NON_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_TOTAL_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_3" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_AR_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA_AR}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_UP_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA_UP}]]></variableExpression>
+	</variable>
+	<variable name="AMT_NON_USAHA_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_NON_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_4" class="java.math.BigDecimal" resetType="Group" resetGroup="Groups" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_5" class="java.math.BigDecimal" resetType="Group" resetGroup="GroupMain" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA}]]></variableExpression>
+	</variable>
+	<variable name="AMT_USAHA_HIT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_USAHA_HIT}]]></variableExpression>
+	</variable>
+	<group name="GroupMain">
+		<groupExpression><![CDATA[$F{GROUP_MAIN}]]></groupExpression>
+		<groupFooter>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{GROUP_MAIN}.equals( "X2" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="300" height="14" uuid="630c7059-fbb8-4843-9a8f-f8379101ea1c"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total seluruh pelunasan Piutang (Bank dan Non Bank(offset))]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="d6bd1e25-3140-4cc5-8faf-f0ec0cf006df"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_5}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="6ebce493-3e8e-437c-ac3f-e96d3186dc97"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Groups">
+		<groupExpression><![CDATA[$F{GROUPS}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "AA" ) == true ||
+$F{GROUPS}.equals( "EE" ) == true ||
+$F{GROUPS}.equals( "FF" ) == true]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="0" width="300" height="14" uuid="d7e956d3-b42f-49d1-8a67-34b989c05567"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{GROUPS_DESC}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "BB" ) == true]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="14" width="200" height="14" uuid="019fba0c-04b0-47e9-8d7b-af238f0e8d93"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{GROUPS_DESC}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="200" y="14" width="100" height="14" uuid="e36c8caa-f522-4dcf-8e37-1cb2e41626e0"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total Penerimaan]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="14" width="100" height="14" uuid="5e2049fc-4f1f-4602-a419-1246152c7194"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[AR]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="400" y="14" width="100" height="14" uuid="4903c67e-c420-4dde-bf1c-c22d166c2a59"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Unapplied Payment]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="14" width="100" height="14" uuid="0254fea3-43e1-4ca2-aee7-c1265cca7845"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Non Peredaran Usaha]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="0" width="200" height="14" uuid="57e7cba0-4455-4d65-a92a-991aae100b85"/>
+					<textElement textAlignment="Center">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Peredaran Usaha]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="200" height="14" uuid="2331f31b-9e84-4790-886e-11da865ca258"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="200" y="0" width="100" height="14" uuid="94a4fe6e-6ffb-429b-811c-49d09302c333"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="0" width="100" height="14" uuid="790e9fab-bbac-41d9-9393-354efe68138a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "AA" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="14" width="200" height="14" uuid="70445564-fc23-4cd1-be65-e5369f25b9da"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="200" height="14" uuid="9ddb4e30-434c-46cb-add7-a3fa31a64450"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Piutang yang telah dilunasi]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="06c3a5fd-f164-4876-9164-53f6b53fb0df"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_2}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="200" y="0" width="100" height="14" uuid="71c5e8aa-e006-4a5f-a93d-7cce98e8ed0c"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="42">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "BB" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="200" height="14" uuid="0c0c6443-6b2b-4d39-8cc3-0b2b8a23ea2e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="200" height="14" uuid="8aae32f1-9c5b-426f-a746-be4c898798c1"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total Peredaran Usaha (AR + Unppl. Pay.)]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="22f6fdcf-bbee-4edd-a9c3-ed1dbc2d8393"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_TOTAL_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="14" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9f2d9c42-17d2-4e5c-99d6-91146fc65cde"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_3}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="eb5cc11e-f68a-4a36-a7bd-8821b623cbc2"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_AR_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="400" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="64b31db3-cf31-49e2-9780-38a141d91f79"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_UP_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="27ce5f57-4f23-467e-93bf-12df55fb82fd"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_NON_USAHA_2}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="28" width="200" height="14" uuid="98724ab1-e0b6-417f-ab01-4d56dc6ca9a1"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="200" y="14" width="100" height="14" uuid="50e43b00-c56c-4788-8bdc-ae99c858237d"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "CC" ) == true ||
+$F{GROUPS}.equals( "DD" ) == true]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="0" width="300" height="14" uuid="9454decf-85b1-4f7c-afb2-1c3e822c8dcd"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{GROUPS_DESC}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="2358b5d5-0553-457c-bafd-d9c698d59894"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_4}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="29d2a59b-bd86-4bd3-811a-66d8e1da5f54"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="28">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "EE" ) == true ||
+$F{GROUPS}.equals( "FF" ) == true]]></printWhenExpression>
+				<textField>
+					<reportElement x="0" y="0" width="300" height="14" uuid="be104a1a-59e1-4f24-adfa-3167eafe52c4"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["Total "+$F{GROUPS_DESC}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="14" width="300" height="14" uuid="3cfc6e3d-8ce2-46d2-bd38-650d6eb8e82b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="aa018ff7-606f-49a4-bd5b-aa2a402011da"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_4}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="SubGroup">
+		<groupExpression><![CDATA[$F{SUB_GROUP}]]></groupExpression>
+		<groupFooter>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "AA" ) == true]]></printWhenExpression>
+				<textField>
+					<reportElement x="25" y="0" width="175" height="14" uuid="d23295bd-0d55-4e32-85ba-e16774788606"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SUB_GROUP_DESC}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="200" y="0" width="100" height="14" uuid="c247c6fe-988e-4099-a794-186810eb0c13"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="1220ec7b-b06c-4c67-bc35-2444dccb37dc"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="6bb3324f-ab28-49ab-a7d1-fc4c265f998e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "BB" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="bf8c6dee-85b6-4141-82f6-13de2e942ac2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="25" y="0" width="175" height="14" uuid="32279827-d7ca-47cd-8417-ab48f5a71cf2"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SUB_GROUP_DESC}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="fe75bbc7-1fd4-48dd-82d2-b5e166769d62"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_TOTAL_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="0c91b00a-5922-4bd7-9683-8d7a62a09519"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_AR_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="400" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="2529a4b7-8560-4d9f-aed7-94cd0979d2e1"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_UP_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="58339ef5-a34e-4404-a256-95467f17f0fc"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_NON_USAHA_1}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$F{GROUPS}.equals( "EE" ) == true ||
+$F{GROUPS}.equals( "FF" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="2f193a5f-be3c-4bf2-810b-07530942ef4a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="25" y="0" width="175" height="14" uuid="e5e58ff8-67fb-4059-8859-4d2b310ffa06"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SUB_GROUP_DESC}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9103a054-42c9-4019-a3aa-07b43e199038"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_USAHA_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="SubDetail">
+		<groupExpression><![CDATA[$F{SUB_DTL}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="84" splitType="Stretch">
+			<staticText>
+				<reportElement x="25" y="56" width="175" height="14" uuid="689e0aa8-46c0-4185-9d6a-962cdcf83b14"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="200" y="56" width="300" height="14" uuid="201070ef-e966-4986-a076-deb0135ee60f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="99cac461-e02f-410e-a809-e5c567cf0834"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01073)  Arus Kas Piutang]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="42" width="175" height="14" uuid="75151e40-ccb2-4dbd-a092-b6890b423d08"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="200" y="42" width="100" height="14" uuid="49a8bc53-ee95-43e9-8901-47f8e33ad21a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="400" y="42" width="100" height="14" uuid="20eb0aa9-4689-4c43-b1f4-3505b75ba44c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="42" width="100" height="14" uuid="fbbd749e-82e1-4de2-a6bb-55d064c7f026"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="3a1c8ea7-5ae5-48ad-a357-ab6996772b39"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="25" height="14" uuid="292bdb14-7db1-4465-afd4-1c97ec810f91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="25" height="14" uuid="24f877de-7bc9-4434-be56-86233b8e87d8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="25" height="14" uuid="c4a12331-88c1-4b62-8a1d-579f03e13e29"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="28" width="175" height="14" uuid="47f0aadf-254d-4c74-b148-e37d2f0ed231"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="200" y="28" width="100" height="14" uuid="60b5839c-17cd-40ad-ad10-c4d49e067d3d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="25" height="14" uuid="abbb8a62-1cb7-495e-afec-cca030672852"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[$F{GROUPS}.equals( "AA" ) == true &&
+$F{SUB_GROUP} == 3]]></printWhenExpression>
+			<staticText>
+				<reportElement x="0" y="0" width="25" height="14" uuid="4c055a64-6b04-4bc2-8619-f7897965efe6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="0" width="25" height="14" uuid="6192e162-11de-4637-bcf5-9b2f8c2fbea0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="50" y="0" width="150" height="14" uuid="7e87b457-171b-4f13-b5e2-14652f50ae66"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SUB_DTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="532a7435-6a2b-497d-90a3-da5952763bf2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_USAHA}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="28">
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="eaa839b3-3936-4b51-b7d1-63f50dad9f70"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="4292555a-148c-4632-9ea4-0f53ba0a211f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Selisih Total Penerimaan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="0" width="100" height="14" uuid="3627433d-12fd-4ee7-b764-00287e0ed3c8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="300" y="14" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="f3ea2641-474b-46a3-a2da-eacbffbae232"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_USAHA_HIT_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="98">
+			<staticText>
+				<reportElement x="25" y="84" width="175" height="14" uuid="beadf125-184e-4ece-a89d-1d7c5ca0becc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tidak Ada Data]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="25" height="14" uuid="d4395f8e-8eb9-4594-96eb-5a87d257180a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="300" height="14" uuid="1e1356b5-da46-48ce-813a-d8fb7970bdaa"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="200" y="56" width="275" height="14" uuid="3623560f-7835-43d8-a6f2-82210e9506cd"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="200" y="28" width="100" height="14" uuid="9429e900-daf5-406e-8236-00fee8b9a424"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Company}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="400" y="42" width="75" height="14" uuid="f1435cf1-ba3b-4a25-8e47-c3a1f46359d4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="300" height="14" uuid="46fb1a20-38b7-4ec6-86c3-de3fecc532ab"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01073)  Arus Kas Piutang]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="200" y="42" width="100" height="14" uuid="5fbf046c-e259-4fac-9e86-4970a50801f8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="25" y="56" width="175" height="14" uuid="ea4da4cb-0dad-40cd-8074-45fc60ba69ed"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="25" height="14" uuid="a980f7eb-02f6-40c4-94d8-233dccbc03c3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="25" height="14" uuid="03ca4f79-e71d-42a8-95dc-e9f0208bedb5"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="28" width="175" height="14" uuid="94254a50-bbd1-4dd0-80f7-98e1e081fc28"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="25" y="42" width="175" height="14" uuid="c5099f63-c0fd-4f70-9375-67259eecdfba"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="25" height="14" uuid="051fa878-75f6-43db-bb12-6fb445e7d64d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="42" width="100" height="14" uuid="696ee6c1-8ee2-42e3-a8ce-8d27558518da"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="25" height="14" uuid="be705669-5fb8-4ef6-8ec8-f791288e9ee8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

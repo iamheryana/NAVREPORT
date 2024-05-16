@@ -1,0 +1,231 @@
+Cek di SP-ADJ kode dokumen SIST230099
+berusaha memindahkan COGS dari Hardware ke PS04 tapi dimensi Productnya salah
+Entry No 3355 Product Group nya ganti ke H021 
+
+- Cek AJ-Adj JV-ZF2306/001
+
+- Admin Cabang - Sosialisasi 
+
+
+
+
+Done
+- Out SO untul SC + 5 hari
+- Review SR dan Gross Margim
+- Oustanding SO SC
+- Add "Work Description" di report Logistic, setuju kah?
+
+- Print Slip Salary by Division
+
+
+- COLLECT PERSONAL EMAIL
+- BETULIN DEPARTEMAN
+
+- uSIA PENSIUN BPJS
+
+
+
+
+
+
+
+
+
+
+
+Done
+--------------------------------------
+Logistic - Pembelian - PO By Project Code --> Cek ALL tidak keluar
+PS- Lap.Biaya Project --> Cek ALL tidak keluar
+
+Logistic - Pembelian - List Purchase Order (PO) --> table User sync belom ada
+
+Sales - Sales Revenue by Customer - 3 Years Compare per Branch --> dibagian persen angkanya terlalu besar
+
+
+Sales - Sales Forcast - SAles Forcast ACS - Detail Pipeline (By SAles) - Detail by Customer sort by SAles - PT Isuzi atra motor Indonesia di Live kepecah
+
+Finance - Lap. Pelunasan AR --> Perlu Tuning
+Finance - Lap. Pelunasan PO
+Logistic - Principal Info - Principal Info - Summary DISTI
+Logistic - Principal Info - Principal Info - Detail(Cross Checked)
+
+Logistic - Pembelian - Rekap Harian SO (SAT / INDOMARCO)
+Logistic - Inventory - Free Stock -> Pelru Tuning
+
+
+Cek Lap LEAD TIME - Detail PO - Summary per Product nya 
+
+
+
+Tgl Sales Revenue di buat Akhir bulan :
+
+x Sales Reve
+x Sales Gross Margin
+x Sales Projection
+x Forecast ACS 
+x Sales Achivement
+x Sales Target Achievement - PS
+
+
+
+
+Jika Posisi Saat ini Q1 maka Kolom Q1 & Q2
+Jika Posisi Saat ini Q2 maka Kolom Q1 & Q2
+Jika Posisi Saat ini Q3 maka Kolom S1 & S2
+Jika Posisi Saat ini Q4 maka Kolom Q1,2,3 & Q4
+
+
+
+Pagi Pak, 
+Mau update aja.
+Untuk Laporan Sales Revenue khusus uang muka, 
+sy sudah split antara yg realisasi tahun ini dan tahun depan (posisinya ada dibawah).
+
+Kemudian untuk Lap. Sales Gross Margin jg sudah saya perbaharui untuk 2 kolom tambahan dikanan nya,
+akan menyesuaikan sesuai dengan posisi "Current Period" nya.
+Yang mana sy lihat ada 3 jenis :
+(A) Jika posisi "Current Period" nya di Q1 dan Q2, maka kolom yg tampil adalah Kolom 1 = Q1 & Kolom 2 = Q2.
+(B) Jika posisi "Current Period" nya di Q3, maka kolom yg tampil adalah Kolom 1 = Sem 1 & Kolom 2 = Sem 2.
+(C) Jika posisi "Current Period" nya di Q4, maka kolom yg tampil adalah Kolom 2 = Q1~Q3 & Kolom 2 = Q4.
+Sehingga untuk posisi hari (bulan November) yang mana adalah Q4 maka akan tampil dengan model yang (C).
+
+
+
+
+
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, GLE.[Source No_] AS CUST_NO
+		, DIMS.BRANCHES
+		, DIMS.SALESMAN
+		, SUM(GLE.[Amount]  * -1) AS AMOUNT_SALES
+		, 0 AS AMOUNT_COGS
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+LEFT JOIN	(
+				SELECT [Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+						,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+						,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+				FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+		GLE.[G_L Account No_] <> '400.110.04' AND
+		DIMS.ITEM_CAT <> '' AND
+		(GLE.[Posting Date] >= CAST('2022-01-01' AS DATETIME) AND GLE.[Posting Date] <=  CAST('2022-11-30' AS DATETIME))
+GROUP BY GLE.[Source No_], DIMS.BRANCHES, DIMS.SALESMAN
+UNION ALL
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 'SPONSORSHIP' AS CUST_NO
+		, '10' AS BRANCHES
+		, 'OFC' AS SALESMAN
+		, SUM(GLE.[Amount]  * -1) AS AMOUNT_SALES
+		, 0 AS AMOUNT_COGS
+FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+		(GLE.[Posting Date] >= CAST('2022-01-01' AS DATETIME) AND GLE.[Posting Date] <=  CAST('2022-11-30' AS DATETIME))
+GROUP BY GLE.[Source No_]
+UNION ALL
+SELECT	1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, ASCY.CUST_NO
+		, SUM(ASCY.AMOUNT) * -1 AS AMOUNT_SALES
+		, 0 AS AMOUNT_COGS
+FROM (
+		SELECT	OUM.ITEM_CAT
+				,OUM.CUST_NO
+				,OUM.AMOUNT
+		FROM	(
+					SELECT	UM.ITEM_CAT
+							,UM.CUST_NO
+							,CASE WHEN ISNULL(INV.AMOUNT,0) = 0 THEN UM.AMOUNT ELSE
+								CASE WHEN SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) <= ISNULL(INV.AMOUNT,0) THEN 0 ELSE
+								SUM(UM.AMOUNT)OVER(PARTITION BY UM.NO_SO, UM.BRANCHES, UM.ITEM_CAT  ORDER BY UM.TGL_UM) - ISNULL(INV.AMOUNT,0)
+							END
+							END	 AS AMOUNT
+					FROM	(
+								SELECT	DIMS.ITEM_CAT
+										,DIMS.BRANCHES
+										,SIH.[Posting Date] AS TGL_UM
+										,SIH.[No_] AS NO_UM
+										,SIH.[External Document No_] AS NO_PO_CUST
+										,SIH.[Bill-to Customer No_] AS CUST_NO
+										,SIH.[Bill-to Name] AS CUST_NAME
+										,SIH.[Prepayment Order No_] AS NO_SO
+										, (SUM(GLE.[Amount]) * -1) AS AMOUNT
+								FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+														,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+														,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+												FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+								LEFT JOIN	(
+												SELECT CLE.[Entry No_]
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE.[Document No_] ELSE CLE2.[Document No_] END AS NO_UM
+														, CASE WHEN CLE.[Document No_] LIKE 'UM%' THEN CLE2.[Document No_] ELSE CLE.[Document No_] END AS NO_CM
+												FROM [dbo].[BC_AUTOJAYA$Cust_ Ledger Entry] CLE
+												LEFT JOIN [dbo].[BC_AUTOJAYA$Cust_ Ledger Entry] CLE2 ON CLE2.[Entry No_] = CLE.[Closed by Entry No_]
+												WHERE CLE.[Document Type] IN (2,3)
+												AND ((CLE.[Document No_]  LIKE 'UM%' AND CLE2.[Document Type] = 3) OR
+													(CLE2.[Document No_]  LIKE 'UM%' AND CLE.[Document Type] = 3) )
+											) CM ON CM.NO_UM = GLE.[Document No_]
+								LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CMH ON CMH.[No_] = CM.NO_CM
+								WHERE GLE.[G_L Account No_] = '400.110.03'
+										AND GLE.[Document No_] NOT IN ('UMST210032', 'UMST210034')
+										AND GLE.[Document No_] LIKE 'UM%'
+										AND (CM.NO_CM IS NULL OR (CM.NO_CM IS NOT NULL AND CMH.[Posting Date] > DATEADD(DAY,-1,@TglFrom) ))
+										AND (DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL')
+										AND (SIH.[Posting Date] >= @TglAwalTahun  AND SIH.[Posting Date]<= DATEADD(DAY,-1,@TglFrom))
+								GROUP BY DIMS.ITEM_CAT,
+											DIMS.BRANCHES,
+											SIH.[Posting Date]
+										,SIH.[No_]
+										,SIH.[External Document No_]
+										,SIH.[Bill-to Customer No_]
+										,SIH.[Bill-to Name]
+										,SIH.[Prepayment Order No_]
+							) UM
+					LEFT JOIN	(
+									SELECT	DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_] AS NO_SO
+											,MAX(SIH.[Posting Date]) AS TGL_INV
+											,SUM(GLE.[Amount]) AS AMOUNT
+									FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT [Dimension Set ID] AS DIM_ID
+															,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+															,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+															,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+													FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+													GROUP BY [Dimension Set ID]
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = GLE.[Document No_]
+									WHERE GLE.[G_L Account No_] = '400.110.03'
+											AND GLE.[Document No_] NOT LIKE 'UM%'
+											AND GLE.[Posting Date] <=  DATEADD(DAY,-1,@TglFrom)
+									GROUP BY DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,SIH.[Order No_]
+								) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT
+				) OUM
+		WHERE OUM.AMOUNT > 0
+		) ASCY
+GROUP BY ASCY.CUST_NO
+UNION ALL
+SELECT	 1 AS GROUP_NO
+		, 'SALES' AS GROUP_DESC
+		, 'SPONSORSHIP' AS CUST_NO
+		, '10' AS BRANCHES
+		, 'OFC' AS SALESMAN
+		, SUM(GLE.[Amount]  * -1) AS AMOUNT_SALES
+		, 0 AS AMOUNT_COGS
+FROM [dbo].[BC_AJ-ADJ$G_L Entry] GLE
+WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+		(GLE.[Posting Date] >= CAST('2022-01-01' AS DATETIME) AND GLE.[Posting Date] <=  CAST('2022-11-30' AS DATETIME))

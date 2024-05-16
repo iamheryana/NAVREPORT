@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SPLapPembelian_sum" language="groovy" pageWidth="1100" pageHeight="595" orientation="Landscape" columnWidth="1060" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b6a5138b-17b0-4950-b07b-e160a136f8fd">
+	<property name="ireport.zoom" value="1.331000000000006"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Tipe" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorTo" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT XXX.*
+FROM (
+SELECT XX.TGL_INV
+		, XX.NO_INV
+		, CASE WHEN XX.TIPE = '' THEN 'ADJUSTMENT JV / OTHERS' ELSE XX.TIPE END AS TIPE
+		, CASE WHEN XX.AMOUNT_PEMBELIAN = 0 AND XX.TIPE_INVOICE = 'INVOICE' THEN
+			'INVOICE UM'
+		  ELSE
+			CASE WHEN XX.AMOUNT_PEMBELIAN = 0 AND XX.TIPE_INVOICE = 'CREDIT MEMO' THEN
+				'CREDIT MEMO UM' ELSE XX.TIPE_INVOICE
+			END
+		  END AS TIPE_INVOICE
+		, CASE WHEN XX.AMOUNT_PPN <> 0 THEN 'PPN' ELSE 'NON PPN' END AS TIPE_PPN
+		, XX.NO_INV_CANCEL
+		, XX.KODE_SUPP
+		, XX.NAMA_SUPP
+		, XX.NO_INV_SUPP
+		, XX.NO_FP
+		, XX.AMOUNT_PEMBELIAN
+		, XX.AMOUNT_UM
+		, XX.AMOUNT_PPN
+FROM (
+SELECT	X.TGL_INV
+		, X.NO_INV
+		, MAX(X.TIPE) AS TIPE
+		, X.TIPE_INVOICE
+		, X.NO_INV_CANCEL
+		, X.KODE_SUPP
+		, X.NAMA_SUPP
+		, X.NO_INV_SUPP
+		, X.NO_FP
+		, SUM(X.AMOUNT_PEMBELIAN) AS AMOUNT_PEMBELIAN
+		, SUM(X.AMOUNT_UM) AS AMOUNT_UM
+		, SUM(X.AMOUNT_PPN) AS AMOUNT_PPN
+FROM	(
+		SELECT	PIPC.TGL_INV
+				,PIPC.NO_INV
+				,PIPC.TIPE
+				,  CASE WHEN PIH.[No_] IS NOT NULL THEN
+						'INVOICE'
+					ELSE
+						CASE WHEN PCH.[No_] IS NOT NULL THEN 'CREDIT MEMO' ELSE NULL END
+					END AS TIPE_INVOICE
+				,PCH.[Applies-to Doc_ No_]  AS NO_INV_CANCEL
+				,ISNULL(PIH.[Pay-to Vendor No_], PCH.[Pay-to Vendor No_]) AS KODE_SUPP
+				,ISNULL(PIH.[Pay-to Name], PCH.[Pay-to Name]) AS NAMA_SUPP
+				,ISNULL(PIH.[Vendor Invoice No_], NULL) AS NO_INV_SUPP
+				,ISNULL(PIH.[Vendor Tax Invoice No_],PCH.[Vendor Tax Invoice No_]) AS NO_FP
+				,PIPC.AMOUNT_PEMBELIAN
+				,PIPC.AMOUNT_UM
+				,ISNULL(PPN.AMOUNT_PPN, 0) AS AMOUNT_PPN
+		FROM
+			(
+				SELECT GLE.[Document No_] AS NO_INV
+						,GLE.[Posting Date] AS TGL_INV
+						,GLE.[Gen_ Bus_ Posting Group] AS TIPE
+						,SUM(GLE.[Amount]) AS AMOUNT_PEMBELIAN
+						, 0 AS AMOUNT_UM
+						, 0 AS AMOUNT_PPN
+				FROM [AUTOJAYA].[dbo].[SOLUSI$G_L Entry] GLE
+				WHERE GLE.[G_L Account No_] IN ('510.100.00', '510.100.01')
+				GROUP BY GLE.[Document No_], GLE.[Posting Date], GLE.[Gen_ Bus_ Posting Group]
+				UNION ALL
+				SELECT GLE.[Document No_] AS NO_INV
+						,GLE.[Posting Date] AS TGL_INV
+						,GLE.[Gen_ Bus_ Posting Group] AS TIPE
+						, 0 AS AMOUNT_PEMBELIAN
+						, SUM(GLE.[Amount]) AS AMOUNT_UM
+						, 0 AS AMOUNT_PPN
+				FROM [AUTOJAYA].[dbo].[SOLUSI$G_L Entry] GLE
+				WHERE GLE.[G_L Account No_] IN ('118.150.00')
+				GROUP BY GLE.[Document No_], GLE.[Posting Date], GLE.[Gen_ Bus_ Posting Group]
+			) PIPC
+		LEFT JOIN (
+						SELECT GLE.[Document No_] AS NO_INV
+								,GLE.[Posting Date] AS TGL_INV
+								, 0 AS AMOUNT_PEMBELIAN
+								, 0 AS AMOUNT_UM
+								, SUM(GLE.[Amount]) AS AMOUNT_PPN
+						FROM [AUTOJAYA].[dbo].[SOLUSI$G_L Entry] GLE
+						WHERE GLE.[G_L Account No_] IN ('118.290.00')
+						GROUP BY GLE.[Document No_], GLE.[Posting Date]
+					) PPN ON PPN.NO_INV = PIPC.NO_INV
+		LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = PIPC.NO_INV
+		LEFT JOIN [AUTOJAYA].[dbo].[SOLUSI$Purch_ Cr_ Memo Hdr_] PCH ON PCH.[No_] = PIPC.NO_INV
+		) X
+GROUP BY X.TGL_INV, X.NO_INV, X.TIPE_INVOICE,
+		 X.NO_INV_CANCEL, X.KODE_SUPP, X.NAMA_SUPP, X.NO_INV_SUPP,
+		 X.NO_FP
+) XX
+)XXX
+WHERE  (XXX.AMOUNT_PEMBELIAN	<> 0 OR XXX.AMOUNT_UM <> 0) AND
+  	(XXX.TGL_INV >= $P{TglFrom} AND XXX.TGL_INV <= $P{TglUpto}) AND
+	($P{Tipe} = 'ALL' OR XXX.TIPE = $P{Tipe}) AND
+	(XXX.KODE_SUPP >= $P{VendorFrom} AND XXX.KODE_SUPP <= $P{VendorTo})]]>
+	</queryString>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TIPE" class="java.lang.String"/>
+	<field name="TIPE_INVOICE" class="java.lang.String"/>
+	<field name="TIPE_PPN" class="java.lang.String"/>
+	<field name="NO_INV_CANCEL" class="java.lang.String"/>
+	<field name="KODE_SUPP" class="java.lang.String"/>
+	<field name="NAMA_SUPP" class="java.lang.String"/>
+	<field name="NO_INV_SUPP" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="AMOUNT_PEMBELIAN" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_UM" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_PPN" class="java.math.BigDecimal"/>
+	<sortField name="TIPE"/>
+	<sortField name="TIPE_PPN"/>
+	<sortField name="KODE_SUPP"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="NO_INV"/>
+	<variable name="AMOUNT_PEMBELIAN_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Tipe" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_2" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_4" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_3" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_3" class="java.math.BigDecimal" resetType="Group" resetGroup="PPN" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PEMBELIAN_5" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_UM_4" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_UM}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_PPN_4" class="java.math.BigDecimal" resetType="Group" resetGroup="Supplier" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_PPN}]]></variableExpression>
+	</variable>
+	<group name="Tipe">
+		<groupExpression><![CDATA[$F{TIPE}]]></groupExpression>
+		<groupHeader>
+			<band height="21">
+				<textField>
+					<reportElement x="10" y="3" width="232" height="14" uuid="f5a5957e-6fdf-427f-9385-932eee97f04f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="10" y="0" width="50" height="14" uuid="ec13eb3f-eff7-4fa6-bad1-96b642e4f289"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="60" y="0" width="232" height="14" uuid="6f2a7700-1621-437c-bafc-933f69629cfd"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="791" y="0" width="87" height="14" uuid="e7362cc5-25f0-481a-bec1-5de764548c40"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="878" y="0" width="87" height="14" uuid="dcad1219-7a9b-480c-a1fd-b570e2389a4d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_UM_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="965" y="0" width="87" height="14" uuid="85243410-b0c7-4c92-9200-80ed1b60abe0"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PPN_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="PPN">
+		<groupExpression><![CDATA[$F{TIPE_PPN}]]></groupExpression>
+		<groupHeader>
+			<band height="22">
+				<textField>
+					<reportElement x="60" y="4" width="99" height="14" uuid="1bd55444-551b-4838-804b-d01d59a68b2d"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE_PPN}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="60" y="0" width="99" height="14" uuid="b3e9c797-9e3c-4065-b76d-0cc993db7973"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="159" y="0" width="83" height="14" uuid="8f488c17-59a1-481b-a0a3-5aedb60eedde"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPE_PPN}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="791" y="0" width="87" height="14" uuid="66367fad-1c68-46b9-9263-813aa997a3c2"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_4}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="878" y="0" width="87" height="14" uuid="b8cabcad-c3af-413d-8a2f-421dfa585b57"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_UM_3}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="965" y="0" width="87" height="14" uuid="a26cad40-8524-44a5-acdb-d360311bad28"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PPN_3}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Supplier">
+		<groupExpression><![CDATA[$F{KODE_SUPP}]]></groupExpression>
+		<groupHeader>
+			<band height="22">
+				<textField>
+					<reportElement x="159" y="4" width="83" height="14" uuid="4835e319-b748-45c4-a320-42fef1b1489f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="242" y="4" width="346" height="14" uuid="28960469-6b84-40ea-8e33-c39410424381"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="159" y="1" width="83" height="14" uuid="1634119c-5d3b-4c88-88e9-6cd5336596c8"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="242" y="1" width="99" height="14" uuid="f19d9c99-c327-4c06-a77e-417a677e4344"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="791" y="1" width="87" height="14" uuid="403bdab8-8789-4499-bb0c-e37f128c4f8e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_5}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="878" y="1" width="87" height="14" uuid="6438c1ae-1765-43be-8091-a3410bfe8f2e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_UM_4}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="965" y="1" width="87" height="14" uuid="104de9c9-6478-47c4-92fa-fa9268bc62e6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_PPN_4}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="341" y="1" width="247" height="14" uuid="3eeca51b-6662-4901-be45-44fadf587929"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="73" splitType="Stretch">
+			<staticText>
+				<reportElement x="2" y="10" width="1050" height="20" uuid="0fb68337-4b71-450f-b190-8e62c209dc35"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LAPORAN REGISTER PEMBELIAN (SUMMARY)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="387" y="30" width="53" height="16" uuid="4db4f912-8486-49a9-8f69-635753bdfbf9"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PERIODE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="30" width="10" height="16" uuid="ab863aeb-d0d8-4065-a9ef-9d28af21c8de"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="450" y="30" width="107" height="16" uuid="b49c341d-6f80-4b70-aa42-f4b627288787"/>
+				<textFieldExpression><![CDATA[$P{TglFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="581" y="30" width="107" height="16" uuid="2a93a660-5c7d-4e4d-9b2b-36cb36181669"/>
+				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="557" y="30" width="24" height="16" uuid="cec8b49b-559d-4050-a317-9bad6340e76b"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="557" y="46" width="24" height="16" uuid="bf2d720c-b06b-4f23-83b8-24081ee5d5ba"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="387" y="46" width="53" height="16" uuid="16c4bc35-c4e5-4de7-97c2-f7e303c5cbb2"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SUPPLIER]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="450" y="46" width="107" height="16" uuid="a30501a0-8501-496e-bf4e-b034604b3f12"/>
+				<textFieldExpression><![CDATA[$P{VendorFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="581" y="46" width="107" height="16" uuid="9a6f9ee1-07b7-4405-a66a-3d27f95a269f"/>
+				<textFieldExpression><![CDATA[$P{VendorTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="440" y="46" width="10" height="16" uuid="065f54aa-c485-4c67-9853-da8798e38760"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch">
+			<staticText>
+				<reportElement x="974" y="3" width="14" height="14" uuid="c96ba2ac-bdbb-4b79-9c29-394c03e8772b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="891" y="18" width="49" height="14" uuid="699da850-24e4-4b6d-b07c-bf35efcdf735"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Print On]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="891" y="3" width="49" height="14" uuid="9cb1b630-5b85-40e7-a892-b3bf6ecd1169"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Page]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="948" y="18" width="100" height="14" uuid="3ef1c5cb-0aaa-4847-b9e7-946df2114225"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="948" y="3" width="23" height="14" uuid="2eaeafcb-dfbc-4c28-bc18-656bc44c62bf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="989" y="3" width="23" height="14" uuid="bd1a3294-985c-4459-80a7-a451a8bd211a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="940" y="3" width="8" height="14" uuid="6c5b8c06-caca-4ba4-a61d-28daa51b58cf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="940" y="18" width="8" height="14" uuid="bdc539aa-646b-45c1-9414-8b4bc00e4cbd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="10" y="3" width="232" height="14" uuid="5383c939-abf9-4462-8ab2-f926d5fbd0a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT. SOLUSI PERIFERAL]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="16" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="0" width="50" height="14" uuid="e0f1e87a-d123-4c33-a5d4-7a55b408c9b6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="60" y="0" width="99" height="14" uuid="9fdfeeb0-cc7a-4cf8-ae7e-36a9d6006765"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="390" y="0" width="198" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Nama Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="588" y="0" width="111" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="341" y="0" width="49" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Kode]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="159" y="0" width="83" height="14" uuid="864a97da-3673-407c-b7c3-cfe0693391b4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tipe Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="965" y="0" width="87" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PPN Masukan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="878" y="0" width="87" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Uang Muka]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="791" y="0" width="87" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Pembelian]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="699" y="0" width="92" height="14" uuid="cbba08bd-c522-45c5-a94c-c0a7162e8e0f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="242" y="0" width="99" height="14" uuid="5b315147-c3bd-476d-a548-374ee2e130db"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice di Cancel]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="10" y="0" width="50" height="14" uuid="a2bbe284-e6ed-44b3-97cb-894273d5fd7c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="60" y="0" width="99" height="14" uuid="98aee937-2fb4-42d7-a17c-c7cfc400338f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="159" y="0" width="83" height="14" uuid="2ee28d88-422d-4d2b-9240-6a07aa52253d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPE_INVOICE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="341" y="0" width="49" height="14" uuid="ac195b01-2a5c-4213-85df-72f63aafb2ae"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="390" y="0" width="198" height="14" uuid="2fcd8486-3fd6-4c42-9a71-51a037d4fcb2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="588" y="0" width="111" height="14" uuid="3d6062a1-a13a-4593-8ff8-639cc25e5189"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV_SUPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="699" y="0" width="92" height="14" uuid="9cce8180-211c-45e3-a00b-59e4366933ab"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="791" y="0" width="87" height="14" uuid="62870dbd-9367-4eed-9df4-0a4f4684dbee"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_PEMBELIAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="878" y="0" width="87" height="14" uuid="c832f016-cb1c-4d88-aadc-2602dbe9362f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_UM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="965" y="0" width="87" height="14" uuid="b51c78bf-e8d3-4bb4-9259-c0e4496e7810"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_PPN}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="242" y="0" width="99" height="14" uuid="ea35028e-ceaf-44ae-ad26-30ef7137ecc8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV_CANCEL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="29" splitType="Stretch">
+			<staticText>
+				<reportElement x="10" y="0" width="282" height="14" uuid="824c20a2-3ff8-48dc-af9d-0cc1374660ac"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRAND TOTAL]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="791" y="0" width="87" height="14" uuid="d6dd203b-5a3b-4573-a9f3-60de06b0262f"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_PEMBELIAN_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="878" y="0" width="87" height="14" uuid="a669821e-2976-4017-9c12-d35e0c70c285"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_UM_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="965" y="0" width="87" height="14" uuid="3579aa16-af7b-4f20-a857-56dc5ed61a02"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_PPN_2}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

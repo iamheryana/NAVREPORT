@@ -1,0 +1,837 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="AJStockAvailability" language="groovy" pageWidth="935" pageHeight="842" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="895" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
+	<property name="ireport.zoom" value="1.6105100000000079"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Item" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ItemCategory" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ProdGroup" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	STKG.ITEM_NO
+		, ITM.[Description] AS DESCRIPTIONS
+		, ITM.[Base Unit of Measure] AS UOM
+		, ITM.[Item Category Code] AS ITEM_CAT
+		, ITC.[Description] AS ITEM_CAT_DESC
+		, ITM.[Product Group Code] AS PROD_GROUP
+		, STKG.LOC_CODE
+		, STKG.STOCK_OH
+		, STKG.ON_ORDER
+		, STKG.ON_ORDER_OTP
+		, STKG.OTP_READY
+		, (STKG.STOCK_OH+STKG.ON_ORDER+STKG.ON_ORDER_OTP+STKG.OTP_READY) AS TOTAL
+		, STKG.RSRV_OH
+		, STKG.RSRV_ON_ORDER
+		, STKG.RSRV_ON_ORDER_OTP
+		, STKG.RSRV_OTP_READY
+		, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+			(STKG.STOCK_OH - STKG.RSRV_OH)
+		  ELSE
+			0
+		  END AS AVAILABLE_OH
+		, CASE WHEN STKG.LOC_CODE IN  ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','') THEN
+			((STKG.STOCK_OH+STKG.ON_ORDER+STKG.ON_ORDER_OTP+STKG.OTP_READY)-(STKG.RSRV_OH+STKG.RSRV_ON_ORDER+STKG.RSRV_ON_ORDER_OTP+STKG.RSRV_OTP_READY))
+		  ELSE 0
+		  END AS STOCK_AVAILABLE
+FROM	(
+			SELECT STK.ITEM_NO
+					, STK.LOC_CODE
+					, SUM(STK.STOCK_OH) AS STOCK_OH
+					, SUM(STK.ON_ORDER) AS ON_ORDER
+					, SUM(STK.ON_ORDER_OTP) AS ON_ORDER_OTP
+					, SUM(STK.OTP_READY) AS OTP_READY
+					, SUM(STK.RSRV_OH) AS RSRV_OH
+					, SUM(STK.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+					, SUM(STK.RSRV_ON_ORDER_OTP) AS RSRV_ON_ORDER_OTP
+					, SUM(STK.RSRV_OTP_READY) AS RSRV_OTP_READY
+			FROM (
+					SELECT
+							[Item No_] AS ITEM_NO
+							,[Location Code] AS LOC_CODE
+							,SUM([Quantity]) AS STOCK_OH
+							, 0 AS ON_ORDER
+							, 0 AS ON_ORDER_OTP
+							, 0 AS OTP_READY
+							, 0 AS RSRV_OH
+							, 0 AS RSRV_ON_ORDER
+							, 0 AS RSRV_ON_ORDER_OTP
+							, 0 AS RSRV_OTP_READY
+					FROM [AUTOJAYA].[dbo].[AUTOJAYA$Item Ledger Entry]
+					GROUP BY [Item No_],[Location Code]
+					UNION ALL
+					SELECT POD.[No_] AS ITEM_NO
+							,POD.[Location Code] AS LOC_CODE
+							, 0 AS STOCK_OH
+							,SUM(POD.[Outstanding Qty_ (Base)]) AS ON_ORDER
+							, 0 AS ON_ORDER_OTP
+							, 0 AS OTP_READY
+							, 0 AS RSRV_OH
+							, 0 AS RSRV_ON_ORDER
+							, 0 AS RSRV_ON_ORDER_OTP
+							, 0 AS RSRV_OTP_READY
+					FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+					INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+					WHERE POH.[Document Type] = 1 AND
+						SUBSTRING( POH.[No_], 5, 1) <> 'P' AND
+						POD.[Type] = 2
+					GROUP BY POD.[No_], POD.[Location Code]
+					UNION ALL
+					SELECT	BPO.ITEM_NO
+							,BPO.LOC_CODE
+							, 0 AS STOCK_OH
+							, 0 AS ON_ORDER
+							, SUM(BPO.ON_ORDER) AS ON_ORDER_OTP
+							, 0 AS OTP_READY
+							, 0 AS RSRV_OH
+							, 0 AS RSRV_ON_ORDER
+							, 0 AS RSRV_ON_ORDER_OTP
+							, 0 AS RSRV_OTP_READY
+					FROM	(
+								SELECT	POD.[No_] AS ITEM_NO
+										,POD.[Location Code] AS LOC_CODE
+										,POD.[Quantity (Base)] - ISNULL(POO.QTY_PO,0) AS ON_ORDER
+								FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+								INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+								LEFT JOIN	(
+												SELECT	PD.[Blanket Order No_] AS NO_BPO
+													,PD.[Blanket Order Line No_] AS NO_BPO_LINE
+													,SUM(PD.[Quantity (Base)]) AS QTY_PO
+												FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] PH
+												INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+												WHERE PH.[Document Type] = 1 AND
+													  PD.[Blanket Order No_] <> ''
+												GROUP BY PD.[Blanket Order No_], PD.[Blanket Order Line No_]
+											) POO ON POO.NO_BPO = POD.[Document No_] AND POO.NO_BPO_LINE = POD.[Line No_]
+								WHERE POH.[Document Type] = 4 AND
+											SUBSTRING( POH.[No_], 6, 1) = 'P' AND
+											POD.[Type] = 2
+							) BPO
+					GROUP BY BPO.ITEM_NO, BPO.LOC_CODE
+					UNION ALL
+					SELECT	OTP.ITEM_NO
+							,OTP.LOC_CODE
+							, 0 AS STOCK_OH
+							, 0 AS ON_ORDER
+							, SUM(OTP.ON_ORDER_OTP) AS ON_ORDER_OTP
+							, SUM(OTP.OTP_READY) AS OTP_READY
+							, 0 AS RSRV_OH
+							, 0 AS RSRV_ON_ORDER
+							, 0 AS RSRV_ON_ORDER_OTP
+							, 0 AS RSRV_OTP_READY
+					FROM	(
+								SELECT POD.[No_] AS ITEM_NO
+										,POD.[Location Code] AS LOC_CODE
+										, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
+										, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
+								FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Header] POH
+								INNER JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+								WHERE POH.[Document Type] = 1 AND
+									SUBSTRING( POH.[No_], 5, 1) = 'P' AND
+									POD.[Type] = 2
+							) OTP
+					GROUP BY OTP.ITEM_NO, OTP.LOC_CODE
+					UNION ALL
+					SELECT	RSV.ITEM_NO
+							, RSV.LOC_CODE
+							, 0 AS STOCK_OH
+							, 0 AS ON_ORDER
+							, 0 AS ON_ORDER_OTP
+							, 0 AS OTP_READY
+							, SUM(RSV.RSRV_OH) AS RSRV_OH
+							, SUM(RSV.RSRV_ON_ORDER) AS RSRV_ON_ORDER
+							, SUM(RSV.RSRV_ON_ORDER_OTP) AS RSRV_ON_ORDER_OTP
+							, SUM(RSV.RSRV_OTP_READY) AS RSRV_OTP_READY
+					FROM	(
+								SELECT  RES.[Item No_] AS ITEM_NO
+										, RES.[Location Code] AS LOC_CODE
+										, CASE WHEN [Source ID] = '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_OH
+										, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) <> 'P' AND RES.[Source ID] <> '' THEN RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER
+										, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) <= GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_OTP_READY
+										, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
+								FROM [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] RES
+								LEFT JOIN	(
+												SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
+												FROM [AUTOJAYA].[dbo].[AUTOJAYA$Purchase Line]
+												GROUP BY [Document No_], [Line No_]
+											) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
+								WHERE RES.[Reservation Status] = 0 AND
+									  RES.[Positive] = 1 AND
+									  SUBSTRING(RES.[Source ID], 1, 2) <> 'TO'
+							) RSV
+					GROUP BY RSV.ITEM_NO, RSV.LOC_CODE
+					UNION ALL
+					SELECT	QTO.ITEM_NO
+							,QTO.LOC_CODE
+							, 0 AS STOCK_OH
+							, 0 AS ON_ORDER
+							, 0 AS ON_ORDER_OTP
+							, 0 AS OTP_READY
+							, 0 AS RSRV_OH
+							, 0 AS RSRV_ON_ORDER
+							--Reservasi terhadap TO dianggap belum reservasi
+							--, CASE WHEN QTO2.ITEM_NO IS NULL THEN QTO.QTY_TO ELSE 0 END AS RSRV_ON_ORDER
+							, 0 AS RSRV_ON_ORDER_OTP
+							, 0 RSRV_OTP_READY
+					FROM	(
+								SELECT  RE.[Item No_] AS ITEM_NO
+										, TH.[Transfer-from Code] AS LOC_CODE
+										, RE.[Source ID] AS NO_TO
+										, SUM(RE.[Quantity (Base)]) QTY_TO
+								FROM [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] RE
+								LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Transfer Header] TH ON TH.[No_] = RE.[Source ID]
+								WHERE RE.[Reservation Status] = 0 AND
+									  RE.[Positive] = 1 AND
+									  SUBSTRING(RE.[Source ID], 1, 2) = 'TO'
+								GROUP BY RE.[Item No_], TH.[Transfer-from Code], RE.[Source ID]
+							) QTO
+					LEFT JOIN (
+									SELECT	TRO.[Item No_] AS ITEM_NO
+											,TRO.[Location Code] AS LOC_CODE
+											,TRO2.[Source ID] AS NO_TO
+											,SUM(TRO.[Quantity (Base)]) AS QTY_TO
+									FROM [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] TRO
+									LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Reservation Entry] TRO2 ON TRO2.[Entry No_] = TRO.[Entry No_] AND TRO2.[Positive] = 0
+									WHERE TRO.[Reservation Status] = 0 AND
+										  TRO.[Positive] = 1 AND
+										  SUBSTRING(TRO2.[Source ID], 1, 2) = 'TO'
+									GROUP BY TRO.[Item No_], TRO.[Location Code], TRO2.[Source ID]
+								) QTO2 ON	QTO2.ITEM_NO = QTO.ITEM_NO AND
+											QTO2.LOC_CODE = QTO.LOC_CODE AND
+											QTO2.NO_TO = QTO.NO_TO AND
+											QTO2.QTY_TO = QTO.QTY_TO
+				 ) STK
+
+			GROUP BY STK.ITEM_NO, STK.LOC_CODE
+		)STKG
+LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+LEFT JOIN [AUTOJAYA].[dbo].[AUTOJAYA$Item Category] ITC ON ITC.[Code] = ITM.[Item Category Code]
+WHERE (STKG.STOCK_OH+STKG.ON_ORDER+STKG.ON_ORDER_OTP+STKG.OTP_READY) > 0
+	AND ITM.[Inventory Value Zero] = 0
+	AND (STKG.ITEM_NO like '%'+$P{Item}+'%' OR $P{Item} = 'ALL')
+	AND (ITM.[Item Category Code] = $P{ItemCategory} OR $P{ItemCategory} = 'ALL')
+	AND (ITM.[Product Group Code] = $P{ProdGroup} OR $P{ProdGroup} = 'ALL')]]>
+	</queryString>
+	<field name="ITEM_NO" class="java.lang.String"/>
+	<field name="DESCRIPTIONS" class="java.lang.String"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="ITEM_CAT" class="java.lang.String"/>
+	<field name="ITEM_CAT_DESC" class="java.lang.String"/>
+	<field name="PROD_GROUP" class="java.lang.String"/>
+	<field name="LOC_CODE" class="java.lang.String"/>
+	<field name="STOCK_OH" class="java.math.BigDecimal"/>
+	<field name="ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="ON_ORDER_OTP" class="java.math.BigDecimal"/>
+	<field name="OTP_READY" class="java.math.BigDecimal"/>
+	<field name="TOTAL" class="java.math.BigDecimal"/>
+	<field name="RSRV_OH" class="java.math.BigDecimal"/>
+	<field name="RSRV_ON_ORDER" class="java.math.BigDecimal"/>
+	<field name="RSRV_ON_ORDER_OTP" class="java.math.BigDecimal"/>
+	<field name="RSRV_OTP_READY" class="java.math.BigDecimal"/>
+	<field name="AVAILABLE_OH" class="java.math.BigDecimal"/>
+	<field name="STOCK_AVAILABLE" class="java.math.BigDecimal"/>
+	<sortField name="ITEM_NO"/>
+	<variable name="STOCK_OH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{STOCK_OH}]]></variableExpression>
+	</variable>
+	<variable name="ON_ORDER_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{ON_ORDER}]]></variableExpression>
+	</variable>
+	<variable name="OTP_READY_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{OTP_READY}]]></variableExpression>
+	</variable>
+	<variable name="TOTAL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="RSRV_OH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{RSRV_OH}]]></variableExpression>
+	</variable>
+	<variable name="RSRV_ON_ORDER_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{RSRV_ON_ORDER}]]></variableExpression>
+	</variable>
+	<variable name="RSRV_OTP_READY_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{RSRV_OTP_READY}]]></variableExpression>
+	</variable>
+	<variable name="STOCK_AVAILABLE_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{STOCK_AVAILABLE}]]></variableExpression>
+	</variable>
+	<variable name="ON_ORDER_OTP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{ON_ORDER_OTP}]]></variableExpression>
+	</variable>
+	<variable name="AVAILABLE_OH_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{AVAILABLE_OH}]]></variableExpression>
+	</variable>
+	<variable name="RSRV_ON_ORDER_OTP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Item" calculation="Sum">
+		<variableExpression><![CDATA[$F{RSRV_ON_ORDER_OTP}]]></variableExpression>
+	</variable>
+	<group name="Item">
+		<groupExpression><![CDATA[$F{ITEM_NO}]]></groupExpression>
+		<groupHeader>
+			<band height="93">
+				<staticText>
+					<reportElement x="12" y="5" width="49" height="14" uuid="14c9b5ff-1ad2-463a-bc62-d0e8747bf4af"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Item No]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="12" y="19" width="49" height="14" uuid="9a227d6b-509c-4c11-9804-eb852796f32c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="12" y="33" width="49" height="14" uuid="9f327ec9-0076-4083-ac53-d6c2df269b25"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[UOM]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="61" y="33" width="7" height="14" uuid="1e985210-ec61-4bd5-9b77-a848c4666c78"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="61" y="19" width="7" height="14" uuid="ecc02914-7f71-4215-8cd7-54387e205dfa"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="61" y="5" width="7" height="14" uuid="468ecc71-5f2b-4497-8077-00238d3f6232"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[:]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="68" y="5" width="481" height="14" uuid="3fa6a591-d4d4-4a30-9e65-251bf0992e01"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ITEM_NO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="68" y="19" width="481" height="14" uuid="c814f528-76a5-48d0-a547-7ef00c802bc5"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DESCRIPTIONS}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="68" y="33" width="100" height="14" uuid="7413e6ba-e0e5-41bc-9336-5bb617d66839"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{UOM}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="11" y="76" width="56" height="14" uuid="e48cb46f-aac1-4022-978d-0c3f78e07d27"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Gudang]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="68" y="76" width="60" height="14" uuid="7c9bd4e9-8c5b-4e0e-b1c9-3dcd05e9ecc5"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Hand]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="132" y="76" width="60" height="14" uuid="998708ae-65ed-4a3a-9339-8d802fc3cbe8"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Order]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="266" y="76" width="60" height="14" uuid="1518f698-6a26-4e95-96c2-4194d191ed6a"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[OTP Ready]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="330" y="76" width="60" height="14" uuid="fbdc56c1-2e56-435f-8f18-e598932658a1"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="592" y="76" width="60" height="14" uuid="c01230f6-4ec2-4aa0-b177-e4c9d4ec0a0b"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[OTP Ready]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="394" y="76" width="60" height="14" uuid="e80bd58d-8dc0-47d4-a117-6a33a53db0c9"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Hand]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="458" y="76" width="60" height="14" uuid="110beb4e-1f46-4458-a3c3-db6751c1e88c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Order]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="720" y="76" width="60" height="14" uuid="9b5e54b3-cccb-4749-972d-896e71e3f082"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="68" y="61" width="322" height="14" uuid="02a3c0d0-c70f-4770-a166-620bca8b5c24"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Stock]]></text>
+				</staticText>
+				<line>
+					<reportElement x="68" y="75" width="325" height="1" uuid="ee1d29fe-bda1-40fb-97f1-6c5942566b3e"/>
+				</line>
+				<staticText>
+					<reportElement x="394" y="61" width="258" height="14" uuid="ac579ae6-b901-4c4c-8220-84e7d47d0fdc"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Reserve]]></text>
+				</staticText>
+				<line>
+					<reportElement x="394" y="75" width="261" height="1" uuid="7302111f-a524-4041-8815-44bbf1d4d1b4"/>
+				</line>
+				<staticText>
+					<reportElement x="656" y="61" width="124" height="14" uuid="dc3f8370-e34e-4b2f-b042-fbcd04f7d47f"/>
+					<textElement textAlignment="Center">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Availability]]></text>
+				</staticText>
+				<line>
+					<reportElement x="11" y="92" width="769" height="1" uuid="824f1205-90a9-4458-9627-7fef68300cf7"/>
+				</line>
+				<line>
+					<reportElement x="1" y="4" width="793" height="1" uuid="698f2890-3356-42f2-a4aa-633faa202cd4"/>
+				</line>
+				<staticText>
+					<reportElement x="196" y="76" width="66" height="14" uuid="922026c2-6dfa-4908-9c23-ec3a52ede503"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Order OTP]]></text>
+				</staticText>
+				<line>
+					<reportElement x="656" y="75" width="124" height="1" uuid="d2a08565-47ee-4da9-8c83-92af1e639494"/>
+				</line>
+				<staticText>
+					<reportElement x="656" y="76" width="60" height="14" uuid="5ce8fe86-9da7-464e-b868-dd6fae3b942d"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Hand]]></text>
+				</staticText>
+				<line>
+					<reportElement x="67" y="61" width="1" height="31" uuid="cf6b1aca-c913-4e34-8ccc-cd1a191fed5f"/>
+				</line>
+				<line>
+					<reportElement x="131" y="76" width="1" height="16" uuid="07d00caa-d24e-496b-a282-69286e761281"/>
+				</line>
+				<line>
+					<reportElement x="329" y="76" width="1" height="16" uuid="846f262a-573e-407c-8351-2efafd23894c"/>
+				</line>
+				<line>
+					<reportElement x="195" y="76" width="1" height="16" uuid="ac102ee0-92c3-454b-b6a9-99c145697841"/>
+				</line>
+				<line>
+					<reportElement x="265" y="76" width="1" height="16" uuid="f0cc5c18-5f4c-4826-ac11-97ee43ec44c6"/>
+				</line>
+				<line>
+					<reportElement x="393" y="61" width="1" height="31" uuid="43225bae-a889-4686-b739-a85fb9c06bb3"/>
+				</line>
+				<line>
+					<reportElement x="11" y="60" width="769" height="1" uuid="92d7bd13-4141-4b30-b73d-ad7ee3e56cba"/>
+				</line>
+				<line>
+					<reportElement x="521" y="76" width="1" height="16" uuid="1ba72487-b52b-4a55-a821-a30dbeb59fe6"/>
+				</line>
+				<line>
+					<reportElement x="457" y="76" width="1" height="16" uuid="74b5d8bc-10bb-4ead-857e-5765681c8b3a"/>
+				</line>
+				<line>
+					<reportElement x="655" y="61" width="1" height="31" uuid="d9e6ce9a-da46-4561-a39e-a64a3c390d62"/>
+				</line>
+				<line>
+					<reportElement x="719" y="76" width="1" height="16" uuid="b05aa6f1-1acf-46e7-8e10-6dbde03aad09"/>
+				</line>
+				<line>
+					<reportElement x="591" y="76" width="1" height="16" uuid="1bcb9fd8-e049-4061-b3e5-ec45ad143111"/>
+				</line>
+				<staticText>
+					<reportElement x="522" y="76" width="66" height="14" uuid="78f8eec5-0620-459a-a130-73148912f479"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[On Order OTP]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="29">
+				<staticText>
+					<reportElement x="11" y="1" width="56" height="14" uuid="59a33315-5843-427b-a797-7cc01b7b0146"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<textField pattern="#,###">
+					<reportElement x="68" y="1" width="60" height="14" uuid="a46de6cd-588c-4258-a2d6-776f33eb9b82"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{STOCK_OH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="132" y="1" width="60" height="14" uuid="45a8d95d-05fb-474d-9924-defd92c00fee"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{ON_ORDER_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="266" y="1" width="60" height="14" uuid="ba29d403-b853-4506-865a-3647bd1551fd"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{OTP_READY_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="330" y="1" width="60" height="14" uuid="a0203c1a-b139-4661-82c6-c11457e73f2d"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TOTAL_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="394" y="1" width="60" height="14" uuid="aa5849b3-01ab-4db2-9165-6376bb84767e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{RSRV_OH_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="458" y="1" width="60" height="14" uuid="145a9e5f-3f57-44a1-8a31-f4b878856b0f"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{RSRV_ON_ORDER_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="592" y="1" width="60" height="14" uuid="82b62ab7-693a-4e59-9c52-98b9cb557502"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{RSRV_OTP_READY_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="720" y="1" width="60" height="14" uuid="f662fced-8dff-44c2-a8e7-692e3ae25d1f"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{STOCK_AVAILABLE_1}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="1" y="20" width="793" height="1" uuid="583a4f9d-e642-4b54-83dd-36780edacd59"/>
+				</line>
+				<textField pattern="#,###">
+					<reportElement x="196" y="1" width="66" height="14" uuid="b09fdbeb-96d3-43e0-9625-6937f2ba2e93"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{ON_ORDER_OTP_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="656" y="1" width="60" height="14" uuid="ad3ab352-d195-4bb8-969d-b85a1fbce96b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AVAILABLE_OH_1}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="11" y="16" width="769" height="1" uuid="16212863-5bfc-4192-93aa-3da8bf3a6000"/>
+				</line>
+				<line>
+					<reportElement x="11" y="0" width="769" height="1" uuid="0ce71d68-c994-4260-b535-7a3270f85823"/>
+				</line>
+				<line>
+					<reportElement x="67" y="1" width="1" height="15" uuid="6e17ebc5-29c4-4c2e-b399-e2f89fcea649"/>
+				</line>
+				<line>
+					<reportElement x="131" y="1" width="1" height="15" uuid="b097a06d-ebf1-4074-a3a1-aeb74585f456"/>
+				</line>
+				<line>
+					<reportElement x="195" y="1" width="1" height="15" uuid="64f18372-3a8b-43d7-a688-c316e172bd92"/>
+				</line>
+				<line>
+					<reportElement x="265" y="1" width="1" height="15" uuid="bfe8c873-ef05-4a8b-a5a3-50739eb4f074"/>
+				</line>
+				<line>
+					<reportElement x="329" y="1" width="1" height="15" uuid="161a7447-8070-4d60-a692-58237338140c"/>
+				</line>
+				<line>
+					<reportElement x="393" y="1" width="1" height="15" uuid="53ac09b0-80c8-47c0-a0b6-44dba8445550"/>
+				</line>
+				<line>
+					<reportElement x="457" y="1" width="1" height="15" uuid="afde5a89-fd44-40ab-9bc5-9acc796a000c"/>
+				</line>
+				<line>
+					<reportElement x="521" y="1" width="1" height="15" uuid="8ffc0da3-e4d5-4614-8a1e-0691bfe7e2b7"/>
+				</line>
+				<line>
+					<reportElement x="591" y="1" width="1" height="15" uuid="6e02d0b6-e3d2-475d-b7a5-058facdca130"/>
+				</line>
+				<line>
+					<reportElement x="655" y="1" width="1" height="15" uuid="46febe2e-6434-4c02-a104-f9cd07cfcccb"/>
+				</line>
+				<textField pattern="#,###">
+					<reportElement x="522" y="1" width="66" height="14" uuid="ab087899-f589-40eb-8bce-9d8ee0b78a41"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{RSRV_ON_ORDER_OTP_1}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="719" y="1" width="1" height="15" uuid="67c6b2a6-fbdd-48ed-af76-92cb835b7b5d"/>
+				</line>
+			</band>
+		</groupFooter>
+	</group>
+	<title>
+		<band height="61" splitType="Stretch">
+			<staticText>
+				<reportElement x="12" y="21" width="537" height="20" uuid="a7597553-dea0-40dd-8114-eeb8737fa757"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Stock Availability]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="40" splitType="Stretch">
+			<staticText>
+				<reportElement x="659" y="19" width="8" height="14" uuid="7852c654-2c18-4a48-b196-394601247d8c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement x="713" y="4" width="23" height="14" uuid="3ddbe7d3-4c00-4fb3-9524-dd6dca9e7a37"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="672" y="4" width="23" height="14" uuid="d4cf22d0-2e20-41b7-9697-05af3d4091a9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="610" y="19" width="49" height="14" uuid="fe2dc67b-70a4-467e-9891-f9ae3266a2a1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Print On]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="610" y="4" width="49" height="14" uuid="284a444c-ff96-467a-bea2-5e5c3305d230"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Page]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="659" y="4" width="8" height="14" uuid="8b6727e1-6099-4e1b-ac30-870e1c26a5b0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="698" y="4" width="14" height="14" uuid="a4c59610-4194-4b29-92ea-8add76aa60e2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="672" y="19" width="100" height="14" uuid="a77530c2-aca8-4a5f-ba9d-6bc253a4a908"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="12" y="5" width="204" height="14" uuid="5dc9ccc3-7d81-4b1f-acbc-bcdebe343714"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT. AUTOJAYA IDETECH]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="11" y="1" width="56" height="14" uuid="7e367bb8-6ea5-437f-ba49-c4aa7c9c83d2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LOC_CODE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="68" y="1" width="60" height="14" uuid="cdca9690-9e05-45b0-8d3e-74cb563e26b2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{STOCK_OH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="132" y="1" width="60" height="14" uuid="56ef3121-a42a-452e-b2ca-d353f02ac040"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="266" y="1" width="60" height="14" uuid="b3333b7a-0874-41af-80fd-81cdfd45696b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OTP_READY}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="330" y="1" width="60" height="14" uuid="4a83927b-80c7-4d94-be14-479320a8bfb3"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="394" y="1" width="60" height="14" uuid="07f4eb78-1239-466c-918c-203f08692210"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RSRV_OH}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="458" y="1" width="60" height="14" uuid="16036a2e-81dc-41c2-b060-838bc6a0175f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RSRV_ON_ORDER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="592" y="1" width="60" height="14" uuid="3a1c116a-aa17-45a8-b718-f87a852011c7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RSRV_OTP_READY}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="720" y="1" width="60" height="14" uuid="7c17d8a8-1a86-4521-a957-5ef406941d25"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{STOCK_AVAILABLE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="196" y="1" width="66" height="14" uuid="30c5de31-b7f6-43d0-8bed-cf9b6435b3d7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ON_ORDER_OTP}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="656" y="1" width="60" height="14" uuid="8a7fb086-f784-4cce-a624-2b009439f5aa"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AVAILABLE_OH}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="67" y="0" width="1" height="15" uuid="d0fa0f63-bc6d-4e82-a06f-6d161e87cdcd"/>
+			</line>
+			<line>
+				<reportElement x="131" y="0" width="1" height="15" uuid="1a89d4ad-8e35-40f6-9be0-c24f1da9216a"/>
+			</line>
+			<line>
+				<reportElement x="195" y="0" width="1" height="15" uuid="33223bcd-8cf9-4f3e-a649-0891bd9df32d"/>
+			</line>
+			<line>
+				<reportElement x="265" y="0" width="1" height="15" uuid="441c6a6a-d8e4-4a5c-9509-cde22c1622df"/>
+			</line>
+			<line>
+				<reportElement x="329" y="0" width="1" height="15" uuid="0185c0e1-b20c-4c04-a484-3129668df9ce"/>
+			</line>
+			<line>
+				<reportElement x="393" y="0" width="1" height="15" uuid="e6568709-60d6-4c4e-8378-9b1d3cb705ed"/>
+			</line>
+			<line>
+				<reportElement x="457" y="0" width="1" height="15" uuid="5ff59727-e96e-42d4-a085-22c2420f910b"/>
+			</line>
+			<line>
+				<reportElement x="521" y="0" width="1" height="15" uuid="27a005f0-02ae-4ed8-b705-3e5e56c2d457"/>
+			</line>
+			<line>
+				<reportElement x="591" y="0" width="1" height="15" uuid="d27eda61-b53e-4f6d-beb2-e2c288560743"/>
+			</line>
+			<line>
+				<reportElement x="655" y="0" width="1" height="15" uuid="691f90e0-9019-433d-a0c7-43d2e98d6746"/>
+			</line>
+			<textField pattern="#,###">
+				<reportElement x="522" y="1" width="66" height="14" uuid="72209c97-34ab-486e-9a66-e1cc77102d39"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RSRV_ON_ORDER_OTP}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="719" y="0" width="1" height="15" uuid="8b47df97-a172-48e8-8b54-96b0333f60f6"/>
+			</line>
+		</band>
+	</detail>
+	<noData>
+		<band height="50">
+			<staticText>
+				<reportElement x="12" y="15" width="204" height="14" uuid="afc085b2-ce1f-4cc4-99bc-2e6d8ea5abf3"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

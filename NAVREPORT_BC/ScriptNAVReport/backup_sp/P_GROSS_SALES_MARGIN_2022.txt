@@ -1,0 +1,571 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_GROSS_SALES_MARGIN_2022]    Script Date: 07-02-2023 4:39:44 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[P_GROSS_SALES_MARGIN_2022] 
+	@ProsesId  nvarchar(100) ,   
+	@TglAwalTahun  nvarchar(15) , 
+	@TglFrom  nvarchar(15) , 
+	@TglUpto  nvarchar(15) , 
+	@Action  nvarchar(15)
+AS   
+BEGIN
+	DECLARE @PeriodAwalTahun DATETIME = CAST(@TglAwalTahun AS DATETIME);
+	DECLARE @PeriodFrom DATETIME = CAST(@TglFrom AS DATETIME);
+	DECLARE @PeriodUpto DATETIME = CAST(@TglUpto AS DATETIME);
+	--
+	IF @Action = 'CETAK'
+	BEGIN
+		INSERT INTO [dbo].[TEMP11_GROSS_SALES_MARGIN]
+				   ([TEMP11_ID]
+				   ,[PROSES_ID]
+				   ,[MAIN_GRP]
+				   ,[GROUP_NO]
+				   ,[GROUP_DESC]
+				   ,[CUST_NO]
+				   ,[UPTO_PREV_MONTH]
+				   ,[CURR_MONTH])
+		SELECT	ROW_NUMBER() OVER (PARTITION BY 1 ORDER BY XX.MAIN_GRP, XX.GROUP_NO) AS TEMP_ID
+				, @ProsesId AS PROSES_ID
+				, XX.MAIN_GRP
+				, XX.GROUP_NO
+				, XX.GROUP_DESC
+				, XX.CUST_NO
+				, XX.UPTO_PREV_MONTH 
+				, XX.CURR_MONTH
+		FROM	(
+		SELECT	'A' AS MAIN_GRP
+				, X.GROUP_NO
+				, X.GROUP_DESC
+				, X.CUST_NO
+				, SUM(X.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH 
+				, SUM(X.CURR_MONTH) AS CURR_MONTH
+		FROM	(
+					SELECT	 1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, GLE.[Source No_] AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+									FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+					GROUP BY GLE.[Source No_]
+					UNION ALL
+					SELECT	 1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, 'SPONSORSHIP' AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(('ALL') = '10' OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+					GROUP BY GLE.[Source No_]
+					UNION ALL					
+					SELECT	1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, DIMS.CUSTOMER AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+											,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+									FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY DIMS.CUSTOMER
+					UNION ALL
+					SELECT	 1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, 'SPONSORSHIP' AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(('ALL') = '10' OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+					UNION ALL
+					SELECT	1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, SLC.CUST_NO AS CUST_NO
+							, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+							, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+					FROM	(
+								SELECT	CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+										, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										, GLE.[Source No_] AS CUST_NO
+								FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Document No_] <> '9SIAT200197'
+										AND GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <=   @TglUpto
+								UNION ALL
+								SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0303' AS SORT_SLS
+										, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										, DIMS.CUSTOMER AS CUST_NO
+								FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														, MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+												FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <=   @TglUpto
+							) SLC
+					WHERE ('ALL') = 'ALL' OR ('ALL') = '10'
+					GROUP BY SLC.CUST_NO
+					UNION ALL
+					SELECT	1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, GLE.[Source No_] AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+									FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <=  @TglUpto)
+					GROUP BY GLE.[Source No_]
+					UNION ALL
+					SELECT	 1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, 'SPONSORSHIP' AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(('ALL') = '10' OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+					GROUP BY GLE.[Source No_]
+					UNION ALL
+					SELECT	1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, DIMS.CUSTOMER AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+											,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+									FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	(GLE.[G_L Account No_] BETWEEN '400.110.00'  AND '420.110.01') AND
+							GLE.[G_L Account No_] <> '400.110.04' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY DIMS.CUSTOMER
+					UNION ALL
+					SELECT	 1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, 'SPONSORSHIP' AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					WHERE	GLE.[G_L Account No_] = '400.110.04' AND
+							(('ALL') = '10' OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					UNION ALL
+					SELECT	1 AS GROUP_NO
+							, 'SALES' AS GROUP_DESC
+							, SLC.CUST_NO AS CUST_NO
+							, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+							, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+					FROM	(
+								SELECT	CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. Sales INTERCOY' ELSE '1. Sales FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) Sales INTERCOY' ELSE '(-) Sales FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0302' ELSE 'SLS-0301' END AS SORT_SLS
+										, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										, GLE.[Source No_] AS CUST_NO
+								FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <= @TglUpto)
+								UNION ALL
+								SELECT	'3. Others Sales Adjustment' AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0303' AS SORT_SLS
+										, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										, DIMS.CUSTOMER AS CUST_NO
+								FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+												FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Posting Date] >= @TglAwalTahun  AND GLE.[Posting Date] <= @TglUpto
+							) SLC
+					WHERE ('ALL') = 'ALL' OR ('ALL') = '10'
+					GROUP BY SLC.CUST_NO
+					UNION ALL
+					SELECT	CX.GROUP_NO
+							,CX.GROUP_DESC
+							, CASE WHEN DC.CUST_NO IS NULL THEN 'ADJUSTMENT-COGS' ELSE DC.CUST_NO END AS CUST_NO
+							, SUM(CX.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+							, SUM(CX.CURR_MONTH) AS CURR_MONTH
+					FROM	(
+					SELECT	 2 AS GROUP_NO
+							, GLE.[Document No_] AS CUST_NO
+							, 'COGS' AS GROUP_DESC
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+									FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY [Document No_]
+					UNION ALL
+					SELECT	 2 AS GROUP_NO
+							, GLE.[Document No_] AS CUST_NO
+							, 'COGS' AS GROUP_DESC
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+									FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY [Document No_]
+							) CX
+					LEFT JOIN	(
+									SELECT [No_] AS DOC_NO, [Bill-to Customer No_] AS CUST_NO FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header]
+									UNION ALL
+									SELECT [No_] AS DOC_NO, [Bill-to Customer No_] AS CUST_NO FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header]
+									UNION ALL
+									SELECT [No_] AS DOC_NO, [Bill-to Customer No_] AS CUST_NO FROM [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header]
+									UNION ALL
+									SELECT [No_] AS DOC_NO, [Bill-to Customer No_] AS CUST_NO FROM [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header]
+									UNION ALL
+									SELECT [No_] AS DOC_NO, [Bill-to Customer No_] AS CUST_NO FROM [ACS].[dbo].[AUTOJAYA$Sales Shipment Header]
+									UNION ALL
+									SELECT [No_] AS DOC_NO, [Bill-to Customer No_] AS CUST_NO FROM [ACS].[dbo].[SOLUSI$Sales Shipment Header]
+								) DC ON DC.DOC_NO = CX.CUST_NO
+					GROUP BY CX.GROUP_NO, CX.GROUP_DESC, DC.CUST_NO
+					UNION ALL
+					SELECT	 2 AS GROUP_NO
+							, 'COGS' AS GROUP_DESC
+							, CASE WHEN DIMS.CUSTOMER IS NULL THEN 'MANAGEMENT-ADJUSTMENT-COGS' ELSE DIMS.CUSTOMER END AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+											,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+									FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY DIMS.CUSTOMER
+					UNION ALL
+					SELECT	2 AS GROUP_NO
+							, 'COGS' AS GROUP_DESC
+							, SLC.CUST_NO
+							, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+							, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+					FROM	(
+								SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+												WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+										END AS GRUP_TITLE
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] = 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+										,CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										,CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										,GLE.[Source No_] AS CUST_NO
+								FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+														,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+														,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+												FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND GLE.[Document No_] <> '9SIAT200197'
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+								UNION ALL
+								SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+												WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+										END AS GRUP_TITLE
+										,CASE WHEN GLE.[Description] LIKE 'FA%' THEN '1. COGS FA' ELSE '2. COGS INTERCOY' END AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0403' AS SORT_SLS
+										, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										, CASE WHEN DIMS.CUSTOMER IS NULL THEN 'MANAGEMENT-ADJUSTMENT-COGS' ELSE DIMS.CUSTOMER END AS CUST_NO
+								FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+														,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+														,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+														,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+												FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+							) SLC
+					WHERE ('ALL') = 'ALL' OR ('ALL') = '10'
+					GROUP BY SLC.CUST_NO
+					UNION ALL
+					SELECT	2 AS GROUP_NO
+							, 'COGS' AS GROUP_DESC
+							, CASE WHEN DIMS.CUSTOMER IS NULL THEN 'MANAGEMENT-ADJUSTMENT-COGS' ELSE DIMS.CUSTOMER END AS CUST_NO
+							, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					LEFT JOIN	(
+									SELECT [Dimension Set ID] AS DIM_ID
+											,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+											,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+											,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+											,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+									FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+									GROUP BY [Dimension Set ID]
+								) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+					WHERE	GLE.[G_L Account No_] BETWEEN '500.110.00'  AND '500.111.00' AND
+							DIMS.ITEM_CAT <> '' AND
+							(DIMS.BRANCHES = ('ALL') OR ('ALL') = 'ALL') AND
+							(GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY DIMS.CUSTOMER
+					UNION ALL
+					SELECT	2 AS GROUP_NO
+							, 'COGS' AS GROUP_DESC
+							, SLC.CUST_NO
+							, SUM(SLC.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+							, SUM(SLC.CURR_MONTH) AS CURR_MONTH
+					FROM	(
+								SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+												WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+										END AS GRUP_TITLE
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '2. COGS INTERCOY' ELSE '1. COGS FA' END AS SALES_TITLE
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN '(-) COGS INTERCOY' ELSE '(-) COGS FA' END AS SALES_TITLE2
+										,CASE WHEN GLE.[Source No_] <> 'SOPE001' THEN 'SLS-0402' ELSE 'SLS-0401' END AS SORT_SLS
+										,CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										,CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										,GLE.[Source No_] AS CUST_NO
+								FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+														,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+														,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+												FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+								UNION ALL
+								SELECT	CASE	WHEN DIMS.ITEM_CAT = 'HW01' THEN '1. HARDWARE'
+												WHEN DIMS.ITEM_CAT = 'PS01' THEN '2. 3rd PARTY SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS02' THEN '3. OWN SOFTWARE'
+												WHEN DIMS.ITEM_CAT = 'PS03' THEN '4. TECHNOLOGY SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS04' THEN '5. HARDWARE SERVICE'
+												WHEN DIMS.ITEM_CAT = 'PS05' THEN '6. MANAGE SERVICE'
+										END AS GRUP_TITLE
+										,CASE WHEN GLE.[Description] LIKE 'FA%' THEN '1. COGS FA' ELSE '2. COGS INTERCOY' END AS SALES_TITLE
+										,'(-/+) Others Management Adjustment' AS SALES_TITLE2
+										,'SLS-0403' AS SORT_SLS
+										, CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS UPTO_PREV_MONTH
+										, CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] ELSE 0 END AS CURR_MONTH
+										, CASE WHEN DIMS.CUSTOMER IS NULL THEN 'MANAGEMENT-ADJUSTMENT-COGS' ELSE DIMS.CUSTOMER END AS CUST_NO
+								FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+								LEFT JOIN	(
+												SELECT [Dimension Set ID] AS DIM_ID
+														,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END) AS BRANCHES
+														,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS ITEM_CAT
+														,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END) AS SALESMAN
+														,MAX(CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END) AS CUSTOMER
+												FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+												GROUP BY [Dimension Set ID]
+											) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+								WHERE GLE.[G_L Account No_] IN ('400.110.01', '410.110.01', '420.110.01')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <=  @TglUpto)
+							) SLC
+					WHERE ('ALL') = 'ALL' OR ('ALL') = '10'
+					GROUP BY SLC.CUST_NO
+					UNION ALL
+					SELECT	RBT.GROUP_NO
+							, RBT.GROUP_DESC
+							, 'N/A' AS CUST_NO
+							, SUM(ISNULL(RBT.UPTO_PREV_MONTH,0)) AS UPTO_PREV_MONTH
+							, SUM(ISNULL(RBT.CURR_MONTH,0)) AS CURR_MONTH 
+					FROM	(
+								SELECT	3 AS GROUP_NO
+										, 'REBATE' AS GROUP_DESC
+										, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+										, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+								FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+								WHERE	GLE.[G_L Account No_] = '600.110.00'
+										AND (GLE.[Global Dimension 1 Code] = ('ALL') OR ('ALL') = 'ALL')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+								UNION ALL
+								SELECT	3 AS GROUP_NO
+										, 'REBATE' AS GROUP_DESC
+										, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+										, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+								FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+								WHERE	GLE.[G_L Account No_] = '600.110.00'
+										AND (GLE.[Global Dimension 1 Code] = ('ALL') OR ('ALL') = 'ALL')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+								UNION ALL
+								SELECT	3 AS GROUP_NO
+										, 'REBATE' AS GROUP_DESC
+										, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+										, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+								FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+								WHERE	GLE.[G_L Account No_] IN ( '600.110.00', '600.120.00')
+										AND (GLE.[Global Dimension 1 Code] = ('ALL') OR ('ALL') = 'ALL')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+								UNION ALL
+								SELECT	3 AS GROUP_NO
+										, 'REBATE' AS GROUP_DESC
+										, SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS UPTO_PREV_MONTH
+										, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN ISNULL(GLE.[Amount],0) ELSE 0 END) * -1 AS CURR_MONTH
+								FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+								WHERE	GLE.[G_L Account No_] IN ( '600.110.00', '600.120.00')
+										AND (GLE.[Global Dimension 1 Code] = ('ALL') OR ('ALL') = 'ALL')
+										AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+							) RBT
+					GROUP BY RBT.GROUP_NO, RBT.GROUP_DESC
+				) X
+		GROUP BY X.GROUP_NO, X.GROUP_DESC, X.CUST_NO
+		UNION ALL
+		SELECT	'B' AS MAIN_GRP
+				, 1 AS GROUP_NO
+				, 'EXCHANGE GAIN/(LOSS)' AS GROUP_DESC
+				, 'N/A' AS CUST_NO
+				, SUM(X.UPTO_PREV_MONTH) AS UPTO_PREV_MONTH
+				, SUM(X.CURR_MONTH) AS CURR_MONTH		
+		FROM	(
+					SELECT
+							SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+					LEFT JOIN  [ACS].[dbo].[AUTOJAYA$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+					WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+							AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY [G_L Account No_],GLA.[Name]
+					UNION ALL
+					SELECT
+							SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1 ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+					LEFT JOIN  [ACS].[dbo].[SOLUSI$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+					WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+							AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY [G_L Account No_],GLA.[Name]
+					UNION ALL
+					SELECT
+							SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1  ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+					LEFT JOIN  [ACS].[dbo].[AJ-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+					WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+							AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY [G_L Account No_],GLA.[Name]
+					UNION ALL
+					SELECT
+							SUM(CASE WHEN GLE.[Posting Date] <= DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1 ELSE 0 END) AS UPTO_PREV_MONTH
+							, SUM(CASE WHEN GLE.[Posting Date] >  DATEADD(DAY,-1,@TglFrom) THEN GLE.[Amount] * -1 ELSE 0 END) AS CURR_MONTH
+					FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+					LEFT JOIN  [ACS].[dbo].[SP-ADJ$G_L Account] GLA ON GLA.[No_] = GLE.[G_L Account No_]
+					WHERE GLE.[G_L Account No_] IN ('990.220.90','990.225.90')
+							AND (GLE.[Posting Date] >= @TglAwalTahun AND GLE.[Posting Date] <= @TglUpto)
+					GROUP BY [G_L Account No_],GLA.[Name]
+				) X
+				) XX;
+		--
+		RETURN  ;
+	END;
+	--
+	IF @Action = 'DELETE' 
+	BEGIN
+		DELETE FROM [dbo].[TEMP11_GROSS_SALES_MARGIN]
+		WHERE [PROSES_ID] = @ProsesId;
+		--
+		RETURN  ;
+	END;
+END;

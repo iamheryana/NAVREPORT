@@ -1,0 +1,1275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01016_AJLapPenjualan_detail_V3" language="groovy" pageWidth="1750" pageHeight="595" orientation="Landscape" columnWidth="1710" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.210000000000009"/>
+	<property name="ireport.x" value="560"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvTo" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Cabang" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CustFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CustUpto" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT XX.REG
+        , XX.NO_INV
+		, XX.TGL_INV
+		, XX.KODE_CUST
+		, XX.NAMA_CUST
+		, XX.NO_PO_CUST
+		, XX.NO_FP
+		, XX.NILAI_PENJUALAN
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_PENJUALAN ELSE 0 END AS SUM_NILAI_PENJUALAN
+		, XX.NILAI_DISC
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_DISC ELSE 0 END AS SUM_NILAI_DISC
+		, XX.NILAI_UM
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_UM ELSE 0 END AS SUM_NILAI_UM
+		, XX.NILAI_DPP
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_DPP ELSE 0 END AS SUM_NILAI_DPP
+		, XX.NILAI_PPN
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_PPN ELSE 0 END AS SUM_NILAI_PPN
+		, XX.NILAI_TOTAL
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_TOTAL ELSE 0 END AS SUM_NILAI_TOTAL
+		, XX.NILAI_COGS
+		, CASE WHEN XX.RN = 1 THEN XX.NILAI_COGS ELSE 0 END AS SUM_NILAI_COGS
+		, XX.MARGIN
+		, CASE WHEN XX.RN = 1 THEN XX.MARGIN ELSE 0 END AS SUM_MARGIN
+		, XX.MARGIN_PCN
+		, CASE WHEN XX.RN = 1 THEN XX.MARGIN_PCN ELSE 0 END AS SUM_MARGIN_PCN
+		, XX.CABANG
+		, XX.CRM_NO
+		, XX.ITEM_CAT
+		, XX.ITEM_CAT_DESC
+		, XX.NILAI_PENJUALAN_DTL
+		, XX.NILAI_DISC_DTL
+		, XX.NILAI_UM_DTL
+		, XX.NILAI_DPP_DTL
+		, XX.NILAI_PPN_DTL
+		, XX.NILAI_TOTAL_DTL
+		, XX.NILAI_COGS_DTL
+FROM (
+SELECT X.REG
+        , X.NO_INV
+		, X.TGL_INV
+		, X.KODE_CUST
+		, X.NAMA_CUST
+		, X.NO_PO_CUST
+		, X.NO_FP
+		, X.NILAI_PENJUALAN
+		, X.NILAI_DISC
+		, X.NILAI_UM
+		, X.NILAI_DPP
+		, X.NILAI_PPN
+		, X.NILAI_TOTAL
+		, X.NILAI_COGS
+		, X.MARGIN
+		, X.MARGIN_PCN
+		, CAB.[Name] AS CABANG
+		, CRM.[No_] AS CRM_NO
+		, ROW_NUMBER() OVER (PARTITION BY X.NO_INV ORDER BY X.NO_INV ) AS RN
+		, DPJL.ITEM_CAT
+		, DPJL.ITEM_CAT_DESC
+		, DPJL.NILAI_PENJUALAN AS NILAI_PENJUALAN_DTL
+		, DPJL.NILAI_DISC AS NILAI_DISC_DTL
+		, DPJL.NILAI_UM AS NILAI_UM_DTL
+		, DPJL.NILAI_DPP AS NILAI_DPP_DTL
+		, DPJL.NILAI_PPN AS NILAI_PPN_DTL
+		, DPJL.NILAI_TOTAL AS NILAI_TOTAL_DTL
+		, DPJL.NILAI_COGS AS NILAI_COGS_DTL
+FROM (
+SELECT CASE WHEN SUBSTRING(SI.[No_],1,2) = 'UM' THEN 'INVOICE UANG MUKA' ELSE 'INVOICE' END AS REG
+        , SI.[No_] AS NO_INV
+		, SI.[Posting Date] AS TGL_INV
+		, SI.[Shortcut Dimension 1 Code] AS CABANG
+		, SI.[Bill-to Customer No_] AS KODE_CUST
+		, SI.[Bill-to Name] AS NAMA_CUST
+		, SI.[External Document No_] AS NO_PO_CUST
+		, SI.[Faktur Pajak No_] AS NO_FP
+		, DTL.NILAI_PENJUALAN
+		, DTL.NILAI_DISC
+		, DTL.NILAI_UM
+		, DTL.NILAI_DPP
+		, DTL.NILAI_PPN
+		, DTL.NILAI_TOTAL
+		, DTL.NILAI_COGS
+		, DTL.NILAI_DPP - DTL.NILAI_COGS AS MARGIN
+		,	CASE WHEN DTL.NILAI_DPP > 0 THEN
+				((DTL.NILAI_DPP - DTL.NILAI_COGS)/DTL.NILAI_DPP)*100
+			ELSE
+				0
+			END AS MARGIN_PCN
+FROM [dbo].[AUTOJAYA$Sales Invoice Header] SI
+INNER JOIN (
+			SELECT	INV.NO_INVOICE
+					,SUM(INV.NILAI_PENJUALAN) * -1 AS NILAI_PENJUALAN
+					,SUM(INV.NILAI_DISC) * -1 AS NILAI_DISC
+					,SUM(INV.NILAI_UM) * -1 AS NILAI_UM
+					,(SUM(INV.NILAI_PENJUALAN) + SUM(INV.NILAI_DISC) + SUM(INV.NILAI_UM)) * -1 AS NILAI_DPP
+					,SUM(INV.NILAI_PPN) * -1 AS NILAI_PPN
+					,(SUM(INV.NILAI_PENJUALAN) + SUM(INV.NILAI_DISC) + SUM(INV.NILAI_UM) + SUM(INV.NILAI_PPN)) * -1 AS NILAI_TOTAL
+					,SUM(INV.NILAI_COGS) AS NILAI_COGS
+			FROM	(
+						SELECT GLE.[Document No_] AS NO_INVOICE
+								,CASE WHEN GLE.[G_L Account No_] IN ('400.110.00', '400.110.01', '400.110.04') THEN
+									GLE.[Amount]
+								ELSE
+									0
+								END AS NILAI_PENJUALAN
+								,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01') THEN
+									GLE.[Amount]
+								ELSE
+									0
+								END AS NILAI_DISC
+								,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+									GLE.[Amount]
+								ELSE
+									0
+								END AS NILAI_UM
+								,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+									GLE.[Amount]
+								ELSE
+									0
+								END AS NILAI_PPN
+								,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+									CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Debit Amount]
+									ELSE GLE.[Amount]
+									END
+								ELSE
+									0
+								END AS NILAI_COGS
+						FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+						INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIA ON SIA.[No_] = GLE.[Document No_]
+						WHERE GLE.[G_L Account No_] IN ('500.110.00' , '400.110.00', '230.190.00', '400.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04')
+					) INV
+			GROUP BY INV.NO_INVOICE
+		) DTL ON SI.[No_] = DTL.NO_INVOICE
+UNION ALL
+SELECT 'CREDIT MEMO' AS REG
+		, SCI.[No_] AS NO_INV
+		, SCI.[Posting Date] AS TGL_INV
+		, SCI.[Shortcut Dimension 1 Code] AS CABANG
+		, SCI.[Bill-to Customer No_] AS KODE_CUST
+		, SCI.[Bill-to Name] AS NAMA_CUST
+		, SCI.[External Document No_] AS NO_PO_CUST
+		, SCI.[Faktur Pajak No_] AS NO_FP
+		, DTL.NILAI_PENJUALAN
+		, DTL.NILAI_DISC
+		, DTL.NILAI_UM
+		, DTL.NILAI_DPP
+		, DTL.NILAI_PPN
+		, DTL.NILAI_TOTAL
+		, DTL.NILAI_COGS
+		, DTL.NILAI_DPP - DTL.NILAI_COGS AS MARGIN
+		,	CASE WHEN DTL.NILAI_DPP < 0 THEN
+				((DTL.NILAI_DPP - DTL.NILAI_COGS)/DTL.NILAI_DPP)*100
+			ELSE
+				0
+			END AS MARGIN_PCN
+FROM [dbo].[AUTOJAYA$Sales Cr_Memo Header] SCI
+INNER JOIN (
+				SELECT	CINV.NO_INVOICE
+						,SUM(CINV.NILAI_PENJUALAN) * -1 AS NILAI_PENJUALAN
+						,SUM(CINV.NILAI_DISC) * -1 AS NILAI_DISC
+						,SUM(CINV.NILAI_UM) * -1 AS NILAI_UM
+						,(SUM(CINV.NILAI_PENJUALAN) + SUM(CINV.NILAI_DISC) + SUM(CINV.NILAI_UM)) * -1 AS NILAI_DPP
+						,SUM(CINV.NILAI_PPN) * -1 AS NILAI_PPN
+						,(SUM(CINV.NILAI_PENJUALAN) + SUM(CINV.NILAI_DISC) + SUM(CINV.NILAI_UM) + SUM(CINV.NILAI_PPN)) * -1 AS NILAI_TOTAL
+						,SUM(CINV.NILAI_COGS) * -1 AS NILAI_COGS
+
+				FROM	(
+							SELECT GLE.[Document No_] AS NO_INVOICE
+									,CASE WHEN GLE.[G_L Account No_] IN ('410.110.00', '410.110.01', '400.110.04') THEN
+										GLE.[Amount]
+									ELSE
+										0
+									END AS NILAI_PENJUALAN
+									,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01' ) THEN
+										GLE.[Amount]
+									ELSE
+										0
+									END AS NILAI_DISC
+									,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+										GLE.[Amount]
+									ELSE
+										0
+									END AS NILAI_UM
+									,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+										GLE.[Amount]
+									END AS NILAI_PPN
+									,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+										CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Credit Amount]
+										ELSE GLE.[Amount]
+										END
+									ELSE
+										0
+									END AS NILAI_COGS
+							FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+							INNER JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CIA ON CIA.[No_] = GLE.[Document No_]
+							WHERE GLE.[G_L Account No_] IN ('500.110.00', '230.190.00', '410.110.00', '410.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04')
+						) CINV
+				GROUP BY CINV.NO_INVOICE
+		) DTL ON SCI.[No_] = DTL.NO_INVOICE
+) X
+LEFT JOIN	(
+				SELECT [Applies-to Doc_ No_], MAX([No_]) AS [No_]
+				FROM [dbo].[AUTOJAYA$Sales Cr_Memo Header]
+				GROUP BY [Applies-to Doc_ No_]
+			) CRM ON CRM.[Applies-to Doc_ No_] = X.NO_INV
+LEFT JOIN [dbo].[AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = X.CABANG
+LEFT JOIN	(
+				SELECT DPJ.NO_INVOICE
+						, DPJ.ITEM_CAT
+						, IC.[Description] AS ITEM_CAT_DESC
+						,DPJ.NILAI_PENJUALAN
+						,DPJ.NILAI_DISC
+						,DPJ.NILAI_UM
+						,DPJ.NILAI_DPP
+						,DPJ.NILAI_PPN
+						,DPJ.NILAI_TOTAL
+						,DPJ.NILAI_COGS
+				FROM	(
+							SELECT	INV.NO_INVOICE
+									,INV.ITEM_CAT
+									,SUM(INV.NILAI_PENJUALAN) * -1 AS NILAI_PENJUALAN
+									,SUM(INV.NILAI_DISC) * -1 AS NILAI_DISC
+									,SUM(INV.NILAI_UM) * -1 AS NILAI_UM
+									,(SUM(INV.NILAI_PENJUALAN) + SUM(INV.NILAI_DISC) + SUM(INV.NILAI_UM)) * -1 AS NILAI_DPP
+									,SUM(INV.NILAI_PPN) * -1 AS NILAI_PPN
+									,(SUM(INV.NILAI_PENJUALAN) + SUM(INV.NILAI_DISC) + SUM(INV.NILAI_UM) + SUM(INV.NILAI_PPN)) * -1 AS NILAI_TOTAL
+									,SUM(INV.NILAI_COGS) AS NILAI_COGS
+							FROM	(
+										SELECT GLE.[Document No_] AS NO_INVOICE
+												, GLE.[Global Dimension 2 Code] AS ITEM_CAT
+												,CASE WHEN GLE.[G_L Account No_] IN ('400.110.00', '400.110.01', '400.110.04') THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_PENJUALAN
+												,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01') THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_DISC
+												,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_UM
+												,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_PPN
+												,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+													CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Debit Amount]
+													ELSE GLE.[Amount]
+													END
+												ELSE
+													0
+												END AS NILAI_COGS
+										FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+										INNER JOIN [dbo].[AUTOJAYA$Sales Invoice Header] SIA ON SIA.[No_] = GLE.[Document No_]
+										WHERE GLE.[G_L Account No_] IN ('500.110.00' , '400.110.00', '230.190.00', '400.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04')
+									) INV
+							GROUP BY INV.NO_INVOICE, INV.ITEM_CAT
+							UNION ALL
+							SELECT	CINV.NO_INVOICE
+									,CINV.ITEM_CAT
+									,SUM(CINV.NILAI_PENJUALAN) * -1 AS NILAI_PENJUALAN
+									,SUM(CINV.NILAI_DISC) * -1 AS NILAI_DISC
+									,SUM(CINV.NILAI_UM) * -1 AS NILAI_UM
+									,(SUM(CINV.NILAI_PENJUALAN) + SUM(CINV.NILAI_DISC) + SUM(CINV.NILAI_UM)) * -1 AS NILAI_DPP
+									,SUM(CINV.NILAI_PPN) * -1 AS NILAI_PPN
+									,(SUM(CINV.NILAI_PENJUALAN) + SUM(CINV.NILAI_DISC) + SUM(CINV.NILAI_UM) + SUM(CINV.NILAI_PPN)) * -1 AS NILAI_TOTAL
+									,SUM(CINV.NILAI_COGS) * -1 AS NILAI_COGS
+							FROM	(
+										SELECT GLE.[Document No_] AS NO_INVOICE
+												, GLE.[Global Dimension 2 Code] AS ITEM_CAT
+												,CASE WHEN GLE.[G_L Account No_] IN ('410.110.00', '410.110.01', '400.110.04') THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_PENJUALAN
+												,CASE WHEN GLE.[G_L Account No_] IN ('420.110.00', '420.110.01' ) THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_DISC
+												,CASE WHEN GLE.[G_L Account No_] = ('400.110.03') THEN
+													GLE.[Amount]
+												ELSE
+													0
+												END AS NILAI_UM
+												,CASE WHEN GLE.[G_L Account No_]= '230.190.00' THEN
+													GLE.[Amount]
+												END AS NILAI_PPN
+												,CASE WHEN GLE.[G_L Account No_]= '500.110.00' THEN
+													CASE WHEN MIN(GLE.[Transaction No_]) OVER(PARTITION BY GLE.[Document No_]) = GLE.[Transaction No_] THEN GLE.[Credit Amount]
+													ELSE GLE.[Amount]
+													END
+												ELSE
+													0
+												END AS NILAI_COGS
+										FROM [dbo].[AUTOJAYA$G_L Entry] GLE
+										INNER JOIN [dbo].[AUTOJAYA$Sales Cr_Memo Header] CIA ON CIA.[No_] = GLE.[Document No_]
+										WHERE GLE.[G_L Account No_] IN ('500.110.00', '230.190.00', '410.110.00', '410.110.01', '420.110.00', '420.110.01', '400.110.03', '400.110.04')
+									) CINV
+							GROUP BY CINV.NO_INVOICE, CINV.ITEM_CAT
+						) DPJ
+				LEFT JOIN [dbo].[AUTOJAYA$Item Category] IC ON IC.[Code] = DPJ.ITEM_CAT
+			) DPJL ON DPJL.NO_INVOICE = X.NO_INV
+) XX
+WHERE (XX.TGL_INV >= $P{TglInvFrom} AND XX.TGL_INV <= $P{TglInvTo}) AND
+	($P{Cabang} = 'ALL' OR XX.CABANG = $P{Cabang}) AND
+  (XX.KODE_CUST >= $P{CustFrom} AND XX.KODE_CUST <= $P{CustUpto})]]>
+	</queryString>
+	<field name="REG" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="KODE_CUST" class="java.lang.String"/>
+	<field name="NAMA_CUST" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="NILAI_PENJUALAN" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_PENJUALAN" class="java.math.BigDecimal"/>
+	<field name="NILAI_DISC" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_DISC" class="java.math.BigDecimal"/>
+	<field name="NILAI_UM" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_UM" class="java.math.BigDecimal"/>
+	<field name="NILAI_DPP" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_DPP" class="java.math.BigDecimal"/>
+	<field name="NILAI_PPN" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_PPN" class="java.math.BigDecimal"/>
+	<field name="NILAI_TOTAL" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_TOTAL" class="java.math.BigDecimal"/>
+	<field name="NILAI_COGS" class="java.math.BigDecimal"/>
+	<field name="SUM_NILAI_COGS" class="java.math.BigDecimal"/>
+	<field name="MARGIN" class="java.math.BigDecimal"/>
+	<field name="SUM_MARGIN" class="java.math.BigDecimal"/>
+	<field name="MARGIN_PCN" class="java.math.BigDecimal"/>
+	<field name="SUM_MARGIN_PCN" class="java.math.BigDecimal"/>
+	<field name="CABANG" class="java.lang.String"/>
+	<field name="CRM_NO" class="java.lang.String"/>
+	<field name="ITEM_CAT" class="java.lang.String"/>
+	<field name="ITEM_CAT_DESC" class="java.lang.String"/>
+	<field name="NILAI_PENJUALAN_DTL" class="java.math.BigDecimal"/>
+	<field name="NILAI_DISC_DTL" class="java.math.BigDecimal"/>
+	<field name="NILAI_UM_DTL" class="java.math.BigDecimal"/>
+	<field name="NILAI_DPP_DTL" class="java.math.BigDecimal"/>
+	<field name="NILAI_PPN_DTL" class="java.math.BigDecimal"/>
+	<field name="NILAI_TOTAL_DTL" class="java.math.BigDecimal"/>
+	<field name="NILAI_COGS_DTL" class="java.math.BigDecimal"/>
+	<sortField name="CABANG"/>
+	<sortField name="REG"/>
+	<sortField name="TGL_INV"/>
+	<sortField name="NO_INV"/>
+	<sortField name="ITEM_CAT"/>
+	<variable name="NILAI_PENJUALAN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_PENJUALAN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_PENJUALAN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_PENJUALAN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_PENJUALAN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_PENJUALAN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_PPN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_PPN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_PPN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_PPN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_PPN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_PPN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DISC_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_DISC}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DISC_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_DISC}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DISC_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_DISC}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_UM_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_UM}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_UM_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_UM}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_UM_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_UM}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DPP_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_DPP}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DPP_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_DPP}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_DPP_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_DPP}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_TOTAL_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_COGS_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_COGS}]]></variableExpression>
+	</variable>
+	<variable name="MARGIN_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Reg" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_MARGIN}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_TOTAL_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_TOTAL_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_TOTAL}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_COGS_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_COGS}]]></variableExpression>
+	</variable>
+	<variable name="NILAI_COGS_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_NILAI_COGS}]]></variableExpression>
+	</variable>
+	<variable name="MARGIN_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_MARGIN}]]></variableExpression>
+	</variable>
+	<variable name="MARGIN_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SUM_MARGIN}]]></variableExpression>
+	</variable>
+	<variable name="Pcn_1" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[($V{NILAI_DPP_1}==0 ? 0 : ($V{MARGIN_1}/$V{NILAI_DPP_1})*100 )]]></variableExpression>
+	</variable>
+	<variable name="Pcn_2" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[($V{NILAI_DPP_2}==0 ? 0 : ($V{MARGIN_2}/$V{NILAI_DPP_2})*100 )]]></variableExpression>
+	</variable>
+	<variable name="Pcn_3" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[($V{NILAI_DPP_3}==0 ? 0 : ($V{MARGIN_3}/$V{NILAI_DPP_3})*100 )]]></variableExpression>
+	</variable>
+	<group name="Cabang">
+		<groupExpression><![CDATA[$F{CABANG}]]></groupExpression>
+		<groupFooter>
+			<band height="25">
+				<staticText>
+					<reportElement x="3" y="1" width="31" height="14" uuid="4aaa84a5-0886-42d7-95fe-e024efe295ea"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="34" y="1" width="71" height="14" uuid="74e9347e-869c-461b-9e45-89ecd9d7c818"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="850" y="1" width="100" height="14" uuid="0b78dd71-7907-4b39-a1b4-12d064568aa7"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_PENJUALAN_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="1250" y="1" width="100" height="14" uuid="2039faa6-73fc-4fa1-a55c-95523d6827a0"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_PPN_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="950" y="1" width="100" height="14" uuid="0d375d2d-c908-4097-8d84-e78d75d835e8"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_DISC_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1050" y="1" width="100" height="14" uuid="a71d8611-6d5f-41d2-ae1d-0280b942ac21"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_UM_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1150" y="1" width="100" height="14" uuid="c7e61571-3519-4648-9973-a7fc1cdb9a5b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_DPP_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1350" y="1" width="100" height="14" uuid="ccac69df-114f-4734-97fa-aead635e1099"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_TOTAL_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1450" y="1" width="100" height="14" uuid="9c469332-bc90-4c3e-b72d-e06bd989bc0b"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_COGS_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1550" y="1" width="100" height="14" uuid="ed48bf4d-d7c9-4146-9e1c-f50cc82ee3a6"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{MARGIN_2}]]></textFieldExpression>
+				</textField>
+				<textField pattern="##0.00">
+					<reportElement x="1650" y="1" width="41" height="14" uuid="002ac434-dac7-416e-9001-a477ec5b5127"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Pcn_2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Reg">
+		<groupExpression><![CDATA[$F{REG}]]></groupExpression>
+		<groupFooter>
+			<band height="18">
+				<staticText>
+					<reportElement x="74" y="1" width="29" height="14" uuid="1247fb78-da21-48b1-9b3f-f0fdd36b01df"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[TOTAL]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="103" y="1" width="105" height="14" uuid="310a8f98-78f7-4af7-81b7-c8f9c0acbc73"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{REG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="850" y="1" width="100" height="14" uuid="dd5484dd-cae4-46bb-9f7b-c94ed77a66e9"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_PENJUALAN_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###">
+					<reportElement x="1250" y="1" width="100" height="14" uuid="69d79664-8e65-4249-817c-8872a6281092"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_PPN_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="950" y="1" width="100" height="14" uuid="888dab79-5367-4162-b72c-02298e571971"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_DISC_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1050" y="1" width="100" height="14" uuid="7486b39e-fcff-449e-b9cd-d8837ecf0efd"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_UM_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1150" y="1" width="100" height="14" uuid="48b80ab9-a9be-43f9-9d36-d6e2b6d155ce"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_DPP_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1350" y="1" width="100" height="14" uuid="f5593821-9f4a-4f8b-b4e0-061267af84f5"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_TOTAL_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1450" y="1" width="100" height="14" uuid="d15b77b6-6de6-4390-bb4d-3448f0609241"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{NILAI_COGS_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1550" y="1" width="100" height="14" uuid="9e565782-ff5f-46c6-b14f-830b71418733"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{MARGIN_1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="##0.00">
+					<reportElement x="1650" y="1" width="41" height="14" uuid="9bbd097f-0aff-464d-ba51-ac84b5381392"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Pcn_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Invoice">
+		<groupExpression><![CDATA[$F{NO_INV}]]></groupExpression>
+		<groupHeader>
+			<band height="37">
+				<textField isStretchWithOverflow="true">
+					<reportElement x="166" y="1" width="71" height="14" uuid="58b4bc28-b368-47cf-b289-769111fb1f2d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+				</textField>
+				<textField pattern="dd-MM-yyyy">
+					<reportElement x="237" y="1" width="53" height="14" uuid="b19214c4-62ae-43e4-95a4-c1e8aca6d0a5"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="362" y="1" width="85" height="14" uuid="e3212f01-8738-4a09-bcf4-db01344cc2d0"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_CUST}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="449" y="1" width="181" height="14" isPrintWhenDetailOverflows="true" uuid="177f68af-f834-4ee6-9209-0967b6834821"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_CUST}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="850" y="1" width="100" height="14" uuid="7feb778c-befb-47e2-abed-5e7e350ebdcc"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_PENJUALAN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="630" y="1" width="125" height="14" uuid="d3ed0bc5-3fb0-44b7-a8a0-7c66d0fe1ca2"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="755" y="1" width="95" height="14" uuid="19f57190-cb0c-4a8e-8faf-e9f897c8dc4b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+					<reportElement x="1250" y="1" width="100" height="14" uuid="f0c533a5-e856-4908-9cc5-c169262c77c6"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_PPN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="291" y="1" width="71" height="14" uuid="2687eef0-dfe9-443c-ae36-8bdcc6f1e512"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CRM_NO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="74" y="1" width="92" height="14" uuid="31e7e5d3-b622-4889-b679-2be2bae4bb2e"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{REG}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="3" y="1" width="71" height="14" uuid="c4ae6f7a-901d-4475-afe4-e04c0aace26f"/>
+					<textElement>
+						<font size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="950" y="1" width="100" height="14" uuid="21c2166e-7a6d-422d-bdbb-8d978fcd20c6"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_DISC}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1150" y="1" width="100" height="14" uuid="f966832e-cd23-40c7-9db1-f3610e519b8c"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_DPP}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1050" y="1" width="100" height="14" uuid="c024f0d3-5fd8-41d0-bb1b-244d91cf3cbc"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_UM}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1350" y="1" width="100" height="14" uuid="46461e4b-a2ea-4fae-9d0b-ffa994c549b8"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_TOTAL}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1450" y="1" width="100" height="14" uuid="53eb1be4-a507-4645-bb3f-1617f7b80c42"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NILAI_COGS}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,###">
+					<reportElement x="1550" y="1" width="100" height="14" uuid="4b6e7771-a36c-41a7-9dc5-15b7722ae23e"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{MARGIN}]]></textFieldExpression>
+				</textField>
+				<textField pattern="##0.00">
+					<reportElement x="1650" y="1" width="41" height="14" uuid="75a6cb32-e45e-4fb8-88dd-2febfd65d48e"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{MARGIN_PCN}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="950" y="23" width="100" height="14" uuid="6d937872-2fd7-4593-a256-638502adeee8"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Disc Penjualan]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1250" y="23" width="100" height="14" uuid="17cf1c87-6aab-41f4-b78d-a173efeeb9ca"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[PPN]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1350" y="23" width="100" height="14" uuid="5d69b663-5f5c-4919-ae11-d334a92148a3"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1050" y="23" width="100" height="14" uuid="77e96b5c-8a9a-478a-b972-cbc337f6eb2a"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Uang Muka]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="850" y="23" width="100" height="14" uuid="f0b5ba9a-e6ba-485c-a6cd-9145a271d5ff"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Penjualan]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1150" y="23" width="100" height="14" uuid="fbdab77e-f24c-43a1-9a17-5e0b730b95d0"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[DPP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1450" y="23" width="100" height="14" uuid="982a98ec-5a30-4b3c-b389-d287280c1258"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[COGS]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="669" y="23" width="181" height="14" uuid="f09b03fd-f503-4056-8026-8a80704bb4b1"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Item Category]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="7"/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="76" splitType="Stretch">
+			<staticText>
+				<reportElement x="3" y="0" width="1688" height="16" uuid="6a807459-6b0d-4b90-aa60-a542bc0e3546"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(01016) LAPORAN REGISTER PENJUALAN (DETAIL)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="716" y="18" width="70" height="16" uuid="0f788482-c86b-4616-98b6-c9dbd9b36a28"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PERIODE]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="799" y="18" width="100" height="16" uuid="e983ef99-7a2c-412b-8c04-aa31da3407c1"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy">
+				<reportElement x="928" y="18" width="100" height="16" uuid="a76e333a-f2cb-410c-a1dd-330ea4d1d958"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvTo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="899" y="18" width="29" height="16" uuid="ea61e6ae-bb65-4ec0-aaea-81fb3b1f7e6c"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="786" y="18" width="13" height="16" uuid="f31066e5-5aee-4295-8b1b-2f5a43095f98"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="716" y="34" width="70" height="16" uuid="8ddf6330-f348-43f7-b0a1-ce936d994856"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CUSTOMER]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="786" y="34" width="13" height="16" uuid="f53eed9c-45ea-4cc2-88eb-e889fdc11df8"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="799" y="34" width="100" height="16" uuid="ce90b7db-b091-441c-852c-7dd0d47d0a8c"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{CustFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="928" y="34" width="100" height="16" uuid="ffb1b46f-4ee5-448c-8f63-dd3c557274d7"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{CustUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="899" y="34" width="29" height="16" uuid="520c75f6-4092-45fc-aeb0-77bff7f7bd98"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S/D]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="716" y="50" width="70" height="16" uuid="71dcf215-3f41-4196-9ef2-10b085a450a9"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CABANG]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="786" y="50" width="13" height="16" uuid="abce03c6-6f98-466b-85d3-4c28e074bb3f"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="799" y="50" width="100" height="16" uuid="26a6a7ed-b518-4a16-aa10-26bf714f247c"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="34" splitType="Stretch">
+			<staticText>
+				<reportElement x="3" y="0" width="263" height="20" uuid="fb2ef6e2-c28e-4acc-b5f4-204d0a14289b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT. AUTOJAYA IDETECH]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="1588" y="17" width="100" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1526" y="2" width="49" height="14" uuid="e3ac19f0-8fbc-4491-ada5-67751a2029ec"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Page]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement x="1629" y="2" width="23" height="14" uuid="e5e879ce-e511-4761-a20b-e76f97827bcd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1526" y="17" width="49" height="14" uuid="a02c54da-2637-49fe-9721-7d343ef4de4d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Print On]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="1588" y="2" width="23" height="14" uuid="ca3cffc6-37a1-4d7e-af0c-0658493dda78"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1575" y="2" width="8" height="14" uuid="27b66ddc-5687-4349-814f-70749434e0f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1575" y="17" width="8" height="14" uuid="215dac2c-a81c-45ae-a687-66df15d487f5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1614" y="2" width="14" height="14" uuid="cf612846-2d30-44cf-b757-2b85ed56bda4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[/]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="17" splitType="Stretch">
+			<staticText>
+				<reportElement x="166" y="1" width="71" height="14" uuid="1a0a7d66-4dc0-4ec8-93c3-d8c90d44153b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="362" y="1" width="268" height="14" uuid="4c401f60-86a8-4361-9fe6-d3e930b47b5a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cutomer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1250" y="1" width="100" height="14" uuid="6c982954-2afe-4a1b-8776-ae67dec9d189"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PPN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="850" y="1" width="100" height="14" uuid="ce809fab-5feb-473b-b50f-0b0c9f428817"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Penjualan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="237" y="1" width="53" height="14" uuid="4026e183-a57e-49ad-a120-c3e612b9be80"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl.Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="291" y="1" width="71" height="14" uuid="67e01e2c-cc4a-4ba0-b843-f9533e339a27"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Credit Memo]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="630" y="1" width="125" height="14" uuid="bfb09aa9-4638-41af-8b5e-aa57d4b67b51"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="755" y="1" width="95" height="14" uuid="1461c9dc-0085-484c-bfaf-3aeace95adf5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="3" y="1" width="71" height="14" uuid="1a05c09c-a846-42d2-9f66-c8c9506a4684"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cabang]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="74" y="1" width="92" height="14" uuid="a807312c-92c3-4b59-be0a-750394cbfa1c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tipe]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="950" y="1" width="100" height="14" uuid="9b3dbcff-b5bc-4c48-bfe3-02ef2c91d406"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Disc Penjualan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1050" y="1" width="100" height="14" uuid="3ab3bd16-52e9-49a5-b3ab-7e5f1b281dc7"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Uang Muka]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1150" y="1" width="100" height="14" uuid="7634691e-1b02-474e-a376-9ac8d8fcbbe5"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[DPP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1350" y="1" width="100" height="14" uuid="1b99b67f-c8e5-44ba-88e8-cee8811ce790"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1450" y="1" width="100" height="14" uuid="e3797d52-16c2-460e-a99f-27ec57c1cd27"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[COGS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1550" y="1" width="100" height="14" uuid="da29c0df-c1fb-403e-853b-61a97c9dc64a"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Margin]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1650" y="1" width="41" height="14" uuid="4e295805-1616-42f3-8578-506ebcf67445"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[(%)Margin]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="850" y="1" width="100" height="14" uuid="5d3b8b7e-0835-4bc4-95d4-96ce4e0a6b2b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_PENJUALAN_DTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="950" y="1" width="100" height="14" uuid="d855c1fb-2cdc-465e-ac5c-a6db1a70f816"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_DISC_DTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1050" y="1" width="100" height="14" uuid="52de94ea-49a5-40b5-9348-8a6544cb219c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_UM_DTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1150" y="1" width="100" height="14" uuid="712af3d4-5c7d-4149-bef9-e1b594ed77a6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_DPP_DTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1250" y="1" width="100" height="14" uuid="4b2b44cd-b62a-417e-bf2f-3cd4089666b9"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_PPN_DTL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1350" y="1" width="100" height="14" uuid="8b270ac9-226b-4e1c-b0e4-b830b4b4d894"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_TOTAL_DTL}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="698" y="1" width="152" height="14" uuid="c6d1ed06-9fc0-4262-8304-b4eaa0869ff8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CAT_DESC}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="669" y="1" width="29" height="14" uuid="512e3c7d-050c-40c3-b1a3-0c770cbd9208"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ITEM_CAT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="1450" y="1" width="100" height="14" uuid="a35fbba1-34ed-4ab1-a05b-095533fb251c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NILAI_COGS_DTL}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="42" splitType="Stretch">
+			<staticText>
+				<reportElement x="3" y="1" width="64" height="14" uuid="f87e11fd-527b-4d38-b6fe-e12413167442"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRAND TOTAL]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="850" y="1" width="100" height="14" uuid="73c4e324-3b0f-4c53-93f2-b6a53c1e9411"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_PENJUALAN_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###">
+				<reportElement x="1250" y="1" width="100" height="14" uuid="34ae86ba-c6f1-4d79-8442-33e3cd1b766a"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_PPN_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="950" y="1" width="100" height="14" uuid="b1681344-b073-457c-a7ae-42826bd07f7e"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_DISC_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1050" y="1" width="100" height="14" uuid="5f26dca3-97f4-4b99-9c60-d20c3f6be04c"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_UM_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1150" y="1" width="100" height="14" uuid="853784c8-b354-4681-8988-99f23af4da7c"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_DPP_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1350" y="1" width="100" height="14" uuid="bbf48ed0-0bcd-4794-81f4-93f9f9202040"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_TOTAL_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1450" y="1" width="100" height="14" uuid="ec4f4984-d1c8-43a2-9f7f-54597177fc63"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NILAI_COGS_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,###">
+				<reportElement x="1550" y="1" width="100" height="14" uuid="66de60d4-af7c-4815-8d4a-ee62b63d5890"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{MARGIN_3}]]></textFieldExpression>
+			</textField>
+			<textField pattern="##0.00">
+				<reportElement x="1650" y="1" width="41" height="14" uuid="b7d8b04d-a8d8-463f-852b-73b09b2af0f9"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Pcn_3}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement x="3" y="17" width="752" height="16" uuid="e10e3c1c-6a66-49e4-be9e-2ddebb619a96"/>
+				<subreportParameter name="TglInvFrom">
+					<subreportParameterExpression><![CDATA[$P{TglInvFrom}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglInvTo">
+					<subreportParameterExpression><![CDATA[$P{TglInvTo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Cabang">
+					<subreportParameterExpression><![CDATA[$P{Cabang}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="CustFrom">
+					<subreportParameterExpression><![CDATA[$P{CustFrom}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="CustUpto">
+					<subreportParameterExpression><![CDATA[$P{CustUpto}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "01015_01_AJLapPenjualan_sub_rpt_V3.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+</jasperReport>

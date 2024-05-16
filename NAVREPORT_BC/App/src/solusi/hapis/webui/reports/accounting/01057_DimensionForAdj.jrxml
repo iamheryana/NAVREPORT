@@ -1,0 +1,785 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01057_DimensionForAdj" language="groovy" pageWidth="900" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="860" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
+	<property name="ireport.zoom" value="1.6105100000000077"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="48"/>
+	<parameter name="NoDok" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+		XXX.TGL_DOK
+		, XXX.NO_DOK
+		, XXX.CUST_NO
+		, XXX.CUST_NAME
+		, XXX.PO_CUST
+		, XXX.AMOUNT
+		, XXX.DIM_CUSTOMER
+		, XXX.DIM_ITEM_CATEGORY
+		, XXX.DIM_PRINCIPAL
+		, XXX.DIM_PRODUCT
+		, XXX.DIM_BRANCHES
+		, XXX.DIM_APPLICATION
+		, XXX.DIM_PROJECT
+		, XXX.DIM_SALESMAN
+		, XXX.DIM_SECTOR
+FROM	(
+SELECT	SIH.[Posting Date] AS TGL_DOK
+		, SIH.[No_] AS NO_DOK
+		, SIH.[Bill-to Customer No_] AS CUST_NO
+		, SIH.[Bill-to Name] AS CUST_NAME
+		, SIH.[External Document No_]  AS PO_CUST
+		, IND.AMOUNT
+		, IND.DIM_CUSTOMER
+		, IND.DIM_ITEM_CATEGORY
+		, IND.DIM_PRINCIPAL
+		, IND.DIM_PRODUCT
+		, IND.DIM_BRANCHES
+		, IND.DIM_APPLICATION
+		, IND.DIM_PROJECT
+		, IND.DIM_SALESMAN
+		, IND.DIM_SECTOR
+FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+INNER JOIN	(
+				SELECT	SIL.[Document No_] AS NO_DOK
+						, SUM(SIL.[Amount]) AS AMOUNT
+						, SIL.[Bill-to Customer No_] AS DIM_CUSTOMER
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+				FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL
+				LEFT JOIN	(
+								SELECT [Dimension Set ID]
+										,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+										,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+										,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+										,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_BRANCHES
+										,MAX(CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_APPLICATION
+										,MAX(CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PROJECT
+										,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SALESMAN
+										,MAX(CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SECTOR
+								FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+								GROUP BY [Dimension Set ID]
+							) DIM ON DIM.[Dimension Set ID] = SIL.[Dimension Set ID]
+				WHERE SIL.[Document No_] LIKE 'UM%'
+				GROUP BY SIL.[Document No_]
+						, SIL.[Bill-to Customer No_]
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+			) IND ON IND.NO_DOK = SIH.[No_]
+UNION ALL
+SELECT	SIH.[Posting Date] AS TGL_DOK
+		, SIH.[No_] AS NO_DOK
+		, SIH.[Bill-to Customer No_] AS CUST_NO
+		, SIH.[Bill-to Name] AS CUST_NAME
+		, SIH.[External Document No_]  AS PO_CUST
+		, IND.AMOUNT
+		, IND.DIM_CUSTOMER
+		, IND.DIM_ITEM_CATEGORY
+		, IND.DIM_PRINCIPAL
+		, IND.DIM_PRODUCT
+		, IND.DIM_BRANCHES
+		, IND.DIM_APPLICATION
+		, IND.DIM_PROJECT
+		, IND.DIM_SALESMAN
+		, IND.DIM_SECTOR
+FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+INNER JOIN	(
+				SELECT	SIL.[Document No_] AS NO_DOK
+						, SUM(SIL.[Amount]) AS AMOUNT
+						, SIL.[Bill-to Customer No_] AS DIM_CUSTOMER
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+				FROM [dbo].[BC_SOLUSI$Sales Invoice Line] SIL
+				LEFT JOIN	(
+								SELECT [Dimension Set ID]
+										,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+										,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+										,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+										,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_BRANCHES
+										,MAX(CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_APPLICATION
+										,MAX(CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PROJECT
+										,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SALESMAN
+										,MAX(CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SECTOR
+								FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+								GROUP BY [Dimension Set ID]
+							) DIM ON DIM.[Dimension Set ID] = SIL.[Dimension Set ID]
+				WHERE SIL.[Document No_] LIKE 'UM%'
+				GROUP BY SIL.[Document No_]
+						, SIL.[Bill-to Customer No_]
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+			) IND ON IND.NO_DOK = SIH.[No_]
+UNION ALL
+SELECT	SIH.[Order Date] AS TGL_DOK
+		, SIH.[No_] AS NO_DOK
+		, SIH.[Bill-to Customer No_] AS CUST_NO
+		, SIH.[Bill-to Name] AS CUST_NAME
+		, SIH.[External Document No_]  AS PO_CUST
+		, IND.AMOUNT
+		, IND.DIM_CUSTOMER
+		, IND.DIM_ITEM_CATEGORY
+		, IND.DIM_PRINCIPAL
+		, IND.DIM_PRODUCT
+		, IND.DIM_BRANCHES
+		, IND.DIM_APPLICATION
+		, IND.DIM_PROJECT
+		, IND.DIM_SALESMAN
+		, IND.DIM_SECTOR
+FROM [dbo].[BC_AUTOJAYA$Sales Header] SIH
+INNER JOIN	(
+				SELECT	SIL.[Document No_] AS NO_DOK
+						, SIL.[Document Type] AS DOK_TYPE
+						, SUM(SIL.[Amount]) AS AMOUNT
+						, SIL.[Bill-to Customer No_] AS DIM_CUSTOMER
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+				FROM [dbo].[BC_AUTOJAYA$Sales Line] SIL
+				LEFT JOIN	(
+								SELECT [Dimension Set ID]
+										,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+										,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+										,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+										,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_BRANCHES
+										,MAX(CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_APPLICATION
+										,MAX(CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PROJECT
+										,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SALESMAN
+										,MAX(CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SECTOR
+								FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+								GROUP BY [Dimension Set ID]
+							) DIM ON DIM.[Dimension Set ID] = SIL.[Dimension Set ID]
+				WHERE SIL.[Document Type] = 1
+				GROUP BY SIL.[Document No_]
+						, SIL.[Document Type]
+						, SIL.[Bill-to Customer No_]
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+			) IND ON IND.NO_DOK = SIH.[No_] AND IND.DOK_TYPE = SIH.[Document Type]
+WHERE IND.AMOUNT <> 0
+UNION ALL
+SELECT	SIH.[Order Date] AS TGL_DOK
+		, SIH.[No_] AS NO_DOK
+		, SIH.[Bill-to Customer No_] AS CUST_NO
+		, SIH.[Bill-to Name] AS CUST_NAME
+		, SIH.[External Document No_]  AS PO_CUST
+		, IND.AMOUNT
+		, IND.DIM_CUSTOMER
+		, IND.DIM_ITEM_CATEGORY
+		, IND.DIM_PRINCIPAL
+		, IND.DIM_PRODUCT
+		, IND.DIM_BRANCHES
+		, IND.DIM_APPLICATION
+		, IND.DIM_PROJECT
+		, IND.DIM_SALESMAN
+		, IND.DIM_SECTOR
+FROM [dbo].[BC_SOLUSI$Sales Header] SIH
+INNER JOIN	(
+				SELECT	SIL.[Document No_] AS NO_DOK
+						, SIL.[Document Type] AS DOK_TYPE
+						, SUM(SIL.[Amount]) AS AMOUNT
+						, SIL.[Bill-to Customer No_] AS DIM_CUSTOMER
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+				FROM [dbo].[BC_SOLUSI$Sales Line] SIL
+				LEFT JOIN	(
+								SELECT [Dimension Set ID]
+										,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END) AS DIM_ITEM_CATEGORY
+										,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRINCIPAL
+										,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PRODUCT
+										,MAX(CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_BRANCHES
+										,MAX(CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_APPLICATION
+										,MAX(CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_PROJECT
+										,MAX(CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SALESMAN
+										,MAX(CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END ) AS DIM_SECTOR
+								FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+								GROUP BY [Dimension Set ID]
+							) DIM ON DIM.[Dimension Set ID] = SIL.[Dimension Set ID]
+				WHERE SIL.[Document Type] = 1
+				GROUP BY SIL.[Document No_]
+						, SIL.[Document Type]
+						, SIL.[Bill-to Customer No_]
+						, DIM.DIM_ITEM_CATEGORY
+						, DIM.DIM_PRINCIPAL
+						, DIM.DIM_PRODUCT
+						, DIM.DIM_BRANCHES
+						, DIM.DIM_APPLICATION
+						, DIM.DIM_PROJECT
+						, DIM.DIM_SALESMAN
+						, DIM.DIM_SECTOR
+			) IND ON IND.NO_DOK = SIH.[No_] AND IND.DOK_TYPE = SIH.[Document Type]
+WHERE IND.AMOUNT <> 0
+			) XXX
+WHERE XXX.NO_DOK = $P{NoDok}]]>
+	</queryString>
+	<field name="TGL_DOK" class="java.sql.Timestamp"/>
+	<field name="NO_DOK" class="java.lang.String"/>
+	<field name="CUST_NO" class="java.lang.String"/>
+	<field name="CUST_NAME" class="java.lang.String"/>
+	<field name="PO_CUST" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="DIM_CUSTOMER" class="java.lang.String"/>
+	<field name="DIM_ITEM_CATEGORY" class="java.lang.String"/>
+	<field name="DIM_PRINCIPAL" class="java.lang.String"/>
+	<field name="DIM_PRODUCT" class="java.lang.String"/>
+	<field name="DIM_BRANCHES" class="java.lang.String"/>
+	<field name="DIM_APPLICATION" class="java.lang.String"/>
+	<field name="DIM_PROJECT" class="java.lang.String"/>
+	<field name="DIM_SALESMAN" class="java.lang.String"/>
+	<field name="DIM_SECTOR" class="java.lang.String"/>
+	<sortField name="DIM_ITEM_CATEGORY"/>
+	<sortField name="DIM_PRODUCT"/>
+	<sortField name="DIM_PRINCIPAL"/>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Dokumen" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<group name="Dokumen">
+		<groupExpression><![CDATA[$F{NO_DOK}]]></groupExpression>
+		<groupHeader>
+			<band height="42">
+				<textField pattern="dd-MM-yyyy">
+					<reportElement x="0" y="0" width="65" height="14" uuid="6f1da233-f823-47f2-9758-75458be82a78"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_DOK}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="65" y="0" width="80" height="14" uuid="c737351c-572a-4e72-a969-b77b09d3978e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_DOK}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="295" y="0" width="80" height="14" uuid="bbedaa1e-f343-4046-b246-41ed1ced69d5"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="375" y="0" width="300" height="14" uuid="0eb754bb-c258-4ee6-b76c-e27b4762ab68"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CUST_NAME}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="145" y="0" width="150" height="14" uuid="ee539151-11d0-48d9-9511-67005484de05"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PO_CUST}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="675" y="14" width="80" height="14" uuid="db80d0e4-3c18-4a9f-b8f8-3a6058dda88f"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="675" y="28" width="80" height="14" uuid="1da7f556-9779-4a7e-8513-0c7931d3bd04"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Amount]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="295" y="28" width="80" height="14" uuid="98dabe69-9545-4b49-85cc-8634676c566d"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Dimension]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="295" y="14" width="80" height="14" uuid="801cc7b4-24d6-49e0-9beb-abf94d6dfc1a"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="375" y="14" width="300" height="14" uuid="66cf2727-e324-4a7d-a584-8190010a535c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="375" y="28" width="300" height="14" uuid="e45ba4a4-d583-4033-974a-83ab99552594"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Value]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="65" height="14" uuid="0b6f2564-492e-46b6-85e5-2d0c88a3f6ff"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="65" height="14" uuid="bffb0d1e-3ca3-4316-ada4-fb0dc98de50e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField evaluationTime="Group" evaluationGroup="Dokumen" pattern="#,##0.00">
+					<reportElement x="675" y="0" width="80" height="14" uuid="4b0fd216-f3a6-4517-927f-072620cf5f28"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<title>
+		<band height="70" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="65" height="14" uuid="71025b29-f428-457a-918c-be5890f8beda"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(01057) ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="65" height="14" uuid="c0f124c3-08b6-4fa9-b966-ac08bdc4e125"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="65" height="14" uuid="ce4993e9-83c5-4acb-bb12-9b7a54b6db46"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Dokumen]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="65" y="0" width="230" height="14" uuid="be2eb229-0790-434e-86db-27c11cdfca3d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dimensi untuk Adjustment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="145" y="56" width="150" height="14" uuid="544919e9-7559-4345-83bb-b448d17c35f4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. PO Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="65" y="56" width="80" height="14" uuid="2d82dd45-dccd-45c4-9638-73162fad687d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Tgl. Dok.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="56" width="80" height="14" uuid="acba8ece-508c-4b27-9f3d-d1f9c92869f9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cust. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="65" height="14" uuid="322b19c0-c131-48d3-b1b0-e06b6e9abc1b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Dokumen :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="65" height="14" uuid="e68bcd71-8304-42b8-8aa0-ea070334c1a5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="65" y="28" width="80" height="14" uuid="43a8ba6b-790f-433a-9302-766f7d8f5e8e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NoDok}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="375" y="56" width="300" height="14" uuid="f78b17b1-4a0c-4038-bc9b-a3adb1b34d17"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Cust. Name]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="140" splitType="Stretch">
+			<textField pattern="#,##0.00">
+				<reportElement x="675" y="0" width="80" height="14" uuid="03781e0c-e056-4169-be37-70682f4c9a8d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="375" y="0" width="300" height="14" uuid="e90cf99f-8dde-4de3-9e26-42ab8bb9c18b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_CUSTOMER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="0" width="80" height="14" uuid="86287c47-d74c-4dea-906c-345ffd0e51b7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[CUSTOMER]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="14" width="80" height="14" uuid="b61cdb6b-0768-443c-abe7-0ddb32eac033"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[ITEM CATEGORY]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="14" width="300" height="14" uuid="1ad293c4-8b6d-4508-bf8c-5f3f8e554b1e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_ITEM_CATEGORY}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="28" width="80" height="14" uuid="74f2ed94-a2b3-4037-9487-bd2445c87bab"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PRINCIPAL]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="28" width="300" height="14" uuid="2d059089-daae-49ab-9070-adef752b7234"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="42" width="80" height="14" uuid="a77f85c2-170c-4df3-bc49-9e4227943238"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PRODUCT]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="42" width="300" height="14" uuid="e23da39c-3221-4faf-adec-e91f639c9f18"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PRODUCT}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="56" width="80" height="14" uuid="8aacac92-1e1f-4b4b-8d97-de1171897dd8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[BRANCHES]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="56" width="300" height="14" uuid="0ef99cc3-de97-4654-a0cd-4e747213be43"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_BRANCHES}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="70" width="80" height="14" uuid="dde52aa5-c41a-4bbd-88b9-72129698442f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[APPLICATION]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="70" width="300" height="14" uuid="1c05be4a-c1f0-4060-aced-98cb721e4f71"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_APPLICATION}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="84" width="80" height="14" uuid="6cdf2b00-631f-4de9-a6ae-f51f7aa775e2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[PROJECT]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="84" width="300" height="14" uuid="9cbf235a-73af-4cb0-be59-410ff4dd7860"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_PROJECT}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="98" width="80" height="14" uuid="a1a4a64f-38ed-4424-8c98-a7cf6cb38ed9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SALESMAN]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="98" width="300" height="14" uuid="72834dce-2a99-4e3c-8878-cf261b75da7d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SALESMAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="112" width="80" height="14" uuid="b1462054-4543-4c28-b056-90512148bc3a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[SECTOR]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="375" y="112" width="300" height="14" uuid="e5c56bab-5024-4cdf-96a6-a9424173a794"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIM_SECTOR}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="675" y="14" width="80" height="14" uuid="4c8249f1-fe27-44f7-8329-360679906c37"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="65" height="14" uuid="a1cde131-07fa-4c27-a795-573f504fb4b0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="65" height="14" uuid="279854a3-161d-4fec-b117-536dbf3c4a63"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="28" width="80" height="14" uuid="bda32c4a-b019-4f72-940e-5b64c8aa6828"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="65" height="14" uuid="537a99a7-034d-4534-98eb-cb446d7a9911"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="42" width="80" height="14" uuid="57997736-5d62-4273-905b-54d3c3e2a7c9"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="65" height="14" uuid="40d6832e-89dd-4e90-9aae-a609bad039c5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="56" width="80" height="14" uuid="e7c6443f-19df-4eb9-986b-952d604f9158"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="65" height="14" uuid="d6153dd9-276c-4877-9acb-a79dabf97168"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="70" width="80" height="14" uuid="ef89c6e4-c49e-4899-9ac7-889303d0ac37"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="65" height="14" uuid="8309b77c-3d8e-4725-85c1-31432c2fcc6f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="84" width="80" height="14" uuid="9ad2357b-7f96-46b3-8b38-de239a957614"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="65" height="14" uuid="55809aef-d6d1-4444-8def-4fb54ddb4fbd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="98" width="80" height="14" uuid="1fa8bd57-3aca-476b-9e51-cd59456bd820"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="65" height="14" uuid="473b3fd8-02ab-4986-a6de-ed882ab3a628"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="112" width="80" height="14" uuid="acc076f8-dff0-4ebf-ad9d-543dfc4db864"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="65" height="14" uuid="1b19c605-f6bf-4e74-88b6-9cc9d20f5746"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="126" width="80" height="14" uuid="b7194464-cb5c-4a3e-91fa-9876e22d314b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="126" width="65" height="14" uuid="8547fa7b-ef2a-4647-89c1-90b2b3b243ab"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<noData>
+		<band height="70">
+			<staticText>
+				<reportElement x="0" y="56" width="295" height="14" uuid="b33fc35d-b608-4759-9a89-2a1ad4befafe"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="65" y="0" width="230" height="14" uuid="b5a146f6-c101-4401-a08b-0d9cad29817d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dimensi untuk Adjustment]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="65" height="14" uuid="2a03f83a-5886-4dcc-8055-1f22aecd2246"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="65" y="28" width="80" height="14" uuid="d6a3f1bd-facf-4532-8268-8297ec95868a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NoDok}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="65" height="14" uuid="4772c99a-50f9-454f-82e3-a687812c6590"/>
+				<textElement>
+					<font size="8" isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[(01057) ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="65" height="14" uuid="ebf6636d-9236-42e4-be39-7b9cb1f9d991"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[No. Dokumen :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="65" height="14" uuid="3f958025-1b0a-409a-bb6e-264d838046aa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

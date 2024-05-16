@@ -1,0 +1,2132 @@
+USE [NavBI]
+GO
+/****** Object:  StoredProcedure [dbo].[P_ISI_DATA]    Script Date: 19-01-2022 8:47:10 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+
+ALTER PROC [dbo].[P_ISI_DATA]     
+AS   
+
+-- MASTER BRANCH
+-- INSERT JIKA ADA BARU
+INSERT INTO [NavBI].[dbo].[M_BRANCH] (
+		[BRANCH_CODE]
+		,[BRANCH_NAME]
+		,[BRANCH_ADDRESS]
+		,[BRANCH_ADDRESS2]
+		,[CITY]
+		,[POSTCODE]
+		,[PHONE]
+		,[CONTACT])
+SELECT REC.[Code]
+		,REC.[Name]
+		,REC.[Address]
+		,REC.[Address 2]
+		,REC.[City]
+		,REC.[Post Code]    
+		,REC.[Phone No_]
+		,REC.[Contact]
+FROM  [ACS].[dbo].[AUTOJAYA$Responsibility Center] REC
+LEFT OUTER JOIN [NavBI].[dbo].[M_BRANCH] MBR ON MBR.[BRANCH_CODE] = REC.[Code]
+COLLATE Latin1_General_CI_AS
+WHERE MBR.[BRANCH_CODE] IS NULL;
+--
+-- UPDATE UNTUK YANG SUDAH ADA
+UPDATE MBR
+SET MBR.BRANCH_NAME = REC.[Name], 
+	MBR.BRANCH_ADDRESS = REC.[Address],
+	MBR.BRANCH_ADDRESS2 = REC.[Address 2],
+	MBR.CITY = REC.[City],
+	MBR.POSTCODE = REC.[Post Code],
+	MBR.PHONE = REC.[Phone No_],
+	MBR.CONTACT = REC.[Contact] 
+FROM [NavBI].[dbo].[M_BRANCH] MBR
+INNER JOIN [ACS].[dbo].[AUTOJAYA$Responsibility Center] REC ON MBR.[BRANCH_CODE] = REC.[Code] COLLATE Latin1_General_CI_AS;
+--
+--
+--
+-- MASTER SALES PEOPLE
+-- INSERT JIKA ADA BARU
+INSERT INTO [NavBI].[dbo].[M_SALESPEOPLE] (
+		   [SALES]
+		  ,[SALES_NAME]
+		  ,[BRANCH_CODE]
+		  ,[EMAIL]
+		  ,[PHONE]
+		  ,[TITLE])
+SELECT SLS.[Code]
+      ,SLS.[Name]
+      ,SLS.[Global Dimension 1 Code]
+      ,SLS.[E-Mail]
+      ,SLS.[Phone No_]
+      ,SLS.[Job Title]
+FROM [ACS].[dbo].[AUTOJAYA$Salesperson_Purchaser] SLS
+LEFT OUTER JOIN  [NavBI].[dbo].[M_SALESPEOPLE] MSL ON MSL.[SALES] = SLS.[Code]
+COLLATE Latin1_General_CI_AS
+WHERE SLS.[Global Dimension 1 Code] <> '' AND
+	  MSL.[SALES] IS NULL;	  
+--
+-- UPDATE UNTUK YANG SUDAH ADA
+UPDATE MSL
+SET MSL.[SALES_NAME] = SLS.[Name], 
+	MSL.[BRANCH_CODE] = SLS.[Global Dimension 1 Code],
+	MSL.[EMAIL] = SLS.[E-Mail],
+	MSL.[PHONE] = SLS.[Phone No_],
+	MSL.[TITLE] = SLS.[Job Title]
+FROM [NavBI].[dbo].[M_SALESPEOPLE] MSL
+INNER JOIN [ACS].[dbo].[AUTOJAYA$Salesperson_Purchaser] SLS ON MSL.[SALES] = SLS.[Code] 
+COLLATE Latin1_General_CI_AS;
+--
+--
+--
+-- MASTER CUSTOMER
+-- INSERT JIKA ADA BARU
+INSERT INTO [NavBI].[dbo].[M_CUSTOMER] (
+		[CUSTOMER_NO]
+      ,[CUSTOMER_NAME]
+      ,[CUSTOMER_ADDRESS]
+      ,[CUSTOMER_ADDRESS2]
+      ,[CITY]
+      ,[CONTACT]
+      ,[PHONE]
+      ,[CUSTOMER_POSTING_GROUP]
+      ,[SALES])
+SELECT
+		CUS.[No_]
+		,CUS.[Name]
+		,CUS.[Address]
+		,CUS.[Address 2]
+		,CUS.[City]
+		,CUS.[Contact]
+		,CUS.[Phone No_]
+		,CUS.[Customer Posting Group]
+		,CUS.[Salesperson Code]
+FROM [ACS].[dbo].[AUTOJAYA$Customer] CUS
+LEFT OUTER JOIN  [NavBI].[dbo].[M_CUSTOMER] MCS ON MCS.[CUSTOMER_NO] = CUS.[No_]
+COLLATE Latin1_General_CI_AS
+WHERE CUS.[Salesperson Code] <> '' AND
+	  MCS.[CUSTOMER_NO] IS NULL;
+--	  
+--
+-- UPDATE UNTUK YANG SUDAH ADA
+--
+UPDATE MCS
+SET MCS.[CUSTOMER_NAME] = CUS.[Name], 
+	MCS.[CUSTOMER_ADDRESS] = CUS.[Address],
+	MCS.[CUSTOMER_ADDRESS2] = CUS.[Address 2],
+	MCS.[CITY] = CUS.[City],
+	MCS.[CONTACT] = CUS.[Contact],
+	MCS.[PHONE] = CUS.[Phone No_],
+	MCS.[CUSTOMER_POSTING_GROUP] = CUS.[Customer Posting Group],
+	MCS.[SALES] = CUS.[Salesperson Code]
+FROM [NavBI].[dbo].[M_CUSTOMER] MCS
+INNER JOIN [ACS].[dbo].[AUTOJAYA$Customer] CUS ON MCS.[CUSTOMER_NO] = CUS.[No_] 
+COLLATE Latin1_General_CI_AS;
+--
+--
+--
+--INSERT M_DIMENSION AUTOJAYA
+--
+INSERT INTO dbo.M_DIMENSION
+SELECT	XX.COMPANY
+		,XX.[Dimension Set ID]
+		,XX.BRANCHES AS BRANCHES_CODE
+		,DV1.[Name] AS BRANCHES
+		,XX.PRODUCT
+		,DV2.[Name] AS PRODUCT_NAME
+		,XX.PRINCIPAL
+		,DV3.[Name] AS PRINCIPAL_NAME
+		,XX.ITEM_CATEGORY
+		,DV4.[Name] AS ITEM_CATEGORY_NAME
+		,XX.APPLICATION
+		,DV5.[Name] AS APPLICATION_NAME
+		,XX.PROJECT
+		,DV6.[Name] AS PROJECT_NAME
+		,XX.SECTOR
+		,DV7.[Name] AS SECTOR_NAME
+		,XX.SALESMAN
+		,DV8.[Name] AS SALESMAN_NAME
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					,X.[Dimension Set ID]
+					,MAX(X.BRANCHES) AS BRANCHES
+					,MAX(X.PRODUCT) AS PRODUCT
+					,MAX(X.PRINCIPAL) AS PRINCIPAL
+					,MAX(X.ITEM_CATEGORY) AS ITEM_CATEGORY
+					,MAX(X.APPLICATION) AS APPLICATION
+					,MAX(X.PROJECT) AS PROJECT
+					,MAX(X.SECTOR) AS SECTOR
+					,MAX(X.SALESMAN) AS SALESMAN
+			FROM	(
+						SELECT [Dimension Set ID]
+							  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+							  ,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
+							  ,CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END AS PRINCIPAL
+							  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CATEGORY
+							  ,CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END AS APPLICATION
+							  ,CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END AS PROJECT
+							  ,CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END AS SECTOR
+							  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+						FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry]
+					) X
+			GROUP BY X.[Dimension Set ID]
+			UNION ALL
+			SELECT	'AJ-ADJ' AS COMPANY
+					,X.[Dimension Set ID]
+					,MAX(X.BRANCHES) AS BRANCHES
+					,MAX(X.PRODUCT) AS PRODUCT
+					,MAX(X.PRINCIPAL) AS PRINCIPAL
+					,MAX(X.ITEM_CATEGORY) AS ITEM_CATEGORY
+					,MAX(X.APPLICATION) AS APPLICATION
+					,MAX(X.PROJECT) AS PROJECT
+					,MAX(X.SECTOR) AS SECTOR
+					,MAX(X.SALESMAN) AS SALESMAN
+			FROM	(
+						SELECT [Dimension Set ID]
+							  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+							  ,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
+							  ,CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END AS PRINCIPAL
+							  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CATEGORY
+							  ,CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END AS APPLICATION
+							  ,CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END AS PROJECT
+							  ,CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END AS SECTOR
+							  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+						FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry]
+					) X
+			GROUP BY X.[Dimension Set ID]
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					,X.[Dimension Set ID]
+					,MAX(X.BRANCHES) AS BRANCHES
+					,MAX(X.PRODUCT) AS PRODUCT
+					,MAX(X.PRINCIPAL) AS PRINCIPAL
+					,MAX(X.ITEM_CATEGORY) AS ITEM_CATEGORY
+					,MAX(X.APPLICATION) AS APPLICATION
+					,MAX(X.PROJECT) AS PROJECT
+					,MAX(X.SECTOR) AS SECTOR
+					,MAX(X.SALESMAN) AS SALESMAN
+			FROM	(
+						SELECT [Dimension Set ID]
+							  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+							  ,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
+							  ,CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END AS PRINCIPAL
+							  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CATEGORY
+							  ,CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END AS APPLICATION
+							  ,CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END AS PROJECT
+							  ,CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END AS SECTOR
+							  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+						FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry]
+					) X
+			GROUP BY X.[Dimension Set ID]
+			UNION ALL
+			SELECT	'SP-ADJ' AS COMPANY
+					,X.[Dimension Set ID]
+					,MAX(X.BRANCHES) AS BRANCHES
+					,MAX(X.PRODUCT) AS PRODUCT
+					,MAX(X.PRINCIPAL) AS PRINCIPAL
+					,MAX(X.ITEM_CATEGORY) AS ITEM_CATEGORY
+					,MAX(X.APPLICATION) AS APPLICATION
+					,MAX(X.PROJECT) AS PROJECT
+					,MAX(X.SECTOR) AS SECTOR
+					,MAX(X.SALESMAN) AS SALESMAN
+			FROM	(
+						SELECT [Dimension Set ID]
+							  ,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+							  ,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
+							  ,CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END AS PRINCIPAL
+							  ,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CATEGORY
+							  ,CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END AS APPLICATION
+							  ,CASE WHEN [Dimension Code] = 'PROJECT' THEN [Dimension Value Code] ELSE NULL END AS PROJECT
+							  ,CASE WHEN [Dimension Code] = 'SECTOR' THEN [Dimension Value Code] ELSE NULL END AS SECTOR
+							  ,CASE WHEN [Dimension Code] = 'SALESMAN' THEN [Dimension Value Code] ELSE NULL END AS SALESMAN
+						FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry]
+					) X
+			GROUP BY X.[Dimension Set ID]
+		) XX
+LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] DV1 ON DV1.[Dimension Code] = 'BRANCHES' AND DV1.[Code] = XX.BRANCHES
+LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] DV2 ON DV2.[Dimension Code] = 'PRODUCT' AND DV2.[Code] = XX.PRODUCT
+LEFT JOIN	(
+				SELECT	DM.[Code]
+						, MAX(DM.[Name]) AS [Name]
+				FROM	(
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Value] 
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AJ-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SOLUSI$Dimension Value] 
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SP-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'PRINCIPAL'
+						) DM
+				GROUP BY DM.[Code]
+			) DV3 ON DV3.[Code] = XX.PRINCIPAL
+LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] DV4 ON DV4.[Dimension Code] = 'ITEM CATEGORY' AND DV4.[Code] = XX.ITEM_CATEGORY
+LEFT JOIN	(
+				SELECT	DM.[Code]
+						, MAX(DM.[Name]) AS [Name]
+				FROM	(
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Value] 
+							WHERE [Dimension Code] = 'APPLICATION'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AJ-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'APPLICATION'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SOLUSI$Dimension Value] 
+							WHERE [Dimension Code] = 'APPLICATION'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SP-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'APPLICATION'
+						) DM
+				GROUP BY DM.[Code]
+			) DV5 ON DV5.[Code] = XX.APPLICATION
+LEFT JOIN	(
+				SELECT	DM.[Code]
+						, MAX(DM.[Name]) AS [Name]
+				FROM	(
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Value] 
+							WHERE [Dimension Code] = 'PROJECT'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AJ-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'PROJECT'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SOLUSI$Dimension Value] 
+							WHERE [Dimension Code] = 'PROJECT'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SP-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'PROJECT'
+						) DM
+				GROUP BY DM.[Code]
+			) DV6 ON DV6.[Code] = XX.PROJECT
+LEFT JOIN	(
+				SELECT	DM.[Code]
+						, MAX(DM.[Name]) AS [Name]
+				FROM	(
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Value] 
+							WHERE [Dimension Code] = 'SECTOR'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[AJ-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'SECTOR'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SOLUSI$Dimension Value] 
+							WHERE [Dimension Code] = 'SECTOR'
+							UNION ALL
+							SELECT	[Code]
+									,[Name]
+							FROM [ACS].[dbo].[SP-ADJ$Dimension Value] 
+							WHERE [Dimension Code] = 'SECTOR'
+						) DM
+				GROUP BY DM.[Code]
+			) DV7 ON DV7.[Code] = XX.SECTOR
+LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] DV8 ON DV8.[Dimension Code] = 'SALESMAN' AND DV8.[Code] = XX.SALESMAN
+LEFT JOIN [NavBI].[dbo].[M_DIMENSION] dim on dim.[COMPANY] =XX.COMPANY AND dim.[DIMENSION_ID] = XX.[Dimension Set ID]
+WHERE dim.[DIMENSION_ID] IS NULL;
+--LEFT JOIN	(
+--				SELECT COMPANY, DIMENSION_ID
+--				FROM [NavBI].[dbo].[M_PARAM]
+--				WHERE REGISTER = 'DIMENSION'
+--			) LST ON LST.COMPANY = XX.COMPANY
+--WHERE XX.[Dimension Set ID] > ISNULL(LST.DIMENSION_ID,0);
+--
+--
+-- UPDATE PAREMETER DIMENSION
+--UPDATE MPR
+--SET MPR.[DIMENSION_ID] = DIM.[DIMENSION_ID]
+--FROM [NavBI].[dbo].[M_PARAM] MPR
+--INNER JOIN	(
+--				SELECT [COMPANY], MAX([DIMENSION_ID]) AS [DIMENSION_ID]
+--				FROM [NavBI].[dbo].[M_DIMENSION]
+--				GROUP BY [COMPANY]
+--			) DIM ON DIM.[COMPANY] = MPR.[COMPANY] AND MPR.[REGISTER] = 'DIMENSION';
+--
+--
+--
+-- UPDATE PARAM UNTUK SALES
+--
+DELETE FROM [NavBI].[dbo].[M_PARAM]
+WHERE [REGISTER] <> 'DIMENSION';
+--
+INSERT INTO [NavBI].[dbo].[M_PARAM]
+SELECT	X.[COMPANY]
+		,X.REGISTER
+		,0 AS [DIMENSION_ID]
+		,MAX(X.[DOCUMENT_NO]) AS [DOCUMENT_NO]
+FROM	(
+			SELECT [COMPANY]
+					, SUBSTRING([DOCUMENT_NO], 1, 4) AS REGISTER
+					, [DOCUMENT_NO]
+			FROM [NavBI].[dbo].[T_SALES]
+		) X
+GROUP BY X.[COMPANY], X.REGISTER;
+--
+--
+-- UPDATE DATA SALES
+INSERT INTO  dbo.T_SALES
+SELECT	XX.COMPANY
+		,XX.INV_NO
+		,XX.[Line No_] 
+		,XX.[Posting Date]
+		,XX.[Sell-to Customer No_]
+		,XX.[Sell-to Customer Name]
+		,XX.[Bill-to Customer No_]
+		,XX.[Bill-to Name]
+		,XX.[Posting Description]
+		,XX.[Payment Terms Code]
+		,XX.[Customer Posting Group]
+		,XX.CURR
+		,XX.[Salesperson Code]
+		,XX.[Order No_]
+		,XX.[External Document No_]
+		,XX.NO_FP   
+		,XX.[Type]
+		,XX.[No_]
+		,XX.[Description]
+		,XX.[Description 2]
+		,XX.[Quantity]
+		,XX.[Unit of Measure]
+		,XX.[Unit Price]			
+		,XX.[Amount]
+		,XX.AMT_IDR		
+		,XX.[Dimension Set ID]
+FROM (
+	SELECT	'AUTOJAYA' AS COMPANY
+			,SUBSTRING(SIH.[No_], 1, 4) AS REGISTER
+			,SIH.[No_] AS INV_NO
+			,SIL.[Line No_] 
+			,SIH.[Posting Date]
+			,SIH.[Sell-to Customer No_]
+			,SIH.[Sell-to Customer Name]
+			,SIH.[Bill-to Customer No_]
+			,SIH.[Bill-to Name]
+			,SIH.[Posting Description]
+			,SIH.[Payment Terms Code]
+			,SIH.[Customer Posting Group]
+			,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS CURR
+			,SIH.[Salesperson Code]
+			,SIH.[Order No_]
+			,SIH.[External Document No_]
+			,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FP   
+			,SIL.[Type]
+			,SIL.[No_]
+			,SIL.[Description]
+			,SIL.[Description 2]
+			,SIL.[Quantity]
+			,SIL.[Unit of Measure]
+			,SIL.[Unit Price]			
+			,SIL.[Amount]
+			, CASE WHEN SIH.[Currency Code] = '' THEN SIL.[Amount] ELSE SIL.[Amount]/SIH.[Currency Factor] END AS AMT_IDR		
+			,SIL.[Dimension Set ID]
+	FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL
+	INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = SIL.[Document No_] 
+	WHERE ((SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.03', '220.190.00')) OR SIL.[Type] = 2)
+			AND SIL.[No_] <> ''
+	UNION ALL
+	SELECT	'SOLUSI' AS COMPANY
+			,SUBSTRING(SIH.[No_], 1, 4) AS REGISTER
+			,SIH.[No_]  AS INV_NO
+			,SIL.[Line No_] 
+			,SIH.[Posting Date]
+			,SIH.[Sell-to Customer No_]
+			,SIH.[Sell-to Customer Name]
+			,SIH.[Bill-to Customer No_]
+			,SIH.[Bill-to Name]
+			,SIH.[Posting Description]
+			,SIH.[Payment Terms Code]
+			,SIH.[Customer Posting Group]
+			,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS CURR
+			,SIH.[Salesperson Code]
+			,SIH.[Order No_]
+			,SIH.[External Document No_]
+			,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FP   
+			,SIL.[Type]
+			,SIL.[No_]
+			,SIL.[Description]
+			,SIL.[Description 2]
+			,SIL.[Quantity]
+			,SIL.[Unit of Measure]
+			,SIL.[Unit Price]
+			,SIL.[Amount]
+			, CASE WHEN SIH.[Currency Code] = '' THEN SIL.[Amount] ELSE SIL.[Amount]/SIH.[Currency Factor] END AS AMT_IDR		
+			,SIL.[Dimension Set ID]
+	FROM [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL
+	INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = SIL.[Document No_] 
+	WHERE ((SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.03', '220.190.00')) OR SIL.[Type] = 2)
+			AND SIL.[No_] <> ''
+	UNION ALL
+	SELECT	'AUTOJAYA' AS COMPANY
+			,SUBSTRING(CRH.[No_], 1, 4) AS REGISTER
+			,CRH.[No_] AS INV_NO
+			,CRL.[Line No_] 
+			,CRH.[Posting Date]
+			,CRH.[Sell-to Customer No_]
+			,CRH.[Sell-to Customer Name]
+			,CRH.[Bill-to Customer No_]
+			,CRH.[Bill-to Name]
+			,CRH.[Posting Description]
+			,CRH.[Payment Terms Code]
+			,CRH.[Customer Posting Group]
+			,CASE WHEN CRH.[Currency Code] = '' THEN 'IDR' ELSE CRH.[Currency Code] END AS CURR
+			,CRH.[Salesperson Code]
+			,CRH.[Applies-to Doc_ No_]
+			,CRH.[External Document No_]
+			,(CRH.[Tax Area Code]+CRH.[Faktur Pajak No_]) AS NO_FP   
+			,CRL.[Type]
+			,CRL.[No_]
+			,CRL.[Description]
+			,CRL.[Description 2]
+			,CRL.[Quantity]
+			,CRL.[Unit of Measure]
+			,CRL.[Unit Price]			
+			,CRL.[Amount] * -1 AS [Amount]
+			, (CASE WHEN CRH.[Currency Code] = '' THEN CRL.[Amount] ELSE CRL.[Amount]/CRH.[Currency Factor] END) * -1 AS AMT_IDR		
+			,CRL.[Dimension Set ID]
+	FROM [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Line] CRL
+	INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRH ON CRH.[No_] = CRL.[Document No_] 
+	WHERE ((CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.03', '220.190.00')) OR CRL.[Type] = 2)
+			AND CRL.[No_] <> ''	
+	UNION ALL
+	SELECT	'SOLUSI' AS COMPANY
+			,SUBSTRING(CRH.[No_], 1, 4) AS REGISTER
+			,CRH.[No_] AS INV_NO
+			,CRL.[Line No_] 
+			,CRH.[Posting Date]
+			,CRH.[Sell-to Customer No_]
+			,CRH.[Sell-to Customer Name]
+			,CRH.[Bill-to Customer No_]
+			,CRH.[Bill-to Name]
+			,CRH.[Posting Description]
+			,CRH.[Payment Terms Code]
+			,CRH.[Customer Posting Group]
+			,CASE WHEN CRH.[Currency Code] = '' THEN 'IDR' ELSE CRH.[Currency Code] END AS CURR
+			,CRH.[Salesperson Code]
+			,CRH.[Applies-to Doc_ No_]
+			,CRH.[External Document No_]
+			,(CRH.[Tax Area Code]+CRH.[Faktur Pajak No_]) AS NO_FP   
+			,CRL.[Type]
+			,CRL.[No_]
+			,CRL.[Description]
+			,CRL.[Description 2]
+			,CRL.[Quantity]
+			,CRL.[Unit of Measure]
+			,CRL.[Unit Price]			
+			,CRL.[Amount] * -1 AS [Amount]
+			, (CASE WHEN CRH.[Currency Code] = '' THEN CRL.[Amount] ELSE CRL.[Amount]/CRH.[Currency Factor] END) * -1 AS AMT_IDR		
+			,CRL.[Dimension Set ID]
+	FROM [ACS].[dbo].[SOLUSI$Sales Cr_Memo Line] CRL
+	INNER JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRH ON CRH.[No_] = CRL.[Document No_] 
+	WHERE ((CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.03', '220.190.00')) OR CRL.[Type] = 2)
+			AND CRL.[No_] <> ''
+	) XX
+LEFT JOIN [NavBI].[dbo].[M_PARAM] PRM ON PRM.[COMPANY] = XX.[COMPANY] AND PRM.[REGISTER] = XX.[REGISTER]
+COLLATE Latin1_General_CI_AS
+WHERE PRM.[DOCUMENT_NO] IS NULL OR
+	  PRM.[DOCUMENT_NO] < XX.INV_NO  COLLATE Latin1_General_CI_AS;
+--
+--
+-- UPDATE PARAM UNTUK SALES REVENUE
+--
+DELETE FROM [NavBI].[dbo].[M_PARAM_REV]
+WHERE [REGISTER] <> 'DIMENSION';
+--
+INSERT INTO [NavBI].[dbo].[M_PARAM_REV]
+SELECT	X.[COMPANY]
+		,X.REGISTER
+		,0 AS [DIMENSION_ID]
+		,MAX(X.[DOCUMENT_NO]) AS [DOCUMENT_NO]
+FROM	(
+			SELECT [COMPANY]
+					, SUBSTRING([DOCUMENT_NO], 1, 4) AS REGISTER
+					, [DOCUMENT_NO]
+			FROM [NavBI].[dbo].[T_SALES_REV]	
+			WHERE [REGISTER] NOT IN ('AJ-A', 'AJ', 'SP-A', 'SP')
+		) X
+GROUP BY X.[COMPANY], X.REGISTER;
+--
+INSERT INTO [NavBI].[dbo].[M_PARAM_REV]
+SELECT [COMPANY]
+		, [REGISTER]
+		, 0 AS [DIMENSION_ID]
+		, MAX([LINE_NO])
+FROM [NavBI].[dbo].[T_SALES_REV]	
+WHERE [REGISTER] IN ('AJ-A', 'AJ', 'SP-A', 'SP')
+GROUP BY [COMPANY], [REGISTER];
+--
+--
+-- UPDATE DATA SALES REVENUE
+INSERT INTO  dbo.T_SALES_REV
+SELECT	XX.COMPANY
+		,XX.INV_NO
+		,XX.LINE_NO
+		,XX.POSTING_DATE
+		,XX.SELL_TO_CUST_NO
+		,XX.SELL_TO_CUST_NAME
+		,XX.BILL_TO_CUST_NO
+		,XX.BILL_TO_CUST_NAME
+		,XX.POSTING_DESC
+		,XX.PAY_TERM
+		,XX.CUST_POST_GROUP
+		,XX.CURR
+		,XX.SALESPERSON
+		,XX.NO_SO
+		,XX.NO_PO_CUST
+		,XX.NO_FP   
+		,XX.TYPE
+		,XX.NO_ITEM			
+		,XX.DESC_ITEM			
+		,XX.DESC_ITEM2
+		,XX.QTY_BASE
+		,XX.UOM_BASE
+		,XX.QTY
+		,XX.UOM
+		,XX.UNIT_PRICE
+		,XX.AMOUNT
+		,XX.AMOUNT_IDR		
+		,XX.DIM_ID
+		,XX.REGISTER
+		,XX.BRANCH_CODE
+		,XX.BRANCH_NAME
+		,XX.PRODUCT_CODE
+		,XX.PRODUCT
+		,XX.PRINCIPAL_CODE
+		,XX.PRINCIPAL
+		,XX.ITEM_CAT_CODE
+		,XX.ITEM_CAT
+		,XX.APPLICATIONS_CODE
+		,XX.APPLICATIONS
+		,XX.PROJECT_CODE
+		,XX.PROJECT
+		,XX.SECTOR_INDUSTRY_CODE
+		,XX.SECTOR_INDUSTRY
+		,XX.SALESMAN_CODE
+		,XX.SALESMAN
+FROM	(
+			SELECT	AJS.COMPANY
+					,AJS.INV_NO
+					,AJS.LINE_NO
+					,AJS.POSTING_DATE
+					,AJS.SELL_TO_CUST_NO
+					,AJS.SELL_TO_CUST_NAME
+					,AJS.BILL_TO_CUST_NO
+					,AJS.BILL_TO_CUST_NAME
+					,AJS.POSTING_DESC
+					,AJS.PAY_TERM
+					,AJS.CUST_POST_GROUP
+					,AJS.CURR
+					,AJS.SALESMAN AS SALESPERSON
+					,AJS.NO_SO
+					,AJS.NO_PO_CUST
+					,AJS.NO_FP   
+					,AJS.TYPE
+					,AJS.NO_ITEM			
+					,AJS.DESC_ITEM			
+					,AJS.DESC_ITEM2
+					,AJS.QTY_BASE
+					,AJS.UOM_BASE
+					,AJS.QTY
+					,AJS.UOM
+					,AJS.UNIT_PRICE
+					,AJS.AMOUNT
+					,AJS.AMOUNT_IDR		
+					,AJS.DIM_ID
+					,AJS.REGISTER
+					,DAJ.BRANCH_CODE
+					,DAJ.BRANCH_NAME
+					,DAJ.PRODUCT_CODE
+					,DAJ.PRODUCT
+					,DAJ.PRINCIPAL_CODE
+					,DAJ.PRINCIPAL
+					,DAJ.ITEM_CAT_CODE
+					,DAJ.ITEM_CAT
+					,DAJ.APPLICATIONS_CODE
+					,DAJ.APPLICATIONS
+					,DAJ.PROJECT_CODE
+					,DAJ.PROJECT
+					,DAJ.SECTOR_INDUSTRY_CODE
+					,DAJ.SECTOR_INDUSTRY
+					,DAJ.SALESMAN_CODE
+					,DAJ.SALESMAN								
+			FROM	(
+						SELECT	'AUTOJAYA' AS COMPANY
+								,SUBSTRING(SIH.[No_], 1, 4) AS REGISTER
+								,SIH.[No_] AS INV_NO
+								,SIL.[Line No_] AS LINE_NO
+								,SIH.[Posting Date] AS POSTING_DATE
+								,SIH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,SIH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,SIH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,SIH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,SIH.[Posting Description] AS POSTING_DESC
+								,SIH.[Payment Terms Code] AS PAY_TERM
+								,SIH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS CURR
+								,SIH.[Salesperson Code] AS SALESMAN
+								,SIH.[Order No_] AS NO_SO
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FP   
+								,SIL.[Type] AS TYPE
+								,CASE WHEN SIL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE SIL.[No_] END AS NO_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE SIL.[Description] END AS DESC_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN '' ELSE SIL.[Description 2] END AS DESC_ITEM2
+								,SIL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,SIL.[Quantity] AS QTY
+								,SIL.[Unit of Measure] AS UOM
+								,SIL.[Unit Price] AS UNIT_PRICE
+								,SIL.[Amount]  AS AMOUNT
+								,CASE WHEN SIH.[Currency Code] = '' THEN SIL.[Amount] ELSE SIL.[Amount]/SIH.[Currency Factor] END AS AMOUNT_IDR		
+								,SIL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = SIL.[No_]
+						INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = SIL.[Document No_] 
+						WHERE	(
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.00')) OR 
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.03') AND SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR
+									SIL.[Type] = 2
+								)
+								AND SIL.[No_] <> ''
+								AND ( 
+										(SUBSTRING(SIH.[No_], 1, 2) <> 'UM' AND SIH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)
+								AND SIH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND SIH.[No_] NOT IN ('SIAT170306') 
+								AND SIH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+						UNION ALL
+						SELECT	'AUTOJAYA' AS COMPANY
+								,SUBSTRING(CRH.[No_], 1, 4) AS REGISTER
+								,CRH.[No_] AS INV_NO
+								,CRL.[Line No_] AS LINE_NO
+								,CRH.[Posting Date] AS POSTING_DATE
+								,CRH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,CRH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,CRH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,CRH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,CRH.[Posting Description] AS POSTING_DESC
+								,CRH.[Payment Terms Code] AS PAY_TERM
+								,CRH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN CRH.[Currency Code] = '' THEN 'IDR' ELSE CRH.[Currency Code] END AS CURR
+								,CRH.[Salesperson Code] AS SALESMAN
+								,CRH.[Applies-to Doc_ No_] AS NO_SO
+								,CRH.[External Document No_] AS NO_PO_CUST
+								,(CRH.[Tax Area Code]+CRH.[Faktur Pajak No_]) AS NO_FP   
+								,CRL.[Type] AS TYPE
+								,CASE WHEN CRL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE CRL.[No_] END AS NO_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE CRL.[Description] END AS DESC_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN '' ELSE CRL.[Description 2] END AS DESC_ITEM2
+								,CRL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,CRL.[Quantity] AS QTY
+								,CRL.[Unit of Measure] AS UOM
+								,CRL.[Unit Price] AS UNIT_PRICE
+								,CRL.[Amount] * -1 AS AMOUNT
+								,((CASE WHEN CRH.[Currency Code] = '' THEN CRL.[Amount] ELSE CRL.[Amount]/CRH.[Currency Factor] END) * -1) AS AMOUNT_IDR		
+								,CRL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Line] CRL
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = CRL.[No_]
+						INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRH ON CRH.[No_] = CRL.[Document No_] 
+						WHERE	(
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.00')) OR
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.03') AND CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR 
+									CRL.[Type] = 2
+								)
+								AND CRL.[No_] <> ''	
+								AND ( 
+										(SUBSTRING(CRH.[No_], 1, 3) = 'PSC' AND CRH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)
+								AND CRH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND CRH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+					) AJS
+			LEFT JOIN	(
+							SELECT X.[Dimension Set ID] AS DIM_ID
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+						) DAJ ON DAJ.DIM_ID = AJS.DIM_ID
+			UNION ALL
+			SELECT	SPS.COMPANY
+					,SPS.INV_NO
+					,SPS.LINE_NO
+					,SPS.POSTING_DATE
+					,SPS.SELL_TO_CUST_NO
+					,SPS.SELL_TO_CUST_NAME
+					,SPS.BILL_TO_CUST_NO
+					,SPS.BILL_TO_CUST_NAME
+					,SPS.POSTING_DESC
+					,SPS.PAY_TERM
+					,SPS.CUST_POST_GROUP
+					,SPS.CURR
+					,SPS.SALESMAN AS SALESPERSON
+					,SPS.NO_SO
+					,SPS.NO_PO_CUST
+					,SPS.NO_FP   
+					,SPS.TYPE
+					,SPS.NO_ITEM			
+					,SPS.DESC_ITEM			
+					,SPS.DESC_ITEM2
+					,SPS.QTY_BASE
+					,SPS.UOM_BASE
+					,SPS.QTY
+					,SPS.UOM
+					,SPS.UNIT_PRICE
+					,SPS.AMOUNT
+					,SPS.AMOUNT_IDR		
+					,SPS.DIM_ID
+					,SPS.REGISTER
+					,DSP.BRANCH_CODE
+					,DSP.BRANCH_NAME
+					,DSP.PRODUCT_CODE
+					,DSP.PRODUCT
+					,DSP.PRINCIPAL_CODE
+					,DSP.PRINCIPAL
+					,DSP.ITEM_CAT_CODE
+					,DSP.ITEM_CAT
+					,DSP.APPLICATIONS_CODE
+					,DSP.APPLICATIONS
+					,DSP.PROJECT_CODE
+					,DSP.PROJECT
+					,DSP.SECTOR_INDUSTRY_CODE
+					,DSP.SECTOR_INDUSTRY
+					,DSP.SALESMAN_CODE
+					,DSP.SALESMAN
+			FROM	(
+						SELECT	'SOLUSI' AS COMPANY
+								,SUBSTRING(SIH.[No_], 1, 4) AS REGISTER
+								,SIH.[No_] AS INV_NO
+								,SIL.[Line No_] AS LINE_NO
+								,SIH.[Posting Date] AS POSTING_DATE
+								,SIH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,SIH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,SIH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,SIH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,SIH.[Posting Description] AS POSTING_DESC
+								,SIH.[Payment Terms Code] AS PAY_TERM
+								,SIH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS CURR
+								,SIH.[Salesperson Code] AS SALESMAN
+								,SIH.[Order No_] AS NO_SO
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FP   
+								,SIL.[Type] AS TYPE
+								,CASE WHEN SIL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE SIL.[No_] END AS NO_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE SIL.[Description] END AS DESC_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN '' ELSE SIL.[Description 2] END AS DESC_ITEM2		
+								,SIL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,SIL.[Quantity] AS QTY
+								,SIL.[Unit of Measure] AS UOM
+								,SIL.[Unit Price] AS UNIT_PRICE
+								,SIL.[Amount]  AS AMOUNT
+								,CASE WHEN SIH.[Currency Code] = '' THEN SIL.[Amount] ELSE SIL.[Amount]/SIH.[Currency Factor] END AS AMOUNT_IDR		
+								,SIL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL
+						LEFT JOIN [ACS].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = SIL.[No_]
+						INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = SIL.[Document No_] 
+						WHERE	(
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.00')) OR 
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.03') AND SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR
+									SIL.[Type] = 2
+								)
+								AND SIL.[No_] <> ''
+								AND ( 
+										(SUBSTRING(SIH.[No_], 1, 2) <> 'UM' AND SIH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)
+								AND SIH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND SIH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+						UNION ALL
+						SELECT	'SOLUSI' AS COMPANY
+								,SUBSTRING(CRH.[No_], 1, 4) AS REGISTER
+								,CRH.[No_] AS INV_NO
+								,CRL.[Line No_] AS LINE_NO
+								,CRH.[Posting Date] AS POSTING_DATE
+								,CRH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,CRH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,CRH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,CRH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,CRH.[Posting Description] AS POSTING_DESC
+								,CRH.[Payment Terms Code] AS PAY_TERM
+								,CRH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN CRH.[Currency Code] = '' THEN 'IDR' ELSE CRH.[Currency Code] END AS CURR
+								,CRH.[Salesperson Code] AS SALESMAN
+								,CRH.[Applies-to Doc_ No_] AS NO_SO
+								,CRH.[External Document No_] AS NO_PO_CUST
+								,(CRH.[Tax Area Code]+CRH.[Faktur Pajak No_]) AS NO_FP   
+								,CRL.[Type] AS TYPE
+								,CASE WHEN CRL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE CRL.[No_] END AS NO_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE CRL.[Description] END AS DESC_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN '' ELSE CRL.[Description 2] END AS DESC_ITEM2	
+								,CRL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,CRL.[Quantity] AS QTY
+								,CRL.[Unit of Measure] AS UOM
+								,CRL.[Unit Price] * -1 AS UNIT_PRICE
+								,CRL.[Amount]  AS AMOUNT
+								,((CASE WHEN CRH.[Currency Code] = '' THEN CRL.[Amount] ELSE CRL.[Amount]/CRH.[Currency Factor] END) * -1) AS AMOUNT_IDR		
+								,CRL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[SOLUSI$Sales Cr_Memo Line] CRL
+						LEFT JOIN [ACS].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = CRL.[No_]
+						INNER JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRH ON CRH.[No_] = CRL.[Document No_] 
+						WHERE	(
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.00')) OR
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.03') AND CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR 
+									CRL.[Type] = 2
+								)
+								AND CRL.[No_] <> ''	
+								AND ( 
+										(SUBSTRING(CRH.[No_], 1, 3) = 'PSC' AND CRH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)
+								AND CRH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND CRH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+					) SPS
+			LEFT JOIN	(
+							SELECT X.[Dimension Set ID] AS DIM_ID
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[SOLUSI$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+						) DSP ON DSP.DIM_ID = SPS.DIM_ID
+		) XX
+LEFT JOIN [NavBI].[dbo].[M_PARAM_REV] PRM ON PRM.[COMPANY] = XX.[COMPANY] AND PRM.[REGISTER] = XX.[REGISTER]
+COLLATE Latin1_General_CI_AS
+WHERE PRM.[DOCUMENT_NO] IS NULL OR
+	  PRM.[DOCUMENT_NO] < XX.INV_NO  COLLATE Latin1_General_CI_AS;
+--
+-- UPDATE DATA SALES REVENUE NEW
+INSERT INTO  dbo.T_SALES_REV_NEW
+SELECT	XX.COMPANY
+		,XX.INV_NO
+		,XX.LINE_NO
+		,XX.POSTING_DATE
+		,XX.SELL_TO_CUST_NO
+		,XX.SELL_TO_CUST_NAME
+		,XX.BILL_TO_CUST_NO
+		,XX.BILL_TO_CUST_NAME
+		,XX.POSTING_DESC
+		,XX.PAY_TERM
+		,XX.CUST_POST_GROUP
+		,XX.CURR
+		,XX.SALESPERSON
+		,XX.NO_SO
+		,XX.NO_PO_CUST
+		,XX.NO_FP   
+		,XX.TYPE
+		,XX.NO_ITEM			
+		,XX.DESC_ITEM			
+		,XX.DESC_ITEM2
+		,XX.QTY_BASE
+		,XX.UOM_BASE
+		,XX.QTY
+		,XX.UOM
+		,XX.UNIT_PRICE
+		,XX.AMOUNT
+		,XX.AMOUNT_IDR		
+		,XX.DIM_ID
+		,XX.REGISTER
+		,XX.BRANCH_CODE
+		,XX.BRANCH_NAME
+		,XX.PRODUCT_CODE
+		,XX.PRODUCT
+		,XX.PRINCIPAL_CODE
+		,XX.PRINCIPAL
+		,XX.ITEM_CAT_CODE
+		,XX.ITEM_CAT
+		,XX.APPLICATIONS_CODE
+		,XX.APPLICATIONS
+		,XX.PROJECT_CODE
+		,XX.PROJECT
+		,XX.SECTOR_INDUSTRY_CODE
+		,XX.SECTOR_INDUSTRY
+		,XX.SALESMAN_CODE
+		,XX.SALESMAN
+FROM	(
+			SELECT	AJS.COMPANY
+					,AJS.INV_NO
+					,AJS.LINE_NO
+					,AJS.POSTING_DATE
+					,AJS.SELL_TO_CUST_NO
+					,AJS.SELL_TO_CUST_NAME
+					,AJS.BILL_TO_CUST_NO
+					,AJS.BILL_TO_CUST_NAME
+					,AJS.POSTING_DESC
+					,AJS.PAY_TERM
+					,AJS.CUST_POST_GROUP
+					,AJS.CURR
+					,AJS.SALESMAN AS SALESPERSON
+					,AJS.NO_SO
+					,AJS.NO_PO_CUST
+					,AJS.NO_FP   
+					,AJS.TYPE
+					,AJS.NO_ITEM			
+					,AJS.DESC_ITEM			
+					,AJS.DESC_ITEM2
+					,AJS.QTY_BASE
+					,AJS.UOM_BASE
+					,AJS.QTY
+					,AJS.UOM
+					,AJS.UNIT_PRICE
+					,AJS.AMOUNT
+					,AJS.AMOUNT_IDR		
+					,AJS.DIM_ID
+					,AJS.REGISTER
+					,DAJ.BRANCH_CODE
+					,DAJ.BRANCH_NAME
+					,DAJ.PRODUCT_CODE
+					,DAJ.PRODUCT
+					,DAJ.PRINCIPAL_CODE
+					,DAJ.PRINCIPAL
+					,DAJ.ITEM_CAT_CODE
+					,DAJ.ITEM_CAT
+					,DAJ.APPLICATIONS_CODE
+					,DAJ.APPLICATIONS
+					,DAJ.PROJECT_CODE
+					,DAJ.PROJECT
+					,DAJ.SECTOR_INDUSTRY_CODE
+					,DAJ.SECTOR_INDUSTRY
+					,DAJ.SALESMAN_CODE
+					,DAJ.SALESMAN								
+			FROM	(
+						SELECT	'AUTOJAYA' AS COMPANY
+								,SUBSTRING(SIH.[No_], 1, 4) AS REGISTER
+								,SIH.[No_] AS INV_NO
+								,SIL.[Line No_] AS LINE_NO
+								,SIH.[Posting Date] AS POSTING_DATE
+								,SIH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,SIH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,SIH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,SIH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,SIH.[Posting Description] AS POSTING_DESC
+								,SIH.[Payment Terms Code] AS PAY_TERM
+								,SIH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS CURR
+								,SIH.[Salesperson Code] AS SALESMAN
+								,SIH.[Order No_] AS NO_SO
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FP   
+								,SIL.[Type] AS TYPE		
+								,CASE WHEN SIL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE SIL.[No_] END AS NO_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE SIL.[Description] END AS DESC_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN '' ELSE SIL.[Description 2] END AS DESC_ITEM2		
+								,SIL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,SIL.[Quantity] AS QTY
+								,SIL.[Unit of Measure] AS UOM
+								,SIL.[Unit Price] AS UNIT_PRICE
+								,SIL.[Amount]  AS AMOUNT
+								,CASE WHEN SIH.[Currency Code] = '' THEN SIL.[Amount] ELSE SIL.[Amount]/SIH.[Currency Factor] END AS AMOUNT_IDR		
+								,SIL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Line] SIL
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = SIL.[No_]
+						INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = SIL.[Document No_] 
+						WHERE	(
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.00')) OR 
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.03') AND SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR
+									SIL.[Type] = 2
+								)
+								AND SIL.[No_] <> ''
+								AND ( 
+										(SUBSTRING(SIH.[No_], 1, 2) <> 'UM' AND SIH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)									
+								AND SIH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND SIH.[No_] NOT IN ('SIAT170306')
+								AND SIH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+						UNION ALL
+						SELECT	'AUTOJAYA' AS COMPANY
+								,SUBSTRING(CRH.[No_], 1, 4) AS REGISTER
+								,CRH.[No_] AS INV_NO
+								,CRL.[Line No_] AS LINE_NO
+								,CRH.[Posting Date] AS POSTING_DATE
+								,CRH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,CRH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,CRH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,CRH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,CRH.[Posting Description] AS POSTING_DESC
+								,CRH.[Payment Terms Code] AS PAY_TERM
+								,CRH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN CRH.[Currency Code] = '' THEN 'IDR' ELSE CRH.[Currency Code] END AS CURR
+								,CRH.[Salesperson Code] AS SALESMAN
+								,CRH.[Applies-to Doc_ No_] AS NO_SO
+								,CRH.[External Document No_] AS NO_PO_CUST
+								,(CRH.[Tax Area Code]+CRH.[Faktur Pajak No_]) AS NO_FP   
+								,CRL.[Type] AS TYPE
+								,CASE WHEN CRL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE CRL.[No_] END AS NO_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE CRL.[Description] END AS DESC_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN '' ELSE CRL.[Description 2] END AS DESC_ITEM2	
+								,CRL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,CRL.[Quantity] AS QTY
+								,CRL.[Unit of Measure] AS UOM
+								,CRL.[Unit Price] AS UNIT_PRICE
+								,CRL.[Amount] * -1 AS AMOUNT
+								,((CASE WHEN CRH.[Currency Code] = '' THEN CRL.[Amount] ELSE CRL.[Amount]/CRH.[Currency Factor] END) * -1) AS AMOUNT_IDR		
+								,CRL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Line] CRL
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Item] ITM ON ITM.[No_] = CRL.[No_]
+						INNER JOIN [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] CRH ON CRH.[No_] = CRL.[Document No_] 
+						WHERE	(
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.00')) OR
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.03') AND CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR 
+									CRL.[Type] = 2
+								)
+								AND CRL.[No_] <> ''	
+								AND ( 
+										(SUBSTRING(CRH.[No_], 1, 3) = 'PSC' AND CRH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)									
+								AND CRH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND CRH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+					) AJS
+			LEFT JOIN	(
+							SELECT X.[Dimension Set ID] AS DIM_ID
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+						) DAJ ON DAJ.DIM_ID = AJS.DIM_ID
+			UNION ALL
+			SELECT	SPS.COMPANY
+					,SPS.INV_NO
+					,SPS.LINE_NO
+					,SPS.POSTING_DATE
+					,SPS.SELL_TO_CUST_NO
+					,SPS.SELL_TO_CUST_NAME
+					,SPS.BILL_TO_CUST_NO
+					,SPS.BILL_TO_CUST_NAME
+					,SPS.POSTING_DESC
+					,SPS.PAY_TERM
+					,SPS.CUST_POST_GROUP
+					,SPS.CURR
+					,SPS.SALESMAN AS SALESPERSON
+					,SPS.NO_SO
+					,SPS.NO_PO_CUST
+					,SPS.NO_FP   
+					,SPS.TYPE
+					,SPS.NO_ITEM			
+					,SPS.DESC_ITEM			
+					,SPS.DESC_ITEM2
+					,SPS.QTY_BASE
+					,SPS.UOM_BASE
+					,SPS.QTY
+					,SPS.UOM
+					,SPS.UNIT_PRICE
+					,SPS.AMOUNT
+					,SPS.AMOUNT_IDR		
+					,SPS.DIM_ID
+					,SPS.REGISTER
+					,DSP.BRANCH_CODE
+					,DSP.BRANCH_NAME
+					,DSP.PRODUCT_CODE
+					,DSP.PRODUCT
+					,DSP.PRINCIPAL_CODE
+					,DSP.PRINCIPAL
+					,DSP.ITEM_CAT_CODE
+					,DSP.ITEM_CAT
+					,DSP.APPLICATIONS_CODE
+					,DSP.APPLICATIONS
+					,DSP.PROJECT_CODE
+					,DSP.PROJECT
+					,DSP.SECTOR_INDUSTRY_CODE
+					,DSP.SECTOR_INDUSTRY
+					,DSP.SALESMAN_CODE
+					,DSP.SALESMAN
+			FROM	(
+						SELECT	'SOLUSI' AS COMPANY
+								,SUBSTRING(SIH.[No_], 1, 4) AS REGISTER
+								,SIH.[No_] AS INV_NO
+								,SIL.[Line No_] AS LINE_NO
+								,SIH.[Posting Date] AS POSTING_DATE
+								,SIH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,SIH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,SIH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,SIH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,SIH.[Posting Description] AS POSTING_DESC
+								,SIH.[Payment Terms Code] AS PAY_TERM
+								,SIH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN SIH.[Currency Code] = '' THEN 'IDR' ELSE SIH.[Currency Code] END AS CURR
+								,SIH.[Salesperson Code] AS SALESMAN
+								,SIH.[Order No_] AS NO_SO
+								,SIH.[External Document No_] AS NO_PO_CUST
+								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FP   
+								,SIL.[Type] AS TYPE
+								,CASE WHEN SIL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE SIL.[No_] END AS NO_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE SIL.[Description] END AS DESC_ITEM			
+								,CASE WHEN SIL.[No_] = '400.110.03' THEN '' ELSE SIL.[Description 2] END AS DESC_ITEM2		
+								,SIL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,SIL.[Quantity] AS QTY
+								,SIL.[Unit of Measure] AS UOM
+								,SIL.[Unit Price] AS UNIT_PRICE
+								,SIL.[Amount] AS AMOUNT
+								,CASE WHEN SIH.[Currency Code] = '' THEN SIL.[Amount] ELSE SIL.[Amount]/SIH.[Currency Factor] END AS AMOUNT_IDR		
+								,SIL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[SOLUSI$Sales Invoice Line] SIL
+						LEFT JOIN [ACS].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = SIL.[No_]
+						INNER JOIN [ACS].[dbo].[SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = SIL.[Document No_] 
+						WHERE	(
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.00')) OR 
+									(SIL.[Type] = 1 AND SIL.[No_] IN ('400.110.03') AND SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR
+									SIL.[Type] = 2
+								)
+								AND SIL.[No_] <> ''
+								AND ( 
+										(SUBSTRING(SIH.[No_], 1, 2) <> 'UM' AND SIH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										SIH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)
+								AND SIH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND SIH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+						UNION ALL
+						SELECT	'SOLUSI' AS COMPANY
+								,SUBSTRING(CRH.[No_], 1, 4) AS REGISTER
+								,CRH.[No_] AS INV_NO
+								,CRL.[Line No_] AS LINE_NO
+								,CRH.[Posting Date] AS POSTING_DATE
+								,CRH.[Sell-to Customer No_] AS SELL_TO_CUST_NO
+								,CRH.[Sell-to Customer Name] AS SELL_TO_CUST_NAME
+								,CRH.[Bill-to Customer No_] AS BILL_TO_CUST_NO
+								,CRH.[Bill-to Name] AS BILL_TO_CUST_NAME
+								,CRH.[Posting Description] AS POSTING_DESC
+								,CRH.[Payment Terms Code] AS PAY_TERM
+								,CRH.[Customer Posting Group] AS CUST_POST_GROUP
+								,CASE WHEN CRH.[Currency Code] = '' THEN 'IDR' ELSE CRH.[Currency Code] END AS CURR
+								,CRH.[Salesperson Code] AS SALESMAN
+								,CRH.[Applies-to Doc_ No_] AS NO_SO
+								,CRH.[External Document No_] AS NO_PO_CUST
+								,(CRH.[Tax Area Code]+CRH.[Faktur Pajak No_]) AS NO_FP   
+								,CRL.[Type] AS TYPE
+								,CASE WHEN CRL.[No_] IN ('400.110.00','400.110.03') THEN 'G/L ACCOUNT' ELSE CRL.[No_] END AS NO_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN 'UANG MUKA' ELSE CRL.[Description] END AS DESC_ITEM			
+								,CASE WHEN CRL.[No_] = '400.110.03' THEN '' ELSE CRL.[Description 2] END AS DESC_ITEM2	
+								,CRL.[Quantity (Base)] AS QTY_BASE
+								,ISNULL(ITM.[Base Unit of Measure], 'LOT') AS UOM_BASE
+								,CRL.[Quantity] AS QTY
+								,CRL.[Unit of Measure] AS UOM
+								,CRL.[Unit Price] AS UNIT_PRICE
+								,CRL.[Amount] * -1 AS AMOUNT
+								,((CASE WHEN CRH.[Currency Code] = '' THEN CRL.[Amount] ELSE CRL.[Amount]/CRH.[Currency Factor] END) * -1) AS AMOUNT_IDR		
+								,CRL.[Dimension Set ID] AS DIM_ID
+						FROM [ACS].[dbo].[SOLUSI$Sales Cr_Memo Line] CRL
+						LEFT JOIN [ACS].[dbo].[SOLUSI$Item] ITM ON ITM.[No_] = CRL.[No_]
+						INNER JOIN [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] CRH ON CRH.[No_] = CRL.[Document No_] 
+						WHERE	(
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.00')) OR
+									(CRL.[Type] = 1 AND CRL.[No_] IN ('400.110.03') AND CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)) OR 
+									CRL.[Type] = 2
+								)
+								AND CRL.[No_] <> ''	
+								AND ( 
+										(SUBSTRING(CRH.[No_], 1, 3) = 'PSC' AND CRH.[Posting Date] < CAST('01/01/2022' AS DATETIME)) 
+										OR
+										CRH.[Posting Date] >= CAST('01/01/2022' AS DATETIME)
+									)
+								AND CRH.[Bill-to Customer No_] NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+								AND CRH.[Gen_ Bus_ Posting Group] <> 'TRADEIC'
+					) SPS
+			LEFT JOIN	(
+							SELECT X.[Dimension Set ID] AS DIM_ID
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[SOLUSI$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+						) DSP ON DSP.DIM_ID = SPS.DIM_ID
+		) XX
+LEFT JOIN [NavBI].[dbo].[M_PARAM_REV] PRM ON PRM.[COMPANY] = XX.[COMPANY] AND PRM.[REGISTER] = XX.[REGISTER]
+COLLATE Latin1_General_CI_AS
+WHERE PRM.[DOCUMENT_NO] IS NULL OR
+	  PRM.[DOCUMENT_NO] < XX.INV_NO  COLLATE Latin1_General_CI_AS;
+--
+--
+INSERT INTO  dbo.T_SALES_REV
+SELECT	XX2.COMPANY
+		,XX2.INV_NO
+		,XX2.LINE_NO
+		,XX2.POSTING_DATE
+		,XX2.SELL_TO_CUST_NO
+		,XX2.SELL_TO_CUST_NAME
+		,XX2.BILL_TO_CUST_NO
+		,XX2.BILL_TO_CUST_NAME
+		,XX2.POSTING_DESC
+		,XX2.PAY_TERM
+		,XX2.CUST_POST_GROUP
+		,XX2.CURR
+		,XX2.SALESPERSON
+		,XX2.NO_SO
+		,XX2.NO_PO_CUST
+		,XX2.NO_FP   
+		,XX2.TYPE
+		,XX2.NO_ITEM			
+		,XX2.DESC_ITEM			
+		,XX2.DESC_ITEM2
+		,XX2.QTY_BASE
+		,XX2.UOM_BASE
+		,XX2.QTY
+		,XX2.UOM
+		,XX2.UNIT_PRICE
+		,XX2.AMOUNT
+		,XX2.AMOUNT_IDR		
+		,XX2.DIM_ID
+		,XX2.REGISTER
+		,XX2.BRANCH_CODE
+		,XX2.BRANCH_NAME
+		,XX2.PRODUCT_CODE
+		,XX2.PRODUCT
+		,XX2.PRINCIPAL_CODE
+		,XX2.PRINCIPAL
+		,XX2.ITEM_CAT_CODE
+		,XX2.ITEM_CAT
+		,XX2.APPLICATIONS_CODE
+		,XX2.APPLICATIONS
+		,XX2.PROJECT_CODE
+		,XX2.PROJECT
+		,XX2.SECTOR_INDUSTRY_CODE
+		,XX2.SECTOR_INDUSTRY
+		,XX2.SALESMAN_CODE
+		,XX2.SALESMAN
+FROM	(
+			SELECT 'AUTOJAYA' AS COMPANY
+					,'AJ' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,'' AS SELL_TO_CUST_NO
+					,'' AS SELL_TO_CUST_NAME
+					,'' AS BILL_TO_CUST_NO
+					,'' AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESPERSON
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN (
+							SELECT X.[Dimension Set ID]
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE [Document No_] NOT IN (
+											SELECT [No_] FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header]
+											UNION ALL
+											SELECT [No_] FROM [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] 
+										) 
+					AND [G_L Account No_] = '400.110.00' 
+			UNION ALL
+			SELECT	'AJ-ADJ' AS COMPANY
+					,'AJ-A' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,ISNULL(DIM.DIM_CUST, '') AS SELL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS SELL_TO_CUST_NAME
+					,ISNULL(DIM.DIM_CUST, '') AS BILL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESPERSON
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+			LEFT JOIN (
+						SELECT	X.[Dimension Set ID]
+								, X.DIM_CUST
+								, CUS.[Name] AS CUST_NAME		
+								,X.BRANCH_CODE
+								,X.BRANCH_NAME
+								,X.PRODUCT_CODE
+								,X.PRODUCT
+								,X.PRINCIPAL_CODE
+								,X.PRINCIPAL
+								,X.ITEM_CAT_CODE
+								,X.ITEM_CAT
+								,X.APPLICATIONS_CODE
+								,X.APPLICATIONS
+								,X.PROJECT_CODE
+								,X.PROJECT
+								,X.SECTOR_INDUSTRY_CODE
+								,X.SECTOR_INDUSTRY
+								,X.SALESMAN_CODE
+								,X.SALESMAN
+						FROM	(
+									SELECT X.[Dimension Set ID]
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'CUSTOMER' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_CUST
+									FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry] X
+									LEFT JOIN [ACS].[dbo].[AJ-ADJ$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+									GROUP BY [Dimension Set ID]
+								) X
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Customer] CUS ON X.DIM_CUST = CUS.[No_] 
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE	GLE.[G_L Account No_] = '400.110.00'
+					AND  GLE.[Document No_] NOT IN ('JV-TB1703/007')
+			UNION ALL
+			SELECT 'SOLUSI' AS COMPANY
+					,'SP' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,'' AS SELL_TO_CUST_NO
+					,'' AS SELL_TO_CUST_NAME
+					,'' AS BILL_TO_CUST_NO
+					,'' AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESMAN
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN (
+							SELECT X.[Dimension Set ID]
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[SOLUSI$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE [Document No_] NOT IN (
+											SELECT [No_] FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header]
+											UNION ALL
+											SELECT [No_] FROM [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] 
+										) 
+					AND [G_L Account No_] = '400.110.00' 
+			UNION ALL
+			SELECT	'SP-ADJ' AS COMPANY
+					,'SP-A' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,ISNULL(DIM.DIM_CUST, '') AS SELL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS SELL_TO_CUST_NAME
+					,ISNULL(DIM.DIM_CUST, '') AS BILL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESMAN
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+			LEFT JOIN (
+						SELECT	X.[Dimension Set ID]
+								, X.DIM_CUST
+								, CUS.[Name] AS CUST_NAME		
+								,X.BRANCH_CODE
+								,X.BRANCH_NAME
+								,X.PRODUCT_CODE
+								,X.PRODUCT
+								,X.PRINCIPAL_CODE
+								,X.PRINCIPAL
+								,X.ITEM_CAT_CODE
+								,X.ITEM_CAT
+								,X.APPLICATIONS_CODE
+								,X.APPLICATIONS
+								,X.PROJECT_CODE
+								,X.PROJECT
+								,X.SECTOR_INDUSTRY_CODE
+								,X.SECTOR_INDUSTRY
+								,X.SALESMAN_CODE
+								,X.SALESMAN
+						FROM	(
+									SELECT X.[Dimension Set ID]
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'CUSTOMER' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_CUST
+									FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry] X
+									LEFT JOIN [ACS].[dbo].[SP-ADJ$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+									GROUP BY [Dimension Set ID]
+								) X
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Customer] CUS ON X.DIM_CUST = CUS.[No_] 
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE	GLE.[G_L Account No_] = '400.110.00'
+		) XX2
+LEFT JOIN [NavBI].[dbo].[M_PARAM_REV] PRM ON PRM.[COMPANY] = XX2.[COMPANY] AND PRM.[REGISTER] = XX2.[REGISTER]
+COLLATE Latin1_General_CI_AS
+WHERE PRM.[DOCUMENT_NO] IS NULL OR
+	  PRM.[DOCUMENT_NO] < XX2.LINE_NO  ;
+--
+-- NEW
+INSERT INTO  dbo.T_SALES_REV_NEW
+SELECT	XX2.COMPANY
+		,XX2.INV_NO
+		,XX2.LINE_NO
+		,XX2.POSTING_DATE
+		,XX2.SELL_TO_CUST_NO
+		,XX2.SELL_TO_CUST_NAME
+		,XX2.BILL_TO_CUST_NO
+		,XX2.BILL_TO_CUST_NAME
+		,XX2.POSTING_DESC
+		,XX2.PAY_TERM
+		,XX2.CUST_POST_GROUP
+		,XX2.CURR
+		,XX2.SALESPERSON
+		,XX2.NO_SO
+		,XX2.NO_PO_CUST
+		,XX2.NO_FP   
+		,XX2.TYPE
+		,XX2.NO_ITEM			
+		,XX2.DESC_ITEM			
+		,XX2.DESC_ITEM2
+		,XX2.QTY_BASE
+		,XX2.UOM_BASE
+		,XX2.QTY
+		,XX2.UOM
+		,XX2.UNIT_PRICE
+		,XX2.AMOUNT
+		,XX2.AMOUNT_IDR		
+		,XX2.DIM_ID
+		,XX2.REGISTER
+		,XX2.BRANCH_CODE
+		,XX2.BRANCH_NAME
+		,XX2.PRODUCT_CODE
+		,XX2.PRODUCT
+		,XX2.PRINCIPAL_CODE
+		,XX2.PRINCIPAL
+		,XX2.ITEM_CAT_CODE
+		,XX2.ITEM_CAT
+		,XX2.APPLICATIONS_CODE
+		,XX2.APPLICATIONS
+		,XX2.PROJECT_CODE
+		,XX2.PROJECT
+		,XX2.SECTOR_INDUSTRY_CODE
+		,XX2.SECTOR_INDUSTRY
+		,XX2.SALESMAN_CODE
+		,XX2.SALESMAN
+FROM	(
+			SELECT 'AUTOJAYA' AS COMPANY
+					,'AJ' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,'' AS SELL_TO_CUST_NO
+					,'' AS SELL_TO_CUST_NAME
+					,'' AS BILL_TO_CUST_NO
+					,'' AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESPERSON
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[AUTOJAYA$G_L Entry] GLE
+			LEFT JOIN (
+							SELECT X.[Dimension Set ID]
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[AUTOJAYA$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[AUTOJAYA$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE [Document No_] NOT IN (
+											SELECT [No_] FROM [ACS].[dbo].[AUTOJAYA$Sales Invoice Header]
+											UNION ALL
+											SELECT [No_] FROM [ACS].[dbo].[AUTOJAYA$Sales Cr_Memo Header] 
+										) 
+					AND [G_L Account No_] = '400.110.00' 
+			UNION ALL
+			SELECT	'AJ-ADJ' AS COMPANY
+					,'AJ-A' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,ISNULL(DIM.DIM_CUST, '') AS SELL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS SELL_TO_CUST_NAME
+					,ISNULL(DIM.DIM_CUST, '') AS BILL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESPERSON
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[AJ-ADJ$G_L Entry] GLE
+			LEFT JOIN (
+						SELECT	X.[Dimension Set ID]
+								, X.DIM_CUST
+								, CUS.[Name] AS CUST_NAME		
+								,X.BRANCH_CODE
+								,X.BRANCH_NAME
+								,X.PRODUCT_CODE
+								,X.PRODUCT
+								,X.PRINCIPAL_CODE
+								,X.PRINCIPAL
+								,X.ITEM_CAT_CODE
+								,X.ITEM_CAT
+								,X.APPLICATIONS_CODE
+								,X.APPLICATIONS
+								,X.PROJECT_CODE
+								,X.PROJECT
+								,X.SECTOR_INDUSTRY_CODE
+								,X.SECTOR_INDUSTRY
+								,X.SALESMAN_CODE
+								,X.SALESMAN
+						FROM	(
+									SELECT X.[Dimension Set ID]
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'CUSTOMER' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_CUST
+									FROM [ACS].[dbo].[AJ-ADJ$Dimension Set Entry] X
+									LEFT JOIN [ACS].[dbo].[AJ-ADJ$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+									GROUP BY [Dimension Set ID]
+								) X
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Customer] CUS ON X.DIM_CUST = CUS.[No_] 
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE	GLE.[G_L Account No_] = '400.110.00'
+					AND  GLE.[Document No_] NOT IN ('JV-TB1703/007')
+			UNION ALL
+			SELECT 'SOLUSI' AS COMPANY
+					,'SP' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,'' AS SELL_TO_CUST_NO
+					,'' AS SELL_TO_CUST_NAME
+					,'' AS BILL_TO_CUST_NO
+					,'' AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESMAN
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[SOLUSI$G_L Entry] GLE
+			LEFT JOIN (
+							SELECT X.[Dimension Set ID]
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+								  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+							FROM [ACS].[dbo].[SOLUSI$Dimension Set Entry] X
+							LEFT JOIN [ACS].[dbo].[SOLUSI$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+							GROUP BY [Dimension Set ID]
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE [Document No_] NOT IN (
+											SELECT [No_] FROM [ACS].[dbo].[SOLUSI$Sales Invoice Header]
+											UNION ALL
+											SELECT [No_] FROM [ACS].[dbo].[SOLUSI$Sales Cr_Memo Header] 
+										) 
+					AND [G_L Account No_] = '400.110.00' 
+			UNION ALL
+			SELECT	'SP-ADJ' AS COMPANY
+					,'SP-A' AS REGISTER
+					,GLE.[Document No_] AS INV_NO
+					,[Entry No_] AS LINE_NO
+					,GLE.[Posting Date] AS POSTING_DATE
+					,ISNULL(DIM.DIM_CUST, '') AS SELL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS SELL_TO_CUST_NAME
+					,ISNULL(DIM.DIM_CUST, '') AS BILL_TO_CUST_NO
+					,ISNULL(DIM.CUST_NAME, '') AS BILL_TO_CUST_NAME
+					,GLE.[Description] AS POSTING_DESC
+					,'' AS PAY_TERM
+					,'' AS CUST_POST_GROUP
+					,'IDR' AS CURR
+					,DIM.SALESMAN_CODE AS SALESMAN
+					,'' AS NO_SO
+					,'' AS NO_PO_CUST
+					,'' AS NO_FP   
+					,0 AS TYPE
+					,'G/L ACCOUNT' AS NO_ITEM			
+					,'MANAGEMENT ADJUSTMENT' AS DESC_ITEM			
+					,'' AS DESC_ITEM2
+					, 1 AS QTY_BASE
+					,'LOT' AS UOM_BASE
+					, 1 AS QTY
+					,'LOT' AS UOM
+					,(GLE.[Amount] * -1) AS UNIT_PRICE
+					,(GLE.[Amount] * -1) AS AMOUNT
+					,(GLE.[Amount] * -1) AS AMOUNT_IDR
+					,GLE.[Dimension Set ID] AS DIM_ID
+					,DIM.BRANCH_CODE
+					,DIM.BRANCH_NAME
+					,DIM.PRODUCT_CODE
+					,DIM.PRODUCT
+					,DIM.PRINCIPAL_CODE
+					,DIM.PRINCIPAL
+					,DIM.ITEM_CAT_CODE
+					,DIM.ITEM_CAT
+					,DIM.APPLICATIONS_CODE
+					,DIM.APPLICATIONS
+					,DIM.PROJECT_CODE
+					,DIM.PROJECT
+					,DIM.SECTOR_INDUSTRY_CODE
+					,DIM.SECTOR_INDUSTRY
+					,DIM.SALESMAN_CODE
+					,DIM.SALESMAN
+			FROM [ACS].[dbo].[SP-ADJ$G_L Entry] GLE
+			LEFT JOIN (
+						SELECT	X.[Dimension Set ID]
+								, X.DIM_CUST
+								, CUS.[Name] AS CUST_NAME		
+								,X.BRANCH_CODE
+								,X.BRANCH_NAME
+								,X.PRODUCT_CODE
+								,X.PRODUCT
+								,X.PRINCIPAL_CODE
+								,X.PRINCIPAL
+								,X.ITEM_CAT_CODE
+								,X.ITEM_CAT
+								,X.APPLICATIONS_CODE
+								,X.APPLICATIONS
+								,X.PROJECT_CODE
+								,X.PROJECT
+								,X.SECTOR_INDUSTRY_CODE
+								,X.SECTOR_INDUSTRY
+								,X.SALESMAN_CODE
+								,X.SALESMAN
+						FROM	(
+									SELECT X.[Dimension Set ID]
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN X.[Dimension Value Code] ELSE NULL END) AS BRANCH_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'BRANCHES' THEN Y.[Name] ELSE NULL END) AS BRANCH_NAME
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN X.[Dimension Value Code] ELSE NULL END) AS PRINCIPAL_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PRINCIPAL' THEN Y.[Name] ELSE NULL END) AS PRINCIPAL
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN X.[Dimension Value Code] ELSE NULL END) AS ITEM_CAT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'ITEM CATEGORY' THEN Y.[Name] ELSE NULL END) AS ITEM_CAT	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN X.[Dimension Value Code] ELSE NULL END) AS APPLICATIONS_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'APPLICATION' THEN Y.[Name] ELSE NULL END) AS APPLICATIONS
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN X.[Dimension Value Code] ELSE NULL END) AS PROJECT_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'PROJECT' THEN Y.[Name] ELSE NULL END) AS PROJECT
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN X.[Dimension Value Code] ELSE NULL END) AS SECTOR_INDUSTRY_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SECTOR' THEN Y.[Name] ELSE NULL END) AS SECTOR_INDUSTRY	   
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN X.[Dimension Value Code] ELSE NULL END) AS SALESMAN_CODE
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'SALESMAN' THEN Y.[Name] ELSE NULL END) AS SALESMAN
+										  ,MAX(CASE WHEN X.[Dimension Code] = 'CUSTOMER' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_CUST
+									FROM [ACS].[dbo].[SP-ADJ$Dimension Set Entry] X
+									LEFT JOIN [ACS].[dbo].[SP-ADJ$Dimension Value] Y ON X.[Dimension Value ID] =Y.[Dimension Value ID]
+									GROUP BY [Dimension Set ID]
+								) X
+						LEFT JOIN [ACS].[dbo].[AUTOJAYA$Customer] CUS ON X.DIM_CUST = CUS.[No_] 
+					  ) DIM ON DIM.[Dimension Set ID] = GLE.[Dimension Set ID]
+			WHERE	GLE.[G_L Account No_] = '400.110.00'
+		) XX2
+LEFT JOIN [NavBI].[dbo].[M_PARAM_REV] PRM ON PRM.[COMPANY] = XX2.[COMPANY] AND PRM.[REGISTER] = XX2.[REGISTER]
+COLLATE Latin1_General_CI_AS
+WHERE PRM.[DOCUMENT_NO] IS NULL OR
+	  PRM.[DOCUMENT_NO] < XX2.LINE_NO  ;
+--
+-- Update Last Update
+UPDATE [NavBI].[dbo].[M_PARAM_TIME] SET 
+	[LAST_UPDATE] = GETDATE();
+
+
+
