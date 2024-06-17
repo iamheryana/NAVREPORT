@@ -2,9 +2,12 @@ package solusi.hapis.webui.accounting;
 
 
 import java.io.Serializable;
+import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.Date;
 
 import org.apache.commons.lang.StringUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zul.Datebox;
@@ -50,6 +53,15 @@ public class KwitansiCicilanCtrl extends GFCBaseCtrl implements Serializable {
 	}
 	
 		
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0108002");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
+	
+	
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOK(Event event) throws InterruptedException {
 		

@@ -377,8 +377,9 @@ public class CallStoreProcOrFuncDAOImpl extends HibernateDaoSupport implements C
 			public String doInHibernate(Session session) throws HibernateException, SQLException {
 
 
-				SQLQuery query = session.createSQLQuery("EXEC P_REPORT_PNL_MANAGEMENT_NEW :p1, :p2, :p3, :p4, :p5 , :p6 ");			 
-//				SQLQuery query = session.createSQLQuery("EXEC P_BC_REPORT_PNL_MANAGEMENT_2 :p1, :p2, :p3, :p4, :p5 , :p6 ");
+//				SQLQuery query = session.createSQLQuery("EXEC P_REPORT_PNL_MANAGEMENT_NEW :p1, :p2, :p3, :p4, :p5 , :p6 ");			 
+//				SQLQuery query = session.createSQLQuery("EXEC P_BC_REPORT_PNL_MANAGEMENT :p1, :p2, :p3, :p4, :p5 , :p6 ");
+				SQLQuery query = session.createSQLQuery("EXEC P_BC_REPORT_PNL_MANAGEMENT_2 :p1, :p2, :p3, :p4, :p5 , :p6 ");
 				query.setString("p1", processId);
 				query.setString("p2", tglFrom);
 				query.setString("p3", tglUpto);
@@ -697,6 +698,30 @@ public class CallStoreProcOrFuncDAOImpl extends HibernateDaoSupport implements C
 				
 				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST (RESULT_STRING AS character varying(100))FROM TEMP00_UPLOAD_RESULT WHERE PROSES_ID = :p6");
 				queryHasil.setString("p6", processId);
+
+				
+				return ((String)queryHasil.uniqueResult());
+				
+				
+			}
+		});
+	}
+
+	@Override
+	public String callSyncAReportManual(final String kodeReport) {
+
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+
+
+	            
+				SQLQuery query = session.createSQLQuery("EXEC A_SYNC_A_REPORT_MANUAL :p1 ");
+				query.setString("p1", kodeReport);
+				query.executeUpdate();
+				
+				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST (RESULT_STRING AS character varying(100))FROM TEMP00_UPLOAD_RESULT WHERE PROSES_ID = :p1");
+				queryHasil.setString("p1", "XXX");
 
 				
 				return ((String)queryHasil.uniqueResult());

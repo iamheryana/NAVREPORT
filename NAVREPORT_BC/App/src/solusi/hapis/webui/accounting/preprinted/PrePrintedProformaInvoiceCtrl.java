@@ -2,8 +2,11 @@ package solusi.hapis.webui.accounting.preprinted;
 
 
 import java.io.Serializable;
+import java.sql.SQLException;
+import java.text.ParseException;
 
 import org.apache.commons.lang.StringUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zul.Radio;
@@ -56,7 +59,14 @@ public class PrePrintedProformaInvoiceCtrl extends GFCBaseCtrl implements Serial
     	rdYesPO.setSelected(true); 
 	}
 	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
 		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0108008");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
+	
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOK(Event event) throws InterruptedException {
 		

@@ -4,6 +4,7 @@ package solusi.hapis.webui.accounting.managementReporting;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -107,7 +109,13 @@ public class LapManagementCtrl extends GFCBaseCtrl implements Serializable {
 		};
 	}
 	
-
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0101002-02");
+		
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
 
 	@SuppressWarnings({ "unchecked", "unused" })
 	public void onClick$btnCOGS(Event event) throws InterruptedException, ParseException {

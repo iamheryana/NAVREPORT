@@ -56,6 +56,8 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
 	protected Textbox txtIdmrAmountKomisi;
 	protected Textbox txtSatAmountBns;
 	protected Textbox txtIdmrAmountBns;
+	protected Textbox txtSatAmountBnsSales;
+	protected Textbox txtIdmrAmountBnsSales;
 
 
 	
@@ -79,6 +81,8 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
     protected Listheader listheader_M04ItemSatindoList_IdmrAmountKomisi;
     protected Listheader listheader_M04ItemSatindoList_SatAmountBns;
     protected Listheader listheader_M04ItemSatindoList_IdmrAmountBns;
+    protected Listheader listheader_M04ItemSatindoList_SatAmountBnsSales;
+    protected Listheader listheader_M04ItemSatindoList_IdmrAmountBnsSales;
     
     public M04ItemSatindoListCtrl() {
         super();
@@ -128,6 +132,12 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
         listheader_M04ItemSatindoList_IdmrAmountKomisi.setSortAscending(new M04ItemSatindoComparator(true, M04ItemSatindoComparator.COMPARE_BY_IDMRAMOUNTKOMISI));
         listheader_M04ItemSatindoList_IdmrAmountKomisi.setSortDescending(new M04ItemSatindoComparator(false, M04ItemSatindoComparator.COMPARE_BY_IDMRAMOUNTKOMISI));        
        
+        listheader_M04ItemSatindoList_SatAmountBnsSales.setSortAscending(new M04ItemSatindoComparator(true, M04ItemSatindoComparator.COMPARE_BY_SATAMOUNTBNSSALES));
+        listheader_M04ItemSatindoList_SatAmountBnsSales.setSortDescending(new M04ItemSatindoComparator(false, M04ItemSatindoComparator.COMPARE_BY_SATAMOUNTBNSSALES));        
+       
+        listheader_M04ItemSatindoList_IdmrAmountBnsSales.setSortAscending(new M04ItemSatindoComparator(true, M04ItemSatindoComparator.COMPARE_BY_IDMRAMOUNTBNSSALES));
+        listheader_M04ItemSatindoList_IdmrAmountBnsSales.setSortDescending(new M04ItemSatindoComparator(false, M04ItemSatindoComparator.COMPARE_BY_IDMRAMOUNTBNSSALES));        
+
         listheader_M04ItemSatindoList_SatAmountBns.setSortAscending(new M04ItemSatindoComparator(true, M04ItemSatindoComparator.COMPARE_BY_SATAMOUNTBNS));
         listheader_M04ItemSatindoList_SatAmountBns.setSortDescending(new M04ItemSatindoComparator(false, M04ItemSatindoComparator.COMPARE_BY_SATAMOUNTBNS));        
        
@@ -173,6 +183,13 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
 			parameterInput.put("idmrAmountBns", new BigDecimal(txtIdmrAmountBns.getValue()));
 		}
 		
+		if (CommonUtils.isNotEmpty(txtSatAmountBnsSales.getValue())) {
+			parameterInput.put("satAmountBnsSales", new BigDecimal(txtSatAmountBnsSales.getValue()));
+		}
+		
+		if (CommonUtils.isNotEmpty(txtIdmrAmountBnsSales.getValue())) {
+			parameterInput.put("idmrAmountBnsSales", new BigDecimal(txtIdmrAmountBnsSales.getValue()));
+		}
 		
 		list_M04ItemSatindoList.clear();
 		
@@ -271,6 +288,14 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
 				lc.setStyle("text-align:right");
 				lc.setParent(item);
 				
+				lc = new Listcell(CommonUtils.formatNumberManual(rec.getSatAmountBnsSales(), "#,###,###"));				
+				lc.setStyle("text-align:right");
+				lc.setParent(item);
+				
+				lc = new Listcell(CommonUtils.formatNumberManual(rec.getIdmrAmountBnsSales(), "#,###,###"));				
+				lc.setStyle("text-align:right");
+				lc.setParent(item);
+				
 				lc = new Listcell(CommonUtils.formatNumberManual(rec.getSatAmountBns(), "#,###,###"));				
 				lc.setStyle("text-align:right");
 				lc.setParent(item);
@@ -360,6 +385,14 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
     	sortingData(listheader_M04ItemSatindoList_IdmrAmountKomisi, M04ItemSatindoComparator.COMPARE_BY_IDMRAMOUNTKOMISI);
     }
     
+    public void onSort$listheader_M04ItemSatindoList_SatAmountBnsSales(Event event) { 
+    	sortingData(listheader_M04ItemSatindoList_SatAmountBnsSales, M04ItemSatindoComparator.COMPARE_BY_SATAMOUNTBNSSALES);
+    }
+    
+    public void onSort$listheader_M04ItemSatindoList_IdmrAmountBnsSales(Event event) { 
+    	sortingData(listheader_M04ItemSatindoList_IdmrAmountBnsSales, M04ItemSatindoComparator.COMPARE_BY_IDMRAMOUNTBNSSALES);
+    }
+    
     public void onSort$listheader_M04ItemSatindoList_SatAmountBns(Event event) { 
     	sortingData(listheader_M04ItemSatindoList_SatAmountBns, M04ItemSatindoComparator.COMPARE_BY_SATAMOUNTBNS);
     }
@@ -396,6 +429,8 @@ public class M04ItemSatindoListCtrl extends GFCBaseListCtrl<M04ItemSatindo> impl
     	txtNoItem.setValue(null);
     	txtSatAmountKomisi.setValue(null);
     	txtIdmrAmountKomisi.setValue(null);
+    	txtSatAmountBnsSales.setValue(null);
+    	txtIdmrAmountBnsSales.setValue(null);
     	txtSatAmountBns.setValue(null);
     	txtIdmrAmountBns.setValue(null);
 

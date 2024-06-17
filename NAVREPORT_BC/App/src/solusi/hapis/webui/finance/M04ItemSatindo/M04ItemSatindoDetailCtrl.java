@@ -40,6 +40,8 @@ public class M04ItemSatindoDetailCtrl extends GFCBaseCtrl implements Serializabl
 	protected Textbox txtNoItem;
 	protected Decimalbox dcbSatAmountKomisi; 
 	protected Decimalbox dcbIdmrAmountKomisi;
+	protected Decimalbox dcbSatAmountBnsSales;
+	protected Decimalbox dcbIdmrAmountBnsSales;
 	protected Decimalbox dcbSatAmountBns;
 	protected Decimalbox dcbIdmrAmountBns;
 	
@@ -111,6 +113,8 @@ public class M04ItemSatindoDetailCtrl extends GFCBaseCtrl implements Serializabl
 				txtNoItem.setReadonly(true);				
 				dcbSatAmountKomisi.setReadonly(true);
 				dcbIdmrAmountKomisi.setReadonly(true);
+				dcbSatAmountBnsSales.setReadonly(true);
+				dcbIdmrAmountBnsSales.setReadonly(true);
 				dcbSatAmountBns.setReadonly(true);
 				dcbIdmrAmountBns.setReadonly(true);
 
@@ -121,6 +125,8 @@ public class M04ItemSatindoDetailCtrl extends GFCBaseCtrl implements Serializabl
 				txtNoItem.setReadonly(false);				
 				dcbSatAmountKomisi.setReadonly(false);
 				dcbIdmrAmountKomisi.setReadonly(false);
+				dcbSatAmountBnsSales.setReadonly(false);
+				dcbIdmrAmountBnsSales.setReadonly(false);
 				dcbSatAmountBns.setReadonly(false);
 				dcbIdmrAmountBns.setReadonly(false);
 				
@@ -134,6 +140,8 @@ public class M04ItemSatindoDetailCtrl extends GFCBaseCtrl implements Serializabl
 				txtNoItem.setReadonly(false);				
 				dcbSatAmountKomisi.setReadonly(false);
 				dcbIdmrAmountKomisi.setReadonly(false);
+				dcbSatAmountBnsSales.setReadonly(false);
+				dcbIdmrAmountBnsSales.setReadonly(false);
 				dcbSatAmountBns.setReadonly(false);
 				dcbIdmrAmountBns.setReadonly(false);
 				

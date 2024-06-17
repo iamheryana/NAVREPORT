@@ -15,6 +15,8 @@ public class M04ItemSatindoComparator implements Comparator<Object>, Serializabl
 	public static int COMPARE_BY_IDMRAMOUNTKOMISI = 4;
 	public static int COMPARE_BY_SATAMOUNTBNS = 5;
 	public static int COMPARE_BY_IDMRAMOUNTBNS = 6;
+	public static int COMPARE_BY_SATAMOUNTBNSSALES = 7;
+	public static int COMPARE_BY_IDMRAMOUNTBNSSALES = 8;
 	
 	private boolean asc = true;
 	private int type = 0;
@@ -63,6 +65,16 @@ public class M04ItemSatindoComparator implements Comparator<Object>, Serializabl
 			BigDecimal amtIdmrBnsObj1 = obj1.getIdmrAmountBns()!= null?obj1.getIdmrAmountBns():new BigDecimal(0);
 			BigDecimal amtIdmrBnsObj2 = obj2.getIdmrAmountBns()!= null?obj2.getIdmrAmountBns():new BigDecimal(0);
 			return amtIdmrBnsObj1.compareTo(amtIdmrBnsObj2)
+					* (asc ? 1 : -1);
+		case 7: 
+			BigDecimal amtSatBnsSalesObj1 = obj1.getSatAmountBnsSales()!= null?obj1.getSatAmountBnsSales():new BigDecimal(0);
+			BigDecimal amtSatBnsSalesObj2 = obj2.getSatAmountBnsSales()!= null?obj2.getSatAmountBnsSales():new BigDecimal(0);
+			return amtSatBnsSalesObj1.compareTo(amtSatBnsSalesObj2)
+					* (asc ? 1 : -1);
+		case 8: 
+			BigDecimal amtIdmrBnsSalesObj1 = obj1.getIdmrAmountBnsSales()!= null?obj1.getIdmrAmountBnsSales():new BigDecimal(0);
+			BigDecimal amtIdmrBnsSalesObj2 = obj2.getIdmrAmountBnsSales()!= null?obj2.getIdmrAmountBnsSales():new BigDecimal(0);
+			return amtIdmrBnsSalesObj1.compareTo(amtIdmrBnsSalesObj2)
 					* (asc ? 1 : -1);
 		default: 
 			return obj1.getNoItem().compareTo(obj2.getNoItem()) * (asc ? 1 : -1);

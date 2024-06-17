@@ -201,4 +201,10 @@ public class CallStoreProcOrFuncServiceImpl implements  CallStoreProcOrFuncServi
 	}
 
 
+	@Override
+	public String callSyncAReportManual(String kodeReport) {
+		return callStoreProcOrFuncDAO.callSyncAReportManual(kodeReport);
+	}
+
+
 }

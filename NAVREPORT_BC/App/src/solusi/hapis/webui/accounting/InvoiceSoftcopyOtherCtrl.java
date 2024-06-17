@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.sql.SQLException;
 import java.text.ParseException;
 
 import org.apache.commons.lang.StringUtils;
@@ -92,7 +93,14 @@ public class InvoiceSoftcopyOtherCtrl extends GFCBaseCtrl implements Serializabl
     	
 	}
 	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
 		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0108003");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
+	
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOK(Event event) throws InterruptedException, IOException {
 		

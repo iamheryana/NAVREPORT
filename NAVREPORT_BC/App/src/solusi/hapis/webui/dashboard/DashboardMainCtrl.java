@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import org.apache.log4j.Logger;
+import org.springframework.security.acls.domain.CumulativePermission;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.zkoss.spring.SpringUtil;
 import org.zkoss.zk.ui.Component;
@@ -34,10 +35,12 @@ import org.zkoss.zul.Window;
 
 import solusi.hapis.backend.model.SecParam;
 import solusi.hapis.backend.model.SecUser;
+import solusi.hapis.backend.navbi.model.BCAccessFrom;
+import solusi.hapis.backend.navbi.service.BCAccessFromService;
 import solusi.hapis.backend.security.service.SecurityService;
 import solusi.hapis.backend.security.service.UserService;
+import solusi.hapis.common.CommonUtils;
 import solusi.hapis.webui.dashboard.module.DashboardCalendarCtrl;
-import solusi.hapis.webui.dashboard.module.DashboardTableRecordsCounterCtrl;
 import solusi.hapis.webui.util.GFCBaseCtrl;
 import solusi.hapis.webui.util.ZksampleMessageUtils;
 
@@ -60,9 +63,11 @@ public class DashboardMainCtrl extends GFCBaseCtrl implements Serializable {
     protected Div divDashboardEast;     // autowired
     
     protected Label lblWarning;
+    protected Label lblLastSync;
     private UserService userService = (UserService) SpringUtil.getBean("userService");
     private SecurityService securityService = (SecurityService) SpringUtil.getBean("securityService");
-	
+    private BCAccessFromService bCAccessFromService = (BCAccessFromService) SpringUtil.getBean("bCAccessFromService");
+    
     
     public DashboardMainCtrl() {
         super();
@@ -95,6 +100,11 @@ public class DashboardMainCtrl extends GFCBaseCtrl implements Serializable {
         }
         
         
+        BCAccessFrom vAccFrom = bCAccessFromService.getLastSync();
+        
+        if(vAccFrom != null){
+        	lblLastSync.setValue("Last 'Data Sync' : "+CommonUtils.convertDateToString(vAccFrom.getLastSync(),CommonUtils.DATE_FORMAT_DDMMYYYYHHMMSS));
+        }
         // Set the Dashboard unClosable
         try {
             Component cmp = (Component) windowDashboard.getParent().getParent().getParent();

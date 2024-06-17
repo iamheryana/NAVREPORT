@@ -43,12 +43,20 @@ public class M04ItemSatindoDAOImpl extends BasisNAVBIDAO<M04ItemSatindo> impleme
 				criteria.add(Restrictions.eq("satAmountBns", parameterInput.get("satAmountBns")));
 			}
 			
+			if (parameterInput.get("satAmountBnsSales") != null) {
+				criteria.add(Restrictions.eq("satAmountBnsSales", parameterInput.get("satAmountBnsSales")));
+			}
+			
 			if (parameterInput.get("idmrAmountKomisi") != null) {
 				criteria.add(Restrictions.eq("idmrAmountKomisi", parameterInput.get("idmrAmountKomisi")));
 			}
 			
 			if (parameterInput.get("idmrAmountBns") != null) {
 				criteria.add(Restrictions.eq("idmrAmountBns", parameterInput.get("idmrAmountBns")));
+			}
+			
+			if (parameterInput.get("idmrAmountBnsSales") != null) {
+				criteria.add(Restrictions.eq("idmrAmountBnsSales", parameterInput.get("idmrAmountBnsSales")));
 			}
 			
 							

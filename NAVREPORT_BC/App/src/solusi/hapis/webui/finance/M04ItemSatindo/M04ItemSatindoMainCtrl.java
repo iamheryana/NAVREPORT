@@ -184,6 +184,9 @@ public class M04ItemSatindoMainCtrl extends GFCBaseCtrl implements Serializable 
         anM04ItemSatindo.setSatAmountKomisi(new BigDecimal(0));
         anM04ItemSatindo.setIdmrAmountKomisi(new BigDecimal(0));
         
+        anM04ItemSatindo.setSatAmountBnsSales(new BigDecimal(0));
+        anM04ItemSatindo.setIdmrAmountBnsSales(new BigDecimal(0));
+        
         anM04ItemSatindo.setSatAmountBns(new BigDecimal(0));
         anM04ItemSatindo.setIdmrAmountBns(new BigDecimal(0));
         

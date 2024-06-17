@@ -12,6 +12,8 @@ public class M04ItemSatindo {
 	private BigDecimal satAmountBns;
 	private BigDecimal idmrAmountKomisi;
 	private BigDecimal idmrAmountBns;	
+	private BigDecimal satAmountBnsSales;
+	private BigDecimal idmrAmountBnsSales;	
 	private Integer version;
 	private String createdBy;
 	private Date createdOn;
@@ -23,15 +25,18 @@ public class M04ItemSatindo {
 	}
 
 	public M04ItemSatindo(Date tglBerlaku, String noItem,
-			BigDecimal satAmountKomisi, BigDecimal satAmountBns,
-			BigDecimal idmrAmountKomisi, BigDecimal idmrAmountBns) {
+			BigDecimal satAmountKomisi, BigDecimal satAmountBns, BigDecimal satAmountBnsSales,
+			BigDecimal idmrAmountKomisi, BigDecimal idmrAmountBns, BigDecimal idmrAmountBnsSales
+			) {
 		super();
 		this.tglBerlaku = tglBerlaku;
 		this.noItem = noItem;
 		this.satAmountKomisi = satAmountKomisi;
 		this.satAmountBns = satAmountBns;
+		this.satAmountBnsSales = satAmountBnsSales;
 		this.idmrAmountKomisi = idmrAmountKomisi;
 		this.idmrAmountBns = idmrAmountBns;
+		this.idmrAmountBnsSales = idmrAmountBnsSales;
 	}
 
 	public long getM04Id() {
@@ -132,6 +137,22 @@ public class M04ItemSatindo {
 
 	public static long getSerialversionuid() {
 		return serialVersionUID;
+	}
+
+	public BigDecimal getSatAmountBnsSales() {
+		return satAmountBnsSales;
+	}
+
+	public void setSatAmountBnsSales(BigDecimal satAmountBnsSales) {
+		this.satAmountBnsSales = satAmountBnsSales;
+	}
+
+	public BigDecimal getIdmrAmountBnsSales() {
+		return idmrAmountBnsSales;
+	}
+
+	public void setIdmrAmountBnsSales(BigDecimal idmrAmountBnsSales) {
+		this.idmrAmountBnsSales = idmrAmountBnsSales;
 	}
 	
 	

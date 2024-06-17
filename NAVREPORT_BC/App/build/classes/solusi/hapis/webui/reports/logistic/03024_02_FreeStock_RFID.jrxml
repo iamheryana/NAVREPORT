@@ -8,13 +8,14 @@
 		<![CDATA[SELECT 1 AS GRP
 		,XXX.*
 FROM	(
-SELECT	ROW_NUMBER()OVER(PARTITION BY XX.PRD_GROUP ORDER BY XX.PRD_GROUP, XX.ITEM_NO) AS NO_BARIS
+SELECT	ROW_NUMBER()OVER(PARTITION BY XX.DIM_PRINCIPAL ORDER BY XX.DIM_PRINCIPAL, XX.ITEM_NO) AS NO_BARIS
 		, XX.COMPANY
 		, XX.ITEM_NO
 		, XX.DESCRIPTIONS
 		, XX.UOM
 		, XX.ITEM_CAT
-		, XX.PRD_GROUP
+		, XX.DIM_PRINCIPAL
+		, PRIN.[Name] AS PRINCIPAL
 		, XX.PRODUCT
 		, (XX.OH_AVL + XX.OTP_READY_AVL) AS READY_AVL
 		, XX.ON_ORDER_AVL
@@ -26,7 +27,7 @@ FROM	(
 					, X.DESCRIPTIONS
 					, X.UOM
 					, X.ITEM_CAT
-					, X.PRD_GROUP
+					, X.DIM_PRINCIPAL
 					, PRD.[Description] AS PRODUCT
 					, X.PRICE
 					, SUM(X.OH_AVL) AS OH_AVL
@@ -39,7 +40,7 @@ FROM	(
 								, ITM.[Description] AS DESCRIPTIONS
 								, ITM.[Base Unit of Measure] AS UOM
 								, ITM.[Item Category Code] AS ITEM_CAT
-								, ITM.[Product Group Code] AS PRD_GROUP
+								, DIM.DIM_PRINCIPAL
 								, STKG.LOC_CODE
 								, ITM.[Unit Cost] AS PRICE
 								, (STKG.STOCK_OH - STKG.RSRV_OH) AS OH_AVL
@@ -217,6 +218,15 @@ FROM	(
 									GROUP BY STK.ITEM_NO, STK.LOC_CODE
 								)STKG
 						LEFT JOIN [dbo].[BC_AUTOJAYA$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+						LEFT JOIN   (
+										SELECT  [No_]
+												,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE '' END) AS DIM_PRODUCT
+												,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE '' END) AS DIM_ITEM_CATEGORY
+												,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE '' END) AS DIM_PRINCIPAL
+										FROM [dbo].[BC_AUTOJAYA$Default Dimension]
+										WHERE [Table ID] = 27
+										GROUP BY [No_]
+									) DIM ON DIM.[No_] = ITM.[No_]
 						WHERE	ITM.[Inventory Value Zero] = 0
 								AND ITM.[Item Category Code] = 'HW01'
 								AND ITM.[Product Group Code] IN ('H004','H026')
@@ -227,7 +237,7 @@ FROM	(
 								, ITM.[Description] AS DESCRIPTIONS
 								, ITM.[Base Unit of Measure] AS UOM
 								, ITM.[Item Category Code] AS ITEM_CAT
-								, ITM.[Product Group Code] AS PRD_GROUP
+								, DIM.DIM_PRINCIPAL
 								, STKG.LOC_CODE
 								, ITM.[Unit Cost] AS PRICE
 								, (STKG.STOCK_OH - STKG.RSRV_OH) AS OH_AVL
@@ -404,21 +414,45 @@ FROM	(
 									GROUP BY STK.ITEM_NO, STK.LOC_CODE
 								)STKG
 						LEFT JOIN [dbo].[BC_SOLUSI$Item] ITM ON ITM.[No_] = STKG.ITEM_NO
+						LEFT JOIN   (
+										SELECT  [No_]
+												,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE '' END) AS DIM_PRODUCT
+												,MAX(CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE '' END) AS DIM_ITEM_CATEGORY
+												,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE '' END) AS DIM_PRINCIPAL
+										FROM [dbo].[BC_SOLUSI$Default Dimension]
+										WHERE [Table ID] = 27
+										GROUP BY [No_]
+									) DIM ON DIM.[No_] = ITM.[No_]
 						WHERE	ITM.[Inventory Value Zero] = 0
 								AND ITM.[Item Category Code] = 'HW01'
 								AND ITM.[Product Group Code] IN ('H004','H026')
 								AND STKG.LOC_CODE IN ('CKR-SC','CKR-TD','DPS-SC','DPS-TD','HO-SC','HO-TD','SBY-SC','SBY-TD','SMR-SC','SMR-TD','')
 					) X
-			LEFT JOIN [dbo].[BC_AUTOJAYA$Product Group] PRD ON PRD.[Item Category Code] = X.ITEM_CAT AND PRD.[Code] = X.PRD_GROUP
+			LEFT JOIN [dbo].[BC_AUTOJAYA$Product Group] PRD ON PRD.[Item Category Code] = X.ITEM_CAT AND PRD.[Code] = X.DIM_PRINCIPAL
 			GROUP BY X.COMPANY
 					, X.ITEM_NO
 					, X.DESCRIPTIONS
 					, X.UOM
 					, X.ITEM_CAT
-					, X.PRD_GROUP
+					, X.DIM_PRINCIPAL
 					, PRD.[Description]
 					, X.PRICE
 		) XX
+LEFT JOIN	(
+				SELECT	PRI.[Code], MAX(PRI.[Name]) AS [Name]
+				FROM	(
+							SELECT [Code]
+								  ,[Name]
+							FROM [dbo].[BC_AUTOJAYA$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+							UNION ALL
+							SELECT [Code]
+								  ,[Name]
+							FROM [dbo].[BC_SOLUSI$Dimension Value]
+							WHERE [Dimension Code] = 'PRINCIPAL'
+						) PRI
+				GROUP BY PRI.[Code]
+			) PRIN ON PRIN.[Code] = XX.DIM_PRINCIPAL
 WHERE XX.TOTAL_AVL > 0
 ) XXX]]>
 	</queryString>
@@ -429,13 +463,14 @@ WHERE XX.TOTAL_AVL > 0
 	<field name="DESCRIPTIONS" class="java.lang.String"/>
 	<field name="UOM" class="java.lang.String"/>
 	<field name="ITEM_CAT" class="java.lang.String"/>
-	<field name="PRD_GROUP" class="java.lang.String"/>
+	<field name="DIM_PRINCIPAL" class="java.lang.String"/>
+	<field name="PRINCIPAL" class="java.lang.String"/>
 	<field name="PRODUCT" class="java.lang.String"/>
 	<field name="READY_AVL" class="java.math.BigDecimal"/>
 	<field name="ON_ORDER_AVL" class="java.math.BigDecimal"/>
 	<field name="LANDED_PRICE" class="java.math.BigDecimal"/>
 	<field name="TOTAL_PRICE" class="java.math.BigDecimal"/>
-	<sortField name="PRODUCT"/>
+	<sortField name="PRINCIPAL"/>
 	<group name="GRP">
 		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
 		<groupHeader>
@@ -671,8 +706,8 @@ WHERE XX.TOTAL_AVL > 0
 			</band>
 		</groupHeader>
 	</group>
-	<group name="Product">
-		<groupExpression><![CDATA[$F{PRODUCT}]]></groupExpression>
+	<group name="Principal">
+		<groupExpression><![CDATA[$F{PRINCIPAL}]]></groupExpression>
 		<groupHeader>
 			<band height="15">
 				<textField>
@@ -680,7 +715,7 @@ WHERE XX.TOTAL_AVL > 0
 					<textElement>
 						<font size="8" isBold="true" isItalic="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$F{PRODUCT}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$F{PRINCIPAL}]]></textFieldExpression>
 				</textField>
 				<staticText>
 					<reportElement x="6" y="1" width="27" height="14" uuid="ac3f8a04-e02a-4abd-b31f-122bc47798b3"/>

@@ -4,9 +4,9 @@ package solusi.hapis.common;
 
 
 public class PathReport {
-	private final static String runningON = "TEST";
+	//private final static String runningON = "TEST";
 	//private final static String runningON = "LIVE";
-	//private final static String runningON = "LIVE-41";
+	private final static String runningON = "LIVE-41";
 	
 	
 	private String salesVSCOGS;

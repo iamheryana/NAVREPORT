@@ -30,6 +30,7 @@ public interface CallStoreProcOrFuncDAO {
 	public String callSyncAReport(String kodeReport);	
 	public String callProsesGenerateSROSO(String modeReport);
 	public String callGrossMarginSalesman(String processId, String tglFrom, String tglUpto,  String action);	
+	public String callSyncAReportManual(String kodeReport);	
 	
 	
 }

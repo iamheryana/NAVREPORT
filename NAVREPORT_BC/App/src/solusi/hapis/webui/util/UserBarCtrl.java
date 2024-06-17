@@ -19,6 +19,7 @@
 package solusi.hapis.webui.util;
 
 import org.apache.log4j.Logger;
+import org.zkoss.spring.SpringUtil;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
@@ -29,6 +30,10 @@ import org.zkoss.zul.Hbox;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Space;
 import org.zkoss.zul.Window;
+
+import solusi.hapis.backend.navbi.model.BCAccessFrom;
+import solusi.hapis.backend.navbi.service.BCAccessFromService;
+import solusi.hapis.common.CommonUtils;
 
 import java.io.Serializable;
 
@@ -106,10 +111,13 @@ public class UserBarCtrl extends GenericForwardComposer implements Serializable 
     private Label userLabelText;
     private Label tenantLabelText;
     private Label officeLabelText;
+    private Label lastSyncText;
 
     private String _UserText = "";
     private String _TenantIdText = "";
     private String _OfficeIdText = "";
+    
+    private BCAccessFromService bCAccessFromService = (BCAccessFromService) SpringUtil.getBean("bCAccessFromService");
 
     /**
      * Default constructor.
@@ -162,19 +170,13 @@ public class UserBarCtrl extends GenericForwardComposer implements Serializable 
     public void onCreate$winUserBar(Event event) {
 
         Space space;
+        Space space2;
 
         winUserBar.setBorder("none");
 
-        Hbox hbox = new Hbox();
-        hbox.setParent(winUserBar);
+      
 
-        userLabel = new Label();
-        userLabel.setStyle("text-align: right; font-size: 10px;");
-        userLabel.setParent(hbox);
-        userLabelText = new Label();
-        userLabelText.setStyle("padding-left: 2px; text-align: right; color: blue; font-size: 10px;");
-        userLabelText.setParent(hbox);
-
+       
 //        tenantLabel = new Label();
 //        tenantLabel.setStyle("text-align: right; font-size: 10px;");
 //        tenantLabel.setParent(hbox);
@@ -189,9 +191,33 @@ public class UserBarCtrl extends GenericForwardComposer implements Serializable 
 //        officeLabelText.setStyle("padding-left: 2px; text-align: right; color: blue; font-size: 10px;");
 //        officeLabelText.setParent(hbox);
 
-        space = new Space();
-        space.setWidth("5px");
-        space.setParent(hbox);
+
+        
+
+        
+
+        Hbox hbox2 = new Hbox();
+        hbox2.setParent(winUserBar);
+
+        lastSyncText= new Label();
+        lastSyncText.setStyle("text-align: right; font-size: 15px;color: red;");
+        lastSyncText.setParent(hbox2);
+        
+        space2 = new Space();
+        space2.setWidth("5px");
+        space2.setParent(hbox2);
+      
+        
+        
+        Hbox hbox = new Hbox();
+        hbox.setParent(winUserBar);
+
+        userLabel = new Label();
+        userLabel.setStyle("text-align: right; font-size: 10px;");
+        userLabel.setParent(hbox);
+        userLabelText = new Label();
+        userLabelText.setStyle("padding-left: 2px; text-align: right; color: blue; font-size: 10px;");
+        userLabelText.setParent(hbox);
     }
 
     /**
@@ -199,8 +225,15 @@ public class UserBarCtrl extends GenericForwardComposer implements Serializable 
      */
     private void doShowLabel() {
 
+    	 BCAccessFrom vAccFrom = bCAccessFromService.getLastSync();
+         
+        
+         
         this.userLabel.setValue(this._UserLabel);
         this.userLabelText.setValue(get_UserText());
+        if(vAccFrom != null){
+        	 this.lastSyncText.setValue("Last 'Data Sync' : "+CommonUtils.convertDateToString(vAccFrom.getLastSync(),CommonUtils.DATE_FORMAT_DDMMYYYYHHMMSS));
+         }
 
 //        this.tenantLabel.setValue(" / " + this._TenantIdLabel);
 //        this.tenantLabelText.setValue(get_TenantIdText());
