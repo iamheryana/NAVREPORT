@@ -2,6 +2,7 @@ package solusi.hapis.webui.sales;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zul.Datebox;
@@ -83,7 +85,15 @@ public class LapSalesRevenueCtrl extends GFCBaseCtrl implements Serializable {
     	vProsesId = String.valueOf(System.currentTimeMillis());
 	}
 	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
 		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0507005");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
+	
+	
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOKNew(Event event) throws InterruptedException, ParseException {
 		

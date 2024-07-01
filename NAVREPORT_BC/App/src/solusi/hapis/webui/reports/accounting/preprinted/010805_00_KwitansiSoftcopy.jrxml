@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010805_00_KwitansiSoftcopy" language="groovy" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="50" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="1.9487171000000647"/>
 	<property name="ireport.x" value="92"/>
-	<property name="ireport.y" value="48"/>
+	<property name="ireport.y" value="288"/>
 	<parameter name="InvoiceFrom" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -12,6 +12,9 @@
 	<parameter name="SUBREPORT_DIR" class="java.lang.String"/>
 	<parameter name="PrintMaterai" class="java.lang.String"/>
 	<parameter name="FlagPPN" class="java.lang.String"/>
+	<parameter name="TTD" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[SELECT	INV.COMP
 		,INV.INV_NO
@@ -33,8 +36,8 @@
 		,	CASE WHEN INV.KODE_CUST IN ('ALFA024', 'AL00605')
 				THEN 'VA' ELSE 'NORMAL'
 			END AS BA_TYPE
-		,INV.TTD
-		,INV.JABATAN
+		,CASE WHEN TTD.TTD IS NULL THEN INV.TTD ELSE TTD.TTD END AS TTD
+		,CASE WHEN TTD.JABATAN IS NULL THEN INV.JABATAN ELSE TTD.JABATAN END AS JABATAN
 		, (CAST(INV.TGL_TGL_INV AS NVARCHAR)+ ' '+ INV.BULAN_INV + ' '+CAST(INV.TAHUN_INV AS NVARCHAR) ) AS TANGGAL_INV
 		, (INV.HARI_DUE_DATE+', '+CAST(INV.TGL_DUE_DATE AS NVARCHAR) + ' '+ INV.BULAN_DUE_DATE + ' '+CAST(INV.TAHUN_DUE_DATE AS NVARCHAR) ) AS TANGGAL_JATUH_TEMPO
 		, EM.[EMAIL_FINANCE]
@@ -242,7 +245,24 @@ FROM	(
 						) XY ON 1=1
 		) INV
 LEFT JOIN [dbo].[BC_AUTOJAYA$Customer Bank Account] CBA ON  CBA.[Customer No_] = INV.NAMA_DC AND CBA.[Code] = 'VA01'
-LEFT JOIN	[dbo].[P05_PARAM_PREPRINT_INVOICE] EM ON EM.KODE = '01']]>
+LEFT JOIN	[dbo].[P05_PARAM_PREPRINT_INVOICE] EM ON EM.KODE = '01'
+LEFT JOIN	(
+				SELECT	TTD_SBY AS TTD,JABATAN_SBY AS JABATAN
+				FROM [dbo].[P05_PARAM_PREPRINT_INVOICE]
+				WHERE $P{TTD} = 'SBY'
+				UNION ALL
+				SELECT	TTD_CKR AS TTD,JABATAN_CKR AS JABATAN
+				FROM [dbo].[P05_PARAM_PREPRINT_INVOICE]
+				WHERE $P{TTD} = 'CKR'
+				UNION ALL
+				SELECT	TTD_SMR AS TTD,JABATAN_SMR AS JABATAN
+				FROM [dbo].[P05_PARAM_PREPRINT_INVOICE]
+				WHERE $P{TTD} = 'SMR'
+				UNION ALL
+				SELECT	TTD_DPS AS TTD,JABATAN_DPS AS JABATAN
+				FROM [dbo].[P05_PARAM_PREPRINT_INVOICE]
+				WHERE $P{TTD} = 'DPS'
+			) TTD ON 1=1]]>
 	</queryString>
 	<field name="COMP" class="java.lang.String"/>
 	<field name="INV_NO" class="java.lang.String"/>

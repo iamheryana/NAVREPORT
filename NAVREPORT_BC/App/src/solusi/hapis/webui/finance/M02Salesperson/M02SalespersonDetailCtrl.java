@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.Path;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
@@ -16,6 +17,7 @@ import org.zkoss.zkplus.databind.AnnotateDataBinder;
 import org.zkoss.zul.Borderlayout;
 import org.zkoss.zul.Button;
 import org.zkoss.zul.Datebox;
+import org.zkoss.zul.Intbox;
 import org.zkoss.zul.ListModelList;
 import org.zkoss.zul.Listbox;
 import org.zkoss.zul.Listcell;
@@ -205,12 +207,12 @@ public class M02SalespersonDetailCtrl extends GFCBaseCtrl implements Serializabl
 
 		
 		doFillListbox();
-		
+		doFitSize(event);
 		binder.loadAll();
 	}
 
 	public void doFillListbox() {
-		doFitSize();
+		
 		
 		//Detail 
 		listheader_M02SalespersonDetailList_Tahun.setSortAscending(new M03TargetsalesComparator(true, M03TargetsalesComparator.COMPARE_BY_TAHUN));
@@ -222,10 +224,19 @@ public class M02SalespersonDetailCtrl extends GFCBaseCtrl implements Serializabl
 
 	}
 
-	
-	public void doFitSize() {
+	public void doFitSize(Event event) {
+		final int height = ((Intbox) Path
+				.getComponent("/outerIndexWindow/currentDesktopHeight"))
+				.getValue().intValue();
+		final int maxListBoxHeight = height - 148;
+
+		borderlayout_M02SalespersonDetail.setHeight(String.valueOf(maxListBoxHeight)
+				+ "px");
+
 		windowM02SalespersonDetail.invalidate();
 	}
+
+
 
 	
 	public void doRenderMode(String pMode) {		

@@ -3,6 +3,7 @@ package solusi.hapis.webui.sales;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -11,6 +12,7 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -150,6 +152,16 @@ public class OutstandingSORealisasiCtrl extends GFCBaseCtrl implements Serializa
 			rowTglUpto.setVisible(false);
 		}		
 	}
+	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0507007-01");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
+	
+	
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOK(Event event) throws InterruptedException, ParseException {
 		

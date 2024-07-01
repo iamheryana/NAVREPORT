@@ -167,19 +167,19 @@ public class PathReport {
 				setProsesRekonPPN("HasilRekonsiliasiPPNKeluaran.xls");
 				setHasilCompareInvoiceRebate("HasilCompareInvoiceRebate.xls");
 				
-				setRumusanOutPOCashFlow("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\web\\WEB-INF\\pages\\finance\\RumusanOutPOCashFlow.xls");
-				setContohFormatHasilStockOpname("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\web\\WEB-INF\\pages\\accounting\\ContohFormatHasilStockOpname.xls");
+				setRumusanOutPOCashFlow("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\web\\WEB-INF\\pages\\finance\\RumusanOutPOCashFlow.xls");
+				setContohFormatHasilStockOpname("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\web\\WEB-INF\\pages\\accounting\\ContohFormatHasilStockOpname.xls");
 				
 				
-				setSubRptAccounting("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\accounting\\");
-				setSubRptAccountingPreprinted("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\accounting\\preprinted\\");
-				setSubRptAccountingPenjualan("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\accounting\\penjualan\\");
+				setSubRptAccounting("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\accounting\\");
+				setSubRptAccountingPreprinted("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\accounting\\preprinted\\");
+				setSubRptAccountingPenjualan("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\accounting\\penjualan\\");
 				
-				setSubRptFinance("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\finance\\");
-				setSubRptLogitic("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\logistic\\");
-				setSubRptSales("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\");
+				setSubRptFinance("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\finance\\");
+				setSubRptLogitic("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\logistic\\");
+				setSubRptSales("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\");
 				setSubRptSalesHistorical("F:\\ERP\\Kosong\\NAVREPORT_BC\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
-				setSubRptMarkom("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\markom\\");
+				setSubRptMarkom("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\markom\\");
 				
 			}
 		}

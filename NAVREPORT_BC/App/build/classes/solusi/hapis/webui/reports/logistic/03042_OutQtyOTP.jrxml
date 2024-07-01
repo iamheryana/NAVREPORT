@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03042_OutQtyOTP" language="groovy" pageWidth="1475" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1435" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03042_OutQtyOTP" language="groovy" pageWidth="1635" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1595" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="2.143588810000073"/>
-	<property name="ireport.x" value="1253"/>
+	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="Company" class="java.lang.String"/>
 	<parameter name="PartNo" class="java.lang.String"/>
@@ -27,6 +27,8 @@
 		,XOX.SALES
 		,XOX.BRANCH
 		, (XOX.QTY_RSRV_READY_DISTI + XOX.QTY_RSRV_ON_ORDER)  + XOX.QTY_FREE AS SISA_OTP
+		, XOX.HARGA_SAT
+		, XOX.HARGA_SAT * ((XOX.QTY_RSRV_READY_DISTI + XOX.QTY_RSRV_ON_ORDER)  + XOX.QTY_FREE) AS TOTAL_HARGA
 FROM	(
 SELECT	'AJ' AS COMPANY
 		,HDR.GRP
@@ -47,6 +49,7 @@ SELECT	'AJ' AS COMPANY
 		,DTL.EXP_RCV
 		,DTL.SALES
 		,DTL.BRANCH
+		,HDR.HARGA_SAT
 FROM	(
 			SELECT	(BPOH.[No_] + CONVERT(VARCHAR,BPOL.[Line No_]) + BPOL.[No_]) AS GRP
 					,BPOH.[No_] AS NO_BPO
@@ -58,6 +61,7 @@ FROM	(
 					,BPOL.[Description] AS ITEM_DESC
 					,BPOL.[Unit of Measure] AS UOM
 					,BPOL.[Quantity] AS QTY_ORDER
+					, CASE WHEN BPOH.[Currency Code] = '' THEN BPOL.[Direct Unit Cost] ELSE BPOL.[Direct Unit Cost] / BPOH.[Currency Factor] END AS HARGA_SAT
 					,BPOL.[Direct Unit Cost] * 1.025 AS LANDED_PRICE
 					,(BPOL.[Quantity] * (BPOL.[Direct Unit Cost] * 1.025)) AS TOTAL_AMT
 					,BPOL.[Quantity Received] AS QTY_RCV_H
@@ -233,6 +237,7 @@ SELECT	'SP' AS COMPANY
 		,DTL.EXP_RCV
 		,DTL.SALES
 		,DTL.BRANCH
+		,HDR.HARGA_SAT
 FROM	(
 			SELECT	(BPOH.[No_] + CONVERT(VARCHAR,BPOL.[Line No_]) + BPOL.[No_]) AS GRP
 					,BPOH.[No_] AS NO_BPO
@@ -244,6 +249,7 @@ FROM	(
 					,BPOL.[Description] AS ITEM_DESC
 					,BPOL.[Unit of Measure] AS UOM
 					,BPOL.[Quantity] AS QTY_ORDER
+					, CASE WHEN BPOH.[Currency Code] = '' THEN BPOL.[Direct Unit Cost] ELSE BPOL.[Direct Unit Cost] / BPOH.[Currency Factor] END AS HARGA_SAT
 					,BPOL.[Direct Unit Cost] * 1.025 AS LANDED_PRICE
 					,(BPOL.[Quantity] * (BPOL.[Direct Unit Cost] * 1.025)) AS TOTAL_AMT
 					,BPOL.[Quantity Received] AS QTY_RCV_H
@@ -425,6 +431,8 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 	<field name="SALES" class="java.lang.String"/>
 	<field name="BRANCH" class="java.lang.String"/>
 	<field name="SISA_OTP" class="java.math.BigDecimal"/>
+	<field name="HARGA_SAT" class="java.math.BigDecimal"/>
+	<field name="TOTAL_HARGA" class="java.math.BigDecimal"/>
 	<sortField name="GRP"/>
 	<sortField name="NO_BPO"/>
 	<sortField name="NO_ITEM"/>
@@ -633,7 +641,7 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 				<text><![CDATA[Qty Reserve OTP]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1360" y="84" width="75" height="14" uuid="76031cf5-b0f2-4016-90be-6da8fe7d2c8b"/>
+				<reportElement x="1520" y="84" width="75" height="14" uuid="76031cf5-b0f2-4016-90be-6da8fe7d2c8b"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="false"/>
 				</textElement>
@@ -661,7 +669,7 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 				<text><![CDATA[Qty Reserve Real SO]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1285" y="84" width="75" height="14" uuid="b5652f51-3945-43c7-aa53-247bf89567f5"/>
+				<reportElement x="1445" y="84" width="75" height="14" uuid="b5652f51-3945-43c7-aa53-247bf89567f5"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="false"/>
 				</textElement>
@@ -680,6 +688,20 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 					<font size="8"/>
 				</textElement>
 				<text><![CDATA[No PO OTP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1285" y="84" width="80" height="14" uuid="0784b5b5-c9b8-4d9f-a50a-d65f38820567"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Harga Satuan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1365" y="84" width="80" height="14" uuid="9def4c7e-ed05-409a-8342-f00971365069"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[Total Amount SISA]]></text>
 			</staticText>
 		</band>
 	</title>
@@ -756,7 +778,7 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 				<textFieldExpression><![CDATA[$F{QTY_RSRV_ON_ORDER}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
-				<reportElement x="1360" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="22e3a1fc-fdef-45a4-b6c2-7e4bd845be81"/>
+				<reportElement x="1520" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="22e3a1fc-fdef-45a4-b6c2-7e4bd845be81"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
@@ -777,7 +799,7 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 				<textFieldExpression><![CDATA[$F{QTY_REAL_PO}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
-				<reportElement x="1285" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="a71cfc60-6348-42bc-b372-169fb941c483"/>
+				<reportElement x="1445" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="a71cfc60-6348-42bc-b372-169fb941c483"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
@@ -796,6 +818,20 @@ WHERE 	(XOX.COMPANY = $P{Company} OR $P{Company} = 'ALL') AND
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NO_PO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1285" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="54f6bec7-029b-4976-9109-279ed8614e00"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{HARGA_SAT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1365" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="2f87c0d6-d328-4d60-83cf-11f3efbaeec2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL_HARGA}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

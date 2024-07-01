@@ -7,7 +7,14 @@ public class P05ParamPreprintInvoice {
 	private static final long serialVersionUID = 1L;
 	private String kode;
 	private String emailFinance;
-	
+	private String ttdSby;
+	private String jabatanSby;
+	private String ttdCkr;
+	private String jabatanCkr;
+	private String ttdSmr;
+	private String jabatanSmr;
+	private String ttdDps;
+	private String jabatanDps;	
 	private Integer version;
 	private String createdBy;
 	private Date createdOn;
@@ -20,11 +27,30 @@ public class P05ParamPreprintInvoice {
 	
 	
 
-	public P05ParamPreprintInvoice(String kode, String emailFinance) {
+
+
+
+
+	public P05ParamPreprintInvoice(String kode, String emailFinance,
+			String ttdSby, String jabatanSby, String ttdCkr, String jabatanCkr,
+			String ttdSmr, String jabatanSmr, String ttdDps, String jabatanDps) {
 		super();
 		this.kode = kode;
 		this.emailFinance = emailFinance;
+		this.ttdSby = ttdSby;
+		this.jabatanSby = jabatanSby;
+		this.ttdCkr = ttdCkr;
+		this.jabatanCkr = jabatanCkr;
+		this.ttdSmr = ttdSmr;
+		this.jabatanSmr = jabatanSmr;
+		this.ttdDps = ttdDps;
+		this.jabatanDps = jabatanDps;
+
 	}
+
+
+
+
 
 
 
@@ -115,6 +141,102 @@ public class P05ParamPreprintInvoice {
 
 	public static long getSerialversionuid() {
 		return serialVersionUID;
+	}
+
+
+
+	public String getTtdSby() {
+		return ttdSby;
+	}
+
+
+
+	public void setTtdSby(String ttdSby) {
+		this.ttdSby = ttdSby;
+	}
+
+
+
+	public String getJabatanSby() {
+		return jabatanSby;
+	}
+
+
+
+	public void setJabatanSby(String jabatanSby) {
+		this.jabatanSby = jabatanSby;
+	}
+
+
+
+	public String getTtdCkr() {
+		return ttdCkr;
+	}
+
+
+
+	public void setTtdCkr(String ttdCkr) {
+		this.ttdCkr = ttdCkr;
+	}
+
+
+
+	public String getJabatanCkr() {
+		return jabatanCkr;
+	}
+
+
+
+	public void setJabatanCkr(String jabatanCkr) {
+		this.jabatanCkr = jabatanCkr;
+	}
+
+
+
+	public String getTtdSmr() {
+		return ttdSmr;
+	}
+
+
+
+	public void setTtdSmr(String ttdSmr) {
+		this.ttdSmr = ttdSmr;
+	}
+
+
+
+	public String getJabatanSmr() {
+		return jabatanSmr;
+	}
+
+
+
+	public void setJabatanSmr(String jabatanSmr) {
+		this.jabatanSmr = jabatanSmr;
+	}
+
+
+
+	public String getTtdDps() {
+		return ttdDps;
+	}
+
+
+
+	public void setTtdDps(String ttdDps) {
+		this.ttdDps = ttdDps;
+	}
+
+
+
+	public String getJabatanDps() {
+		return jabatanDps;
+	}
+
+
+
+	public void setJabatanDps(String jabatanDps) {
+		this.jabatanDps = jabatanDps;
 	}
 
 	

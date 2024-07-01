@@ -3,6 +3,7 @@ package solusi.hapis.webui.finance.T03CetakSlip;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -215,7 +216,13 @@ public class T03CetakSlipMainCtrl extends GFCBaseCtrl implements Serializable {
     // +++++++++++++++++++++++++++++++++++++++++++++++++ // 
     
     
-    
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0206001");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
     
 	public void onClick$btnResetPrintCheque(Event event) throws InterruptedException {
 		if(getSelectedT03CetakSlip() != null) {

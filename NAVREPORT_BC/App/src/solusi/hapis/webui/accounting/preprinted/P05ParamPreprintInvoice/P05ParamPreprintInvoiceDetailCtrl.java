@@ -31,7 +31,18 @@ public class P05ParamPreprintInvoiceDetailCtrl extends GFCBaseCtrl implements Se
 	
 	// Data Entry Component
 	protected Textbox txtEmailFinance;
+	
+	protected Textbox txtTTDSBY;
+	protected Textbox txtJabatanSBY;
 
+	protected Textbox txtTTDCKR;
+	protected Textbox txtJabatanCKR;
+	
+	protected Textbox txtTTDSMR;
+	protected Textbox txtJabatanSMR;
+	
+	protected Textbox txtTTDDPS;
+	protected Textbox txtJabatanDPS;
 	
 	// Databinding
 	protected transient AnnotateDataBinder binder;
@@ -98,6 +109,21 @@ public class P05ParamPreprintInvoiceDetailCtrl extends GFCBaseCtrl implements Se
 				
 				// set read only other
 				txtEmailFinance.setReadonly(false);
+				
+				txtTTDSBY.setReadonly(false);
+				txtJabatanSBY.setReadonly(false);
+
+				txtTTDCKR.setReadonly(false);
+				txtJabatanCKR.setReadonly(false);
+					
+				txtTTDSMR.setReadonly(false);
+				txtJabatanSMR.setReadonly(false);
+					
+				txtTTDDPS.setReadonly(false);
+				txtJabatanDPS.setReadonly(false);			
+					
+					
+					
 			
 
 				// set focus 

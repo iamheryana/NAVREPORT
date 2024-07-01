@@ -46,6 +46,12 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdYesPPN;
 	protected Radio rdNoPPN;
 	
+	protected Radiogroup rdgFlagTTD;	 
+	protected Radio rdJKT;
+	protected Radio rdSBY;
+	protected Radio rdCKR;
+	protected Radio rdSMR;
+	protected Radio rdDPS;
 
 
 
@@ -61,6 +67,8 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
     	rdYes.setSelected(true); 
     	rdYesPO.setSelected(true); 
     	rdYesPPN.setSelected(true); 
+    	
+    	rdJKT.setSelected(true); 
     	
 	}
 	
@@ -100,6 +108,14 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 		if (StringUtils.isNotEmpty(rdgFlagPPN.getSelectedItem().getValue())) {
 			vFlagPPN = rdgFlagPPN.getSelectedItem().getValue();	
 		} 
+		
+		
+		String vFlagTTD = "JKT";
+		if (StringUtils.isNotEmpty(rdgFlagTTD.getSelectedItem().getValue())) {
+			vFlagTTD = rdgFlagTTD.getSelectedItem().getValue();	
+		} 
+		
+		
 		@SuppressWarnings("unused")
 		String vSync = callStoreProcOrFuncService.callSyncAReport("0108009");
 		
@@ -112,7 +128,7 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 		param.put("InvoiceUpto",  vInvUpto);  
 		param.put("PrintMaterai",  vPrintMaterai); 
 		param.put("FlagPPN",  vFlagPPN); 
-		
+		param.put("TTD",  vFlagTTD); 
 		
 		String vSaveAs = "PDF";
 		if (StringUtils.isNotEmpty(rdgSave.getSelectedItem().getValue())) {
@@ -212,6 +228,11 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 			vPrintPO = rdgNoPO.getSelectedItem().getValue();	
 		} 
 		
+		String vFlagTTD = "JKT";
+		if (StringUtils.isNotEmpty(rdgFlagTTD.getSelectedItem().getValue())) {
+			vFlagTTD = rdgFlagTTD.getSelectedItem().getValue();	
+		} 
+		
 		@SuppressWarnings("unused")
 		String vSync = callStoreProcOrFuncService.callSyncAReport("0108003");
 		
@@ -224,6 +245,7 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 		param.put("InvoiceUpto",  vInvUpto);  
 		param.put("PrintMaterai",  vPrintMaterai); 
 		param.put("PrintPO",  vPrintPO); 
+		param.put("TTD",  vFlagTTD); 
 		
 		String vSaveAs = "PDF";
 		if (StringUtils.isNotEmpty(rdgSave.getSelectedItem().getValue())) {
