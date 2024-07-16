@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02050_SlipTransferBCAAntarBank" language="groovy" pageWidth="612" pageHeight="510" whenNoDataType="NoDataSection" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="1.9487171000000667"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="576"/>
+	<property name="ireport.x" value="123"/>
+	<property name="ireport.y" value="2400"/>
 	<parameter name="T03CsId" class="java.lang.Long">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -232,8 +232,10 @@ FROM	(
 																			SELECT	[Posting Date] AS TGL_TRANS
 																					,[Document No_] AS VOUCHER_NO
 																					,[Bank Account No_] AS BANK_CODE
-																					,[Amount] * -1 AS AMOUNT
+																					,SUM([Amount]) * -1 AS AMOUNT
 																			FROM [dbo].[BC_AUTOJAYA$Bank Account Ledger Entry]
+																			WHERE [Reversed] = 0
+																			GROUP BY [Document No_], [Bank Account No_], [Posting Date]
 																		) BAC
 															) BA
 													LEFT JOIN	(
@@ -282,7 +284,7 @@ FROM	(
 																									,MAX([Vendor No_]) AS SUPP_CODE
 																									,MAX([Currency Code]) AS CURR_CODE
 																							FROM [dbo].[BC_AUTOJAYA$Vendor Ledger Entry]
-																							WHERE [Document Type] IN (0,1) and [Currency Code] ='CNY'
+																							WHERE [Document Type] IN (0,1)
 																							GROUP BY [Document No_]
 																						) VT
 																				LEFT JOIN [dbo].[BC_AUTOJAYA$Vendor Bank Account] VON ON VON.[Vendor No_] = VT.SUPP_CODE AND VON.Code = (VT.SUPP_CODE+'-'+CASE WHEN VT.CURR_CODE='' THEN 'IDR' ELSE VT.CURR_CODE END)
@@ -340,8 +342,10 @@ FROM	(
 																			SELECT	[Posting Date] AS TGL_TRANS
 																					,[Document No_] AS VOUCHER_NO
 																					,[Bank Account No_] AS BANK_CODE
-																					,[Amount] * -1 AS AMOUNT
+																					,SUM([Amount]) * -1 AS AMOUNT
 																			FROM [dbo].[BC_SOLUSI$Bank Account Ledger Entry]
+																			WHERE [Reversed] = 0
+																			GROUP BY [Document No_], [Bank Account No_], [Posting Date]
 																		) BAC
 															) BA
 													LEFT JOIN	(

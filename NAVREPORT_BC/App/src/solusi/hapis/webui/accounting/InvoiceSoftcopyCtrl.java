@@ -54,7 +54,11 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdDPS;
 
 
-
+	protected Radiogroup rdgJthTempo;	 
+	protected Radio rdJTYes;
+	protected Radio rdJTNo;	
+	
+	
 	private CallStoreProcOrFuncService callStoreProcOrFuncService;
 
 
@@ -62,6 +66,7 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 	public void doAfterCompose(Component comp) throws Exception {
 		super.doAfterCompose(comp);  
 
+		rdJTNo.setSelected(true);   
 		
     	rdPDF.setSelected(true);     	
     	rdYes.setSelected(true); 
@@ -233,6 +238,12 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 			vFlagTTD = rdgFlagTTD.getSelectedItem().getValue();	
 		} 
 		
+		String vPrintJatuhTempo = "N";
+		if (StringUtils.isNotEmpty(rdgJthTempo.getSelectedItem().getValue())) {
+			vPrintJatuhTempo = rdgJthTempo.getSelectedItem().getValue();	
+		} 
+		
+		
 		@SuppressWarnings("unused")
 		String vSync = callStoreProcOrFuncService.callSyncAReport("0108003");
 		
@@ -246,6 +257,7 @@ public class InvoiceSoftcopyCtrl extends GFCBaseCtrl implements Serializable {
 		param.put("PrintMaterai",  vPrintMaterai); 
 		param.put("PrintPO",  vPrintPO); 
 		param.put("TTD",  vFlagTTD); 
+		param.put("CetakJatuhTempo",  vPrintJatuhTempo);
 		
 		String vSaveAs = "PDF";
 		if (StringUtils.isNotEmpty(rdgSave.getSelectedItem().getValue())) {

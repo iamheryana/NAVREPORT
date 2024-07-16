@@ -2,6 +2,7 @@ package solusi.hapis.webui.logistic;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -122,6 +124,16 @@ public class PrincipalInfoCtrl extends GFCBaseCtrl implements Serializable {
 		};
 	}
 		
+	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0301001");
+		
+		Messagebox.show("Sync Sudah Selesai");
+	}
+	
+	
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOK(Event event) throws InterruptedException, ParseException {
 			
