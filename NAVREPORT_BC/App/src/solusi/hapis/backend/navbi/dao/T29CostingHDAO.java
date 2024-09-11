@@ -12,4 +12,8 @@ public interface T29CostingHDAO {
 	public void delete(T29CostingH t29CostingH);
 	public List<T29CostingH> getListT29CostingH(Map<Object, Object> parameterInput);
 	public void flush();
+	
+	public T29CostingH getT29CostingHByNoCosting(String noCosting);
+	public String callGetNoCosting(String noCosting);
+	
 }

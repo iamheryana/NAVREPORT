@@ -58,6 +58,7 @@ public class LapOutPOCtrl extends GFCBaseCtrl implements Serializable {
 	protected Decimalbox dcmKursUSD;
 	protected Decimalbox dcmKursEUR;
 	protected Decimalbox dcmKursSGD;	
+	protected Decimalbox dcmKursCNY;	
 	
 	protected Radiogroup rdgOut;	 
 	protected Radio rdBPO;
@@ -118,6 +119,7 @@ public class LapOutPOCtrl extends GFCBaseCtrl implements Serializable {
     	dcmKursUSD.setValue(new BigDecimal(0));
     	dcmKursSGD.setValue(new BigDecimal(0));
     	dcmKursEUR.setValue(new BigDecimal(0));
+    	dcmKursCNY.setValue(new BigDecimal(0));
     	
     	txtKodeVendorTo.setValue("ZZZZZZZZZZZZZZZZZZZZ");
     	
@@ -658,20 +660,28 @@ private EventListener selectProject() {
 		
 		Date vR1From = new Date();
 		Date vR1Upto = new Date();
+		
 		Date vR2From = new Date();
 		Date vR2Upto = new Date();
+		
 		Date vR3From = new Date();
 		Date vR3Upto = new Date();
+		
 		Date vR4From = new Date();
 		Date vR4Upto = new Date();
+		
 		Date vR5From = new Date();
 		Date vR5Upto = new Date();
+		
 		Date vR6From = new Date();
 		Date vR6Upto = new Date();
+		
 		Date vR7From = new Date();
 		Date vR7Upto = new Date();
+		
 		Date vR8From = new Date();
 		Date vR8Upto = new Date();
+		
 		Date vR9From = new Date();
 		Date vR9Upto = new Date();		
 		Date vR10From = new Date();
@@ -1044,12 +1054,15 @@ private EventListener selectProject() {
 				Calendar cR9From = Calendar.getInstance();
 				cR9From.setTime(vR8Upto);			
 				cR9From.add(Calendar.DAY_OF_MONTH, 1);  
-				vR9From = cR9From.getTime();
+				vR9From = cR9From.getTime();				
 				
 				Calendar cR9Upto = Calendar.getInstance();
 				cR9Upto.setTime(vR9From);			
-				cR9Upto.add(Calendar.DAY_OF_MONTH, 13);  
-				vR9Upto = cR9Upto.getTime();
+				cR9Upto.add(Calendar.MONTH, 1);  
+				vR9Upto = cR9Upto.getTime(); 
+				
+				
+				
 			} else {
 				if (vJnsRpt.equals("C") == true)	{
 					Calendar cTglFrom = Calendar.getInstance();		
@@ -1373,6 +1386,11 @@ private EventListener selectProject() {
 			vKursSGD = dcmKursSGD.getValue();	
 		} 
 		
+		BigDecimal vKursCNY = new BigDecimal(0);
+		if (dcmKursCNY.getValue() != null) {
+			vKursCNY = dcmKursCNY.getValue();	
+		} 
+		
 		
 		if(vOut.equals("BPO")){
 
@@ -1399,6 +1417,7 @@ private EventListener selectProject() {
 			param.put("Kurs",  vKursUSD); 
 			param.put("KursEUR",  vKursEUR); 
 			param.put("KursSGD",  vKursSGD); 
+			param.put("KursCNY",  vKursCNY); 
 			
 		} else {
 			if(vOut.equals("BPO")){

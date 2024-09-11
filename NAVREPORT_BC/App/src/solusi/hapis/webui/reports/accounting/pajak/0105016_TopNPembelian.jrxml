@@ -1,0 +1,820 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="0105016_TopNPembelian" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="d67d58b6-db98-43fc-b2fe-6c1d43bc5f9a">
+	<property name="ireport.zoom" value="1.6105100000000236"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="PeriodeFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="PeriodeUpto" class="java.util.Date"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TopN" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[SELECT	XIX.RANKING
+		, XIX.KODE_SUPP
+		, XIX.NAMA_SUPP
+		, SUM(XIX.AMOUNT) AS AMOUNT
+		, SUM(SUM(XIX.AMOUNT)) OVER (PARTITION BY 1) AS TOTAL_PEMBELIAN
+		, (SUM(XIX.AMOUNT)  / SUM(SUM(XIX.AMOUNT)) OVER (PARTITION BY 1)  * 100 ) AS PERSEN
+FROM	(
+			SELECT	CASE WHEN XII.RANKING <= $P{TopN} THEN XII.RANKING ELSE $P{TopN}+1 END AS RANKING
+					, CASE WHEN XII.RANKING <= $P{TopN} THEN XII.KODE_SUPP ELSE 'OTHER' END AS KODE_SUPP
+					, CASE WHEN XII.RANKING <= $P{TopN} THEN XII.NAMA_SUPP ELSE 'OTHER SUPPLIER' END AS NAMA_SUPP
+					, XII.AMOUNT
+			FROM	(
+						SELECT	RANK() OVER (PARTITION BY 1 ORDER BY XXI.AMOUNT_PEMBELIAN DESC) AS RANKING
+								, XXI.KODE_SUPP
+								, XXI.NAMA_SUPP
+								, XXI.AMOUNT_BIAYA_FREIGHT
+								, XXI.AMOUNT_PEMBELIAN
+								, XXI.AMOUNT_PEMBELIAN_IC
+								, XXI.PEMBELIAN AS AMOUNT
+						FROM	(
+									SELECT
+											XXX.COMPANY
+											, XXX.KODE_SUPP
+											, XXX.NAMA_SUPP
+											, SUM(XXX.AMOUNT_BIAYA_FREIGHT) AS AMOUNT_BIAYA_FREIGHT
+											, SUM(XXX.AMOUNT_PEMBELIAN) AS AMOUNT_PEMBELIAN
+											, SUM(XXX.AMOUNT_PEMBELIAN_IC) AS AMOUNT_PEMBELIAN_IC
+											, SUM(XXX.AMOUNT_BIAYA_FREIGHT + XXX.AMOUNT_PEMBELIAN + XXX.AMOUNT_PEMBELIAN_IC) AS PEMBELIAN
+									FROM (
+												SELECT	XX.COMPANY
+														, XX.TIPE
+														, XX.REG
+														, CASE WHEN XX.JENIS = 'PIB' AND XX.JENIS_PEMBELIAN = 'PEMBELIAN NON INVENTORY' THEN 'PEMBELIAN' ELSE XX.JENIS_PEMBELIAN END AS JENIS_PEMBELIAN
+														, CASE	WHEN XX.JENIS = 'PPN 10%' THEN 1
+																WHEN XX.JENIS = 'PPN 1%' THEN 2
+																WHEN XX.JENIS = 'PPN' THEN 3
+																WHEN XX.JENIS = 'PPN - TS/MC' THEN 4
+																WHEN XX.JENIS = 'PIB' THEN 5
+																WHEN XX.JENIS = 'NON PKP' THEN 6
+																WHEN XX.JENIS = 'NON PPN' THEN 7
+																WHEN XX.JENIS = 'NON PPN - IMPORT' THEN 8
+																WHEN XX.JENIS = 'NON PPN - TS/MC' THEN 9
+																WHEN XX.JENIS = 'NON PPN - IMPORT - TS/MC' THEN 10
+																ELSE 11 END AS JENIS_SORT
+														, XX.JENIS
+														, XX.NO_INV
+														, XX.TGL_INV
+														, XX.NO_INV_CANCEL
+														, XX.KODE_SUPP
+														, XX.NAMA_SUPP
+														, XX.NO_INV_SUPP
+														, XX.NO_FP
+														, XX.AMOUNT_OTHERS
+														, XX.AMOUNT_BIAYA_FREIGHT
+														, XX.AMOUNT_PEMBELIAN
+														, XX.AMOUNT_PEMBELIAN_IC
+														, XX.AMOUNT_UM
+														, XX.SUBTOTAL
+														, (XX.AMOUNT_BIAYA_FREIGHT + XX.AMOUNT_PEMBELIAN + XX.AMOUNT_PEMBELIAN_IC) AS SUBTOTAL_PEMBELIAN
+														, XX.AMOUNT_PPN
+														, XX.TOTAL
+												FROM	(
+															SELECT	X.COMPANY
+																	, X.TIPE
+																	, X.REG
+																	, CASE WHEN X.AMOUNT_BIAYA_FREIGHT = 0 AND X.AMOUNT_PEMBELIAN = 0 AND X.AMOUNT_PEMBELIAN_IC = 0 AND X.AMOUNT_UM = 0 THEN
+																		'PEMBELIAN NON INVENTORY'
+																		ELSE
+																		'PEMBELIAN'
+																		END AS JENIS_PEMBELIAN
+																	,
+																		CASE WHEN X.AMT_PPN_SUM = 0 THEN
+																			CASE WHEN SUP.SUPP_JENIS IS NOT NULL OR SUP.SUPP_JENIS <> '' THEN
+																				CASE WHEN SUP.SUPP_JENIS IN ('NON PPN - IMPORT', 'PIB') THEN
+																					CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - IMPORT - TS/MC' ELSE SUP.SUPP_JENIS END
+																				ELSE
+																					CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - TS/MC' ELSE SUP.SUPP_JENIS END
+																				END
+																			ELSE
+																				CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - TS/MC'
+																						WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  <> 0 THEN 'PPN 10%'
+																						WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1 <> 0 AND X.ADA_VAT10  = 0 THEN 'PPN 1%'
+																						ELSE 'NON PPN'
+																				END
+																			END
+																		ELSE
+																			CASE WHEN SUP.SUPP_JENIS IS NOT NULL OR SUP.SUPP_JENIS <> '' THEN
+																				CASE WHEN SUP.SUPP_JENIS = 'PIB' THEN
+																					SUP.SUPP_JENIS
+																				ELSE
+																					CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+																							WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
+																							WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
+																							ELSE 'PPN'
+																					END
+																				END
+																			ELSE
+																				CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+																						WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
+																						WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
+																						ELSE 'PPN'
+																				END
+																			END
+																		END AS JENIS
+																	, X.NO_INV
+																	, X.TGL_INV
+																	, X.NO_INV_CANCEL
+																	, X.KODE_SUPP
+																	, X.NAMA_SUPP
+																	, X.NO_INV_SUPP
+																	, X.NO_FP
+																	, X.AMOUNT_OTHERS
+																	, X.AMOUNT_BIAYA_FREIGHT
+																	, X.AMOUNT_PEMBELIAN
+																	, X.AMOUNT_PEMBELIAN_IC
+																	, X.AMOUNT_UM
+																	, X.SUBTOTAL
+																	, X.AMOUNT_PPN
+																	, X.TOTAL
+															FROM	(
+																		SELECT	'AUTOJAYA' AS COMPANY
+																				, HDR.TIPE
+																				, HDR.REG
+																				, HDR.TIER_MAINTENANCE
+																				, HDR.ADA_VAT1
+																				, HDR.ADA_VAT10
+																				, HDR.VAT_CODE
+																				, HDR.NO_INV
+																				, HDR.TGL_INV
+																				, HDR.NO_INV_CANCEL
+																				, HDR.KODE_SUPP
+																				, HDR.NAMA_SUPP
+																				, HDR.NO_INV_SUPP
+																				, HDR.NO_FP
+																				, HDR.AMOUNT_OTHERS
+																				, (HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST) AS AMOUNT_BIAYA_FREIGHT
+																				, HDR.AMOUNT_PEMBELIAN
+																				, HDR.AMOUNT_PEMBELIAN_IC
+																				, HDR.AMOUNT_UM
+																				, (HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) AS SUBTOTAL
+																				, HDR.AMOUNT_PPN
+																				, (HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM + HDR.AMOUNT_PPN) AS TOTAL
+																				,ROUND(HDR.AMOUNT_PPN,0) AS AMT_PPN_SUM
+																				,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.1 ),0) AS  AMT_PPN_CAL_10
+																				,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.01 ),0) AS  AMT_PPN_CAL_1
+																		FROM	(
+																					SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'INVOICE UM' ELSE 'INVOICE' END AS REG
+																							, CASE WHEN SUBSTRING(GLE.[Document No_],4,1) = 'T' OR SUBSTRING(GLE.[Document No_],1,2) = 'PP' OR PIL.ITEM > 0 THEN 'TRADE' ELSE 'NON TRADE' END AS TIPE
+																							, PIL.TIER_MAINTENANCE
+																							, PIL.ADA_VAT1
+																							, PIL.ADA_VAT10
+																							, PIH.[VAT Bus_ Posting Group] AS VAT_CODE
+																							, GLE.[Document No_] AS NO_INV
+																							, PIH.[Posting Date] AS TGL_INV
+																							, '' AS NO_INV_CANCEL
+																							, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+																							, PIH.[Pay-to Name] AS NAMA_SUPP
+																							, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+																							, PIH.[Vendor Tax Invoice No_] AS NO_FP
+																							, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_OTHERS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_FGOODS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_DCOST
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN_IC
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_UM
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PPN
+																					FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+																					INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+																					INNER JOIN	(
+																									SELECT	PLD.[Document No_]
+																											,SUM(CASE WHEN PLD.[Item Category Code] = 'HW01' OR ISNULL(DIMD.DIM_PRODUCT,'') = 'S402' THEN 1 ELSE 0 END) AS  HW_SP
+																											,SUM(CASE WHEN ISNULL(DIMD.DIM_PRODUCT,'') IN ('S401','S404','S405') THEN 1 ELSE 0 END) AS  TIER_MAINTENANCE
+																											,SUM(CASE WHEN PLD.[Type] = 2 THEN 1 ELSE 0 END) AS ITEM
+																											,SUM(CASE WHEN PLD.[Type] = 4 THEN 1 ELSE 0 END) AS FA
+																											,SUM(CASE WHEN PLD.[Type] = 1 THEN 1 ELSE 0 END) AS GL_ACCOUNT
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
+																									FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PLD
+																									LEFT JOIN	(
+																													SELECT X.[Dimension Set ID]
+																															,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+																													FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry] X
+																													GROUP BY [Dimension Set ID]
+																												) DIMD ON DIMD.[Dimension Set ID] = PLD.[Dimension Set ID]
+																									GROUP BY [Document No_]
+																								) PIL ON PIL.[Document No_] = PIH.[No_]
+																					WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
+																					GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_],
+																								PIH.[Vendor Tax Invoice No_], PIH.[Posting Date], PIL.ITEM, PIL.TIER_MAINTENANCE,
+																								PIH.[VAT Bus_ Posting Group], PIL.ADA_VAT1, PIL.ADA_VAT10
+																					UNION ALL
+																					SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
+																							, CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' OR CIL.ITEM > 0 THEN 'TRADE' ELSE 'NON TRADE' END AS TIPE
+																							, CIL.TIER_MAINTENANCE
+																							, CIL.ADA_VAT1
+																							, CIL.ADA_VAT10
+																							, CIH.[VAT Bus_ Posting Group] AS VAT_CODE
+																							, GLE.[Document No_] AS NO_INV
+																							, CIH.[Posting Date] AS TGL_INV
+																							, CIH.[Applies-to Doc_ No_]  AS NO_INV_CANCEL
+																							, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+																							, CIH.[Pay-to Name] AS NAMA_SUPP
+																							, '' AS NO_INV_SUPP
+																							, CIH.[Vendor Tax Invoice No_] AS NO_FP
+																							, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_OTHERS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_FGOODS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_DCOST
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN_IC
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_UM
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PPN
+																					FROM [dbo].[BC_AUTOJAYA$G_L Entry] GLE
+																					INNER JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+																					INNER JOIN	(
+																									SELECT	PLD.[Document No_]
+																											,SUM(CASE WHEN PLD.[Item Category Code] = 'HW01' OR ISNULL(DIMD.DIM_PRODUCT,'') = 'S402' THEN 1 ELSE 0 END) AS  HW_SP
+																											,SUM(CASE WHEN ISNULL(DIMD.DIM_PRODUCT,'') IN ('S401','S404','S405') THEN 1 ELSE 0 END) AS  TIER_MAINTENANCE
+																											,SUM(CASE WHEN PLD.[Type] = 2 THEN 1 ELSE 0 END) AS ITEM
+																											,SUM(CASE WHEN PLD.[Type] = 4 THEN 1 ELSE 0 END) AS FA
+																											,SUM(CASE WHEN PLD.[Type] = 1 THEN 1 ELSE 0 END) AS GL_ACCOUNT
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
+																									FROM [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Line] PLD
+																									LEFT JOIN	(
+																													SELECT X.[Dimension Set ID]
+																															,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+																													FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry] X
+																													GROUP BY [Dimension Set ID]
+																												) DIMD ON DIMD.[Dimension Set ID] = PLD.[Dimension Set ID]
+																									GROUP BY [Document No_]
+																								) CIL ON CIL.[Document No_] = CIH.[No_]
+																					WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
+																					GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_],
+																								CIH.[Applies-to Doc_ No_] , CIH.[Posting Date], CIL.ITEM, CIL.TIER_MAINTENANCE,
+																								CIH.[VAT Bus_ Posting Group], CIL.ADA_VAT1, CIL.ADA_VAT10
+																				) HDR
+																	) X
+															LEFT JOIN	(
+																			SELECT [No_] AS KODE_SUPP, [Dimension Value Code] AS SUPP_JENIS
+																			FROM [dbo].[BC_AUTOJAYA$Default Dimension]
+																			WHERE	[Dimension Code] = 'JENIS PEMBELIAN'
+																					AND [Table ID] = 23
+																		) SUP ON SUP.KODE_SUPP = X.KODE_SUPP
+															WHERE	(X.TGL_INV >= $P{PeriodeFrom} AND X.TGL_INV <= $P{PeriodeUpto})
+															UNION ALL
+															SELECT	X.COMPANY
+																	, X.TIPE
+																	, X.REG
+																	, CASE WHEN X.AMOUNT_BIAYA_FREIGHT = 0 AND X.AMOUNT_PEMBELIAN = 0 AND X.AMOUNT_PEMBELIAN_IC = 0 THEN
+																		'PEMBELIAN NON INVENTORY'
+																		ELSE
+																		'PEMBELIAN'
+																		END AS JENIS_PEMBELIAN
+																	,
+																		CASE WHEN X.AMT_PPN_SUM = 0 THEN
+																			CASE WHEN SUP.SUPP_JENIS IS NOT NULL OR SUP.SUPP_JENIS <> '' THEN
+																				CASE WHEN SUP.SUPP_JENIS IN ('NON PPN - IMPORT', 'PIB') THEN
+																					CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - IMPORT - TS/MC' ELSE SUP.SUPP_JENIS END
+																				ELSE
+																					CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - TS/MC' ELSE SUP.SUPP_JENIS END
+																				END
+																			ELSE
+																				CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - TS/MC'
+																						WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  <> 0 THEN 'PPN 10%'
+																						WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1 <> 0 AND X.ADA_VAT10  = 0 THEN 'PPN 1%'
+																						ELSE 'NON PPN'
+																				END
+																			END
+																		ELSE
+																			CASE WHEN SUP.SUPP_JENIS IS NOT NULL OR SUP.SUPP_JENIS <> '' THEN
+																				CASE WHEN SUP.SUPP_JENIS = 'PIB' THEN
+																					SUP.SUPP_JENIS
+																				ELSE
+																					CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+																							WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
+																							WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
+																							ELSE 'PPN'
+																					END
+																				END
+																			ELSE
+																				CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+																						WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
+																						WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
+																						ELSE 'PPN'
+																				END
+																			END
+																		END AS JENIS
+																	, X.NO_INV
+																	, X.TGL_INV
+																	, X.NO_INV_CANCEL
+																	, X.KODE_SUPP
+																	, X.NAMA_SUPP
+																	, X.NO_INV_SUPP
+																	, X.NO_FP
+																	, X.AMOUNT_OTHERS
+																	, X.AMOUNT_BIAYA_FREIGHT
+																	, X.AMOUNT_PEMBELIAN
+																	, X.AMOUNT_PEMBELIAN_IC
+																	, X.AMOUNT_UM
+																	, X.SUBTOTAL
+																	, X.AMOUNT_PPN
+																	, X.TOTAL
+															FROM	(
+																		SELECT	'SOLUSI' AS COMPANY
+																				, HDR.TIPE
+																				, HDR.REG
+																				, HDR.HW_SP
+																				, HDR.TIER_MAINTENANCE
+																				, HDR.ADA_VAT1
+																				, HDR.ADA_VAT10
+																				, HDR.VAT_CODE
+																				, HDR.NO_INV
+																				, HDR.TGL_INV
+																				, HDR.NO_INV_CANCEL
+																				, HDR.KODE_SUPP
+																				, HDR.NAMA_SUPP
+																				, HDR.NO_INV_SUPP
+																				, HDR.NO_FP
+																				, HDR.AMOUNT_OTHERS
+																				, (HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST) AS AMOUNT_BIAYA_FREIGHT
+																				, HDR.AMOUNT_PEMBELIAN
+																				, HDR.AMOUNT_PEMBELIAN_IC
+																				, HDR.AMOUNT_UM
+																				, (HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) AS SUBTOTAL
+																				, HDR.AMOUNT_PPN
+																				, (HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM + HDR.AMOUNT_PPN) AS TOTAL
+																				,ROUND(HDR.AMOUNT_PPN,0) AS AMT_PPN_SUM
+																				,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.1 ),0) AS  AMT_PPN_CAL_10
+																				,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.01 ),0) AS  AMT_PPN_CAL_1
+																		FROM	(
+																					SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'INVOICE UM' ELSE 'INVOICE' END AS REG
+																							, CASE WHEN SUBSTRING(GLE.[Document No_],4,1) = 'T' OR SUBSTRING(GLE.[Document No_],1,2) = 'PP' OR PIL.ITEM > 0 THEN 'TRADE' ELSE 'NON TRADE' END AS TIPE
+																							, PIL.HW_SP
+																							, PIL.TIER_MAINTENANCE
+																							, PIL.ADA_VAT1
+																							, PIL.ADA_VAT10
+																							, PIH.[VAT Bus_ Posting Group] AS VAT_CODE
+																							, GLE.[Document No_] AS NO_INV
+																							, PIH.[Posting Date] AS TGL_INV
+																							, '' AS NO_INV_CANCEL
+																							, PIH.[Pay-to Vendor No_] AS KODE_SUPP
+																							, PIH.[Pay-to Name] AS NAMA_SUPP
+																							, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+																							, PIH.[Vendor Tax Invoice No_] AS NO_FP
+																							, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_OTHERS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_FGOODS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_DCOST
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN_IC
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_UM
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PPN
+																					FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+																					INNER JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH ON PIH.[No_] = GLE.[Document No_]
+																					INNER JOIN	(
+																									SELECT	PLD.[Document No_]
+																											,SUM(CASE WHEN PLD.[Item Category Code] = 'HW01' OR ISNULL(DIMD.DIM_PRODUCT,'') = 'S402' THEN 1 ELSE 0 END) AS  HW_SP
+																											,SUM(CASE WHEN ISNULL(DIMD.DIM_PRODUCT,'') IN ('S401','S404','S405') THEN 1 ELSE 0 END) AS  TIER_MAINTENANCE
+																											,SUM(CASE WHEN [Type] = 2 THEN 1 ELSE 0 END) AS ITEM
+																											,SUM(CASE WHEN [Type] = 4 THEN 1 ELSE 0 END) AS FA
+																											,SUM(CASE WHEN [Type] = 1 THEN 1 ELSE 0 END) AS GL_ACCOUNT
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
+																									FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PLD
+																									LEFT JOIN	(
+																													SELECT X.[Dimension Set ID]
+																															,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+																													FROM [dbo].[BC_SOLUSI$Dimension Set Entry] X
+																													GROUP BY [Dimension Set ID]
+																												) DIMD ON DIMD.[Dimension Set ID] = PLD.[Dimension Set ID]
+																									GROUP BY [Document No_]
+																								) PIL ON PIL.[Document No_] = PIH.[No_]
+																					WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00', '210.113.00')
+																					GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_],
+																								PIH.[Vendor Tax Invoice No_], PIH.[Posting Date], PIL.ITEM, PIL.HW_SP, PIL.TIER_MAINTENANCE,
+																								PIH.[VAT Bus_ Posting Group], PIL.ADA_VAT1, PIL.ADA_VAT10
+																					UNION ALL
+																					SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
+																							, CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' OR CIL.ITEM > 0 THEN 'TRADE' ELSE 'NON TRADE' END AS TIPE
+																							, CIL.HW_SP
+																							, CIL.TIER_MAINTENANCE
+																							, CIL.ADA_VAT1
+																							, CIL.ADA_VAT10
+																							, CIH.[VAT Bus_ Posting Group] AS VAT_CODE
+																							, GLE.[Document No_] AS NO_INV
+																							, CIH.[Posting Date] AS TGL_INV
+																							, CIH.[Applies-to Doc_ No_]  AS NO_INV_CANCEL
+																							, CIH.[Pay-to Vendor No_] AS KODE_SUPP
+																							, CIH.[Pay-to Name] AS NAMA_SUPP
+																							, '' AS NO_INV_SUPP
+																							, CIH.[Vendor Tax Invoice No_] AS NO_FP
+																							, SUM(CASE WHEN GLE.[G_L Account No_] NOT IN ('210.111.00', '510.200.00', '116.199.00','510.100.00','118.150.00', '118.290.00', '510.100.01')  THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_OTHERS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '116.199.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_FGOODS
+																							, SUM(CASE WHEN GLE.[G_L Account No_] IN ('210.111.00', '510.200.00') THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_DCOST
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '510.100.01' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PEMBELIAN_IC
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.150.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_UM
+																							, SUM(CASE WHEN GLE.[G_L Account No_] = '118.290.00' THEN
+																								GLE.[Amount] ELSE 0
+																								END ) AS AMOUNT_PPN
+																					FROM [dbo].[BC_SOLUSI$G_L Entry] GLE
+																					INNER JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CIH ON CIH.[No_] = GLE.[Document No_]
+																					INNER JOIN	(
+																									SELECT	PLD.[Document No_]
+																											,SUM(CASE WHEN PLD.[Item Category Code] = 'HW01' OR ISNULL(DIMD.DIM_PRODUCT,'') = 'S402' THEN 1 ELSE 0 END) AS  HW_SP
+																											,SUM(CASE WHEN ISNULL(DIMD.DIM_PRODUCT,'') IN ('S401','S404','S405') THEN 1 ELSE 0 END) AS  TIER_MAINTENANCE
+																											,SUM(CASE WHEN [Type] = 2 THEN 1 ELSE 0 END) AS ITEM
+																											,SUM(CASE WHEN [Type] = 4 THEN 1 ELSE 0 END) AS FA
+																											,SUM(CASE WHEN [Type] = 1 THEN 1 ELSE 0 END) AS GL_ACCOUNT
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
+																											,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
+																									FROM [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Line] PLD
+																									LEFT JOIN	(
+																													SELECT X.[Dimension Set ID]
+																															,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS DIM_PRODUCT
+																													FROM [dbo].[BC_SOLUSI$Dimension Set Entry] X
+																													GROUP BY [Dimension Set ID]
+																												) DIMD ON DIMD.[Dimension Set ID] = PLD.[Dimension Set ID]
+																									GROUP BY [Document No_]
+																								) CIL ON CIL.[Document No_] = CIH.[No_]
+																					WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00', '210.113.00')
+																					GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_],
+																								CIH.[Applies-to Doc_ No_] , CIH.[Posting Date], CIL.ITEM, CIL.HW_SP, CIL.TIER_MAINTENANCE,
+																								CIH.[VAT Bus_ Posting Group], CIL.ADA_VAT1, CIL.ADA_VAT10
+																				) HDR
+																	) X
+															LEFT JOIN	(
+																			SELECT [No_] AS KODE_SUPP, [Dimension Value Code] AS SUPP_JENIS
+																			FROM [dbo].[BC_SOLUSI$Default Dimension]
+																			WHERE	[Dimension Code] = 'JENIS PEMBELIAN'
+																					AND [Table ID] = 23
+																		) SUP ON SUP.KODE_SUPP = X.KODE_SUPP
+															WHERE	(X.TGL_INV >= $P{PeriodeFrom} AND X.TGL_INV <= $P{PeriodeUpto})
+														) XX
+											) XXX
+									WHERE	XXX.COMPANY = $P{Company}
+									GROUP BY XXX.COMPANY, XXX.KODE_SUPP, XXX.NAMA_SUPP
+								) XXI
+						WHERE	XXI.PEMBELIAN <> 0
+					) XII
+		) XIX
+GROUP BY XIX.RANKING
+		, XIX.KODE_SUPP
+		, XIX.NAMA_SUPP]]>
+	</queryString>
+	<field name="RANKING" class="java.lang.Long"/>
+	<field name="KODE_SUPP" class="java.lang.String"/>
+	<field name="NAMA_SUPP" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<field name="TOTAL_PEMBELIAN" class="java.math.BigDecimal"/>
+	<field name="PERSEN" class="java.math.BigDecimal"/>
+	<sortField name="RANKING"/>
+	<variable name="vCompany" class="java.lang.String">
+		<variableExpression><![CDATA[$P{Company}.equals( "ALL" )==true?"-":
+(
+    $P{Company}.equals( "AUTOJAYA" )==true?"PT. AUTOJAYA IDETECH":
+    (
+        $P{Company}.equals( "SOLUSI" )==true?"PT. SOLUSI PERIFERAL":"-"
+    )
+)]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{Company}.equals( "ALL" )==true?"-":
+(
+    $P{Company}.equals( "AUTOJAYA" )==true?"PT. AUTOJAYA IDETECH":
+    (
+        $P{Company}.equals( "SOLUSI" )==true?"PT. SOLUSI PERIFERAL":"-"
+    )
+)]]></initialValueExpression>
+	</variable>
+	<variable name="AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="PERSEN_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{PERSEN}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="98" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="125" y="56" width="300" height="14" uuid="354c48b6-c745-4179-8c35-437bfbe26bc6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="125" height="14" uuid="2416e567-b590-46cd-b14e-f9281133ba81"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="42" width="50" height="14" uuid="4eb2c989-0b8b-464e-9e93-b047e47ba9df"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField pattern="dd-MMM-yyyy">
+				<reportElement x="250" y="42" width="175" height="14" uuid="e2c01df6-3d02-4a09-835c-4f47a195324f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeUpto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MMM-yyyy" isBlankWhenNull="false">
+				<reportElement x="125" y="42" width="75" height="14" uuid="757d2d50-3e37-411b-9603-0d5414f561c3"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeFrom}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="425" height="14" uuid="2fc21783-b640-401c-8fef-e4c4fffbb892"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vCompany}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="125" height="14" uuid="a32e760a-fea8-45bd-91b2-08c5d8357602"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="125" y="56" width="300" height="14" uuid="32b8aba9-7269-48e2-bf47-8880179b1bf9"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MMM-yyyy" isBlankWhenNull="false">
+				<reportElement x="0" y="14" width="425" height="14" uuid="e6fb8bbb-c100-4d58-b313-3510af2f94eb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Top " + $P{TopN} +" Supplier (Pembelian)"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="125" height="14" uuid="9287ed88-9790-4cf9-8c38-6a73ebce36e1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="125" height="14" uuid="d1b9a0de-648b-4e8c-9563-da88e04b5855"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="125" height="14" uuid="38e30eb4-c8cc-4a03-8286-de1eafa94383"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="84" width="50" height="14" uuid="45053de8-e309-4134-aee9-7ea7644f94ca"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Rank]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="50" y="84" width="75" height="14" uuid="27c7220c-2935-4e6e-9527-debe022136cb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cust. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="125" y="84" width="300" height="14" uuid="98c3e653-0d98-457b-90a5-0454140daada"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cust. Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="425" y="84" width="100" height="14" uuid="27ffd710-552c-42b3-9427-bd461b0a4dd4"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="525" y="84" width="50" height="14" uuid="7b5bcabd-97b8-4e4e-80c4-fe4f748162f9"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Persen]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="f0ce8b61-6946-489a-b85d-1ff01971306e"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{RANKING}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="50" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="55a2bd53-e05c-4ed3-90bf-be7cb8f4edd7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KODE_SUPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="125" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="8df49525-2866-4d02-b487-138a4f5edd96"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_SUPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="425" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="2d0a95b3-c07f-4a27-8b54-d20440ea56d6"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="9d00b92f-7df6-4c90-a2a2-6d6495b99eda"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PERSEN}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="14">
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="425" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="84bc26e0-0d1e-4645-81cc-39d3a2721f9b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMOUNT_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="525" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="cada6c83-0eac-4c4f-8895-2bda1cf20055"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PERSEN_1}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="98">
+			<staticText>
+				<reportElement x="0" y="84" width="425" height="14" uuid="a12b2f52-8dde-40c9-9e4b-d9b528e15c41"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TIDAK ADA DATA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="125" height="14" uuid="3d112bf4-93fc-43ef-ae85-1be0c6ad0d43"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="125" height="14" uuid="eea0a957-0c36-43bf-93df-8ca491c6fb68"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MMM-yyyy">
+				<reportElement x="250" y="42" width="175" height="14" uuid="cbd76a66-7833-49e8-90b6-8afc1b778b44"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeUpto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MMM-yyyy" isBlankWhenNull="false">
+				<reportElement x="0" y="14" width="425" height="14" uuid="fc9c7ca3-76d4-4d21-8878-d5cebe827e2f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Top " + $P{TopN} +" Supplier (Pembelian)"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="125" height="14" uuid="cb6746ac-30af-4753-ac8e-a2072a2ca1a8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Periode:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="125" height="14" uuid="49b80ae6-0409-481b-9608-0b833ece09f0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="125" height="14" uuid="c855d5d3-05f0-439e-bbe4-d54e96296b17"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada:]]></text>
+			</staticText>
+			<textField pattern="dd-MMM-yyyy" isBlankWhenNull="false">
+				<reportElement x="125" y="42" width="75" height="14" uuid="13d4f6fe-11f7-43b0-a852-62d57e5d0e96"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{PeriodeFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="125" y="56" width="300" height="14" uuid="3d140979-e528-4611-9737-5d4ea8f2ee0f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="125" y="56" width="300" height="14" uuid="1baa7768-85dd-4f2d-aef2-9bb10ab440fb"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="200" y="42" width="50" height="14" uuid="abedf98b-7c69-49bf-9062-8630005e60ed"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[s/d]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="0" width="425" height="14" uuid="9f81cf05-a719-400c-a74e-090955e057a7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vCompany}]]></textFieldExpression>
+			</textField>
+		</band>
+	</noData>
+</jasperReport>

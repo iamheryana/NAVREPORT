@@ -38,4 +38,11 @@ public interface SelectQueryDAO {
 	public List<Object[]> QueryStaffFinanceUntukCosting();
 	public List<Object[]> QueryDCName();
 	public List<Object[]> QueryCustGroup();
+	
+	public List<Object[]> QueryItemCategoryCosting();
+	public List<Object[]> QueryProductGroupCosting(String itemCat);
+	
+	public List<Object[]> QueryFilterUserCosting(String username);
+	public String QueryRoleUserCosting(String username);
+	
 }

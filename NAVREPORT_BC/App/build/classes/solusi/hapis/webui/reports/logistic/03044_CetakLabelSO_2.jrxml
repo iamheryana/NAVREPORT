@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="03044_CetakLabelSO" language="groovy" pageWidth="179" pageHeight="94" columnWidth="163" leftMargin="8" rightMargin="8" topMargin="8" bottomMargin="8" uuid="903a1b17-b3c7-44f4-bb86-8f20a34306d6">
+	<property name="ireport.zoom" value="5.559917313492244"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="11"/>
+	<parameter name="NoSoFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NoSoUpto" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="MulaiCetak" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JumlahCetak" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	SOO.NO_SO, SOO.NO_PO_CUST, SOO.SELL_TO_CODE, SOO.ALOKASI
+									FROM	(
+												SELECT  DISTINCT X.NO_SO, X.NO_PO_CUST, X.SELL_TO_CODE, X.ALOKASI
+												FROM	(
+															SELECT	SOH.[No_] AS NO_SO
+																	,SOH.[External Document No_] AS NO_PO_CUST
+																	,SOH.[Sell-to Customer No_] AS SELL_TO_CODE
+																	,SOH.[Posting Description] AS ALOKASI
+															FROM [dbo].[BC_AUTOJAYA$Sales Header] SOH
+															INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SOD ON SOD.[Document No_] = SOH.[No_] AND SOH.[Document Type] = SOD.[Document Type]
+															LEFT JOIN	(
+																			SELECT	DO.[Order No_],
+																					DO.[Order Line No_],
+																					DO.[Document No_],
+																					DO.[Posting Date],
+																					DO.[Quantity]
+																			FROM	(
+																						SELECT	[Order No_],
+																								[Order Line No_],
+																								[Document No_],
+																								[Posting Date],
+																								SUM([Quantity]) AS [Quantity]
+																						FROM [dbo].[BC_AUTOJAYA$Sales Shipment Line]
+																						WHERE [Type] = 2 AND
+																								([Order No_]  LIKE '8SO%' OR [Order No_]  LIKE '9SO%')
+																						GROUP BY [Order No_], [Order Line No_], [Document No_],	[Posting Date]
+																					) DO
+																			WHERE DO.[Quantity] <> 0
+																		) SHL ON SHL.[Order No_] = SOD.[Document No_] AND SHL.[Order Line No_] = SOD.[Line No_]
+															WHERE	(SOH.[No_]  LIKE '8SO%' OR SOH.[No_]  LIKE '9SO%') AND
+																	SOH.[Document Type] = 1 AND SOD.[Type] = 2 AND
+																	SHL.[Document No_] IS NOT NULL AND
+																	SOH.[No_] BETWEEN $P{NoSoFrom} AND $P{NoSoUpto}
+															UNION ALL
+															SELECT	SOH.[No_] AS NO_SO
+																	,SOH.[External Document No_] AS NO_PO_CUST
+																	,SOH.[Sell-to Customer No_] AS SELL_TO_CODE
+																	,SOH.[Posting Description] AS ALOKASI
+															FROM [dbo].[BC_AUTOJAYA$Sales Header] SOH
+															INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SOD ON SOD.[Document No_] = SOH.[No_] AND SOH.[Document Type] = SOD.[Document Type]
+															WHERE	(SOH.[No_]  LIKE '8SO%' OR SOH.[No_]  LIKE '9SO%') AND
+																	SOH.[Document Type] = 1 AND SOD.[Type] = 2 AND
+																	((SOD.[Quantity]	- SOD.[Quantity Shipped]) <> 0 ) AND
+																	SOH.[No_] BETWEEN $P{NoSoFrom} AND $P{NoSoUpto}
+															UNION ALL
+															SELECT	SIH.[Order No_] AS NO_SO
+																	,SIH.[External Document No_] AS NO_PO_CUST
+																	,SIH.[Sell-to Customer No_] AS SELL_TO_CODE
+																	,SIH.[Posting Description] AS ALOKASI
+															FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header]  SIH
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON  SIL.[Document No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Header] SOH ON SOH.[No_] = SIH.[Order No_] AND SOH.[Document Type] = 1
+															LEFT JOIN	(
+																						SELECT	DO.[Order No_],
+																								DO.[Order Line No_],
+																								DO.[Document No_],
+																								DO.[Posting Date],
+																								DO.[Quantity]
+																						FROM	(
+																									SELECT	[Order No_],
+																											[Order Line No_],
+																											[Document No_],
+																											[Posting Date],
+																											SUM([Quantity]) AS [Quantity]
+																									FROM [dbo].[BC_AUTOJAYA$Sales Shipment Line]
+																									WHERE [Type] = 2 AND
+																											([Order No_]  LIKE '8SO%' OR [Order No_]  LIKE '9SO%')
+																									GROUP BY [Order No_], [Order Line No_], [Document No_],	[Posting Date]
+																								) DO
+																						WHERE DO.[Quantity] <> 0
+																					) SHL ON SHL.[Order No_] = SIH.[Order No_] AND SHL.[Order Line No_] = SIL.[Line No_]
+															WHERE (SIH.[No_]  LIKE '8SI%' OR SIH.[No_]  LIKE '9SI%') AND
+																	SIL.[Type] = 2 AND CRM.[No_] IS NULL AND
+																	SOH.[No_] IS NULL AND
+																	SIH.[Order No_] BETWEEN $P{NoSoFrom} AND $P{NoSoUpto}
+															UNION ALL
+															SELECT	SOH.[No_] AS NO_SO
+																	,SOH.[External Document No_] AS NO_PO_CUST
+																	,SOH.[Sell-to Customer No_] AS SELL_TO_CODE
+																	,SOH.[Posting Description] AS ALOKASI
+															FROM [dbo].[BC_SOLUSI$Sales Header] SOH
+															INNER JOIN [dbo].[BC_SOLUSI$Sales Line] SOD ON SOD.[Document No_] = SOH.[No_] AND SOH.[Document Type] = SOD.[Document Type]
+															LEFT JOIN	(
+																			SELECT	DO.[Order No_],
+																					DO.[Order Line No_],
+																					DO.[Document No_],
+																					DO.[Posting Date],
+																					DO.[Quantity]
+																			FROM	(
+																						SELECT	[Order No_],
+																								[Order Line No_],
+																								[Document No_],
+																								[Posting Date],
+																								SUM([Quantity]) AS [Quantity]
+																						FROM [dbo].[BC_SOLUSI$Sales Shipment Line]
+																						WHERE [Type] = 2 AND
+																								([Order No_]  LIKE '8SO%' OR [Order No_]  LIKE '9SO%')
+																						GROUP BY [Order No_], [Order Line No_], [Document No_],	[Posting Date]
+																					) DO
+																			WHERE DO.[Quantity] <> 0
+																		) SHL ON SHL.[Order No_] = SOD.[Document No_] AND SHL.[Order Line No_] = SOD.[Line No_]
+															WHERE	(SOH.[No_]  LIKE '8SO%' OR SOH.[No_]  LIKE '9SO%') AND
+																	SOH.[Document Type] = 1 AND SOD.[Type] = 2 AND
+																	SHL.[Document No_] IS NOT NULL AND
+																	SOH.[No_] BETWEEN $P{NoSoFrom} AND $P{NoSoUpto}
+															UNION ALL
+															SELECT	SOH.[No_] AS NO_SO
+																	,SOH.[External Document No_] AS NO_PO_CUST
+																	,SOH.[Sell-to Customer No_] AS SELL_TO_CODE
+																	,SOH.[Posting Description] AS ALOKASI
+															FROM [dbo].[BC_SOLUSI$Sales Header] SOH
+															INNER JOIN [dbo].[BC_SOLUSI$Sales Line] SOD ON SOD.[Document No_] = SOH.[No_] AND SOH.[Document Type] = SOD.[Document Type]
+															WHERE	(SOH.[No_]  LIKE '8SO%' OR SOH.[No_]  LIKE '9SO%') AND
+																	SOH.[Document Type] = 1 AND SOD.[Type] = 2 AND
+																	((SOD.[Quantity]	- SOD.[Quantity Shipped]) <> 0 ) AND
+																	SOH.[No_] BETWEEN $P{NoSoFrom} AND $P{NoSoUpto}
+															UNION ALL
+															SELECT	SIH.[Order No_] AS NO_SO
+																	,SIH.[External Document No_] AS NO_PO_CUST
+																	,SIH.[Sell-to Customer No_] AS SELL_TO_CODE
+																	,SIH.[Posting Description] AS ALOKASI
+															FROM [dbo].[BC_SOLUSI$Sales Invoice Header]  SIH
+															LEFT JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON  SIL.[Document No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+															LEFT JOIN [dbo].[BC_SOLUSI$Sales Header] SOH ON SOH.[No_] = SIH.[Order No_] AND SOH.[Document Type] = 1
+															LEFT JOIN	(
+																						SELECT	DO.[Order No_],
+																								DO.[Order Line No_],
+																								DO.[Document No_],
+																								DO.[Posting Date],
+																								DO.[Quantity]
+																						FROM	(
+																									SELECT	[Order No_],
+																											[Order Line No_],
+																											[Document No_],
+																											[Posting Date],
+																											SUM([Quantity]) AS [Quantity]
+																									FROM [dbo].[BC_SOLUSI$Sales Shipment Line]
+																									WHERE [Type] = 2 AND
+																											([Order No_]  LIKE '8SO%' OR [Order No_]  LIKE '9SO%')
+																									GROUP BY [Order No_], [Order Line No_], [Document No_],	[Posting Date]
+																								) DO
+																						WHERE DO.[Quantity] <> 0
+																					) SHL ON SHL.[Order No_] = SIH.[Order No_] AND SHL.[Order Line No_] = SIL.[Line No_]
+															WHERE	(SIH.[No_]  LIKE '8SI%' OR SIH.[No_]  LIKE '9SI%') AND
+																	SIL.[Type] = 2 AND CRM.[No_] IS NULL AND
+																	SOH.[No_] IS NULL AND
+																	SHL.[Document No_] IS NOT NULL AND
+																	SIH.[Order No_] BETWEEN $P{NoSoFrom} AND $P{NoSoUpto}
+														) X
+											) SOO
+									LEFT JOIN	(
+													SELECT ROW_NUMBER() OVER (PARTITION BY 1 ORDER BY [Document No_]) AS BARIS
+													FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line]
+												) SOX ON SOX.BARIS <=  $P{JumlahCetak}]]>
+	</queryString>
+	<field name="NO_SO" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="SELL_TO_CODE" class="java.lang.String"/>
+	<field name="ALOKASI" class="java.lang.String"/>
+	<sortField name="NO_SO"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="78">
+			<staticText>
+				<reportElement x="0" y="0" width="35" height="14" uuid="a9abf097-3fc0-4a39-b45c-8c1dd1edeecf">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[No. SO]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="40" y="0" width="123" height="14" isPrintWhenDetailOverflows="true" uuid="84b2bd48-e53c-433a-b2c4-c1f0c14e986a">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_SO}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="14" width="35" height="14" uuid="bce7e745-db39-4f70-8c1a-06ba84125719">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[No. PO]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="40" y="14" width="123" height="14" isPrintWhenDetailOverflows="true" uuid="085d43af-5fde-43b6-830c-af16bb4f2e1b">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="35" height="14" uuid="40d244e4-632a-488a-bf01-6d574ff14ce8">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[DC]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="40" y="28" width="123" height="14" isPrintWhenDetailOverflows="true" uuid="e40fc028-dd8f-4435-8333-1486851f9511">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_CODE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="35" height="14" uuid="7f412fa4-0648-4d56-adaf-9e960cf70c03">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Alokasi]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="40" y="42" width="123" height="36" isPrintWhenDetailOverflows="true" uuid="8f1725e6-0cc5-45c9-8bb3-23ecafbabbbe">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ALOKASI}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="35" y="14" width="5" height="14" uuid="12f164b7-2c7e-4be7-b3af-97c3a7710259">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="0" width="5" height="14" uuid="b94a52c5-efe8-4cbf-bed7-58548d02af9f">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="28" width="5" height="14" uuid="4d96e5ed-fdba-4424-89d7-a6477c69c75f">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="35" y="42" width="5" height="14" uuid="6e0adc33-1079-4a88-9969-02528cb03b68">
+					<printWhenExpression><![CDATA[$F{NO_SO}.equals( "000" ) == false && $F{NO_SO} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

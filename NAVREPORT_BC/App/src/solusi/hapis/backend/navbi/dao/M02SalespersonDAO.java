@@ -15,7 +15,7 @@ public interface M02SalespersonDAO {
 	public void flush();
 	public ResultObject getListM02SalespersonLOV(Map<Object, Object> parameterInput, int start, int pageSize);
 	
-	
+	public M02Salesperson getM02SalespersonBySales (String sales);
 	public ResultObject getListM02SalespersonLOVFilter(Map<Object, Object> parameterInput, int start, int pageSize);
 
 }

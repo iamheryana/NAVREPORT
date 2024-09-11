@@ -1,6 +1,8 @@
 package solusi.hapis.webui.finance;
 
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -41,6 +43,10 @@ public class LapOutARCtrl extends GFCBaseCtrl implements Serializable {
 	protected Textbox txtKodeCustFrom;
 	protected Textbox txtKodeCustUpto;
 	
+	
+	protected Datebox dbTglInvFrom;
+	protected Datebox dbTglInvUpto;
+	
 
 	
 	protected Combobox  cmbCurrency;
@@ -58,6 +64,8 @@ public class LapOutARCtrl extends GFCBaseCtrl implements Serializable {
 		super.doAfterCompose(comp);  
 		
 		dbTglUpto.setValue((new Date())); 
+		
+		dbTglInvUpto.setValue((new Date())); 
     	    	
     	txtKodeCustUpto.setValue("ZZZZZZZZZZZZZZZZZZZZ");
     	
@@ -114,15 +122,27 @@ public class LapOutARCtrl extends GFCBaseCtrl implements Serializable {
 		
 		
 		
-/*		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 		Date vTanggal = null;
 			try {
 				vTanggal = formatter.parse("1900-01-01");			
 			} catch (ParseException e) {
 				e.printStackTrace();
-			}		*/	
+			}		
 			
 
+		
+		Date vTglInvFrom = vTanggal;   
+		if(CommonUtils.isNotEmpty(dbTglInvFrom.getValue()) == true){  
+			vTglInvFrom = dbTglInvFrom.getValue();
+		} 
+			
+		Date vTglInvUpto = new Date();   
+		if(CommonUtils.isNotEmpty(dbTglInvUpto.getValue()) == true){  
+			vTglInvUpto = dbTglInvUpto.getValue();
+		} 
+		
+		
 		Date vTglUpto = new Date();   
 		if(CommonUtils.isNotEmpty(dbTglUpto.getValue()) == true){  
 			vTglUpto = dbTglUpto.getValue();
@@ -161,7 +181,8 @@ public class LapOutARCtrl extends GFCBaseCtrl implements Serializable {
 
 		String jasperRpt = "/solusi/hapis/webui/reports/finance/02022_OutARNonOperasional.jasper";
 		
-
+		param.put("TglInvFrom",  vTglInvFrom); 
+		param.put("TglInvUpto",  vTglInvUpto); 
 		
 		param.put("Company",  vCompany); 
 		param.put("TglUpto",  vTglUpto); 

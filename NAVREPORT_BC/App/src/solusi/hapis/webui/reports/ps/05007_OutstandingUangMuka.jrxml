@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="05007_OutstandingUangMuka" language="groovy" pageWidth="1850" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1810" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="05007_OutstandingUangMuka" language="groovy" pageWidth="1930" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1890" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e4a9c5ca-8c3f-4842-92fe-fcbf6b01d302">
 	<property name="ireport.zoom" value="2.3579476910000063"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.x" value="3336"/>
+	<property name="ireport.y" value="38"/>
 	<parameter name="Cabang" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -30,6 +30,12 @@
 		,XXX.AMT_PILLAR_2
 		,XXX.AMT_PILLAR_3
 		,XXX.AMT_PILLAR_4
+		,XXX.AMT_PILLAR_5
+		,MAX(XXX.TITLE_PILLAR_1) OVER (PARTITION BY 1) AS TITLE_PILLAR_1
+		,MAX(XXX.TITLE_PILLAR_2) OVER (PARTITION BY 1) AS TITLE_PILLAR_2
+		,MAX(XXX.TITLE_PILLAR_3) OVER (PARTITION BY 1) AS TITLE_PILLAR_3
+		,MAX(XXX.TITLE_PILLAR_4) OVER (PARTITION BY 1) AS TITLE_PILLAR_4
+		,MAX(XXX.TITLE_PILLAR_5) OVER (PARTITION BY 1) AS TITLE_PILLAR_5
 FROM	(
 			SELECT IUM.COMPANY
 					,IUM.BRANCHES
@@ -51,6 +57,12 @@ FROM	(
 					,IUM.AMT_PILLAR_2
 					,IUM.AMT_PILLAR_3
 					,IUM.AMT_PILLAR_4
+					,IUM.AMT_PILLAR_5
+					,IUM.TITLE_PILLAR_1
+					,IUM.TITLE_PILLAR_2
+					,IUM.TITLE_PILLAR_3
+					,IUM.TITLE_PILLAR_4
+					,IUM.TITLE_PILLAR_5
 					, ROW_NUMBER()OVER(PARTITION BY IUM.NO_PO_CUST ORDER BY IUM.NO_PO_CUST, IUM.TGL_UM) AS BARIS
 			FROM	(
 						SELECT	XX.COMPANY
@@ -72,6 +84,12 @@ FROM	(
 								,ROUND(SUM(XX.AMT_PILLAR_2),0) AS AMT_PILLAR_2
 								,ROUND(SUM(XX.AMT_PILLAR_3),0) AS AMT_PILLAR_3
 								,ROUND(SUM(XX.AMT_PILLAR_4),0) AS AMT_PILLAR_4
+								,ROUND(SUM(XX.AMT_PILLAR_5),0) AS AMT_PILLAR_5
+								,MAX(XX.TITLE_PILLAR_1) AS TITLE_PILLAR_1
+								,MAX(XX.TITLE_PILLAR_2) AS TITLE_PILLAR_2
+								,MAX(XX.TITLE_PILLAR_3) AS TITLE_PILLAR_3
+								,MAX(XX.TITLE_PILLAR_4) AS TITLE_PILLAR_4
+								,MAX(XX.TITLE_PILLAR_5) AS TITLE_PILLAR_5
 						FROM	(
 									SELECT	OUM.COMPANY
 											,OUM.ITEM_CAT
@@ -92,23 +110,22 @@ FROM	(
 											, CASE WHEN OUM.ITEM_CAT = 'PS03'  THEN OUM.AMOUNT ELSE 0 END AS AMT_PS03
 											, CASE WHEN OUM.ITEM_CAT = 'PS04'  THEN OUM.AMOUNT ELSE 0 END AS AMT_PS04
 											, CASE WHEN OUM.ITEM_CAT = 'PS05'  THEN OUM.AMOUNT ELSE 0 END AS AMT_PS05
-											, CASE WHEN OUM.PILLAR = '1' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_1
-											, CASE WHEN OUM.PILLAR = '2' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_2
-											, CASE WHEN OUM.PILLAR = '3' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_3
-											, CASE WHEN OUM.PILLAR = '4' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_4
+											, CASE WHEN OUM.PILLAR = 1 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_1
+											, CASE WHEN OUM.PILLAR = 2 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_2
+											, CASE WHEN OUM.PILLAR = 3 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_3
+											, CASE WHEN OUM.PILLAR = 4 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_4
+											, CASE WHEN OUM.PILLAR = 5 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_5
+											, CASE WHEN OUM.PILLAR = 1 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_1
+											, CASE WHEN OUM.PILLAR = 2 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_2
+											, CASE WHEN OUM.PILLAR = 3 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_3
+											, CASE WHEN OUM.PILLAR = 4 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_4
+											, CASE WHEN OUM.PILLAR = 5 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_5
 									FROM	(
 												SELECT	UM.COMPANY
 														,UM.ITEM_CAT
 														,UM.BRANCHES
 														,UM.PRODUCT
-														,	CASE WHEN UM.ITEM_CAT = 'HW01' THEN
-																CASE WHEN UM.PRODUCT IN ('H005', 'H019', 'H020', 'H021', 'H027') THEN '2'
-																		WHEN UM.PRODUCT IN ('H011', 'H015', 'H022', 'H023', 'H024', 'H028', 'H029') THEN '3'
-																		ELSE  '1'
-																END
-															ELSE
-																'4'
-															END AS PILLAR
+														,ISNULL(MMP.PILLAR_NO, 1) AS PILLAR
 														,UM.TGL_UM
 														,UM.NO_UM
 														,UM.NO_PO_CUST
@@ -211,7 +228,9 @@ FROM	(
 																		,DIMS.PRODUCT
 																		,SIH.[Order No_]
 															) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT AND INV.PRODUCT = UM.PRODUCT
+												LEFT JOIN [dbo].[M_MAPPING_PILLAR] MMP ON MMP.PRODUCT_CODE = UM.PRODUCT
 											) OUM
+									LEFT JOIN [dbo].[M_PILLAR] MPP ON MPP.PILLAR_NO = OUM.PILLAR
 									WHERE OUM.AMOUNT > 0
 									UNION ALL
 									SELECT	OUM.COMPANY
@@ -233,23 +252,22 @@ FROM	(
 											, CASE WHEN OUM.ITEM_CAT = 'PS03'  THEN OUM.AMOUNT ELSE 0 END AS AMT_PS03
 											, CASE WHEN OUM.ITEM_CAT = 'PS04'  THEN OUM.AMOUNT ELSE 0 END AS AMT_PS04
 											, CASE WHEN OUM.ITEM_CAT = 'PS05'  THEN OUM.AMOUNT ELSE 0 END AS AMT_PS05
-											, CASE WHEN OUM.PILLAR = '1' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_1
-											, CASE WHEN OUM.PILLAR = '2' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_2
-											, CASE WHEN OUM.PILLAR = '3' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_3
-											, CASE WHEN OUM.PILLAR = '4' THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_4
+											, CASE WHEN OUM.PILLAR = 1 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_1
+											, CASE WHEN OUM.PILLAR = 2 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_2
+											, CASE WHEN OUM.PILLAR = 3 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_3
+											, CASE WHEN OUM.PILLAR = 4 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_4
+											, CASE WHEN OUM.PILLAR = 5 THEN OUM.AMOUNT ELSE 0 END AS AMT_PILLAR_5
+											, CASE WHEN OUM.PILLAR = 1 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_1
+											, CASE WHEN OUM.PILLAR = 2 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_2
+											, CASE WHEN OUM.PILLAR = 3 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_3
+											, CASE WHEN OUM.PILLAR = 4 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_4
+											, CASE WHEN OUM.PILLAR = 5 THEN MPP.PILLAR_SHORT ELSE '' END AS TITLE_PILLAR_5
 									FROM	(
 												SELECT	UM.COMPANY
 														,UM.ITEM_CAT
 														,UM.BRANCHES
 														,UM.PRODUCT
-														,	CASE WHEN UM.ITEM_CAT = 'HW01' THEN
-																CASE WHEN UM.PRODUCT IN ('H005', 'H019', 'H020', 'H021', 'H027') THEN '2'
-																		WHEN UM.PRODUCT IN ('H011', 'H015', 'H022', 'H023', 'H024', 'H028', 'H029') THEN '3'
-																		ELSE  '1'
-																END
-															ELSE
-																'4'
-															END AS PILLAR
+														,ISNULL(MMP.PILLAR_NO,1) AS PILLAR
 														,UM.TGL_UM
 														,UM.NO_UM
 														,UM.NO_PO_CUST
@@ -352,7 +370,9 @@ FROM	(
 																		,DIMS.PRODUCT
 																		,SIH.[Order No_]
 															) INV ON INV.NO_SO = UM.NO_SO AND INV.BRANCHES = UM.BRANCHES AND INV.ITEM_CAT = UM.ITEM_CAT AND INV.PRODUCT = UM.PRODUCT
+												LEFT JOIN [dbo].[M_MAPPING_PILLAR] MMP ON MMP.PRODUCT_CODE = UM.PRODUCT
 											) OUM
+									LEFT JOIN [dbo].[M_PILLAR] MPP ON MPP.PILLAR_NO = OUM.PILLAR
 									WHERE OUM.AMOUNT > 0
 								) XX
 						LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XX.BRANCHES
@@ -407,6 +427,12 @@ SELECT	'MANAGEMENT ADJUST.' AS GRP
 		,UMA.AMT_PILLAR_2
 		,UMA.AMT_PILLAR_3
 		,UMA.AMT_PILLAR_4
+		,UMA.AMT_PILLAR_5
+		,UMA.TITLE_PILLAR_1
+		,UMA.TITLE_PILLAR_2
+		,UMA.TITLE_PILLAR_3
+		,UMA.TITLE_PILLAR_4
+		,UMA.TITLE_PILLAR_5
 FROM	(
 SELECT	OSO.CUST_NO
 		, OSO.BRANCHES
@@ -421,6 +447,12 @@ SELECT	OSO.CUST_NO
 		, SUM(OSO.AMT_PILLAR_2) AS AMT_PILLAR_2
 		, SUM(OSO.AMT_PILLAR_3) AS AMT_PILLAR_3
 		, SUM(OSO.AMT_PILLAR_4) AS AMT_PILLAR_4
+		, SUM(OSO.AMT_PILLAR_5) AS AMT_PILLAR_5
+		, MAX(OSO.TITLE_PILLAR_1) AS TITLE_PILLAR_1
+		, MAX(OSO.TITLE_PILLAR_2) AS TITLE_PILLAR_2
+		, MAX(OSO.TITLE_PILLAR_3) AS TITLE_PILLAR_3
+		, MAX(OSO.TITLE_PILLAR_4) AS TITLE_PILLAR_4
+		, MAX(OSO.TITLE_PILLAR_5) AS TITLE_PILLAR_5
 FROM	(
 			SELECT	ISNULL(UMX.CUSTOMER, 'ADJUSTMENT')  AS CUST_NO
 					,ISNULL(UMX.BRANCHES, '10')  AS BRANCHES
@@ -433,85 +465,87 @@ FROM	(
 					, CASE WHEN UMX.ITEM_CAT = 'PS03'  THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PS03
 					, CASE WHEN UMX.ITEM_CAT = 'PS04'  THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PS04
 					, CASE WHEN UMX.ITEM_CAT = 'PS05'  THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PS05
-					, CASE WHEN UMX.PILLAR = '1' THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_1
-					, CASE WHEN UMX.PILLAR = '2' THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_2
-					, CASE WHEN UMX.PILLAR = '3' THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_3
-					, CASE WHEN UMX.PILLAR = '4' THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_4
+					, CASE WHEN UMX.PILLAR = 1 THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_1
+					, CASE WHEN UMX.PILLAR = 2 THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_2
+					, CASE WHEN UMX.PILLAR = 3 THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_3
+					, CASE WHEN UMX.PILLAR = 4 THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_4
+					, CASE WHEN UMX.PILLAR = 5 THEN (SUM(UMX.AMOUNT)*-1) ELSE 0 END AS AMT_PILLAR_5
+					, CASE WHEN UMX.PILLAR = 1 THEN MAX(MPP.PILLAR_SHORT) ELSE '' END AS TITLE_PILLAR_1
+					, CASE WHEN UMX.PILLAR = 2 THEN MAX(MPP.PILLAR_SHORT) ELSE '' END AS TITLE_PILLAR_2
+					, CASE WHEN UMX.PILLAR = 3 THEN MAX(MPP.PILLAR_SHORT) ELSE '' END AS TITLE_PILLAR_3
+					, CASE WHEN UMX.PILLAR = 4 THEN MAX(MPP.PILLAR_SHORT) ELSE '' END AS TITLE_PILLAR_4
+					, CASE WHEN UMX.PILLAR = 5 THEN MAX(MPP.PILLAR_SHORT) ELSE '' END AS TITLE_PILLAR_5
 			FROM	(
-						SELECT	'AJ' AS COMPANY
-								,DIMS.ITEM_CAT
-								,DIMS.BRANCHES
-								,	CASE WHEN DIMS.ITEM_CAT = 'HW01' THEN
-										CASE WHEN DIMS.PRODUCT IN ('H005', 'H019', 'H020', 'H021', 'H027') THEN '2'
-												WHEN DIMS.PRODUCT IN ('H011', 'H015', 'H022', 'H023', 'H024', 'H028', 'H029') THEN '3'
-												ELSE  '1'
-										END
-									ELSE
-										'4'
-									END AS PILLAR
-								,CASE WHEN DIMS.CUSTOMER IS NULL AND GLE.[Posting Date] < '2019-01-01' THEN 'NGIN001' ELSE DIMS.CUSTOMER END AS CUSTOMER
-								,(SUM(GLE.[Amount]) * -1) AS AMOUNT
-						FROM [dbo].[BC_AJ-ADJ$G_L Entry] GLE
-						LEFT JOIN	(
-										SELECT	DIM.DIM_ID
-												,MAX(DIM.BRANCHES) AS BRANCHES
-												,MAX(DIM.ITEM_CAT) AS ITEM_CAT
-												,MAX(DIM.PRODUCT) AS PRODUCT
-												,MAX(DIM.CUSTOMER) AS CUSTOMER
-										FROM	(
-													SELECT [Dimension Set ID] AS DIM_ID
-															,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
-															,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
-															,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
-															,CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END AS CUSTOMER
-													FROM [dbo].[BC_AJ-ADJ$Dimension Set Entry]
-												) DIM
-										GROUP BY DIM.DIM_ID
-									) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
-						WHERE	GLE.[G_L Account No_] = '400.110.00' AND
-								GLE.[Source Code] <> 'CLSINCOME' AND
-								GLE.[Description] NOT LIKE 'Close Income Statement%' AND
-								GLE.[Document No_] NOT LIKE 'OBAL-CLOSE%' AND
-								GLE.[Document No_] NOT LIKE 'JV-SNUM%'
-						GROUP BY DIMS.BRANCHES, DIMS.ITEM_CAT, DIMS.CUSTOMER, GLE.[Posting Date], DIMS.PRODUCT
-						UNION ALL
-						SELECT	'SP' AS COMPANY
-								,DIMS.ITEM_CAT
-								,DIMS.BRANCHES
-								,	CASE WHEN DIMS.ITEM_CAT = 'HW01' THEN
-										CASE WHEN DIMS.PRODUCT IN ('H005', 'H019', 'H020', 'H021', 'H027') THEN '2'
-												WHEN DIMS.PRODUCT IN ('H011', 'H015', 'H022', 'H023', 'H024', 'H028', 'H029') THEN '3'
-												ELSE  '1'
-										END
-									ELSE
-										'4'
-									END AS PILLAR
-								,CASE WHEN DIMS.CUSTOMER IS NULL AND GLE.[Posting Date] < '2019-01-01' THEN 'NGIN001' ELSE DIMS.CUSTOMER END AS CUSTOMER
-								,(SUM(GLE.[Amount]) * -1) AS AMOUNT
-						FROM [dbo].[BC_SP-ADJ$G_L Entry] GLE
-						LEFT JOIN	(
-										SELECT	DIM.DIM_ID
-												,MAX(DIM.BRANCHES) AS BRANCHES
-												,MAX(DIM.ITEM_CAT) AS ITEM_CAT
-												,MAX(DIM.PRODUCT) AS PRODUCT
-												,MAX(DIM.CUSTOMER) AS CUSTOMER
-										FROM	(
-													SELECT [Dimension Set ID] AS DIM_ID
-															,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
-															,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
-															,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
-															,CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END AS CUSTOMER
-													FROM [dbo].[BC_SP-ADJ$Dimension Set Entry]
-												) DIM
-										GROUP BY DIM.DIM_ID
-									) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
-						WHERE	GLE.[G_L Account No_] = '400.110.00' AND
-								GLE.[Source Code] <> 'CLSINCOME'AND
-								GLE.[Description] NOT LIKE 'Close Income Statement%' AND
-								GLE.[Document No_] NOT LIKE 'OBAL-CLOSE%' AND
-								GLE.[Document No_] NOT LIKE 'JV-SNUM%'
-						GROUP BY DIMS.BRANCHES, DIMS.ITEM_CAT, DIMS.CUSTOMER, GLE.[Posting Date], DIMS.PRODUCT
+						SELECT	MPX.COMPANY
+								,MPX.ITEM_CAT
+								,MPX.BRANCHES
+								,ISNULL(MMP.PILLAR_NO, 1) AS PILLAR
+								,MPX.CUSTOMER
+								,MPX.AMOUNT
+						FROM	(
+									SELECT	'AJ' AS COMPANY
+											,DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,DIMS.PRODUCT
+											,CASE WHEN DIMS.CUSTOMER IS NULL AND GLE.[Posting Date] < '2019-01-01' THEN 'NGIN001' ELSE DIMS.CUSTOMER END AS CUSTOMER
+											,(SUM(GLE.[Amount]) * -1) AS AMOUNT
+									FROM [dbo].[BC_AJ-ADJ$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.PRODUCT) AS PRODUCT
+															,MAX(DIM.CUSTOMER) AS CUSTOMER
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																		,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																		,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																		,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
+																		,CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END AS CUSTOMER
+																FROM [dbo].[BC_AJ-ADJ$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									WHERE	GLE.[G_L Account No_] = '400.110.00' AND
+											GLE.[Source Code] <> 'CLSINCOME' AND
+											GLE.[Description] NOT LIKE 'Close Income Statement%' AND
+											GLE.[Document No_] NOT LIKE 'OBAL-CLOSE%' AND
+											GLE.[Document No_] NOT LIKE 'JV-SNUM%'
+									GROUP BY DIMS.BRANCHES, DIMS.ITEM_CAT, DIMS.CUSTOMER, GLE.[Posting Date], DIMS.PRODUCT
+									UNION ALL
+									SELECT	'SP' AS COMPANY
+											,DIMS.ITEM_CAT
+											,DIMS.BRANCHES
+											,DIMS.PRODUCT
+											,CASE WHEN DIMS.CUSTOMER IS NULL AND GLE.[Posting Date] < '2019-01-01' THEN 'NGIN001' ELSE DIMS.CUSTOMER END AS CUSTOMER
+											,(SUM(GLE.[Amount]) * -1) AS AMOUNT
+									FROM [dbo].[BC_SP-ADJ$G_L Entry] GLE
+									LEFT JOIN	(
+													SELECT	DIM.DIM_ID
+															,MAX(DIM.BRANCHES) AS BRANCHES
+															,MAX(DIM.ITEM_CAT) AS ITEM_CAT
+															,MAX(DIM.PRODUCT) AS PRODUCT
+															,MAX(DIM.CUSTOMER) AS CUSTOMER
+													FROM	(
+																SELECT [Dimension Set ID] AS DIM_ID
+																		,CASE WHEN [Dimension Code] = 'BRANCHES' THEN [Dimension Value Code] ELSE NULL END AS BRANCHES
+																		,CASE WHEN [Dimension Code] = 'ITEM CATEGORY' THEN [Dimension Value Code] ELSE NULL END AS ITEM_CAT
+																		,CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END AS PRODUCT
+																		,CASE WHEN [Dimension Code] = 'CUSTOMER' THEN [Dimension Value Code] ELSE NULL END AS CUSTOMER
+																FROM [dbo].[BC_SP-ADJ$Dimension Set Entry]
+															) DIM
+													GROUP BY DIM.DIM_ID
+												) DIMS ON DIMS.DIM_ID = GLE.[Dimension Set ID]
+									WHERE	GLE.[G_L Account No_] = '400.110.00' AND
+											GLE.[Source Code] <> 'CLSINCOME'AND
+											GLE.[Description] NOT LIKE 'Close Income Statement%' AND
+											GLE.[Document No_] NOT LIKE 'OBAL-CLOSE%' AND
+											GLE.[Document No_] NOT LIKE 'JV-SNUM%'
+									GROUP BY DIMS.BRANCHES, DIMS.ITEM_CAT, DIMS.CUSTOMER, GLE.[Posting Date], DIMS.PRODUCT
+								) MPX
+						LEFT JOIN [dbo].[M_MAPPING_PILLAR] MMP ON MMP.PRODUCT_CODE = MPX.PRODUCT
 					) UMX
+			LEFT JOIN [dbo].[M_PILLAR] MPP ON MPP.PILLAR_NO = UMX.PILLAR
 			GROUP BY UMX.CUSTOMER, UMX.BRANCHES, UMX.COMPANY, UMX.PILLAR, UMX.ITEM_CAT
 		) OSO
 GROUP BY OSO.CUST_NO , OSO.BRANCHES
@@ -543,6 +577,12 @@ WHERE UMA.AMOUNT <> 0]]>
 	<field name="AMT_PILLAR_2" class="java.math.BigDecimal"/>
 	<field name="AMT_PILLAR_3" class="java.math.BigDecimal"/>
 	<field name="AMT_PILLAR_4" class="java.math.BigDecimal"/>
+	<field name="AMT_PILLAR_5" class="java.math.BigDecimal"/>
+	<field name="TITLE_PILLAR_1" class="java.lang.String"/>
+	<field name="TITLE_PILLAR_2" class="java.lang.String"/>
+	<field name="TITLE_PILLAR_3" class="java.lang.String"/>
+	<field name="TITLE_PILLAR_4" class="java.lang.String"/>
+	<field name="TITLE_PILLAR_5" class="java.lang.String"/>
 	<sortField name="BRANCHES"/>
 	<sortField name="GRP"/>
 	<sortField name="CUST_NAME_SORT"/>
@@ -647,6 +687,18 @@ WHERE UMA.AMOUNT <> 0]]>
 	<variable name="AMT_PILLAR_4_3" class="java.math.BigDecimal" calculation="Sum">
 		<variableExpression><![CDATA[$F{AMT_PILLAR_4}]]></variableExpression>
 	</variable>
+	<variable name="AMT_PILLAR_5_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Grp" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PILLAR_5}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PILLAR_5_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Cabang" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PILLAR_5}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PS05_4" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PS05}]]></variableExpression>
+	</variable>
+	<variable name="AMT_PILLAR_5_3" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMT_PILLAR_5}]]></variableExpression>
+	</variable>
 	<group name="Cabang">
 		<groupExpression><![CDATA[$F{BRANCHES}]]></groupExpression>
 		<groupHeader>
@@ -740,32 +792,49 @@ WHERE UMA.AMOUNT <> 0]]>
 					<text><![CDATA[]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1490" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="c2e9e397-975c-4b85-907d-12dcb6d3f4c6"/>
+					<reportElement x="1490" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="c2e9e397-975c-4b85-907d-12dcb6d3f4c6">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_1}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_1_2}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1570" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="000db622-b60d-4569-9de8-d1912b569dc7"/>
+					<reportElement x="1570" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="000db622-b60d-4569-9de8-d1912b569dc7">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_2}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_2_2}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1650" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="30fb0212-e76d-4701-a5e8-01b2f0434819"/>
+					<reportElement x="1650" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="30fb0212-e76d-4701-a5e8-01b2f0434819">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_3}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_3_2}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1730" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="29eed88b-cd5c-4b20-bad4-1b30d4b75532"/>
+					<reportElement x="1730" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="29eed88b-cd5c-4b20-bad4-1b30d4b75532">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_4}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_4_2}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="1810" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="75f2d82c-3665-4548-97a7-69272b1b55fe">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_5}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_PILLAR_5_2}]]></textFieldExpression>
 				</textField>
 			</band>
 		</groupFooter>
@@ -891,32 +960,49 @@ WHERE UMA.AMOUNT <> 0]]>
 					<text><![CDATA[]]></text>
 				</staticText>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1490" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3bebc8b1-9a0d-4673-8706-bd0838e280fc"/>
+					<reportElement x="1490" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3bebc8b1-9a0d-4673-8706-bd0838e280fc">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_1}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_1_1}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1570" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="12fb2a00-7d92-4c4a-8cf2-7cbcb15a2615"/>
+					<reportElement x="1570" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="12fb2a00-7d92-4c4a-8cf2-7cbcb15a2615">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_2}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_2_1}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1650" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="cfc692fe-f22a-4a8c-83f6-c2624623e3b7"/>
+					<reportElement x="1650" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="cfc692fe-f22a-4a8c-83f6-c2624623e3b7">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_3}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_3_1}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-					<reportElement x="1730" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="94f5836e-1856-48ed-95b8-4e589a56284d"/>
+					<reportElement x="1730" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="94f5836e-1856-48ed-95b8-4e589a56284d">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_4}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$V{AMT_PILLAR_4_1}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+					<reportElement x="1810" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ec627c09-58ee-4122-8f7f-14c158dd1a9d">
+						<printWhenExpression><![CDATA[$F{TITLE_PILLAR_5}.equals( "" ) == false]]></printWhenExpression>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMT_PILLAR_5_1}]]></textFieldExpression>
 				</textField>
 			</band>
 		</groupFooter>
@@ -1151,40 +1237,47 @@ WHERE UMA.AMOUNT <> 0]]>
 				<text><![CDATA[]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1490" y="70" width="80" height="14" uuid="55f8451e-8508-47df-bab2-0f6542e10df0"/>
-				<textElement textAlignment="Right">
-					<font size="8"/>
-				</textElement>
-				<text><![CDATA[1. AIDC]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="1730" y="70" width="80" height="14" uuid="86f2467b-e56d-4638-8cc2-3b3deeacdee4"/>
-				<textElement textAlignment="Right">
-					<font size="8"/>
-				</textElement>
-				<text><![CDATA[4. EBS]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="1570" y="70" width="80" height="14" uuid="7cc7b145-df9b-4484-98e3-b9f8a2d2fc01"/>
-				<textElement textAlignment="Right">
-					<font size="8"/>
-				</textElement>
-				<text><![CDATA[2. IT Infra.]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="1650" y="70" width="80" height="14" uuid="6d48d796-e78a-462a-8561-c0ebd3049549"/>
-				<textElement textAlignment="Right">
-					<font size="8"/>
-				</textElement>
-				<text><![CDATA[3. ESS]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="1490" y="56" width="320" height="14" uuid="aa565bc6-67b7-4476-93d1-b5655e045db8"/>
+				<reportElement x="1490" y="56" width="400" height="14" uuid="aa565bc6-67b7-4476-93d1-b5655e045db8"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
-				<text><![CDATA[4 Pilar]]></text>
+				<text><![CDATA[Pillars]]></text>
 			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1490" y="70" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="b9fd3d07-c9f0-48ed-83cc-309e66a9a385"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TITLE_PILLAR_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1570" y="70" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ed440f8b-9a68-483c-992a-5c1c3837fbe8"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TITLE_PILLAR_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1650" y="70" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="28484ede-ee78-44d8-8288-505537eb4a16"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TITLE_PILLAR_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1730" y="70" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="8a8dc433-c172-45e3-a8aa-d53de0cc658d"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TITLE_PILLAR_4}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1810" y="70" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="ebc2003e-4db6-4ec1-a810-d5c5ae4d2953"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TITLE_PILLAR_5}]]></textFieldExpression>
+			</textField>
 		</band>
 	</title>
 	<detail>
@@ -1295,28 +1388,36 @@ WHERE UMA.AMOUNT <> 0]]>
 				<textFieldExpression><![CDATA[$F{AMT_PS05}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1490" y="0" width="80" height="14" uuid="d7986a23-1e44-4f24-8eb5-ba7000242198"/>
+				<reportElement x="1490" y="0" width="80" height="14" uuid="d7986a23-1e44-4f24-8eb5-ba7000242198">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_1}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{AMT_PILLAR_1}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1570" y="0" width="80" height="14" uuid="eb5c7841-f342-428e-b01e-28d913543a54"/>
+				<reportElement x="1570" y="0" width="80" height="14" uuid="eb5c7841-f342-428e-b01e-28d913543a54">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_2}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{AMT_PILLAR_2}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1650" y="0" width="80" height="14" uuid="a2a0dc6c-bc05-452a-9228-a027cf57e6be"/>
+				<reportElement x="1650" y="0" width="80" height="14" uuid="a2a0dc6c-bc05-452a-9228-a027cf57e6be">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_3}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{AMT_PILLAR_3}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1730" y="0" width="80" height="14" uuid="db0a0b6d-ab89-4743-a2fd-25e660cda614"/>
+				<reportElement x="1730" y="0" width="80" height="14" uuid="db0a0b6d-ab89-4743-a2fd-25e660cda614">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_4}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
@@ -1336,6 +1437,15 @@ WHERE UMA.AMOUNT <> 0]]>
 				</textElement>
 				<text><![CDATA[]]></text>
 			</staticText>
+			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="1810" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="43678639-c7f7-46c3-b814-9bf34893c4c4">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_5}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_PS05}]]></textFieldExpression>
+			</textField>
 		</band>
 	</detail>
 	<summary>
@@ -1411,32 +1521,49 @@ WHERE UMA.AMOUNT <> 0]]>
 				<text><![CDATA[]]></text>
 			</staticText>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1490" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="67f742c9-f9bd-4165-bcdc-f59235ba0509"/>
+				<reportElement x="1490" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="67f742c9-f9bd-4165-bcdc-f59235ba0509">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_1}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{AMT_PILLAR_1_3}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1570" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="39cdb1bf-cd9a-4a33-8667-f6ff06f96246"/>
+				<reportElement x="1570" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="39cdb1bf-cd9a-4a33-8667-f6ff06f96246">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_2}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{AMT_PILLAR_2_3}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1650" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="71c5468c-b651-4b21-903d-dc060b40d58d"/>
+				<reportElement x="1650" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="71c5468c-b651-4b21-903d-dc060b40d58d">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_3}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{AMT_PILLAR_3_3}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
-				<reportElement x="1730" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="9ba5508b-dea9-4b77-bcd7-f6618c68ac88"/>
+				<reportElement x="1730" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="9ba5508b-dea9-4b77-bcd7-f6618c68ac88">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_4}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$V{AMT_PILLAR_4_3}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###;(#,###)" isBlankWhenNull="true">
+				<reportElement x="1810" y="0" width="80" height="14" isPrintWhenDetailOverflows="true" uuid="3e11f93c-6a27-4a95-b9e2-c74db71f9a35">
+					<printWhenExpression><![CDATA[$F{TITLE_PILLAR_5}.equals( "" ) == false]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{AMT_PILLAR_5_3}]]></textFieldExpression>
 			</textField>
 		</band>
 	</summary>

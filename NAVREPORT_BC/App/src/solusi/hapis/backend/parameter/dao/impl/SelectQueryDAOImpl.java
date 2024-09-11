@@ -922,6 +922,85 @@ public class SelectQueryDAOImpl  extends HibernateDaoSupport implements SelectQu
 		});
 	}
 
+	@Override
+	public List<Object[]> QueryItemCategoryCosting() {
+		return (List<Object[]>) getHibernateTemplate().execute(new HibernateCallback<List<Object[]>>() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public List<Object[]> doInHibernate(Session session) throws HibernateException, SQLException {
+
+				SQLQuery query = session.createSQLQuery("SELECT	CAST([Code]+' - '+[Description] AS VARCHAR(100)) AS LABEL, "
+						+ "CAST([Code] AS VARCHAR) AS VALUE "
+						+ "FROM [dbo].[BC_AUTOJAYA$Item Category] WHERE [Code] IN ('HW01', 'PS01', 'PS03', 'PS04', 'PS05') "
+						+ "ORDER BY [Code]" );
+		
+				return (List<Object[]>)query.list();
+			}
+		});
+	}
+
+
+	@Override
+	public List<Object[]> QueryProductGroupCosting(final String itemCat) {
+		return (List<Object[]>) getHibernateTemplate().execute(new HibernateCallback<List<Object[]>>() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public List<Object[]> doInHibernate(Session session) throws HibernateException, SQLException {
+
+				SQLQuery query = session.createSQLQuery("SELECT CAST(([Code] + ' - '+[Description]) AS VARCHAR(100)) AS LABEL "+
+														",CAST([Code] AS VARCHAR) AS VALUE "+
+														"FROM [dbo].[BC_AUTOJAYA$Product Group] "+
+														"WHERE [Item Category Code] = '"+ itemCat +"'");
+		
+				return (List<Object[]>)query.list();
+			}
+		});
+	}
+
+	@Override
+	public List<Object[]> QueryFilterUserCosting(final String username) {
+		return (List<Object[]>) getHibernateTemplate().execute(new HibernateCallback<List<Object[]>>() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public List<Object[]> doInHibernate(Session session) throws HibernateException, SQLException {
+
+				SQLQuery query = session.createSQLQuery(
+								"SELECT CAST(FILTERUSER AS VARCHAR) AS LABEL,  CAST(FILTERUSER AS VARCHAR) AS VALUE "+
+								"FROM	( "+
+								"SELECT	DISTINCT X.[FILTERUSER] AS FILTERUSER "+
+								"FROM	( "+
+								"			SELECT [FILTERUSER] "+
+								"			FROM [dbo].[M07_USERROLE_COSTING_H] "+
+								"			WHERE	[USERNAME] = '"+username+"' AND (ISNULL([FILTERUSER], '') <> '') "+
+								"			UNION ALL "+
+								"			SELECT	UCD.[FILTERUSER] "+
+								"			FROM [dbo].[M07_USERROLE_COSTING_H] UCH "+
+								"			INNER JOIN [dbo].[M08_USERROLE_COSTING_D] UCD ON UCD.M07_ID = UCH.M07_ID AND ISNULL(UCH.FILTERUSER,'') <> 'ALL' "+
+								"			WHERE [USERNAME] = '"+username+"' "+
+								"		) X	" +
+								"       ) XX "
+						);
+		
+				return (List<Object[]>)query.list();
+			}
+		});
+	}
+
+	@Override
+	public String QueryRoleUserCosting(final String username) {
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+				
+				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST(ROLENAME AS VARCHAR) AS VALUE FROM [dbo].[M07_USERROLE_COSTING_H] WHERE [USERNAME] = :p1");
+				queryHasil.setString("p1", username);
+				
+				return ((String)queryHasil.uniqueResult());
+			}
+		});
+	}
+
+
 
 
 }

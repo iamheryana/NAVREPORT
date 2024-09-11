@@ -21,6 +21,12 @@
 	<parameter name="Company" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
+	<parameter name="TglInvFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglInvUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[SELECT    'AUTOJAYA' AS COMPANY
 		  ,CL.TGL_INV
@@ -90,7 +96,8 @@ FROM	(
 							FROM [dbo].[BC_AUTOJAYA$Detailed Cust_ Ledg_ Entry] CLED
 							GROUP BY CLED.[Cust_ Ledger Entry No_]
 						) CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
-			WHERE CLE.[Posting Date] <= $P{TglUpto}
+			WHERE CLE.[Posting Date] <= $P{TglUpto}  AND
+				  CLD.RMN_AMOUNT <> 0
 		) CL
 LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = CL.CABANG
 LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = CL.NO_INV
@@ -98,9 +105,10 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 		(CL.KODE_CUST BETWEEN $P{KodeCustFrom} AND $P{KodeCustUpto}) AND
 		($P{Currency} = 'ALL' OR CL.CURRENCY = $P{Currency}) AND
 		($P{Cabang} = 'ALL' OR CAB.[Name] = $P{Cabang}) AND
-		($P{Company} = 'AUTOJAYA')
+		($P{Company} = 'AUTOJAYA') AND
+		(CL.TGL_INV >= $P{TglInvFrom} AND CL.TGL_INV <= $P{TglInvUpto})
 UNION ALL
-SELECT    'AUTOJAYA' AS COMPANY
+SELECT    'SOLUSI' AS COMPANY
 		  ,CL.TGL_INV
 		  ,CL.DUE_DATE
 		  ,CL.KODE_CUST
@@ -168,7 +176,8 @@ FROM	(
 							FROM [dbo].[BC_SOLUSI$Detailed Cust_ Ledg_ Entry] CLED
 							GROUP BY CLED.[Cust_ Ledger Entry No_]
 						) CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
-			WHERE CLE.[Posting Date] <= $P{TglUpto}
+			WHERE CLE.[Posting Date] <= $P{TglUpto} AND
+				  CLD.RMN_AMOUNT <> 0
 		) CL
 LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = CL.CABANG
 LEFT JOIN [dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = CL.NO_INV
@@ -176,7 +185,8 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 		(CL.KODE_CUST BETWEEN $P{KodeCustFrom} AND $P{KodeCustUpto}) AND
 		($P{Currency} = 'ALL' OR CL.CURRENCY = $P{Currency}) AND
 		($P{Cabang} = 'ALL' OR CAB.[Name] = $P{Cabang}) AND
-		($P{Company} = 'SOLUSI')]]>
+		($P{Company} = 'SOLUSI') AND
+		(CL.TGL_INV >= $P{TglInvFrom} AND CL.TGL_INV <= $P{TglInvUpto})]]>
 	</queryString>
 	<field name="COMPANY" class="java.lang.String"/>
 	<field name="TGL_INV" class="java.sql.Timestamp"/>
@@ -805,7 +815,7 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 		<band splitType="Stretch"/>
 	</background>
 	<title>
-		<band height="154" splitType="Stretch">
+		<band height="168" splitType="Stretch">
 			<staticText>
 				<reportElement x="224" y="0" width="251" height="14" uuid="bcfae24e-39ef-4964-ae36-45b50c2956e2"/>
 				<textElement>
@@ -828,42 +838,42 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<text><![CDATA[(02022)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="124" y="140" width="100" height="14" uuid="1866489a-6b7d-4187-bd25-2193339c7d4f"/>
+				<reportElement x="124" y="154" width="100" height="14" uuid="1866489a-6b7d-4187-bd25-2193339c7d4f"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Kode Customer (Bill to)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="224" y="140" width="251" height="14" uuid="bc9d01cb-c79b-4595-9484-4093f9e026d7"/>
+				<reportElement x="224" y="154" width="251" height="14" uuid="bc9d01cb-c79b-4595-9484-4093f9e026d7"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Nama Customer (Bill to)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1272" y="140" width="54" height="14" uuid="d12c314a-e365-48fb-a3d3-c66f4b3e2915"/>
+				<reportElement x="1272" y="154" width="54" height="14" uuid="d12c314a-e365-48fb-a3d3-c66f4b3e2915"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Tgl. Inv]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1326" y="140" width="54" height="14" uuid="075b9719-67f7-4d39-be0c-24858d9dbbf8"/>
+				<reportElement x="1326" y="154" width="54" height="14" uuid="075b9719-67f7-4d39-be0c-24858d9dbbf8"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Due Date]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1457" y="140" width="100" height="14" uuid="abbeb640-425f-43b4-b1d3-43b0b41c178a"/>
+				<reportElement x="1457" y="154" width="100" height="14" uuid="abbeb640-425f-43b4-b1d3-43b0b41c178a"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[No. Invoice]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1557" y="140" width="174" height="14" uuid="a25facdb-6fbd-466a-a310-315c5a8d0a82"/>
+				<reportElement x="1557" y="154" width="174" height="14" uuid="a25facdb-6fbd-466a-a310-315c5a8d0a82"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
@@ -884,28 +894,28 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="1731" y="140" width="29" height="14" uuid="1ce76a0a-6122-42ef-a77f-47f7510757ab"/>
+				<reportElement x="1731" y="154" width="29" height="14" uuid="1ce76a0a-6122-42ef-a77f-47f7510757ab"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Curr]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1760" y="140" width="100" height="14" uuid="993eb653-00e9-448c-9f7f-c932a79dc076"/>
+				<reportElement x="1760" y="154" width="100" height="14" uuid="993eb653-00e9-448c-9f7f-c932a79dc076"/>
 				<textElement textAlignment="Right">
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Invoice Amount]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1860" y="140" width="100" height="14" uuid="3f732e4a-7680-4744-a66f-af77fbc18bde"/>
+				<reportElement x="1860" y="154" width="100" height="14" uuid="3f732e4a-7680-4744-a66f-af77fbc18bde"/>
 				<textElement textAlignment="Right">
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Remaining Amount]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1380" y="140" width="77" height="14" uuid="fb475650-83af-490e-8694-ae576b763c90"/>
+				<reportElement x="1380" y="154" width="77" height="14" uuid="fb475650-83af-490e-8694-ae576b763c90"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
@@ -947,7 +957,7 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="124" y="98" width="100" height="14" uuid="9b34ea1c-82ac-4ec4-a6d0-6a283fcd7e54"/>
+				<reportElement x="124" y="112" width="100" height="14" uuid="9b34ea1c-82ac-4ec4-a6d0-6a283fcd7e54"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -968,14 +978,14 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<textFieldExpression><![CDATA[$P{Currency}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="124" y="112" width="100" height="14" uuid="8944cccf-41d0-4ba8-a141-ffac04318979"/>
+				<reportElement x="124" y="126" width="100" height="14" uuid="8944cccf-41d0-4ba8-a141-ffac04318979"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="124" y="126" width="100" height="14" uuid="e4ffabe4-2b0d-4fe0-b631-c3cd4d53132d"/>
+				<reportElement x="124" y="140" width="100" height="14" uuid="e4ffabe4-2b0d-4fe0-b631-c3cd4d53132d"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -989,28 +999,28 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<textFieldExpression><![CDATA[$P{TglUpto}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="0" y="140" width="124" height="14" uuid="45f6e8b0-b408-4c1c-8891-44b7d442fa34"/>
+				<reportElement x="0" y="154" width="124" height="14" uuid="45f6e8b0-b408-4c1c-8891-44b7d442fa34"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Cabang]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="0" y="126" width="124" height="14" uuid="360fe646-1dfb-48c8-8be6-2ac44b4c4393"/>
+				<reportElement x="0" y="140" width="124" height="14" uuid="360fe646-1dfb-48c8-8be6-2ac44b4c4393"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="0" y="112" width="124" height="14" uuid="67e186fd-16bc-4fba-bea2-cbb9cf3edc5c"/>
+				<reportElement x="0" y="126" width="124" height="14" uuid="67e186fd-16bc-4fba-bea2-cbb9cf3edc5c"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="0" y="98" width="124" height="14" uuid="7a4c1aca-0cb4-49d1-aba5-f436bae75d51"/>
+				<reportElement x="0" y="112" width="124" height="14" uuid="7a4c1aca-0cb4-49d1-aba5-f436bae75d51"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -1066,35 +1076,35 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="475" y="140" width="251" height="14" uuid="43d1a844-9f04-4873-a3aa-732e063df897"/>
+				<reportElement x="475" y="154" width="251" height="14" uuid="43d1a844-9f04-4873-a3aa-732e063df897"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Description]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="826" y="140" width="251" height="14" uuid="a708f897-dea4-478c-ba89-656ee21c6224"/>
+				<reportElement x="826" y="154" width="251" height="14" uuid="a708f897-dea4-478c-ba89-656ee21c6224"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Nama Customer (Sell to)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="726" y="140" width="100" height="14" uuid="91d7cb41-7b07-4a13-93db-5e36412a22d1"/>
+				<reportElement x="726" y="154" width="100" height="14" uuid="91d7cb41-7b07-4a13-93db-5e36412a22d1"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[Kode Customer (Sell to)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1172" y="140" width="100" height="14" uuid="29d3d7f9-6a60-4914-8b90-1ef4e95caefc"/>
+				<reportElement x="1172" y="154" width="100" height="14" uuid="29d3d7f9-6a60-4914-8b90-1ef4e95caefc"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
 				<text><![CDATA[No Faktur Pajak]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1077" y="140" width="95" height="14" uuid="6aac1508-2879-4fa2-8d27-34d983a12432"/>
+				<reportElement x="1077" y="154" width="95" height="14" uuid="6aac1508-2879-4fa2-8d27-34d983a12432"/>
 				<textElement>
 					<font size="8" isBold="false"/>
 				</textElement>
@@ -1121,6 +1131,48 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				</textElement>
 				<textFieldExpression><![CDATA[$V{vCompany}]]></textFieldExpression>
 			</textField>
+			<staticText>
+				<reportElement x="124" y="98" width="100" height="14" uuid="e56fd4c2-99f2-422e-9be8-1f6217fd9c60"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="224" y="98" width="251" height="14" uuid="ec235568-d6f5-4b56-b579-59dad4ec67ab"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="124" height="14" uuid="988c8647-ceaa-4243-95b3-0c02fa935882"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="475" y="98" width="251" height="14" uuid="ab35f6ed-30e2-4f2f-ae8c-181085cdaedc"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="826" y="98" width="251" height="14" uuid="728b0e4d-7e6c-482c-802b-f0d7d303256b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvUpto}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="726" y="98" width="100" height="14" uuid="f28064dd-728b-4737-917e-15c8616f7668"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[sd]]></text>
+			</staticText>
 		</band>
 	</title>
 	<detail>
@@ -1356,7 +1408,7 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 		</band>
 	</summary>
 	<noData>
-		<band height="126">
+		<band height="154">
 			<staticText>
 				<reportElement x="124" y="56" width="100" height="14" uuid="00e2bbd1-8db5-432e-b81c-bb43f9d38b99"/>
 				<textElement>
@@ -1414,7 +1466,7 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="0" y="98" width="124" height="14" uuid="22e6893f-4fd1-4163-9e1c-e983c9e9a4ff"/>
+				<reportElement x="0" y="126" width="124" height="14" uuid="22e6893f-4fd1-4163-9e1c-e983c9e9a4ff"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -1526,39 +1578,95 @@ WHERE	(CL.RMN_AMOUNT_IDR < -1 OR CL.RMN_AMOUNT_IDR > 1) AND
 				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="124" y="98" width="100" height="14" uuid="4d85c29f-6fac-49bc-8a31-cc50a2769eae"/>
+				<reportElement x="124" y="126" width="100" height="14" uuid="4d85c29f-6fac-49bc-8a31-cc50a2769eae"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="224" y="98" width="251" height="14" uuid="8037b2af-1bdc-432d-874b-16826c39dc54"/>
+				<reportElement x="224" y="126" width="251" height="14" uuid="8037b2af-1bdc-432d-874b-16826c39dc54"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="224" y="112" width="251" height="14" uuid="157ff9bf-f3b5-49f5-a5ba-b360e6a39210"/>
+				<reportElement x="224" y="140" width="251" height="14" uuid="157ff9bf-f3b5-49f5-a5ba-b360e6a39210"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[TIDAK ADA DATA]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="124" y="112" width="100" height="14" uuid="809acdff-ce28-4cdb-b912-17c60aa8ffee"/>
+				<reportElement x="124" y="140" width="100" height="14" uuid="809acdff-ce28-4cdb-b912-17c60aa8ffee"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="0" y="112" width="124" height="14" uuid="e225857c-b142-4972-881f-67d6625bcbd3"/>
+				<reportElement x="0" y="140" width="124" height="14" uuid="e225857c-b142-4972-881f-67d6625bcbd3"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="112" width="124" height="14" uuid="f804cbfb-ee36-4f9c-b898-20dce030c30c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="124" y="112" width="100" height="14" uuid="5c033d86-1d18-4c4f-9313-a758f9b9e21e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="224" y="98" width="251" height="14" uuid="86f3ebb6-1e59-4e30-ac99-95cc53297ce6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="826" y="98" width="251" height="14" uuid="489894bf-222c-474e-95c6-6491eda3c3dd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvUpto}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="475" y="98" width="251" height="14" uuid="740365c7-7b96-4233-abc0-ac2b7a13ec11"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglInvFrom}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="124" y="98" width="100" height="14" uuid="2552d622-fbf7-438c-97a3-15f8b29ce49c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="98" width="124" height="14" uuid="f3a1332d-9fde-489d-a11f-8db01f483aea"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[-]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="726" y="98" width="100" height="14" uuid="5b687b5e-3320-4ffb-bfcf-52f3e537ce6a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[sd]]></text>
 			</staticText>
 		</band>
 	</noData>

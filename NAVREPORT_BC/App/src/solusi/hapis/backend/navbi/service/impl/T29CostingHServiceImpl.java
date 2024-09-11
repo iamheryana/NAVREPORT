@@ -24,33 +24,43 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 	T33CostingDOtherDAO t33CostingDOtherDAO;
 	
 	@Override
-	public void insert(T29CostingH t29CostingH) {
+	public String insert(T29CostingH t29CostingH) {
+		
 		t29CostingHDAO.save(t29CostingH);
+		
+		String vNoCosting = t29CostingHDAO.callGetNoCosting(t29CostingH.getNoCosting());
+		
+		T29CostingH aHeader = t29CostingHDAO.getT29CostingHByNoCosting(vNoCosting);		
 		
 		if(CommonUtils.isNotEmpty(t29CostingH.getT30CostingDHw3pss())){
 			for (T30CostingDHw3ps t30 : t29CostingH.getT30CostingDHw3pss()) {
+				t30.setT29CostingH(aHeader);
 				t30CostingDHw3psDAO.save(t30);
 			}
 		}
 		
 		if(CommonUtils.isNotEmpty(t29CostingH.getT31CostingDAcspss())){
 			for (T31CostingDAcsps t31: t29CostingH.getT31CostingDAcspss()) {
+				t31.setT29CostingH(aHeader);
 				t31CostingDAcspsDAO.save(t31);
 			}
 		}
 		
 		if(CommonUtils.isNotEmpty(t29CostingH.getT32CostingDOwnsws())){
 			for (T32CostingDOwnsw t32 : t29CostingH.getT32CostingDOwnsws()) {
+				t32.setT29CostingH(aHeader);
 				t32CostingDOwnswDAO.save(t32);
 			}
 		}
 		
 		if(CommonUtils.isNotEmpty(t29CostingH.getT33CostingDOthers())){
 			for (T33CostingDOther t33 : t29CostingH.getT33CostingDOthers()) {
+				t33.setT29CostingH(aHeader);
 				t33CostingDOtherDAO.save(t33);
 			}
 		}
 		
+		return vNoCosting;
 		
 	}
 
@@ -107,6 +117,7 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 			}
 		}
 		
+
 		// Detail 3 
 		if (CommonUtils.isNotEmpty(listDetail3Delete)) {
 			for (T32CostingDOwnsw deleteT32 : listDetail3Delete) {
@@ -115,7 +126,7 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 			}
 		}
 		
-		if (CommonUtils.isNotEmpty(t29CostingH.getT31CostingDAcspss())){
+		if (CommonUtils.isNotEmpty(t29CostingH.getT32CostingDOwnsws())){
 			for (T32CostingDOwnsw t32 : t29CostingH.getT32CostingDOwnsws()) {
 				t32.setT29CostingH(t29CostingH);
 				if (t32.getT32Id() > 0) {
@@ -183,6 +194,13 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 		return t33CostingDOtherDAO.getListT33CostingDOther(parameterInput);
 	}
 
+
+	@Override
+	public void updateNamaFile(T29CostingH t29CostingH) {
+		t29CostingHDAO.update(t29CostingH);
+		
+	}
+	
 	public T29CostingHDAO getT29CostingHDAO() {
 		return t29CostingHDAO;
 	}
@@ -222,6 +240,8 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 	public void setT33CostingDOtherDAO(T33CostingDOtherDAO t33CostingDOtherDAO) {
 		this.t33CostingDOtherDAO = t33CostingDOtherDAO;
 	}
+
+
 
 	
 	

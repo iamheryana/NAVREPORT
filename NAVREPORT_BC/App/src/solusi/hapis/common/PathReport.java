@@ -36,6 +36,7 @@ public class PathReport {
 	private String contohFormatHasilStockOpname;
 	private String preprintInvSATINDO;
 	private String hasilMergeInvSATINDO;
+	private String pathFileCosting;
 	
 	public PathReport(String timestamp){
 		if(runningON.equals("LIVE")){
@@ -138,6 +139,8 @@ public class PathReport {
 			setSubRptSalesHistorical("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/sales/Historical/");
 			setSubRptMarkom("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/markom/");
 			
+			setPathFileCosting("/home/hapis/");
+			
 		} else {
 			if(runningON.equals("LIVE-41")){
 				setPnlKonsolidasi("PNLKonsolidasi.xls");
@@ -159,6 +162,7 @@ public class PathReport {
 				setSubRptSalesHistorical("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
 				setSubRptMarkom("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\markom\\");
 				
+				setPathFileCosting("C:\\Tomcat\\Costing\\");
 				
 			} else {
 			
@@ -181,6 +185,8 @@ public class PathReport {
 				setSubRptSalesHistorical("F:\\ERP\\Kosong\\NAVREPORT_BC\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
 				setSubRptMarkom("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\markom\\");
 				
+				
+				setPathFileCosting("F:\\Costing\\");
 			}
 		}
 	}
@@ -407,6 +413,14 @@ public class PathReport {
 
 	public void setSubRptAccountingPenjualan(String subRptAccountingPenjualan) {
 		this.subRptAccountingPenjualan = subRptAccountingPenjualan;
+	}
+
+	public String getPathFileCosting() {
+		return pathFileCosting;
+	}
+
+	public void setPathFileCosting(String pathFileCosting) {
+		this.pathFileCosting = pathFileCosting;
 	}
 	
 	

@@ -556,8 +556,8 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
 				
 				Calendar cR9Upto = Calendar.getInstance();
 				cR9Upto.setTime(vR9From);			
-				cR9Upto.add(Calendar.DAY_OF_MONTH, 13);  
-				vR9Upto = cR9Upto.getTime();
+				cR9Upto.add(Calendar.MONTH, 1);  
+				vR9Upto = cR9Upto.getTime(); 
 			} else {
 				if (vJnsRpt.equals("C") == true)	{
 					Date vTglFrom = new Date();   

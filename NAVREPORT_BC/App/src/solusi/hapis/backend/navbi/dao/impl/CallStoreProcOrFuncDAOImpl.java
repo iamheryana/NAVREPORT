@@ -125,6 +125,7 @@ public class CallStoreProcOrFuncDAOImpl extends HibernateDaoSupport implements C
 			public String doInHibernate(Session session) throws HibernateException, SQLException {
 
 				SQLQuery query = session.createSQLQuery("EXEC P_BC_SALES_REVENUE :p1, :p2, :p3, :p4, :p5 ");	            
+//				SQLQuery query = session.createSQLQuery("EXEC P_BC_SALES_REVENUE_PILLAR :p1, :p2, :p3, :p4, :p5 ");	            
 
 //				SQLQuery query = session.createSQLQuery("EXEC P_SALES_REVENUE :p1, :p2, :p3, :p4, :p5 ");	            
 //				SQLQuery query = session.createSQLQuery("EXEC P_SALES_REVENUE_NEW :p1, :p2, :p3, :p4, :p5 ");

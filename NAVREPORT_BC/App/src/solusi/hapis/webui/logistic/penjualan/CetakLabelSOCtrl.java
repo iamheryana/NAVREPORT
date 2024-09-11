@@ -88,5 +88,44 @@ public class CetakLabelSOCtrl extends GFCBaseCtrl implements Serializable {
 		 
 		
 	}
+	
+	@SuppressWarnings("unchecked")
+	public void onClick$btnOK2(Event event) throws InterruptedException, ParseException {
+		
+		
+		String vNoSOFrom = ".";
+		if (StringUtils.isNotEmpty(txtNoSOFrom.getValue())) {
+			vNoSOFrom = txtNoSOFrom.getValue();
+		} 
+		
+		String vNoSOUpto = ".";
+		if (StringUtils.isNotEmpty(txtNoSOUpto.getValue())) {
+			vNoSOUpto = txtNoSOUpto.getValue();
+		} 
+		
+		
+		int vJumlahCetak = 1;
+		if(CommonUtils.isNotEmpty(IntJumlahCetak.getValue())){
+			vJumlahCetak = IntJumlahCetak.getValue();
+		}
+		
+		
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReport("0305011");
+		
+		
+		String jasperRpt = "/solusi/hapis/webui/reports/logistic/03044_CetakLabelSO_2.jasper";
+		
+
+		param.put("NoSoFrom",  vNoSOFrom); 
+		param.put("NoSoUpto",  vNoSOUpto); 
+		param.put("JumlahCetak",  vJumlahCetak); 
+		
+		
+		new JReportGeneratorWindow(param, jasperRpt, "PDF"); 
+		 
+		
+	}
  
 }

@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.zkoss.util.media.Media;
+
 public class T29CostingH {
 	private static final long serialVersionUID = 1L;
 	private long t29Id;	
@@ -13,6 +15,7 @@ public class T29CostingH {
 	private Date tglCosting;		
 	private String noBso;	
 	private String noSo;	
+	private String salesman;	
 	private String noPoCustomer;	
 	private String customer;	
 	private String fileBso;
@@ -24,6 +27,7 @@ public class T29CostingH {
 	private BigDecimal salesOwnsw;
 	private BigDecimal cogsHw3ps;
 	private BigDecimal cogsOthers;
+	
 	private BigDecimal totalSales;
 	private BigDecimal totalCogs;
 	private BigDecimal marginPcn;
@@ -55,10 +59,22 @@ public class T29CostingH {
 	private BigDecimal amountSbonusHw3ps;
 	private BigDecimal amountSbonusAcsps;
 	private BigDecimal amountSbonusOwnsw;	
+	
+	
+	private BigDecimal amountTqsHw3ps;
+	private BigDecimal amountTqsAcsps;
+	private BigDecimal amountTqsOwnsw;
+	
+	
 	private BigDecimal amountKomisi;
 	private BigDecimal amountSbonus;
 	private BigDecimal amountSalesTqs;
 	private BigDecimal amountNonsales;
+	
+	private Media uploadBSO;
+	private Media uploadInfoPrice;
+	private Media uploadPoCustomer;
+	
 	private String noInvoice;
 	private Date tglInvoice;	
 	private String noLunas;
@@ -123,6 +139,14 @@ public class T29CostingH {
 
 	public String getNoSo() {
 		return noSo;
+	}
+
+	public String getSalesman() {
+		return salesman;
+	}
+
+	public void setSalesman(String salesman) {
+		this.salesman = salesman;
 	}
 
 	public void setNoSo(String noSo) {
@@ -571,6 +595,54 @@ public class T29CostingH {
 
 	public void setT33CostingDOthers(Set<T33CostingDOther> t33CostingDOthers) {
 		this.t33CostingDOthers = t33CostingDOthers;
+	}
+
+	public BigDecimal getAmountTqsHw3ps() {
+		return amountTqsHw3ps;
+	}
+
+	public void setAmountTqsHw3ps(BigDecimal amountTqsHw3ps) {
+		this.amountTqsHw3ps = amountTqsHw3ps;
+	}
+
+	public BigDecimal getAmountTqsAcsps() {
+		return amountTqsAcsps;
+	}
+
+	public void setAmountTqsAcsps(BigDecimal amountTqsAcsps) {
+		this.amountTqsAcsps = amountTqsAcsps;
+	}
+
+	public BigDecimal getAmountTqsOwnsw() {
+		return amountTqsOwnsw;
+	}
+
+	public void setAmountTqsOwnsw(BigDecimal amountTqsOwnsw) {
+		this.amountTqsOwnsw = amountTqsOwnsw;
+	}
+
+	public Media getUploadBSO() {
+		return uploadBSO;
+	}
+
+	public void setUploadBSO(Media uploadBSO) {
+		this.uploadBSO = uploadBSO;
+	}
+
+	public Media getUploadInfoPrice() {
+		return uploadInfoPrice;
+	}
+
+	public void setUploadInfoPrice(Media uploadInfoPrice) {
+		this.uploadInfoPrice = uploadInfoPrice;
+	}
+
+	public Media getUploadPoCustomer() {
+		return uploadPoCustomer;
+	}
+
+	public void setUploadPoCustomer(Media uploadPoCustomer) {
+		this.uploadPoCustomer = uploadPoCustomer;
 	}
 
 	

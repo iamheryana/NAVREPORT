@@ -261,4 +261,32 @@ public class SelectQueryServiceImpl implements SelectQueryService{
 		return selectQueryDAO.QueryCustGroup();
 	}
 
+
+	@Override
+	public List<Object[]> QueryItemCategoryCosting() {
+		// TODO Auto-generated method stub
+		return selectQueryDAO.QueryItemCategoryCosting();
+	}
+
+
+	@Override
+	public List<Object[]> QueryProductGroupCosting(String itemCat) {
+		// TODO Auto-generated method stub
+		return selectQueryDAO.QueryProductGroupCosting(itemCat);
+	}
+
+
+	@Override
+	public List<Object[]> QueryFilterUserCosting(String username) {
+		// TODO Auto-generated method stub
+		return selectQueryDAO.QueryFilterUserCosting(username);
+	}
+
+
+	@Override
+	public String QueryRoleUserCosting(String username) {
+		// TODO Auto-generated method stub
+		return selectQueryDAO.QueryRoleUserCosting(username);
+	}
+
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02046_Forecast4PillarBCA" language="groovy" pageWidth="800" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="760" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
-	<property name="ireport.zoom" value="1.000000000000012"/>
-	<property name="ireport.x" value="0"/>
+	<property name="ireport.zoom" value="1.6105100000000199"/>
+	<property name="ireport.x" value="52"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="YearFrom" class="java.lang.Integer">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -11,29 +11,35 @@
 	</parameter>
 	<queryString>
 		<![CDATA[SELECT	XI.CATEGORY
+		,XI.PILLAR_NO
+		,XI.MAX_PILLAR
 		,XI.AMOUNT_AJ
-		,CASE WHEN XI.CATEGORY = '4. EBS & PS' AND XI.AMOUNT_AJ <> 0 THEN
-			100 - LAG(XI.PCN_AJ_RUN) OVER (ORDER BY XI.CATEGORY)
+		,CASE WHEN XI.PILLAR_NO =  XI.MAX_PILLAR AND XI.AMOUNT_AJ <> 0 THEN
+			100 - LAG(XI.PCN_AJ_RUN) OVER (ORDER BY XI.PILLAR_NO)
 		 ELSE XI.PCN_AJ END AS PCN_AJ
 		,XI.AMOUNT_SP
-		,CASE WHEN XI.CATEGORY = '4. EBS & PS' AND XI.AMOUNT_SP <> 0 THEN
-			100 - LAG(XI.PCN_SP_RUN) OVER (ORDER BY XI.CATEGORY) ELSE XI.PCN_SP END AS PCN_SP
+		,CASE WHEN XI.PILLAR_NO =  XI.MAX_PILLAR AND XI.AMOUNT_SP <> 0 THEN
+			100 - LAG(XI.PCN_SP_RUN) OVER (ORDER BY XI.PILLAR_NO) ELSE XI.PCN_SP END AS PCN_SP
 		,XI.AMOUNT
-		,CASE WHEN XI.CATEGORY = '4. EBS & PS' AND XI.AMOUNT <> 0 THEN
-			100 - LAG(XI.PCN_ALL_RUN) OVER (ORDER BY XI.CATEGORY) ELSE XI.PCN_ALL END AS PCN_ALL
+		,CASE WHEN XI.PILLAR_NO =  XI.MAX_PILLAR AND XI.AMOUNT <> 0 THEN
+			100 - LAG(XI.PCN_ALL_RUN) OVER (ORDER BY XI.PILLAR_NO) ELSE XI.PCN_ALL END AS PCN_ALL
 FROM	(
 SELECT	XXX.CATEGORY
+		, XXX.PILLAR_NO
+		, XXX.MAX_PILLAR
 		, XXX.AMOUNT_AJ
 		, XXX.PCN_AJ
-		, SUM(XXX.PCN_AJ) OVER(ORDER BY XXX.CATEGORY) AS PCN_AJ_RUN
+		, SUM(XXX.PCN_AJ) OVER(ORDER BY XXX.PILLAR_NO) AS PCN_AJ_RUN
 		, XXX.AMOUNT_SP
 		, XXX.PCN_SP
-		, SUM(XXX.PCN_SP) OVER(ORDER BY XXX.CATEGORY) AS PCN_SP_RUN
+		, SUM(XXX.PCN_SP) OVER(ORDER BY XXX.PILLAR_NO) AS PCN_SP_RUN
 		, XXX.AMOUNT
 		, XXX.PCN_ALL
-		, SUM(XXX.PCN_ALL) OVER(ORDER BY XXX.CATEGORY) AS PCN_ALL_RUN
+		, SUM(XXX.PCN_ALL) OVER(ORDER BY XXX.PILLAR_NO) AS PCN_ALL_RUN
 FROM	(
 			SELECT XX.CATEGORY
+					, XX.PILLAR_NO
+					, XX.MAX_PILLAR
 					, XX.AMOUNT_AJ
 					, CASE WHEN SUM(XX.AMOUNT_AJ) OVER () = 0 THEN 0 ELSE
 						ROUND((XX.AMOUNT_AJ / SUM(XX.AMOUNT_AJ) OVER () * 100),2) END AS PCN_AJ
@@ -45,49 +51,33 @@ FROM	(
 						ROUND((XX.AMOUNT / SUM(XX.AMOUNT) OVER () * 100),2) END AS PCN_ALL
 			FROM	(
 						SELECT	X.CATEGORY
+								,X.PILLAR_NO
+								,MAX(X.PILLAR_NO) OVER (PARTITION BY 1) AS MAX_PILLAR
 								,SUM(X.AMOUNT_AJ) AS AMOUNT_AJ
 								,SUM(X.AMOUNT_SP) AS AMOUNT_SP
 								,SUM(X.AMOUNT) AS AMOUNT
 						FROM	(
-									SELECT	 '1. AUTOMATIC IDENTIFICATION & DATA COLLECTION (AIDC)' AS CATEGORY
-												,0 AS AMOUNT_AJ
-												,0 AS AMOUNT_SP
-												,0 AS AMOUNT
-												, $P{YearFrom} AS EST_YEAR
-									UNION ALL
-									SELECT	 '2. WIRELESS NETWORK INFRASTRUCTURE & SECURITY' AS CATEGORY
-												,0 AS AMOUNT_AJ
-												,0 AS AMOUNT_SP
-												,0 AS AMOUNT
-												, $P{YearFrom} AS EST_YEAR
-									UNION ALL
-									SELECT	 '3. ENTERPRISE SECURITY SYSTEMS' AS CATEGORY
-												,0 AS AMOUNT_AJ
-												,0 AS AMOUNT_SP
-												,0 AS AMOUNT
-												, $P{YearFrom} AS EST_YEAR
-									UNION ALL
-									SELECT	 '4. EBS & PS' AS CATEGORY
-												,0 AS AMOUNT_AJ
-												,0 AS AMOUNT_SP
-												,0 AS AMOUNT
-												, $P{YearFrom} AS EST_YEAR
+									SELECT	PILLAR AS CATEGORY
+											, PILLAR_NO
+											, MAX(PILLAR_NO) OVER (PARTITION BY 1) AS MAX_PILLAR
+											,0 AS AMOUNT_AJ
+											,0 AS AMOUNT_SP
+											,0 AS AMOUNT
+											, $P{YearFrom} AS EST_YEAR
+									FROM [dbo].[M_PILLAR]
+									GROUP BY PILLAR, PILLAR_NO
 									UNION ALL
 									SELECT	MAM.CATEGORY
+											,MAM.PILLAR_NO
+											, MAX(MAM.PILLAR_NO) OVER (PARTITION BY 1) AS MAX_PILLAR
 											,SUM(MAM.AMOUNT_AJ) AS AMOUNT_AJ
 											,SUM(MAM.AMOUNT_SP) AS AMOUNT_SP
 											,SUM(MAM.AMOUNT_AJ) + SUM(MAM.AMOUNT_SP) AS AMOUNT
 											,MAM.EST_YEAR
 									FROM	(
 												SELECT
-														CASE WHEN MAD.DIM_ITEM_CATEGORY  = 'HW01' THEN
-															CASE WHEN MAD.DIM_PRODUCT IN ('H005', 'H019', 'H020', 'H021') THEN '2. WIRELESS NETWORK INFRASTRUCTURE & SECURITY'
-																 WHEN MAD.DIM_PRODUCT IN ('H011', 'H022', 'H023', 'H024') THEN '3. ENTERPRISE SECURITY SYSTEMS'
-																 ELSE  '1. AUTOMATIC IDENTIFICATION & DATA COLLECTION (AIDC)'
-															END
-														ELSE
-															'4. EBS & PS'
-														END AS CATEGORY
+														MPP.PILLAR AS CATEGORY
+														,MPP.PILLAR_NO
 														, CASE WHEN MAD.COMPANY = 'AJ' THEN MAD.AMOUNT ELSE 0 END AS AMOUNT_AJ
 														, CASE WHEN MAD.COMPANY = 'SP' THEN MAD.AMOUNT ELSE 0 END AS AMOUNT_SP
 														, MAD.EST_YEAR
@@ -111,16 +101,20 @@ FROM	(
 																		) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
 															WHERE SOH.[No_ Series] IN ('SBOM', 'SBOMS')
 														) MAD
-												) MAM
-									GROUP BY MAM.CATEGORY, MAM.EST_YEAR
+												LEFT JOIN [dbo].[M_MAPPING_PILLAR] MMP ON MMP.PRODUCT_CODE = MAD.DIM_PRODUCT
+												LEFT JOIN [dbo].[M_PILLAR] MPP ON MPP.PILLAR_NO = ISNULL(MMP.PILLAR_NO, 1)
+											) MAM
+									GROUP BY MAM.CATEGORY, MAM.EST_YEAR, MAM.PILLAR_NO
 								) X
 						WHERE	(X.EST_YEAR >= $P{YearFrom} AND X.EST_YEAR <= $P{YearUpto})
-						GROUP BY X.CATEGORY
+						GROUP BY X.CATEGORY, X.PILLAR_NO
 					) XX
 		) XXX
 		) XI]]>
 	</queryString>
 	<field name="CATEGORY" class="java.lang.String"/>
+	<field name="PILLAR_NO" class="java.lang.Integer"/>
+	<field name="MAX_PILLAR" class="java.lang.Integer"/>
 	<field name="AMOUNT_AJ" class="java.math.BigDecimal"/>
 	<field name="PCN_AJ" class="java.math.BigDecimal"/>
 	<field name="AMOUNT_SP" class="java.math.BigDecimal"/>

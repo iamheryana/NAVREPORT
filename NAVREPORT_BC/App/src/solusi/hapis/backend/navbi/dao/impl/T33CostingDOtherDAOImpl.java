@@ -19,7 +19,7 @@ public class T33CostingDOtherDAOImpl extends BasisNAVBIDAO<T33CostingDOther> imp
 	@Override
 	public List<T33CostingDOther> getListT33CostingDOther(
 			Map<Object, Object> parameterInput) {
-		DetachedCriteria criteria = DetachedCriteria.forClass(T32CostingDOwnsw.class);
+		DetachedCriteria criteria = DetachedCriteria.forClass(T33CostingDOther.class);
 
 		criteria.createCriteria("t29CostingH", "t29", CriteriaSpecification.LEFT_JOIN);
 

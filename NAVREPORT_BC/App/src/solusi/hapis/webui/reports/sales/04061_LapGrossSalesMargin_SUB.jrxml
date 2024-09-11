@@ -21,21 +21,31 @@
 			ELSE
 				0
 			END AS MARGIN_PCN
+		, SUM(XIX.DEXP_AMOUNT) AS DEXP_AMOUNT
+		, SUM(XIX.SALES_AMOUNT) - (SUM(XIX.COGS_AMOUNT) + SUM(XIX.DEXP_AMOUNT)) AS SALES_MARGIN
+		,	CASE WHEN SUM(XIX.SALES_AMOUNT) > 0 THEN
+				((SUM(XIX.SALES_AMOUNT) -  (SUM(XIX.COGS_AMOUNT) + SUM(XIX.DEXP_AMOUNT)))/SUM(XIX.SALES_AMOUNT))*100
+			ELSE
+				0
+			END AS SALES_MARGIN_PCN
 FROM	(
 			SELECT	CASE WHEN  ROUND((SUM(XXX.SALES_AMOUNT) / 1000000),2) >= $P{ParamValue} THEN XXX.CUST_NAME ELSE 'OTHERS' END AS CUST_NAME
 					, CASE WHEN  ROUND((SUM(XXX.SALES_AMOUNT) / 1000000),2) >= $P{ParamValue} THEN XXX.CUST_NAME ELSE 'ZZZZZ' END AS CUST_NAME_URUT
 					,ROUND((SUM(XXX.SALES_AMOUNT) / 1000000),2) AS SALES_AMOUNT
 					,ROUND((SUM(XXX.COGS_AMOUNT) / 1000000),2) AS COGS_AMOUNT
+					,ROUND((SUM(XXX.DEXP_AMOUNT) / 1000000),2) AS DEXP_AMOUNT
 			FROM	(
 									SELECT	X.CUST_NO
 											,X.CUST_NAME
 											,SUM(X.SALES_AMOUNT) AS SALES_AMOUNT
 											,SUM(X.COGS_AMOUNT) AS COGS_AMOUNT
+											,SUM(X.DEXP_AMOUNT) AS DEXP_AMOUNT
 									FROM	(
 												SELECT	CUST_NO
 														,CUST_NAME
-														, CASE WHEN GROUP_NO = 1 THEN CURR_MONTH ELSE 0 END AS SALES_AMOUNT
-														, CASE WHEN GROUP_NO = 2 THEN CURR_MONTH ELSE 0 END AS COGS_AMOUNT
+														, CASE WHEN SUB_GROUP_NO = 1 AND GROUP_NO = 1 THEN CURR_MONTH ELSE 0 END AS SALES_AMOUNT
+														, CASE WHEN SUB_GROUP_NO = 1 AND GROUP_NO = 2 THEN CURR_MONTH ELSE 0 END AS COGS_AMOUNT
+														, CASE WHEN SUB_GROUP_NO = 2 AND GROUP_NO = 2 THEN CURR_MONTH ELSE 0 END AS DEXP_AMOUNT
 												FROM [dbo].[TEMP11_GROSS_SALES_MARGIN]
 												WHERE	PROSES_ID = $P{ProsesId} AND
 														MAIN_GRP = 'A' AND
@@ -54,6 +64,9 @@ GROUP BY XIX.CUST_NAME, XIX.CUST_NAME_URUT]]>
 	<field name="COGS_AMOUNT" class="java.math.BigDecimal"/>
 	<field name="MARGIN" class="java.math.BigDecimal"/>
 	<field name="MARGIN_PCN" class="java.math.BigDecimal"/>
+	<field name="DEXP_AMOUNT" class="java.math.BigDecimal"/>
+	<field name="SALES_MARGIN" class="java.math.BigDecimal"/>
+	<field name="SALES_MARGIN_PCN" class="java.math.BigDecimal"/>
 	<sortField name="URUT_NILAI_SALES" order="Descending"/>
 	<variable name="SALES_AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
 		<variableExpression><![CDATA[$F{SALES_AMOUNT}]]></variableExpression>
@@ -67,6 +80,16 @@ GROUP BY XIX.CUST_NAME, XIX.CUST_NAME_URUT]]>
 	<variable name="PcnMargin" class="java.math.BigDecimal">
 		<variableExpression><![CDATA[$V{SALES_AMOUNT_1}==0?0:($V{MARGIN_1}/$V{SALES_AMOUNT_1})*100]]></variableExpression>
 		<initialValueExpression><![CDATA[$V{SALES_AMOUNT_1}==0?0:($V{MARGIN_1}/$V{SALES_AMOUNT_1})*100]]></initialValueExpression>
+	</variable>
+	<variable name="DEXP_AMOUNT_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{DEXP_AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="SALES_MARGIN_1" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{SALES_MARGIN}]]></variableExpression>
+	</variable>
+	<variable name="PcnSalesMargin" class="java.math.BigDecimal">
+		<variableExpression><![CDATA[$V{SALES_AMOUNT_1}==0?0:($V{SALES_MARGIN_1}/$V{SALES_AMOUNT_1})*100]]></variableExpression>
+		<initialValueExpression><![CDATA[$V{SALES_AMOUNT_1}==0?0:($V{SALES_MARGIN_1}/$V{SALES_AMOUNT_1})*100]]></initialValueExpression>
 	</variable>
 	<background>
 		<band splitType="Stretch"/>
@@ -92,7 +115,7 @@ GROUP BY XIX.CUST_NAME, XIX.CUST_NAME_URUT]]>
 				<textElement textAlignment="Right">
 					<font size="8" isBold="true"/>
 				</textElement>
-				<text><![CDATA[Margin]]></text>
+				<text><![CDATA[Gross Margin]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="380" y="28" width="80" height="14" uuid="e0573201-42a0-42dd-a350-80cc88c88c6d"/>

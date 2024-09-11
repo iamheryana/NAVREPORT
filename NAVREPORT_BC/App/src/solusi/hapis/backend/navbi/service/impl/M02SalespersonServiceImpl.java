@@ -68,8 +68,12 @@ public class M02SalespersonServiceImpl implements M02SalespersonService {
 	@Override
 	public void insert(M02Salesperson m02Salesperson) {
 		m02SalespersonDAO.save(m02Salesperson);
+		
+		M02Salesperson aHeader = m02SalespersonDAO.getM02SalespersonBySales(m02Salesperson.getSales());
+		
 		if(CommonUtils.isNotEmpty(m02Salesperson.getM03Targetsaless())){
 			for (M03Targetsales m03 : m02Salesperson.getM03Targetsaless()) {
+				m03.setM02Salesperson(aHeader);
 				m03TargetsalesDAO.save(m03);
 			}
 		}

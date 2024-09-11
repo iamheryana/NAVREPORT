@@ -41,6 +41,10 @@ public class PiutangKasBonSementaraCtrl extends GFCBaseCtrl implements Serializa
 	protected Radio rdSP;
 	protected Radio rdAJ;
 	
+	protected Radiogroup rdgJenis;	 
+	protected Radio rdSUM;
+	protected Radio rdDTL;
+	
 	
 	protected Bandbox  cmbKaryawan;
 	protected Listbox listKaryawan;
@@ -71,7 +75,7 @@ public class PiutangKasBonSementaraCtrl extends GFCBaseCtrl implements Serializa
 		dbTglUpto.setValue((new Date()));   
     	
     	rdAJ.setSelected(true); 
-    	
+    	rdSUM.setSelected(true); 
     	
     	Bandpopup popup2 = new Bandpopup();
 			listKaryawan = new Listbox();
@@ -140,12 +144,22 @@ public class PiutangKasBonSementaraCtrl extends GFCBaseCtrl implements Serializa
 			vCompany = rdgCompany.getSelectedItem().getValue();	
 		} 
 		
+		String vJenisLap = "SUM";
+		if (StringUtils.isNotEmpty(rdgJenis.getSelectedItem().getValue())) {
+			vJenisLap = rdgJenis.getSelectedItem().getValue();	
+		} 
+		
 		
 		@SuppressWarnings("unused")
 		String vSync = callStoreProcOrFuncService.callSyncAReport("0207008");
 		
 		String jasperRpt = "/solusi/hapis/webui/reports/finance/02055_PiutangKasBonSementara.jasper";
 		
+		if (vJenisLap.equals("SUM") == true) {
+			jasperRpt = "/solusi/hapis/webui/reports/finance/02055_PiutangKasBonSementara.jasper";
+		} else {
+			jasperRpt = "/solusi/hapis/webui/reports/finance/02055_PiutangKasBonSementara_Detail.jasper";
+		}
 		
     	param.put("TglFrom",  vTglFrom); 
 		param.put("TglUpto",  vTglUpto);  

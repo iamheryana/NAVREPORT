@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="030503_CekTOPPOSynnex" language="groovy" pageWidth="1915" pageHeight="595" whenNoDataType="NoDataSection" columnWidth="1875" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.7715610000000408"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[SELECT	X.*
+FROM	(
+			SELECT	'SOLUSI' AS COMPANY
+					, MAX(PL.NO_BPO) OVER (PARTITION BY PH.[No_] ORDER BY PH.[No_]) AS NO_BPO
+					, PH.[No_] AS NO_PO
+					, PH.[Order Date] AS TGL_PO
+					, PH.[Pay-to Vendor No_] AS VENDOR_NO
+					, PH.[Pay-to Name] AS VENDOR_NAME
+					, PH.[Your Reference] AS YOUR_REF
+					, PH.[Assigned User ID] AS PO_BY
+					, CASE WHEN PH.[Currency Code] = '' THEN 'IDR' ELSE PH.[Currency Code] END AS CURR_CODE
+					, PH.[Payment Terms Code] AS TERM_OF_PAY
+					,	CASE WHEN PL.PRINCIPAL = 'ZEBR'  THEN
+							CASE WHEN PH.[Payment Terms Code] = '60D' THEN 1 ELSE 0 END
+						ELSE
+							CASE WHEN PL.PRINCIPAL = 'HUAWEI' THEN
+								CASE WHEN PH.[Payment Terms Code] = '45D' THEN 1 ELSE 0 END
+							ELSE
+								CASE WHEN PH.[Payment Terms Code] = '30D' THEN 1 ELSE 0 END
+							END
+						END AS VALID
+					,	CASE WHEN PL.PRINCIPAL IS NULL THEN 'SILAHKAN CEK SECARA MANUAL, KARENA BARANG BUKAN ITEM/STOCK'
+						ELSE
+							'PRINCIPAL : '+PL.PRINCIPAL+' - '+
+							CASE WHEN PL.PRINCIPAL = 'ZEBR'  THEN
+								CASE WHEN PH.[Payment Terms Code] = '60D' THEN 'TOP SUDAH BENAR' ELSE 'TOP SEHARUSNYA 60D' END
+							ELSE
+								CASE WHEN PL.PRINCIPAL = 'HUAWEI' THEN
+									CASE WHEN PH.[Payment Terms Code] = '45D' THEN 'TOP SUDAH BENAR' ELSE 'TOP SEHARUSNYA 45D' END
+								ELSE
+									CASE WHEN PH.[Payment Terms Code] = '30D' THEN 'TOP SUDAH BENAR' ELSE 'TOP SEHARUSNYA 30D' END
+								END
+							END
+						END AS VALID_COMMENT
+					, PL.PRINCIPAL
+					, PL.TIPE
+					, PL.NO_ITEM
+					, PL.DESC_1
+					, PL.DESC_2
+					, PL.LOC_CODE
+					, PL.UOM
+					, PL.QTY_ORDER
+			FROM [dbo].[BC_SOLUSI$Purchase Header] PH
+			INNER JOIN	(
+							SELECT	POL.NO_PO
+									,POL.TIPE
+									,POL.NO_ITEM
+									,POL.DESC_1
+									,POL.DESC_2
+									,POL.LOC_CODE
+									,POL.UOM
+									,POL.QTY_ORDER
+									,POL.QTY_OUT
+									,POL.NO_BPO
+									, POL.PRINCIPAL
+							FROM	(
+										SELECT
+												[Document No_] AS NO_PO
+												,CASE	WHEN [Type] = 1 THEN 'G/L Account'
+													WHEN [Type] = 2 THEN 'Item'
+													WHEN [Type] = 3 THEN '?'
+													WHEN [Type] = 4 THEN 'Fixed Asset'
+													WHEN [Type] = 5 THEN 'Freight'
+													ELSE 'Others'
+												END AS TIPE
+												,[No_] AS NO_ITEM
+												,[Description] AS DESC_1
+												,[Description 2] AS DESC_2
+												,[Location Code] AS LOC_CODE
+												,[Unit of Measure] AS UOM
+												,[Quantity] AS QTY_ORDER
+												,([Quantity] - [Quantity Invoiced]) AS QTY_OUT
+												,[Blanket Order No_] AS NO_BPO
+												, DIMS.PRINCIPAL
+										FROM [dbo].[BC_SOLUSI$Purchase Line] PLL
+										LEFT JOIN	(
+														SELECT [Dimension Set ID] AS DIM_ID
+																,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+														FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
+														GROUP BY [Dimension Set ID]
+													) DIMS ON DIMS.DIM_ID = PLL.[Dimension Set ID]
+										WHERE [Document Type] = 1
+									) POL
+							WHERE POL.QTY_OUT <> 0
+						) PL ON PL.NO_PO = PH.[No_] AND 1 = PH.[Document Type]
+			WHERE PH.[Pay-to Vendor No_] = 'SUPP412'
+			UNION ALL
+			SELECT	'AUTOJAYA' AS COMPANY
+					, MAX(PL.NO_BPO) OVER (PARTITION BY PH.[No_] ORDER BY PH.[No_]) AS NO_BPO
+					, PH.[No_] AS NO_PO
+					, PH.[Order Date] AS TGL_PO
+					, PH.[Pay-to Vendor No_] AS VENDOR_NO
+					, PH.[Pay-to Name] AS VENDOR_NAME
+					, PH.[Your Reference] AS YOUR_REF
+					, PH.[Assigned User ID] AS PO_BY
+					, CASE WHEN PH.[Currency Code] = '' THEN 'IDR' ELSE PH.[Currency Code] END AS CURR_CODE
+					, PH.[Payment Terms Code] AS TERM_OF_PAY
+					,	CASE WHEN PL.PRINCIPAL = 'ZEBR'  THEN
+							CASE WHEN PH.[Payment Terms Code] = '60D' THEN 1 ELSE 0 END
+						ELSE
+							CASE WHEN PL.PRINCIPAL = 'HUAWEI' THEN
+								CASE WHEN PH.[Payment Terms Code] = '45D' THEN 1 ELSE 0 END
+							ELSE
+								CASE WHEN PH.[Payment Terms Code] = '30D' THEN 1 ELSE 0 END
+							END
+						END AS VALID
+					,	CASE WHEN PL.PRINCIPAL IS NULL THEN 'SILAHKAN CEK SECARA MANUAL, KARENA BARANG BUKAN ITEM/STOCK'
+						ELSE
+							'PRINCIPAL : '+PL.PRINCIPAL+' - '+
+							CASE WHEN PL.PRINCIPAL = 'ZEBR'  THEN
+								CASE WHEN PH.[Payment Terms Code] = '60D' THEN 'TOP SUDAH BENAR' ELSE 'TOP SEHARUSNYA 60D' END
+							ELSE
+								CASE WHEN PL.PRINCIPAL = 'HUAWEI' THEN
+									CASE WHEN PH.[Payment Terms Code] = '45D' THEN 'TOP SUDAH BENAR' ELSE 'TOP SEHARUSNYA 45D' END
+								ELSE
+									CASE WHEN PH.[Payment Terms Code] = '30D' THEN 'TOP SUDAH BENAR' ELSE 'TOP SEHARUSNYA 30D' END
+								END
+							END
+						END AS VALID_COMMENT
+					, PL.PRINCIPAL
+					, PL.TIPE
+					, PL.NO_ITEM
+					, PL.DESC_1
+					, PL.DESC_2
+					, PL.LOC_CODE
+					, PL.UOM
+					, PL.QTY_ORDER
+			FROM [dbo].[BC_AUTOJAYA$Purchase Header] PH
+			INNER JOIN	(
+							SELECT	POL.NO_PO
+									,POL.TIPE
+									,POL.NO_ITEM
+									,POL.DESC_1
+									,POL.DESC_2
+									,POL.LOC_CODE
+									,POL.UOM
+									,POL.QTY_ORDER
+									,POL.QTY_OUT
+									,POL.NO_BPO
+									, POL.PRINCIPAL
+							FROM	(
+										SELECT
+												[Document No_] AS NO_PO
+												,CASE	WHEN [Type] = 1 THEN 'G/L Account'
+													WHEN [Type] = 2 THEN 'Item'
+													WHEN [Type] = 3 THEN '?'
+													WHEN [Type] = 4 THEN 'Fixed Asset'
+													WHEN [Type] = 5 THEN 'Freight'
+													ELSE 'Others'
+												END AS TIPE
+												,[No_] AS NO_ITEM
+												,[Description] AS DESC_1
+												,[Description 2] AS DESC_2
+												,[Location Code] AS LOC_CODE
+												,[Unit of Measure] AS UOM
+												,[Quantity] AS QTY_ORDER
+												,([Quantity] - [Quantity Invoiced]) AS QTY_OUT
+												,[Blanket Order No_] AS NO_BPO
+												, DIMS.PRINCIPAL
+										FROM [dbo].[BC_AUTOJAYA$Purchase Line] PLL
+										LEFT JOIN	(
+														SELECT [Dimension Set ID] AS DIM_ID
+																,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+														FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
+														GROUP BY [Dimension Set ID]
+													) DIMS ON DIMS.DIM_ID = PLL.[Dimension Set ID]
+										WHERE [Document Type] = 1
+									) POL
+							WHERE POL.QTY_OUT <> 0
+						) PL ON PL.NO_PO = PH.[No_] AND 1 = PH.[Document Type]
+			WHERE PH.[Pay-to Vendor No_] = 'SUPP412'
+		) X
+WHERE X.VALID = 0]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_BPO" class="java.lang.String"/>
+	<field name="NO_PO" class="java.lang.String"/>
+	<field name="TGL_PO" class="java.sql.Timestamp"/>
+	<field name="VENDOR_NO" class="java.lang.String"/>
+	<field name="VENDOR_NAME" class="java.lang.String"/>
+	<field name="YOUR_REF" class="java.lang.String"/>
+	<field name="PO_BY" class="java.lang.String"/>
+	<field name="CURR_CODE" class="java.lang.String"/>
+	<field name="TERM_OF_PAY" class="java.lang.String"/>
+	<field name="VALID" class="java.lang.Integer"/>
+	<field name="VALID_COMMENT" class="java.lang.String"/>
+	<field name="PRINCIPAL" class="java.lang.String"/>
+	<field name="TIPE" class="java.lang.String"/>
+	<field name="NO_ITEM" class="java.lang.String"/>
+	<field name="DESC_1" class="java.lang.String"/>
+	<field name="DESC_2" class="java.lang.String"/>
+	<field name="LOC_CODE" class="java.lang.String"/>
+	<field name="UOM" class="java.lang.String"/>
+	<field name="QTY_ORDER" class="java.math.BigDecimal"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_PO"/>
+	<group name="PO">
+		<groupExpression><![CDATA[$F{NO_PO}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="75" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="6828fed3-5e76-4717-aff1-63378d503b57"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_BPO}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="150" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="9d028b0b-3054-43f6-b606-525277c6e8bb"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_PO}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="d912be8b-57e6-49b5-9f15-b19e2dbdd459"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="dd040c04-cc85-42f4-9b43-da09f508d698"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{VENDOR_NO}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="275" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="10ed9b9b-d63c-4c61-b1ae-7c0c95825946"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{VENDOR_NAME}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="525" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="d9e9aa2e-891d-4d01-b9fc-e594b1ac39e1"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{YOUR_REF}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="725" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="7dec37d9-1cfd-44ce-ad80-5a0fc363842b"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CURR_CODE}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="775" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="d956d21f-e125-4e37-a736-51d922bc5798"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TERM_OF_PAY}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="825" y="0" width="1050" height="14" isPrintWhenDetailOverflows="true" uuid="9ff13083-efd4-4f8a-9188-a2021079814e"/>
+					<textElement>
+						<font size="8" isBold="true" isItalic="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{VALID_COMMENT}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="675" y="0" width="50" height="14" uuid="064c3623-d379-455d-97e6-b531c72476b8"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PO_BY}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="70" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="56" width="75" height="14" uuid="8cf79679-3fe2-4352-82a6-127ab540fd10"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="56" width="75" height="14" uuid="113baa29-4e9d-4423-9803-6fe651c8a0e0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. BPO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="0" width="200" height="14" uuid="e3affb08-2fe4-475c-9687-1227b37c6b71"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cek TOP untuk PO ke SYNNEX]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="75" height="14" uuid="b228d3a6-d02a-47a5-b6f8-5111063bd14c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(030503)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="4223dcd2-af49-4384-a3dd-109c976047b9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cetak :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="75" y="28" width="200" height="14" uuid="fecceb7d-8dec-4317-bdb9-dfba793f1d23"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="9f3f1ff2-0201-41b9-9e3b-da38b53c719d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="42" width="200" height="14" uuid="23868f57-0e3e-4c0d-911e-971c057a337a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="56" width="75" height="14" uuid="1d6504f2-8ae4-4d28-bcb2-6f28af1d5e22"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. PO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="56" width="50" height="14" uuid="433f00df-fa4c-4309-97c7-92bc3b18bcad"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="525" y="56" width="150" height="14" uuid="6ba6caf5-e063-406a-83f6-940b6ad06e3a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Your Ref.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="775" y="56" width="50" height="14" uuid="0df5c5ac-7ea1-4c21-bf3b-870e425003f0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOP]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="725" y="56" width="50" height="14" uuid="3094afd7-beb7-4bdd-a6d5-bd9e962e7ab3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Curr.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="75" height="14" uuid="c64da384-4d2b-4246-a3e2-8df7448272e0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="14" width="200" height="14" uuid="082b8c29-614b-4712-baa1-6bc07ce62750"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="275" y="56" width="250" height="14" uuid="d486e0c6-afc4-4b41-b1f9-48b6589fadf3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vendor Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="825" y="56" width="75" height="14" uuid="a9870f6b-9777-4795-8596-44d9b5b85c2e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="900" y="56" width="75" height="14" uuid="bdd89d88-9cfd-4b6b-af47-44979ae946ba"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="975" y="56" width="150" height="14" uuid="39aba333-bd6c-4dd6-a278-bd1062a58f8d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Item No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1125" y="56" width="300" height="14" uuid="94e93235-8fec-4668-9910-b60f71df4fa4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Desc. 1]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1425" y="56" width="300" height="14" uuid="12da4160-3243-427b-bc1b-ba278df5372d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Desc. 2]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1725" y="56" width="50" height="14" uuid="dc4952ba-6fd4-4569-9bf2-08284f8910b0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Loc.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1775" y="56" width="50" height="14" uuid="4f7d6281-1d0c-44a8-9e8e-7c0a1e48694e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[UOM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1825" y="56" width="50" height="14" uuid="1c16420e-498f-408a-9549-4792781d902f"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qty.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="675" y="56" width="50" height="14" uuid="e0242241-0e2e-4579-abc7-73ad64c6e62e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[User]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="825" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="9cd8de3f-94fb-4565-a76a-8ba25db42012"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRINCIPAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="900" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="1f4fe852-f204-45b2-a069-3c2bade142a7"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="975" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="14f634aa-be5e-42e4-8349-f9d79f915b89"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_ITEM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1125" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="d4626a1e-516c-4beb-9bba-ca9aacb2085c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DESC_1}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1425" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="7c77cebe-3de1-4155-83f8-3580114128e8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DESC_2}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1725" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="3dbaec75-436f-4184-9c2e-29c8545b03ec"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LOC_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1775" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="cc4e4020-5534-4b73-9ad1-b498b5918182"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{UOM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1825" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="c9dccb44-69b2-4c1e-8980-ba4ce0e94450"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_ORDER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="70">
+			<staticText>
+				<reportElement x="0" y="56" width="275" height="14" uuid="25b1ad6d-5775-45d0-9c05-2d33e53bda67"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[*** TIDAK ADA DATA YANG MEMENUHI KRITERIA ***]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="0" width="200" height="14" uuid="cfe34ccc-fa2c-4777-84c3-790367093dc4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cek TOP untuk PO ke SYNNEX]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="42" width="200" height="14" uuid="83544cc3-af20-47ca-b9fc-d5739e7a44a1"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="30245d8a-2e7c-44b6-b5fc-e42a26e30fb0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="75" y="28" width="200" height="14" uuid="76cf83a4-c0c5-43ee-b06a-8ecc63136206"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="75" height="14" uuid="16584714-c2fc-4c83-a6b0-de15a6081ce2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(030503)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="2c46aecf-a91a-43ac-8083-20f105f2bcf4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cetak :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="14" width="200" height="14" uuid="caf548c6-6238-4c52-b8a2-70a9a0b1ed0f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="75" height="14" uuid="227c2573-1065-43fc-947c-1c968a0ba50b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

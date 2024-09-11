@@ -67,6 +67,7 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 	protected Decimalbox dcmKursUSD;
 	protected Decimalbox dcmKursEUR;
 	protected Decimalbox dcmKursSGD;
+	protected Decimalbox dcmKursCNY;
 	
 	protected Combobox  cmbCurrency;
 	
@@ -93,7 +94,7 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
     	dcmKursUSD.setValue(new BigDecimal(0));
     	dcmKursEUR.setValue(new BigDecimal(0));
     	dcmKursSGD.setValue(new BigDecimal(0));
-    	
+    	dcmKursCNY.setValue(new BigDecimal(0));
     	
     	cmbCurrency.setSelectedIndex(0);
     	
@@ -557,8 +558,8 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 				
 				Calendar cR9Upto = Calendar.getInstance();
 				cR9Upto.setTime(vR9From);			
-				cR9Upto.add(Calendar.DAY_OF_MONTH, 13);  
-				vR9Upto = cR9Upto.getTime();
+				cR9Upto.add(Calendar.MONTH, 1);  
+				vR9Upto = cR9Upto.getTime(); 
 			} else {
 				if (vJnsRpt.equals("C") == true)	{
 					Date vTglFrom = new Date();   
@@ -885,6 +886,11 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 			vKursSGD = dcmKursSGD.getValue();	
 		} 
 		
+		BigDecimal vKursCNY = new BigDecimal(0);
+		if (dcmKursCNY.getValue() != null) {
+			vKursCNY = dcmKursCNY.getValue();	
+		} 
+		
 		String vShowAmtIn = "VAL";
 		if (StringUtils.isNotEmpty(rdgShowAmtIn.getSelectedItem().getValue())) {
 			vShowAmtIn = rdgShowAmtIn.getSelectedItem().getValue();	
@@ -905,6 +911,7 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 			param.put("Kurs",  vKursUSD); 
 			param.put("KursEUR",  vKursEUR);
 			param.put("KursSGD",  vKursSGD);
+			param.put("KursCNY",  vKursCNY);
 		}
 		
 		param.put("R1From",  vR1From); 

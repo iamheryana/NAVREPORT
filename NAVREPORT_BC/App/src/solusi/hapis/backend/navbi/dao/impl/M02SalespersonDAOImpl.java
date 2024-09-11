@@ -116,4 +116,13 @@ public class M02SalespersonDAOImpl extends BasisNAVBIDAO<M02Salesperson> impleme
 		return new  ResultObject(list, totalCount);
 	}
 
+	@Override
+	public M02Salesperson getM02SalespersonBySales(String sales) {
+		DetachedCriteria criteria = DetachedCriteria.forClass(M02Salesperson.class);
+
+		criteria.add(Restrictions.eq("sales", sales));
+
+		return getUniqueResult(criteria);
+	}
+
 }

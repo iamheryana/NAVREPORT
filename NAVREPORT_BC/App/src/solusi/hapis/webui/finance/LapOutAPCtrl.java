@@ -35,6 +35,8 @@ public class LapOutAPCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdAJ;
 	
 	
+	
+	
 	protected Combobox  cmbCurrency;
 	
 	
@@ -45,6 +47,7 @@ public class LapOutAPCtrl extends GFCBaseCtrl implements Serializable {
 		super.doAfterCompose(comp);  
 		
 		dbTglUpto.setValue((new Date())); 
+		
     	    	
     	txtKodeVendorUpto.setValue("ZZZZZZZZZZZZZZZZZZZZ");
     	
@@ -75,6 +78,9 @@ public class LapOutAPCtrl extends GFCBaseCtrl implements Serializable {
 			}			
 			
 
+
+			
+			
 		Date vTglUpto = new Date();   
 		if(CommonUtils.isNotEmpty(dbTglUpto.getValue()) == true){  
 			vTglUpto = dbTglUpto.getValue();
