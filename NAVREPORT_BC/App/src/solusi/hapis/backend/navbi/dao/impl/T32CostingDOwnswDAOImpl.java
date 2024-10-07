@@ -32,6 +32,10 @@ public class T32CostingDOwnswDAOImpl extends BasisNAVBIDAO<T32CostingDOwnsw> imp
 				criteria.add(Restrictions.ilike("itemNo", parameterInput.get("itemNo").toString(), MatchMode.ANYWHERE));
 			}
 			
+			if (parameterInput.get("t29Id") != null) {
+				criteria.add(Restrictions.eq("t29.t29Id", parameterInput.get("t29Id")));
+			}
+			
 		}
 		
 		return getHibernateTemplate().findByCriteria(criteria);

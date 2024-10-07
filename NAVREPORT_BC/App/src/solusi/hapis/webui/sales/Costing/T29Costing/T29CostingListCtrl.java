@@ -38,6 +38,7 @@ import solusi.hapis.backend.navbi.model.T30CostingDHw3ps;
 import solusi.hapis.backend.navbi.model.T31CostingDAcsps;
 import solusi.hapis.backend.navbi.model.T32CostingDOwnsw;
 import solusi.hapis.backend.navbi.model.T33CostingDOther;
+import solusi.hapis.backend.navbi.model.T34CostingDPayment;
 import solusi.hapis.backend.parameter.service.SelectQueryService;
 import solusi.hapis.common.CommonUtils;
 import solusi.hapis.webui.util.GFCBaseListCtrl;
@@ -62,6 +63,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 	private List<T31CostingDAcsps> list_T31CostingDAcspsList = new ArrayList<T31CostingDAcsps>();
 	private List<T32CostingDOwnsw> list_T32CostingDOwnswList = new ArrayList<T32CostingDOwnsw>();
 	private List<T33CostingDOther> list_T33CostingDOtherList = new ArrayList<T33CostingDOther>();
+	private List<T34CostingDPayment> list_T34CostingDPaymentList = new ArrayList<T34CostingDPayment>();
 	  
    	
     private ListModelList modelList_T29CostingList = new ListModelList();
@@ -78,6 +80,8 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
     protected Listheader listheader_T29CostingList_NoSO;
     protected Listheader listheader_T29CostingList_NoPOCustomer;
     protected Listheader listheader_T29CostingList_Customer;
+    protected Listheader listheader_T29CostingList_FlagInvoice;
+    protected Listheader listheader_T29CostingList_FlagLunas;
     
  
     // Search Box Components 
@@ -88,8 +92,10 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
  	protected Textbox txtNoSO;
  	protected Textbox txtNoPOCustomer;
  	protected Textbox txtCustomer;
-    
+
  	protected Combobox cmbPosisi;
+ 	protected Combobox cmbFlagInvoice;
+ 	protected Combobox cmbFlagLunas;
  	
  	private SelectQueryService selectQueryService;
      
@@ -203,8 +209,14 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
        
         listheader_T29CostingList_Customer.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_CUSTOMER));
         listheader_T29CostingList_Customer.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_CUSTOMER));        
-       
               
+        listheader_T29CostingList_FlagInvoice.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_FLAGINVOICE));
+        listheader_T29CostingList_FlagInvoice.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_FLAGINVOICE));        
+        
+        listheader_T29CostingList_FlagLunas.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_FLAGLUNAS));
+        listheader_T29CostingList_FlagLunas.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_FLAGLUNAS));        
+       
+        
         getSearchData();
         
         listBoxT29Costing.setItemRenderer(renderTable());
@@ -218,9 +230,8 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 		Collection<String> filterSales = new HashSet<String>();
 		String vUser = SecurityContextHolder.getContext().getAuthentication().getName();
 		
-		//if (vUser.equals("admin") == true){
-		
-		//} else 
+		if (vUser.equals("admin") == true){
+		} else 
 		{
 			String vALL = "XXX";
 			List<Object[]> vResultFilterUser = selectQueryService.QueryFilterUserCosting(vUser);
@@ -301,6 +312,14 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 		}
 		
 		
+		if (cmbFlagInvoice.getSelectedIndex() != 0) {
+			parameterInput.put("flagInvoice", (String) cmbFlagInvoice.getSelectedItem().getValue());
+		}
+		
+		if (cmbFlagLunas.getSelectedIndex() != 0) {
+			parameterInput.put("flagLunas", (String) cmbFlagLunas.getSelectedItem().getValue());
+		}
+		
 		
 		list_T29CostingList.clear();
 		
@@ -323,6 +342,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 		list_T31CostingDAcspsList.clear();
 		list_T32CostingDOwnswList.clear();
 		list_T33CostingDOtherList.clear();
+		list_T34CostingDPaymentList.clear();
 		
 		if (t29CostingH != null) {
 			Map<Object, Object> parameterInputDetail = new HashMap<Object, Object>();		
@@ -364,6 +384,14 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 				//paging_T30CostingDHw3psList.setActivePage(0);
 			}
 			
+			
+			List<T34CostingDPayment> tempT34CostingDPayment = getT29CostingMainCtrl().getT29CostingHService().getListT34CostingDPayment(parameterInputDetail); 
+			if (CommonUtils.isNotEmpty(tempT34CostingDPayment)) {
+				list_T34CostingDPaymentList.addAll(tempT34CostingDPayment);
+				//startT30CostingDHw3psList = 0;
+				
+				//paging_T30CostingDHw3psList.setActivePage(0);
+			}
 			
 		}
 		
@@ -426,6 +454,14 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
       
                 lc = new Listcell(rec.getFlagStatus());
                 lc.setParent(item);
+                
+                String vFlagInvoice = rec.getFlagInvoice().equals("Y")?"Sudah":"Belum";
+                lc = new Listcell(vFlagInvoice);
+                lc.setParent(item); 
+                
+                String vFlagLunas = rec.getFlagLunas().equals("Y")?"Sudah":"Belum";
+                lc = new Listcell(vFlagLunas);
+                lc.setParent(item); 
 	                
                 item.setValue(data);
                 item.setAttribute("data", data);
@@ -454,7 +490,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 	            
 	            Events.sendEvent(new Event("onSelect", getT29CostingMainCtrl().tabT29CostingDetail, selectedData));
 	            
-	            getT29CostingMainCtrl().getT29CostingDetailCtrl().doRenderMode("View"); 
+	            getT29CostingMainCtrl().getT29CostingDetailCtrl().doRenderMode("View", "NA"); 
 			}
 		}
     }
@@ -516,6 +552,14 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
     	sortingData(listheader_T29CostingList_Customer, T29CostingComparator.COMPARE_BY_CUSTOMER);
     }
     
+    public void onSort$listheader_T29CostingList_FlagInvoice(Event event) { 
+    	sortingData(listheader_T29CostingList_FlagInvoice, T29CostingComparator.COMPARE_BY_FLAGINVOICE);
+    }
+    
+    public void onSort$listheader_T29CostingList_FlagLunas(Event event) { 
+    	sortingData(listheader_T29CostingList_FlagLunas, T29CostingComparator.COMPARE_BY_FLAGLUNAS);
+    }
+    
     private void sortingData(Listheader listHeader, int sortBy){
     	if(CommonUtils.isNotEmpty(listHeader.getSortDirection())){
     		if(listHeader.getSortDirection().equals("ascending")){
@@ -541,9 +585,11 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
     	txtNoSO.setValue(null);
     	txtNoPOCustomer.setValue(null);
     	txtCustomer.setValue(null);
+
     
     	cmbPosisi.setSelectedIndex(0);
-
+    	cmbFlagInvoice.setSelectedIndex(0);
+    	cmbFlagLunas.setSelectedIndex(0);
     }
 
     
@@ -612,6 +658,15 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 	public void setList_T33CostingDOtherList(
 			List<T33CostingDOther> list_T33CostingDOtherList) {
 		this.list_T33CostingDOtherList = list_T33CostingDOtherList;
+	}
+
+	public List<T34CostingDPayment> getList_T34CostingDPaymentList() {
+		return list_T34CostingDPaymentList;
+	}
+
+	public void setList_T34CostingDPaymentList(
+			List<T34CostingDPayment> list_T34CostingDPaymentList) {
+		this.list_T34CostingDPaymentList = list_T34CostingDPaymentList;
 	}
     
 	

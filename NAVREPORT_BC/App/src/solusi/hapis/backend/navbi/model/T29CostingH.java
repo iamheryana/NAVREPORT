@@ -18,6 +18,7 @@ public class T29CostingH {
 	private String salesman;	
 	private String noPoCustomer;	
 	private String customer;	
+	private String noPenawaran;
 	private String fileBso;
 	private String fileInfoPrice;
 	private String filePoCustomer;
@@ -31,6 +32,7 @@ public class T29CostingH {
 	private BigDecimal totalSales;
 	private BigDecimal totalCogs;
 	private BigDecimal marginPcn;
+	private BigDecimal marginPcnNonacsps;
 	
 	private BigDecimal incentiveFormulaHw3ps;
 	private BigDecimal incentiveFormulaAcsps;
@@ -75,10 +77,12 @@ public class T29CostingH {
 	private Media uploadInfoPrice;
 	private Media uploadPoCustomer;
 	
-	private String noInvoice;
-	private Date tglInvoice;	
-	private String noLunas;
-	private Date tglLunas;	
+	private BigDecimal amountInvoice;
+	private BigDecimal amountLunas;
+	
+	private String flagInvoice;
+	private String flagLunas;
+	
 	private String flagStatus;	
 	private Integer version;
 	private String createdBy;
@@ -90,7 +94,7 @@ public class T29CostingH {
 	private Set<T31CostingDAcsps> t31CostingDAcspss = new HashSet<T31CostingDAcsps>(0);
 	private Set<T32CostingDOwnsw> t32CostingDOwnsws = new HashSet<T32CostingDOwnsw>(0);
 	private Set<T33CostingDOther> t33CostingDOthers = new HashSet<T33CostingDOther>(0);
-	
+	private Set<T34CostingDPayment> t34CostingDPayments = new HashSet<T34CostingDPayment>(0);
 	
 	
 	public T29CostingH(){
@@ -480,37 +484,21 @@ public class T29CostingH {
 	public void setAmountNonsales(BigDecimal amountNonsales) {
 		this.amountNonsales = amountNonsales;
 	}
-
-	public String getNoInvoice() {
-		return noInvoice;
+	
+	public String getFlagInvoice() {
+		return flagInvoice;
 	}
 
-	public void setNoInvoice(String noInvoice) {
-		this.noInvoice = noInvoice;
+	public void setFlagInvoice(String flagInvoice) {
+		this.flagInvoice = flagInvoice;
 	}
 
-	public Date getTglInvoice() {
-		return tglInvoice;
+	public String getFlagLunas() {
+		return flagLunas;
 	}
 
-	public void setTglInvoice(Date tglInvoice) {
-		this.tglInvoice = tglInvoice;
-	}
-
-	public String getNoLunas() {
-		return noLunas;
-	}
-
-	public void setNoLunas(String noLunas) {
-		this.noLunas = noLunas;
-	}
-
-	public Date getTglLunas() {
-		return tglLunas;
-	}
-
-	public void setTglLunas(Date tglLunas) {
-		this.tglLunas = tglLunas;
+	public void setFlagLunas(String flagLunas) {
+		this.flagLunas = flagLunas;
 	}
 
 	public String getFlagStatus() {
@@ -643,6 +631,46 @@ public class T29CostingH {
 
 	public void setUploadPoCustomer(Media uploadPoCustomer) {
 		this.uploadPoCustomer = uploadPoCustomer;
+	}
+
+	public String getNoPenawaran() {
+		return noPenawaran;
+	}
+
+	public void setNoPenawaran(String noPenawaran) {
+		this.noPenawaran = noPenawaran;
+	}
+
+	public Set<T34CostingDPayment> getT34CostingDPayments() {
+		return t34CostingDPayments;
+	}
+
+	public void setT34CostingDPayments(Set<T34CostingDPayment> t34CostingDPayments) {
+		this.t34CostingDPayments = t34CostingDPayments;
+	}
+
+	public BigDecimal getAmountInvoice() {
+		return amountInvoice;
+	}
+
+	public void setAmountInvoice(BigDecimal amountInvoice) {
+		this.amountInvoice = amountInvoice;
+	}
+
+	public BigDecimal getAmountLunas() {
+		return amountLunas;
+	}
+
+	public void setAmountLunas(BigDecimal amountLunas) {
+		this.amountLunas = amountLunas;
+	}
+
+	public BigDecimal getMarginPcnNonacsps() {
+		return marginPcnNonacsps;
+	}
+
+	public void setMarginPcnNonacsps(BigDecimal marginPcnNonacsps) {
+		this.marginPcnNonacsps = marginPcnNonacsps;
 	}
 
 	

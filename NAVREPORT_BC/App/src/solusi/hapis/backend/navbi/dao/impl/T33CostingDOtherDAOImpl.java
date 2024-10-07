@@ -9,7 +9,6 @@ import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Restrictions;
 
 import solusi.hapis.backend.navbi.dao.T33CostingDOtherDAO;
-import solusi.hapis.backend.navbi.model.T32CostingDOwnsw;
 import solusi.hapis.backend.navbi.model.T33CostingDOther;
 import solusi.hapis.backend.security.dao.impl.BasisNAVBIDAO;
 

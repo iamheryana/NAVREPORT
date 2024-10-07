@@ -24,7 +24,9 @@ import org.zkoss.zul.Radio;
 import org.zkoss.zul.Radiogroup;
 import org.zkoss.zul.Textbox;
 
+import solusi.hapis.backend.navbi.model.P06ParamDefaultRpt;
 import solusi.hapis.backend.navbi.service.CallStoreProcOrFuncService;
+import solusi.hapis.backend.navbi.service.P06ParamDefaultRptService;
 import solusi.hapis.backend.parameter.service.SelectQueryService;
 import solusi.hapis.common.CommonUtils;
 import solusi.hapis.webui.reports.util.JReportGeneratorWindow;
@@ -78,7 +80,7 @@ public class OutSOPaymentDueCtrl extends GFCBaseCtrl implements Serializable {
 	protected Decimalbox dcmNilai;
 	
 	private SelectQueryService selectQueryService;
-	
+	private P06ParamDefaultRptService p06ParamDefaultRptService;
 	private CallStoreProcOrFuncService callStoreProcOrFuncService;
 	
 	@Override
@@ -88,7 +90,28 @@ public class OutSOPaymentDueCtrl extends GFCBaseCtrl implements Serializable {
     	dbTglParamFrom.setValue((new Date()));  
     	
     	rdALL.setSelected(true); 
-    	rdC.setSelected(true); 
+    	
+    	P06ParamDefaultRpt aParam =	p06ParamDefaultRptService.getP06ParamDefaultRptByKode("01");
+    	if (aParam != null){
+    		String vDefaultKolomCf = aParam.getPeriodeKolomCf();
+    		if (vDefaultKolomCf.equals("N") == true){
+				rdN.setSelected(true);
+			} else {
+				if (vDefaultKolomCf.equals("W") == true){
+					rdW.setSelected(true);
+				} else {
+					if (vDefaultKolomCf.equals("C") == true){
+						rdC.setSelected(true);
+					} else {
+						if (vDefaultKolomCf.equals("M") == true){
+							rdM.setSelected(true);
+						}
+					}
+				}
+			}
+    	}
+
+    	
     
     	Calendar cTgl = Calendar.getInstance();		
 		cTgl.setTime(new Date());

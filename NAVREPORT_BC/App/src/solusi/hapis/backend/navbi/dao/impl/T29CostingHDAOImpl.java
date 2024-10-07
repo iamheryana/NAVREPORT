@@ -67,8 +67,13 @@ DetachedCriteria criteria = DetachedCriteria.forClass(T29CostingH.class);
 				criteria.add(Restrictions.ilike("flagStatus", parameterInput.get("flagStatus").toString(), MatchMode.START));
 			}
 			
+			if (parameterInput.get("flagInvoice") != null) {
+				criteria.add(Restrictions.eq("flagInvoice", parameterInput.get("flagInvoice").toString()));
+			}
 			
-			
+			if (parameterInput.get("flagLunas") != null) {
+				criteria.add(Restrictions.eq("flagLunas", parameterInput.get("flagLunas").toString()));
+			}
 		
 		}
 		

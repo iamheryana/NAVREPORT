@@ -19,6 +19,9 @@ public class T29CostingComparator implements Comparator<Object>, Serializable {
 	public static int COMPARE_BY_NOSO = 5;
 	public static int COMPARE_BY_NOPOCUSTOMER = 6;
 	public static int COMPARE_BY_CUSTOMER = 7;
+	public static int COMPARE_BY_FLAGINVOICE = 8;
+	public static int COMPARE_BY_FLAGLUNAS = 9;
+	
 	
 	private boolean asc = true;
 	private int type = 0;
@@ -84,6 +87,12 @@ public class T29CostingComparator implements Comparator<Object>, Serializable {
 					* (asc ? 1 : -1);	
 		case 7: 
 			return obj1.getCustomer().compareTo(obj2.getCustomer())
+					* (asc ? 1 : -1);
+		case 8: 
+			return obj1.getFlagInvoice().compareTo(obj2.getFlagInvoice())
+					* (asc ? 1 : -1);
+		case 9: 
+			return obj1.getFlagLunas().compareTo(obj2.getFlagLunas())
 					* (asc ? 1 : -1);
 		default: 
 			return obj1.getNoCosting().compareTo(obj2.getNoCosting()) * (asc ? 1 : -1);

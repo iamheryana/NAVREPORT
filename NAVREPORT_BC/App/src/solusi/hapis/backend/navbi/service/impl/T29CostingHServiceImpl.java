@@ -8,11 +8,13 @@ import solusi.hapis.backend.navbi.dao.T30CostingDHw3psDAO;
 import solusi.hapis.backend.navbi.dao.T31CostingDAcspsDAO;
 import solusi.hapis.backend.navbi.dao.T32CostingDOwnswDAO;
 import solusi.hapis.backend.navbi.dao.T33CostingDOtherDAO;
+import solusi.hapis.backend.navbi.dao.T34CostingDPaymentDAO;
 import solusi.hapis.backend.navbi.model.T29CostingH;
 import solusi.hapis.backend.navbi.model.T30CostingDHw3ps;
 import solusi.hapis.backend.navbi.model.T31CostingDAcsps;
 import solusi.hapis.backend.navbi.model.T32CostingDOwnsw;
 import solusi.hapis.backend.navbi.model.T33CostingDOther;
+import solusi.hapis.backend.navbi.model.T34CostingDPayment;
 import solusi.hapis.backend.navbi.service.T29CostingHService;
 import solusi.hapis.common.CommonUtils;
 
@@ -22,6 +24,7 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 	T31CostingDAcspsDAO t31CostingDAcspsDAO;
 	T32CostingDOwnswDAO t32CostingDOwnswDAO;
 	T33CostingDOtherDAO t33CostingDOtherDAO;
+	T34CostingDPaymentDAO t34CostingDPaymentDAO;
 	
 	@Override
 	public String insert(T29CostingH t29CostingH) {
@@ -60,6 +63,13 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 			}
 		}
 		
+		if(CommonUtils.isNotEmpty(t29CostingH.getT34CostingDPayments())){
+			for (T34CostingDPayment t34 : t29CostingH.getT34CostingDPayments()) {
+				t34.setT29CostingH(aHeader);
+				t34CostingDPaymentDAO.save(t34);
+			}
+		}
+		
 		return vNoCosting;
 		
 	}
@@ -69,7 +79,9 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 			List<T30CostingDHw3ps> listDetail1Delete,
 			List<T31CostingDAcsps> listDetail2Delete,
 			List<T32CostingDOwnsw> listDetail3Delete,
-			List<T33CostingDOther> listDetail4Delete) {
+			List<T33CostingDOther> listDetail4Delete,
+			List<T34CostingDPayment> listDetail5Delete
+			) {
 		
 		// Update Header
 		t29CostingHDAO.update(t29CostingH);
@@ -152,6 +164,26 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 					t33CostingDOtherDAO.update(t33);
 				} else {
 					t33CostingDOtherDAO.save(t33);
+				}			
+			}
+		}
+		
+		
+		// Detail 5 
+		if (CommonUtils.isNotEmpty(listDetail5Delete)) {
+			for (T34CostingDPayment deleteT34 : listDetail5Delete) {
+				t34CostingDPaymentDAO.delete(deleteT34);
+				t34CostingDPaymentDAO.flush();
+			}
+		}
+		
+		if (CommonUtils.isNotEmpty(t29CostingH.getT34CostingDPayments())){
+			for (T34CostingDPayment t34 : t29CostingH.getT34CostingDPayments()) {
+				t34.setT29CostingH(t29CostingH);
+				if (t34.getT34Id() > 0) {
+					t34CostingDPaymentDAO.update(t34);
+				} else {
+					t34CostingDPaymentDAO.save(t34);
 				}			
 			}
 		}
@@ -239,6 +271,25 @@ public class T29CostingHServiceImpl implements T29CostingHService {
 
 	public void setT33CostingDOtherDAO(T33CostingDOtherDAO t33CostingDOtherDAO) {
 		this.t33CostingDOtherDAO = t33CostingDOtherDAO;
+	}
+
+	public T34CostingDPaymentDAO getT34CostingDPaymentDAO() {
+		return t34CostingDPaymentDAO;
+	}
+
+	public void setT34CostingDPaymentDAO(T34CostingDPaymentDAO t34CostingDPaymentDAO) {
+		this.t34CostingDPaymentDAO = t34CostingDPaymentDAO;
+	}
+
+	@Override
+	public void updateSatus(T29CostingH t29CostingH) {
+		t29CostingHDAO.update(t29CostingH);		
+	}
+
+	@Override
+	public List<T34CostingDPayment> getListT34CostingDPayment(
+			Map<Object, Object> parameterInput) {
+		return t34CostingDPaymentDAO.getListT34CostingDPayment(parameterInput);
 	}
 
 

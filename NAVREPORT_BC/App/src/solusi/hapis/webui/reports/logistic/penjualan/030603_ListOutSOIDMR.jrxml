@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="030603_ListOutSOIDMR" language="groovy" pageWidth="1825" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1785" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="030603_ListOutSOIDMR" language="groovy" pageWidth="2500" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2460" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="1.6105100000000256"/>
-	<property name="ireport.x" value="1176"/>
+	<property name="ireport.x" value="2411"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="TglFrom" class="java.util.Date"/>
 	<parameter name="TglUpto" class="java.util.Date"/>
@@ -15,6 +15,7 @@
 		, X.NO_SP
 		, X.KODE_BARANG
 		, X.NAMA_BARANG
+		, X.PRODUCT
 		, X.QTY
 		, X.NO_SO
 		, X.NO_DO
@@ -30,6 +31,7 @@ SELECT
 		, SLH.[External Document No_] AS NO_SP
 		, SLL.[No_] AS KODE_BARANG
 		, SLL.[Description] AS NAMA_BARANG
+		, DIMD.PRODUCT_CODE + ' - '+DIMD.PRODUCT AS PRODUCT
 		, SLL.[Quantity] AS QTY
 		, SLH.[No_] AS NO_SO
 		, SHL.[Document No_] AS NO_DO
@@ -37,6 +39,14 @@ SELECT
 		, SHL.[Posting Date] AS TGL_KIRIM
 FROM [dbo].[BC_AUTOJAYA$Sales Header] SLH
 INNER JOIN [dbo].[BC_AUTOJAYA$Sales Line] SLL ON SLL.[Document Type] = SLH.[Document Type] AND SLL.[Document No_] = SLH.[No_]
+LEFT JOIN	(
+				SELECT X.[Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+						,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+				FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry] X
+				LEFT JOIN [dbo].[BC_AUTOJAYA$Dimension Value] Y ON X.[Dimension Code] = Y.[Dimension Code] AND X.[Dimension Value Code] = Y.[Code]
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.DIM_ID = SLL.[Dimension Set ID]
 LEFT JOIN	(
 				SELECT	[Document Type]
 						, [Document No_]
@@ -46,7 +56,7 @@ LEFT JOIN	(
 			) SLL2 ON SLL2.[Document Type] = SLH.[Document Type] AND SLL2.[Document No_] = SLH.[No_]
 LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Shipment Line] SHL ON SHL.[Order No_] = SLL.[Document No_] AND SHL.[Order Line No_]  = SLL.[Line No_]
 WHERE	SLH.[Document Type] = 1 AND
-		SLH.[No_] LIKE '9SO%' AND
+		SLH.[Customer Posting Group] = 'INDOMARCO'AND
 		SLH.[Status] <> 0 AND
 		SLL.[Type] = 2
 UNION ALL
@@ -59,6 +69,7 @@ SELECT
 		, SLH.[External Document No_] AS NO_SP
 		, SLL.[No_] AS KODE_BARANG
 		, SLL.[Description] AS NAMA_BARANG
+		, DIMD.PRODUCT_CODE + ' - '+DIMD.PRODUCT AS PRODUCT
 		, SLL.[Quantity] AS QTY
 		, SLH.[No_] AS NO_SO
 		, SHL.[Document No_] AS NO_DO
@@ -66,6 +77,14 @@ SELECT
 		, SHL.[Posting Date] AS TGL_KIRIM
 FROM [dbo].[BC_SOLUSI$Sales Header] SLH
 INNER JOIN [dbo].[BC_SOLUSI$Sales Line] SLL ON SLL.[Document Type] = SLH.[Document Type] AND SLL.[Document No_] = SLH.[No_]
+LEFT JOIN	(
+				SELECT X.[Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN X.[Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+						,MAX(CASE WHEN X.[Dimension Code] = 'PRODUCT' THEN Y.[Name] ELSE NULL END) AS PRODUCT
+				FROM [dbo].[BC_SOLUSI$Dimension Set Entry] X
+				LEFT JOIN [dbo].[BC_SOLUSI$Dimension Value] Y ON X.[Dimension Code] = Y.[Dimension Code] AND X.[Dimension Value Code] = Y.[Code]
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.DIM_ID = SLL.[Dimension Set ID]
 LEFT JOIN	(
 				SELECT	[Document Type]
 						, [Document No_]
@@ -75,12 +94,12 @@ LEFT JOIN	(
 			) SLL2 ON SLL2.[Document Type] = SLH.[Document Type] AND SLL2.[Document No_] = SLH.[No_]
 LEFT JOIN [dbo].[BC_SOLUSI$Sales Shipment Line] SHL ON SHL.[Order No_] = SLL.[Document No_] AND SHL.[Order Line No_]  = SLL.[Line No_]
 WHERE	SLH.[Document Type] = 1 AND
-		SLH.[No_] LIKE '9SO%' AND
+		SLH.[Customer Posting Group] = 'INDOMARCO'AND
 		SLH.[Status] <> 0 AND
 		SLL.[Type] = 2
 		) X
-WHERE (X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
-($P{ItemNo} = 'ALL' OR X.KODE_BARANG = $P{ItemNo})]]>
+WHERE	(X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
+		($P{ItemNo} = 'ALL' OR X.KODE_BARANG = $P{ItemNo})]]>
 	</queryString>
 	<field name="COMPANY" class="java.lang.String"/>
 	<field name="UNIT" class="java.lang.String"/>
@@ -90,6 +109,7 @@ WHERE (X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
 	<field name="NO_SP" class="java.lang.String"/>
 	<field name="KODE_BARANG" class="java.lang.String"/>
 	<field name="NAMA_BARANG" class="java.lang.String"/>
+	<field name="PRODUCT" class="java.lang.String"/>
 	<field name="QTY" class="java.math.BigDecimal"/>
 	<field name="NO_SO" class="java.lang.String"/>
 	<field name="NO_DO" class="java.lang.String"/>
@@ -168,63 +188,63 @@ WHERE (X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
 				<text><![CDATA[Tgl. SP]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="775" y="84" width="75" height="14" uuid="3c465ac3-a845-4a13-be42-eb76f5c68669"/>
+				<reportElement x="775" y="84" width="150" height="14" uuid="3c465ac3-a845-4a13-be42-eb76f5c68669"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[No. SP]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="850" y="84" width="75" height="14" uuid="bc01780b-59ec-4bb4-9ad9-387a48c94fe1"/>
+				<reportElement x="925" y="84" width="75" height="14" uuid="bc01780b-59ec-4bb4-9ad9-387a48c94fe1"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Tgl. SP Expired]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="925" y="84" width="100" height="14" uuid="d097a250-6658-4362-8676-b04a37fcb6c0"/>
+				<reportElement x="1000" y="84" width="150" height="14" uuid="d097a250-6658-4362-8676-b04a37fcb6c0"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Kode Barang]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1025" y="84" width="250" height="14" uuid="ebcda989-eb1e-4f25-b8ba-d6fe5fcb3a13"/>
+				<reportElement x="1150" y="84" width="500" height="14" uuid="ebcda989-eb1e-4f25-b8ba-d6fe5fcb3a13"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Nama Barang]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1325" y="84" width="75" height="14" uuid="62e5e54c-4871-4588-8890-3111be226706"/>
+				<reportElement x="1900" y="84" width="75" height="14" uuid="62e5e54c-4871-4588-8890-3111be226706"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[SO#]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1400" y="84" width="75" height="14" uuid="29b3bce3-c755-4915-a38f-e00621afb421"/>
+				<reportElement x="1975" y="84" width="75" height="14" uuid="29b3bce3-c755-4915-a38f-e00621afb421"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[DO#]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1475" y="84" width="120" height="14" uuid="81506798-7ad8-4a09-854a-1c4c1894cf09"/>
+				<reportElement x="2050" y="84" width="120" height="14" uuid="81506798-7ad8-4a09-854a-1c4c1894cf09"/>
 				<textElement textAlignment="Right">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Total Nilai PO (EXC TAX)]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1595" y="84" width="100" height="14" uuid="24ae3d5a-55be-4e3f-9c58-b8d26e9e8fb3"/>
+				<reportElement x="2170" y="84" width="100" height="14" uuid="24ae3d5a-55be-4e3f-9c58-b8d26e9e8fb3"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Tgl. Kirim Supplier]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1695" y="84" width="90" height="14" uuid="365537e6-9d75-4000-92c4-d5ffdca39e42"/>
+				<reportElement x="2270" y="84" width="90" height="14" uuid="365537e6-9d75-4000-92c4-d5ffdca39e42"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -280,11 +300,18 @@ WHERE (X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
 				<text><![CDATA[]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1275" y="84" width="50" height="14" uuid="bd45c6e9-af7b-4c96-bdb3-e3599898d5b4"/>
+				<reportElement x="1850" y="84" width="50" height="14" uuid="bd45c6e9-af7b-4c96-bdb3-e3599898d5b4"/>
 				<textElement textAlignment="Right">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Qty]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1650" y="84" width="200" height="14" uuid="09f4f52f-5fb2-4c33-aa61-c32d9eb1c6b9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Product Group]]></text>
 			</staticText>
 		</band>
 	</title>
@@ -319,7 +346,7 @@ WHERE (X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
 				<textFieldExpression><![CDATA[$F{TGL_SP}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement x="775" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="3a87382c-11e6-4766-9854-84198f3edc70"/>
+				<reportElement x="775" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="3a87382c-11e6-4766-9854-84198f3edc70"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
@@ -333,53 +360,60 @@ WHERE (X.TGL_SP >=  $P{TglFrom} AND X.TGL_SP <= $P{TglUpto}) AND
 				<textFieldExpression><![CDATA[$F{ALOKASI}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement x="925" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="100a71dc-ff61-4563-a76e-85b8ad03a081"/>
+				<reportElement x="1000" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="100a71dc-ff61-4563-a76e-85b8ad03a081"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{KODE_BARANG}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement x="1025" y="0" width="250" height="14" isPrintWhenDetailOverflows="true" uuid="61ab1343-96f4-41c1-ba5c-6f87372ccabe"/>
+				<reportElement x="1150" y="0" width="500" height="14" isPrintWhenDetailOverflows="true" uuid="61ab1343-96f4-41c1-ba5c-6f87372ccabe"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NAMA_BARANG}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement x="1325" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="578195b2-3f33-4497-83a8-9bcc1f236a60"/>
+				<reportElement x="1900" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="578195b2-3f33-4497-83a8-9bcc1f236a60"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NO_SO}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-				<reportElement x="1400" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e67aa56b-28a0-44fd-9d84-856aa3ddbb98"/>
+				<reportElement x="1975" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e67aa56b-28a0-44fd-9d84-856aa3ddbb98"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NO_DO}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
-				<reportElement x="1475" y="0" width="120" height="14" isPrintWhenDetailOverflows="true" uuid="7089257d-2cb7-49f3-a0a9-79c74ebc9c2f"/>
+				<reportElement x="2050" y="0" width="120" height="14" isPrintWhenDetailOverflows="true" uuid="7089257d-2cb7-49f3-a0a9-79c74ebc9c2f"/>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{AMOUNT_PO}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
-				<reportElement x="1595" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="b5bc1fc9-52c5-4214-868e-800dd92a1f44"/>
+				<reportElement x="2170" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="b5bc1fc9-52c5-4214-868e-800dd92a1f44"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{TGL_KIRIM}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
-				<reportElement x="1275" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="3c2bffee-ea89-4f92-a999-acd9acfd73ee"/>
+				<reportElement x="1850" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="3c2bffee-ea89-4f92-a999-acd9acfd73ee"/>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{QTY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1650" y="0" width="200" height="14" isPrintWhenDetailOverflows="true" uuid="f7ad778e-0bcc-4fb0-b189-3de66d7e9226"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PRODUCT}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

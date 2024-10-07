@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.zkoss.util.media.Media;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zk.ui.Component;
@@ -47,6 +46,7 @@ import solusi.hapis.backend.navbi.model.T30CostingDHw3ps;
 import solusi.hapis.backend.navbi.model.T31CostingDAcsps;
 import solusi.hapis.backend.navbi.model.T32CostingDOwnsw;
 import solusi.hapis.backend.navbi.model.T33CostingDOther;
+import solusi.hapis.backend.navbi.model.T34CostingDPayment;
 import solusi.hapis.backend.navbi.model.V01CustomerNav;
 import solusi.hapis.backend.parameter.service.SelectQueryService;
 import solusi.hapis.common.CommonUtils;
@@ -79,6 +79,8 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Textbox txtNoSo;	
 	protected Textbox txtNoPoCustomer;
 	protected Textbox txtCustomer;
+	protected Textbox txtNoPenawaran;
+	
 	
 	protected Decimalbox dcbSalesHW3PS;	
 	protected Decimalbox dcbCOGSHW3PS;
@@ -87,11 +89,13 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Decimalbox dcbsalesOWNSW;
 	protected Decimalbox dcbcogsOTHERS;
 	
+	protected Decimalbox dcbSalesHW3PS_2;
+	
+	protected Decimalbox dcbTotalCOGS_2;
+	protected Decimalbox dcbMarginPcnNonacsps;
+	
 	
 	protected Decimalbox dcbTotalSales;
-	
-	
-	protected Decimalbox dcbSalesHW3PS_2;
 	protected Decimalbox dcbTotalCOGS;
 	protected Decimalbox dcbMarginPcn;
 	
@@ -144,6 +148,10 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Decimalbox dcbAmountSalesTqs;
 	
 	
+	protected Decimalbox dcbAmountInvoice;
+	protected Decimalbox dcbAmountLunas;
+	
+	
  
 	protected Datebox dbTglCosting;
 	
@@ -173,6 +181,13 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Button btnView_D;
 	protected Button btnEdit_D;
 	protected Button btnDelete_D;
+	
+	
+	// Button tabel Detail 5 - T34CostingD_PAYMENT
+	protected Button btnNew_E;
+	protected Button btnView_E;
+	protected Button btnEdit_E;
+	protected Button btnDelete_E;
 		
 	protected Button btnUploadBSO;
 	protected Button btnDownloadBSO;
@@ -219,6 +234,13 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Listheader listheader_T33CostingD_OTHER_CogsTotal;
 	protected Listheader listheader_T33CostingD_OTHER_Catatan;
 		
+	// Paging and list Detail 5 - T34CostingD_PAYMENT
+	protected Listheader listheader_T34CostingD_PAYMENT_NoInvoice;	
+	protected Listheader listheader_T34CostingD_PAYMENT_TglInvoice;
+	protected Listheader listheader_T34CostingD_PAYMENT_NilaiInvoice;
+	protected Listheader listheader_T34CostingD_PAYMENT_NoLunas;
+	protected Listheader listheader_T34CostingD_PAYMENT_TglLunas;
+	protected Listheader listheader_T34CostingD_PAYMENT_NilaiLunas;
 	
 	
 	protected Paging paging_T30CostingD_HW3PS_List;
@@ -248,6 +270,15 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	private ListModelList modelList_T33CostingD_OTHER_List = new ListModelList();
 	protected Listbox listBox_T33CostingD_OTHER;
 	private List<T33CostingDOther> list_Deleted_T33CostingD_OTHER_List = new ArrayList<T33CostingDOther>();
+	
+	protected Paging paging_T34CostingD_PAYMENT_List;
+	private int start_T34CostingD_PAYMENT_List;
+	private List<T34CostingDPayment> list_T34CostingD_PAYMENT_List = new ArrayList<T34CostingDPayment>();
+	private ListModelList modelList_T34CostingD_PAYMENT_List = new ListModelList();
+	protected Listbox listBox_T34CostingD_PAYMENT;
+	private List<T34CostingDPayment> list_Deleted_T34CostingD_PAYMENT_List = new ArrayList<T34CostingDPayment>();
+	
+	
 	
 	
 	protected Listbox list_Company;
@@ -296,13 +327,19 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				onPaging_T32CostingD_OWNSW_List());
 		listBox_T32CostingD_OWNSW.setItemRenderer(renderTable_T32CostingD_OWNSW());
 		
-		
 		// Paging and list Detail 4 - T33CostingD_OTHER
 		paging_T33CostingD_OTHER_List.setPageSize(CommonUtils.PAGE_SIZE_DETAIL);
 		paging_T33CostingD_OTHER_List.setDetailed(true);
 		paging_T33CostingD_OTHER_List.addEventListener("onPaging",
 				onPaging_T33CostingD_OTHER_List());
 		listBox_T33CostingD_OTHER.setItemRenderer(renderTable_T33CostingD_OTHER());
+		
+		// Paging and list Detail 5 - T34CostingD_PAYMENT
+		paging_T34CostingD_PAYMENT_List.setPageSize(CommonUtils.PAGE_SIZE_DETAIL);
+		paging_T34CostingD_PAYMENT_List.setDetailed(true);
+		paging_T34CostingD_PAYMENT_List.addEventListener("onPaging",
+				onPaging_T34CostingD_PAYMENT_List());
+		listBox_T34CostingD_PAYMENT.setItemRenderer(renderTable_T34CostingD_PAYMENT());
 		
 
 		if (arg.containsKey("ModuleMainController")) {
@@ -367,6 +404,20 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				start_T33CostingD_OTHER_List = pageNo
 						* paging_T33CostingD_OTHER_List.getPageSize();
 				setModel_T33CostingD_OTHER_List();
+			}
+		};
+	}
+	
+	private EventListener onPaging_T34CostingD_PAYMENT_List() {
+		return new EventListener() {
+
+			@Override
+			public void onEvent(Event event) throws Exception {
+				PagingEvent pe = (PagingEvent) event;
+				int pageNo = pe.getActivePage();
+				start_T34CostingD_PAYMENT_List = pageNo
+						* paging_T34CostingD_PAYMENT_List.getPageSize();
+				setModel_T34CostingD_PAYMENT_List();
 			}
 		};
 	}
@@ -541,6 +592,47 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 
 	}	
 
+	private void setModel_T34CostingD_PAYMENT_List() {
+		modelList_T34CostingD_PAYMENT_List.clear();
+
+		if (CommonUtils.isNotEmpty(list_T34CostingD_PAYMENT_List)) {
+
+			int end_T34CostingD_PAYMENT_List = 0;
+			if (start_T34CostingD_PAYMENT_List + paging_T34CostingD_PAYMENT_List.getPageSize() < list_T34CostingD_PAYMENT_List
+					.size()) {
+				end_T34CostingD_PAYMENT_List = start_T34CostingD_PAYMENT_List
+						+ paging_T34CostingD_PAYMENT_List.getPageSize();
+			} else {
+				end_T34CostingD_PAYMENT_List = list_T34CostingD_PAYMENT_List.size();
+			}
+
+			if (start_T34CostingD_PAYMENT_List > end_T34CostingD_PAYMENT_List) {
+				start_T34CostingD_PAYMENT_List = 0;
+				paging_T34CostingD_PAYMENT_List.setActivePage(0);
+			}
+
+			modelList_T34CostingD_PAYMENT_List.addAll(list_T34CostingD_PAYMENT_List.subList(
+					start_T34CostingD_PAYMENT_List, end_T34CostingD_PAYMENT_List));
+
+			paging_T34CostingD_PAYMENT_List.setDetailed(true);
+			paging_T34CostingD_PAYMENT_List
+					.setTotalSize(list_T34CostingD_PAYMENT_List.size());
+
+			listBox_T34CostingD_PAYMENT.setModel(modelList_T34CostingD_PAYMENT_List);
+			listBox_T34CostingD_PAYMENT.setSelectedIndex(0);
+
+			getT29CostingH().setT34CostingDPayments(new HashSet<T34CostingDPayment>(list_T34CostingD_PAYMENT_List));
+			
+		} else {
+			paging_T34CostingD_PAYMENT_List.setDetailed(false);
+			listBox_T34CostingD_PAYMENT.setModel(modelList_T34CostingD_PAYMENT_List);
+			paging_T34CostingD_PAYMENT_List.setTotalSize(0);
+			
+			getT29CostingH().setT34CostingDPayments(null);
+		}
+
+	}	
+	
 	private ListitemRenderer renderTable_T30CostingD_HW3PS() {
 		return new ListitemRenderer() {
 
@@ -702,6 +794,43 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 			}
 		};
 	}
+	
+	private ListitemRenderer renderTable_T34CostingD_PAYMENT() {
+		return new ListitemRenderer() {
+
+			@Override
+			public void render(Listitem item, Object data) throws Exception {
+
+				final T34CostingDPayment rec = (T34CostingDPayment) data;
+
+				Listcell lc;
+
+				lc = new Listcell(rec.getNoInvoice());
+				lc.setParent(item);				
+				
+				lc = new Listcell(CommonUtils.convertDateToString(rec.getTglInvoice()));
+                lc.setParent(item);
+				
+				lc = new Listcell(CommonUtils.formatNumberManual(rec.getNilaiInvoice(),"#,##0"));
+				lc.setStyle("text-align:right");
+				lc.setParent(item);
+				
+				lc = new Listcell(rec.getNoLunas());
+				lc.setParent(item);				
+				
+				lc = new Listcell(CommonUtils.convertDateToString(rec.getTglLunas()));
+                lc.setParent(item);
+				
+				lc = new Listcell(CommonUtils.formatNumberManual(rec.getNilaiLunas(),"#,##0"));
+				lc.setStyle("text-align:right");
+				lc.setParent(item);
+				
+				item.setValue(data);
+				item.setAttribute("data", data);
+			}
+		};
+	}
+	
     private EventListener onEnterForm(){
     	return new EventListener() {
 			
@@ -886,6 +1015,26 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		listheader_T33CostingD_OTHER_Catatan.setSortAscending(new T33CostingD_OTHER_Comparator(true, T33CostingD_OTHER_Comparator.COMPARE_BY_CATATAN));
 		listheader_T33CostingD_OTHER_Catatan.setSortDescending(new T33CostingD_OTHER_Comparator(false, T33CostingD_OTHER_Comparator.COMPARE_BY_CATATAN));        
 
+		//Detail 4 - T34CostingD_PAYMENT		
+		listheader_T34CostingD_PAYMENT_NoInvoice.setSortAscending(new T34CostingD_PAYMENT_Comparator(true, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NOINVOICE));
+		listheader_T34CostingD_PAYMENT_NoInvoice.setSortDescending(new T34CostingD_PAYMENT_Comparator(false, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NOINVOICE));        
+
+		listheader_T34CostingD_PAYMENT_TglInvoice.setSortAscending(new T34CostingD_PAYMENT_Comparator(true, T34CostingD_PAYMENT_Comparator.COMPARE_BY_TGLINVOICE));
+		listheader_T34CostingD_PAYMENT_TglInvoice.setSortDescending(new T34CostingD_PAYMENT_Comparator(false, T34CostingD_PAYMENT_Comparator.COMPARE_BY_TGLINVOICE));        
+		
+		listheader_T34CostingD_PAYMENT_NilaiInvoice.setSortAscending(new T34CostingD_PAYMENT_Comparator(true, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NILAIINVOICE));
+		listheader_T34CostingD_PAYMENT_NilaiInvoice.setSortDescending(new T34CostingD_PAYMENT_Comparator(false, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NILAIINVOICE));        
+
+		listheader_T34CostingD_PAYMENT_NoLunas.setSortAscending(new T34CostingD_PAYMENT_Comparator(true, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NOLUNAS));
+		listheader_T34CostingD_PAYMENT_NoLunas.setSortDescending(new T34CostingD_PAYMENT_Comparator(false, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NOLUNAS));        
+
+		listheader_T34CostingD_PAYMENT_TglLunas.setSortAscending(new T34CostingD_PAYMENT_Comparator(true, T34CostingD_PAYMENT_Comparator.COMPARE_BY_TGLLUNAS));
+		listheader_T34CostingD_PAYMENT_TglLunas.setSortDescending(new T34CostingD_PAYMENT_Comparator(false, T34CostingD_PAYMENT_Comparator.COMPARE_BY_TGLLUNAS));        
+		
+		listheader_T34CostingD_PAYMENT_NilaiLunas.setSortAscending(new T34CostingD_PAYMENT_Comparator(true, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NILAILUNAS));
+		listheader_T34CostingD_PAYMENT_NilaiLunas.setSortDescending(new T34CostingD_PAYMENT_Comparator(false, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NILAILUNAS));   
+
+		
 	}
 
 	
@@ -904,7 +1053,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 
 
 	
-	public void doRenderMode(String pMode) {		
+	public void doRenderMode(String pMode, String pPosisiCosting) {		
 		if(CommonUtils.isNotEmpty(pMode)){
 			if(pMode.equals("View")){
 				
@@ -919,6 +1068,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				txtNoSo.setReadonly(true);
 				txtNoPoCustomer.setReadonly(true);
 				txtCustomer.setReadonly(true);
+				txtNoPenawaran.setReadonly(true);
 				
 				btnNew.setVisible(false);
 				btnView.setVisible(true);
@@ -939,6 +1089,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				btnView_D.setVisible(true);
 				btnEdit_D.setVisible(false);
 				btnDelete_D.setVisible(false);
+				
+				btnNew_E.setVisible(false);
+				btnView_E.setVisible(true);
+				btnEdit_E.setVisible(false);
+				btnDelete_E.setVisible(false);
 				
 				btnUploadBSO.setVisible(false);
 				btnUploadInfoPrice.setVisible(false);
@@ -976,7 +1131,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				txtNoSo.setReadonly(false);
 				txtNoPoCustomer.setReadonly(false);
 				txtCustomer.setReadonly(false);
-				
+				txtNoPenawaran.setReadonly(false);
 				
 				
 				btnNew.setVisible(true);
@@ -998,6 +1153,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				btnView_D.setVisible(false);
 				btnEdit_D.setVisible(true);
 				btnDelete_D.setVisible(true);
+				
+				btnNew_E.setVisible(false);
+				btnView_E.setVisible(false);
+				btnEdit_E.setVisible(false);
+				btnDelete_E.setVisible(false);
 				
 				btnUploadBSO.setVisible(true);
 				btnUploadInfoPrice.setVisible(true);
@@ -1026,10 +1186,10 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 			}
 			
 			if(pMode.equals("Edit")){		
-				String vUser = SecurityContextHolder.getContext().getAuthentication().getName();
-				String vRoleUser = selectQueryService.QueryRoleUserCosting(vUser);
+				//String vUser = SecurityContextHolder.getContext().getAuthentication().getName();
+				//String vRoleUser = selectQueryService.QueryRoleUserCosting(vUser);
 				
-				if (vRoleUser.equals("SALES") == true) {
+				if (pPosisiCosting.equals("SALES") == true) {
 					// set read only key
 					cmbCompany.setDisabled(true);
 					cmbSalesman.setDisabled(true);		
@@ -1042,6 +1202,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 					txtNoSo.setReadonly(false);
 					txtNoPoCustomer.setReadonly(false);
 					txtCustomer.setReadonly(false);
+					txtNoPenawaran.setReadonly(false);
 					
 					btnNew.setVisible(true);
 					btnView.setVisible(false);
@@ -1062,6 +1223,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 					btnView_D.setVisible(false);
 					btnEdit_D.setVisible(true);
 					btnDelete_D.setVisible(true);
+					
+					btnNew_E.setVisible(false);
+					btnView_E.setVisible(false);
+					btnEdit_E.setVisible(false);
+					btnDelete_E.setVisible(false);
 					
 					btnUploadBSO.setVisible(true);
 					btnUploadInfoPrice.setVisible(true);
@@ -1087,7 +1253,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 					// set focus 
 					cmbCompany.setFocus(true);	
 				} else {
-					if (vRoleUser.equals("SAO") == true) {
+					if (pPosisiCosting.equals("SAO") == true) {
 						// set read only key
 						cmbCompany.setDisabled(true);
 						cmbSalesman.setDisabled(true);		
@@ -1100,6 +1266,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						txtNoSo.setReadonly(true);
 						txtNoPoCustomer.setReadonly(true);
 						txtCustomer.setReadonly(true);
+						txtNoPenawaran.setReadonly(true);
 						
 						btnNew.setVisible(false);
 						btnView.setVisible(true);
@@ -1120,6 +1287,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						btnView_D.setVisible(true);
 						btnEdit_D.setVisible(false);
 						btnDelete_D.setVisible(false);
+						
+						btnNew_E.setVisible(false);
+						btnView_E.setVisible(false);
+						btnEdit_E.setVisible(false);
+						btnDelete_E.setVisible(false);
 						
 						btnUploadBSO.setVisible(false);
 						btnUploadInfoPrice.setVisible(false);
@@ -1146,11 +1318,199 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						//cmbCompany.setFocus(true);
 						
 					} else {
-						if (vRoleUser.equals("LOGISTIC") == true) {
+						if (pPosisiCosting.equals("LOGISTIC") == true) {
+							// set read only key
+							cmbCompany.setDisabled(true);
+							cmbSalesman.setDisabled(true);		
+							dbTglCosting.setDisabled(true);	
+						
+							txtNoCosting.setReadonly(true);
+							txtNoCosting.setVisible(true);
+							
+							txtNoBso.setReadonly(true);
+							txtNoSo.setReadonly(true);
+							txtNoPoCustomer.setReadonly(true);
+							txtCustomer.setReadonly(true);
+							txtNoPenawaran.setReadonly(true);
+							
+							btnNew.setVisible(false);
+							btnView.setVisible(true);
+							btnEdit.setVisible(true);
+							btnDelete.setVisible(false);
+							
+							btnNew_B.setVisible(false);
+							btnView_B.setVisible(true);
+							btnEdit_B.setVisible(false);
+							btnDelete_B.setVisible(false);
+							
+							btnNew_C.setVisible(false);
+							btnView_C.setVisible(true);
+							btnEdit_C.setVisible(false);
+							btnDelete_C.setVisible(false);
+							
+							btnNew_D.setVisible(false);
+							btnView_D.setVisible(true);
+							btnEdit_D.setVisible(true);
+							btnDelete_D.setVisible(false);
+							
+							btnNew_E.setVisible(false);
+							btnView_E.setVisible(false);
+							btnEdit_E.setVisible(false);
+							btnDelete_E.setVisible(false);
+							
+							btnUploadBSO.setVisible(false);
+							btnUploadInfoPrice.setVisible(false);
+							btnUploadFilePOCustomer.setVisible(false);
+							
+							dcbIncentiveApproveHw3ps.setReadonly(true);	
+							dcbIncentiveNonsalesHw3ps.setReadonly(true);
+							dcbIncentiveKomisiHw3ps.setReadonly(true);
+							//dcbIncentiveSbonusHw3ps.setReadonly(false);
+						
+							dcbIncentiveApproveAcsps.setReadonly(true);	
+							dcbIncentiveNonsalesAcsps.setReadonly(true);
+							dcbIncentiveKomisiAcsps.setReadonly(true);
+							//dcbIncentiveSbonusAcsps.setReadonly(false);
+							
+							dcbIncentiveApproveOwnsw.setReadonly(true);	
+							dcbIncentiveNonsalesOwnsw.setReadonly(true);
+							dcbIncentiveKomisiOwnsw.setReadonly(true);
+							//dcbIncentiveSbonusOwnsw.setReadonly(false);
+							
+							btnSearchCustomerLOV.setDisabled(true);	
+							
+							// set focus 
+							//cmbCompany.setFocus(true);
 							
 						} else {
-							if (vRoleUser.equals("SM") == true) {
+							if (pPosisiCosting.equals("FINANCE 1") == true) {
+								// set read only key
+								cmbCompany.setDisabled(true);
+								cmbSalesman.setDisabled(true);		
+								dbTglCosting.setDisabled(true);	
+							
+								txtNoCosting.setReadonly(true);
+								txtNoCosting.setVisible(true);
 								
+								txtNoBso.setReadonly(true);
+								txtNoSo.setReadonly(true);
+								txtNoPoCustomer.setReadonly(true);
+								txtCustomer.setReadonly(true);
+								txtNoPenawaran.setReadonly(true);
+								
+								btnNew.setVisible(false);
+								btnView.setVisible(true);
+								btnEdit.setVisible(false);
+								btnDelete.setVisible(false);
+								
+								btnNew_B.setVisible(false);
+								btnView_B.setVisible(true);
+								btnEdit_B.setVisible(false);
+								btnDelete_B.setVisible(false);
+								
+								btnNew_C.setVisible(false);
+								btnView_C.setVisible(true);
+								btnEdit_C.setVisible(false);
+								btnDelete_C.setVisible(false);
+								
+								btnNew_D.setVisible(false);
+								btnView_D.setVisible(true);
+								btnEdit_D.setVisible(false);
+								btnDelete_D.setVisible(false);
+								
+								btnNew_E.setVisible(true);
+								btnView_E.setVisible(true);
+								btnEdit_E.setVisible(true);
+								btnDelete_E.setVisible(true);
+								
+								btnUploadBSO.setVisible(false);
+								btnUploadInfoPrice.setVisible(false);
+								btnUploadFilePOCustomer.setVisible(false);
+								
+								dcbIncentiveApproveHw3ps.setReadonly(true);	
+								dcbIncentiveNonsalesHw3ps.setReadonly(true);
+								dcbIncentiveKomisiHw3ps.setReadonly(true);
+								//dcbIncentiveSbonusHw3ps.setReadonly(false);
+							
+								dcbIncentiveApproveAcsps.setReadonly(true);	
+								dcbIncentiveNonsalesAcsps.setReadonly(true);
+								dcbIncentiveKomisiAcsps.setReadonly(true);
+								//dcbIncentiveSbonusAcsps.setReadonly(false);
+								
+								dcbIncentiveApproveOwnsw.setReadonly(true);	
+								dcbIncentiveNonsalesOwnsw.setReadonly(true);
+								dcbIncentiveKomisiOwnsw.setReadonly(true);
+								//dcbIncentiveSbonusOwnsw.setReadonly(false);
+								
+								btnSearchCustomerLOV.setDisabled(true);	
+								
+								// set focus 
+								cmbCompany.setFocus(true);	
+							} else {
+								if (pPosisiCosting.equals("SM") == true) {
+									// set read only key
+									cmbCompany.setDisabled(true);
+									cmbSalesman.setDisabled(true);		
+									dbTglCosting.setDisabled(true);	
+								
+									txtNoCosting.setReadonly(true);
+									txtNoCosting.setVisible(true);
+									
+									txtNoBso.setReadonly(false);
+									txtNoSo.setReadonly(false);
+									txtNoPoCustomer.setReadonly(false);
+									txtCustomer.setReadonly(false);
+									txtNoPenawaran.setReadonly(false);
+									
+									btnNew.setVisible(true);
+									btnView.setVisible(false);
+									btnEdit.setVisible(true);
+									btnDelete.setVisible(true);
+									
+									btnNew_B.setVisible(true);
+									btnView_B.setVisible(false);
+									btnEdit_B.setVisible(true);
+									btnDelete_B.setVisible(true);
+									
+									btnNew_C.setVisible(true);
+									btnView_C.setVisible(false);
+									btnEdit_C.setVisible(true);
+									btnDelete_C.setVisible(true);
+									
+									btnNew_D.setVisible(true);
+									btnView_D.setVisible(false);
+									btnEdit_D.setVisible(true);
+									btnDelete_D.setVisible(true);
+									
+									btnNew_E.setVisible(false);
+									btnView_E.setVisible(false);
+									btnEdit_E.setVisible(false);
+									btnDelete_E.setVisible(false);
+									
+									btnUploadBSO.setVisible(true);
+									btnUploadInfoPrice.setVisible(true);
+									btnUploadFilePOCustomer.setVisible(true);
+									
+									dcbIncentiveApproveHw3ps.setReadonly(false);	
+									dcbIncentiveNonsalesHw3ps.setReadonly(false);
+									dcbIncentiveKomisiHw3ps.setReadonly(false);
+									//dcbIncentiveSbonusHw3ps.setReadonly(false);
+								
+									dcbIncentiveApproveAcsps.setReadonly(false);	
+									dcbIncentiveNonsalesAcsps.setReadonly(false);
+									dcbIncentiveKomisiAcsps.setReadonly(false);
+									//dcbIncentiveSbonusAcsps.setReadonly(false);
+									
+									dcbIncentiveApproveOwnsw.setReadonly(false);	
+									dcbIncentiveNonsalesOwnsw.setReadonly(false);
+									dcbIncentiveKomisiOwnsw.setReadonly(false);
+									//dcbIncentiveSbonusOwnsw.setReadonly(false);
+									
+									btnSearchCustomerLOV.setDisabled(false);	
+									
+									// set focus 
+									cmbCompany.setFocus(true);	
+								}
 							}
 						}
 					}
@@ -1187,7 +1547,8 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	public void displayDetail(	List<T30CostingDHw3ps> dataT30CostingDHw3ps, 
 								List<T31CostingDAcsps> dataT31CostingDAcsps, 
 								List<T32CostingDOwnsw> dataT32CostingDOwnsw,
-								List<T33CostingDOther> dataT33CostingDOther
+								List<T33CostingDOther> dataT33CostingDOther,
+								List<T34CostingDPayment> dataT34CostingDPayment
 								) {
 		
 		// Detail 1 - T30CostingD_HW3PS
@@ -1230,6 +1591,16 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		}
 
 		setModel_T33CostingD_OTHER_List();
+		
+		// Detail 4 - T34CostingD_PAYMENT
+		list_Deleted_T34CostingD_PAYMENT_List.clear();
+		list_T34CostingD_PAYMENT_List.clear();
+
+		if (CommonUtils.isNotEmpty(dataT34CostingDPayment)) {
+			list_T34CostingD_PAYMENT_List.addAll(dataT34CostingDPayment);
+		}
+
+		setModel_T34CostingD_PAYMENT_List();
 	}
 	
 	private void HitDetailTotal(){		
@@ -1273,16 +1644,34 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		//vTotalCOGS = vTotalCOGS.round(vPembulatanAmount);
 		
 		this.dcbTotalCOGS.setValue(vTotalCOGS);
+		this.dcbTotalCOGS_2.setValue(vTotalCOGS);
 		getT29CostingH().setTotalCogs(vTotalCOGS);
 
+		
+		BigDecimal vTotalMarginNonAcsPs = new BigDecimal(0);
+		BigDecimal vTotalMarginNonAcsPsPcn = new BigDecimal(0);
+		
+		vTotalMarginNonAcsPs = vSalesHw3ps.subtract(vTotalCOGS);
+		
+		if (vSalesHw3ps.compareTo(new BigDecimal(0)) > 0){
+			vTotalMarginNonAcsPsPcn = (vTotalMarginNonAcsPs.multiply(new BigDecimal(100.00))).divide(vSalesHw3ps, 5, RoundingMode.HALF_UP);	
+		} else {
+			vTotalMarginNonAcsPsPcn = new BigDecimal(0);
+		}
+		
+		vTotalMarginNonAcsPsPcn = vTotalMarginNonAcsPsPcn.round(vPembulatanPcn);
+		
+		this.dcbMarginPcnNonacsps.setValue(vTotalMarginNonAcsPsPcn);
+		getT29CostingH().setMarginPcnNonacsps(vTotalMarginNonAcsPsPcn);
+		
 		
 		BigDecimal vTotalMargin = new BigDecimal(0);
 		BigDecimal vTotalMarginPcn = new BigDecimal(0);
 		
-		vTotalMargin = vSalesHw3ps.subtract(vTotalCOGS);
+		vTotalMargin = vTotalSales.subtract(vTotalCOGS);
 		
-		if (vSalesHw3ps.compareTo(new BigDecimal(0)) > 0){
-			vTotalMarginPcn = (vTotalMargin.multiply(new BigDecimal(100.00))).divide(vSalesHw3ps, 5, RoundingMode.HALF_UP);	
+		if (vTotalSales.compareTo(new BigDecimal(0)) > 0){
+			vTotalMarginPcn = (vTotalMargin.multiply(new BigDecimal(100.00))).divide(vTotalSales, 5, RoundingMode.HALF_UP);	
 		} else {
 			vTotalMarginPcn = new BigDecimal(0);
 		}
@@ -1291,6 +1680,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		
 		this.dcbMarginPcn.setValue(vTotalMarginPcn);
 		getT29CostingH().setMarginPcn(vTotalMarginPcn);
+		
 		
 		
 		// Parameter perhitungan Incentive
@@ -1773,6 +2163,56 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		HitDetailTotal();
 	}
 
+	
+	private void HitDetailT34CostingDPayment(){
+		BigDecimal vAmountInvoice = new BigDecimal(0);
+		BigDecimal vAmountLunas = new BigDecimal(0);
+		
+		int vAdaInvoice = 0;
+		int vAdaPayment = 0;
+		
+		for (T34CostingDPayment aData : list_T34CostingD_PAYMENT_List) {
+			if (CommonUtils.isNotEmpty(aData.getNoInvoice())){
+				vAdaInvoice = vAdaInvoice +1;
+			}
+			
+			if (CommonUtils.isNotEmpty(aData.getNilaiInvoice())){
+				vAmountInvoice = vAmountInvoice.add(aData.getNilaiInvoice());
+			}
+			
+			if (CommonUtils.isNotEmpty(aData.getNoLunas())){
+				vAdaPayment = vAdaPayment +1;
+			}
+			
+			if (CommonUtils.isNotEmpty(aData.getNilaiLunas())){
+				vAmountLunas = vAmountLunas.add(aData.getNilaiLunas());
+			}
+		}
+		
+		//vTotalCogsOther = vTotalCogsOther.round(vPembulatanAmount);
+		
+		this.dcbAmountInvoice.setValue(vAmountInvoice);
+		this.dcbAmountLunas.setValue(vAmountLunas);
+		
+		if (vAdaInvoice > 0) {
+			getT29CostingH().setFlagInvoice("Y");
+		} else {
+			getT29CostingH().setFlagInvoice("N");
+		}
+		
+		
+		if (vAmountInvoice.compareTo(vAmountLunas) <= 0) {
+			getT29CostingH().setFlagLunas("Y");
+		} else {
+			getT29CostingH().setFlagLunas("N");
+		}
+		
+		getT29CostingH().setAmountInvoice(vAmountInvoice);
+		getT29CostingH().setAmountLunas(vAmountLunas);
+		
+	}
+	
+	
 	// Action Button Detail 1 - T30CostingD_HW3PS -------------------------------------------------------------------------------------
 	public void onClick$btnNew(Event event) {
 		T30CostingDHw3ps newDetail = new T30CostingDHw3ps();
@@ -1920,7 +2360,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						windowT29CostingDetail, selectedItem, getT29CostingH(), "View", selectQueryService);
 				if (viewValue != null) {
 					list_T31CostingD_ACSPS_List.set(index, viewValue);
-					setModel_T31CostingD_ACSPS_List();;
+					setModel_T31CostingD_ACSPS_List();
 					HitDetailT31CostingDAcsps();
 				}
 			}
@@ -1940,7 +2380,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						windowT29CostingDetail, selectedItem, getT29CostingH(), "Edit", selectQueryService);
 				if (editValue != null) {
 					list_T31CostingD_ACSPS_List.set(index, editValue);
-					setModel_T31CostingD_ACSPS_List();;
+					setModel_T31CostingD_ACSPS_List();
 					HitDetailT31CostingDAcsps();
 				}
 			}
@@ -2033,7 +2473,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						windowT29CostingDetail, selectedItem, getT29CostingH(), "View", selectQueryService);
 				if (viewValue != null) {
 					list_T32CostingD_OWNSW_List.set(index, viewValue);
-					setModel_T32CostingD_OWNSW_List();;
+					setModel_T32CostingD_OWNSW_List();
 					HitDetailT32CostingDOwnsw();
 				}
 			}
@@ -2053,7 +2493,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						windowT29CostingDetail, selectedItem, getT29CostingH(), "Edit", selectQueryService);
 				if (editValue != null) {
 					list_T32CostingD_OWNSW_List.set(index, editValue);
-					setModel_T32CostingD_OWNSW_List();;
+					setModel_T32CostingD_OWNSW_List();
 					HitDetailT32CostingDOwnsw();
 				}
 			}
@@ -2131,7 +2571,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 			
 			HitDetailT33CostingDOther();
 			 
-			onClick$btnNew_C(event);
+			onClick$btnNew_D(event);
 		}
 	}
 	
@@ -2147,7 +2587,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						windowT29CostingDetail, selectedItem, getT29CostingH(), "View", selectQueryService);
 				if (viewValue != null) {
 					list_T33CostingD_OTHER_List.set(index, viewValue);
-					setModel_T33CostingD_OTHER_List();;
+					setModel_T33CostingD_OTHER_List();
 					HitDetailT33CostingDOther();
 				}
 			}
@@ -2167,7 +2607,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						windowT29CostingDetail, selectedItem, getT29CostingH(), "Edit", selectQueryService);
 				if (editValue != null) {
 					list_T33CostingD_OTHER_List.set(index, editValue);
-					setModel_T33CostingD_OTHER_List();;
+					setModel_T33CostingD_OTHER_List();
 					HitDetailT33CostingDOther();
 				}
 			}
@@ -2224,7 +2664,121 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		}
 	}
 	
+	// Action Button Detail 5 - T34CostingD_PAYMENT -------------------------------------------------------------------------------------
+	public void onClick$btnNew_E(Event event) {
+		T34CostingDPayment newDetail = new T34CostingDPayment();
+		
+		newDetail.setT29CostingH(getT29CostingH());
+		
+		newDetail.setNilaiInvoice(new BigDecimal(0));
+		newDetail.setNilaiLunas(new BigDecimal(0));
+
+
+
+		T34CostingDPayment newValue = T34CostingD_PAYMENT_AddWindow.show(
+				windowT29CostingDetail, newDetail, getT29CostingH(), "New", selectQueryService);
+
+		if (newValue != null) {			
+			list_T34CostingD_PAYMENT_List.add(newValue);
+			
+			setModel_T34CostingD_PAYMENT_List();
+			
+			HitDetailT34CostingDPayment();
+			
+			onClick$btnNew_E(event);
+			
+			
+		}
+	}
 	
+	public void onClick$btnView_E(Event event) {
+		if (listBox_T34CostingD_PAYMENT.getSelectedItem() != null) {
+			T34CostingDPayment selectedItem = (T34CostingDPayment) listBox_T34CostingD_PAYMENT
+					.getSelectedItem().getValue();
+
+			if (selectedItem != null) {
+				int index = list_T34CostingD_PAYMENT_List.indexOf(selectedItem);
+
+				T34CostingDPayment viewValue = T34CostingD_PAYMENT_AddWindow.show(
+						windowT29CostingDetail, selectedItem, getT29CostingH(), "View", selectQueryService);
+				if (viewValue != null) {
+					list_T34CostingD_PAYMENT_List.set(index, viewValue);
+					setModel_T34CostingD_PAYMENT_List();
+					HitDetailT34CostingDPayment();
+				}
+			}
+		}
+	}
+	
+	
+	public void onClick$btnEdit_E(Event event) {
+		if (listBox_T34CostingD_PAYMENT.getSelectedItem() != null) {
+			T34CostingDPayment selectedItem = (T34CostingDPayment) listBox_T34CostingD_PAYMENT
+					.getSelectedItem().getValue();
+
+			if (selectedItem != null) {
+				int index = list_T34CostingD_PAYMENT_List.indexOf(selectedItem);
+
+				T34CostingDPayment editValue = T34CostingD_PAYMENT_AddWindow.show(
+						windowT29CostingDetail, selectedItem, getT29CostingH(), "Edit", selectQueryService);
+				if (editValue != null) {
+					list_T34CostingD_PAYMENT_List.set(index, editValue);
+					setModel_T34CostingD_PAYMENT_List();
+					HitDetailT34CostingDPayment();
+				}
+			}
+		}
+	}
+	
+	public void onClick$btnDelete_E(Event event) throws InterruptedException {
+		if (listBox_T34CostingD_PAYMENT.getSelectedItem() != null) {
+			final T34CostingDPayment selectedItem = (T34CostingDPayment) listBox_T34CostingD_PAYMENT
+					.getSelectedItem().getValue();
+			if (selectedItem != null) {
+
+				// Show a confirm box
+				String deleteRecord = selectedItem.getNoInvoice();
+				
+				final String msg = Labels
+						.getLabel("message.Question.Are_you_sure_to_delete_this_record")
+						+ "\n\n --> " + deleteRecord;
+				final String title = Labels.getLabel("message.Deleting.Record");
+
+				MultiLineMessageBox.doSetTemplate();
+				if (MultiLineMessageBox.show(msg, title, Messagebox.YES
+						| Messagebox.NO, Messagebox.QUESTION, true,
+						new EventListener() {
+							@Override
+							public void onEvent(Event evt) {
+								switch (((Integer) evt.getData()).intValue()) {
+								case MultiLineMessageBox.YES:
+									try {
+										deleteBean();
+										HitDetailT34CostingDPayment();
+									} catch (InterruptedException e) {
+										e.printStackTrace();
+									}
+									break;
+								case MultiLineMessageBox.NO:
+									break;
+								}
+							}
+
+							private void deleteBean()
+									throws InterruptedException {
+								if (selectedItem.getT34Id() > 0) {
+									list_Deleted_T34CostingD_PAYMENT_List
+											.add(selectedItem);
+								}
+								list_T34CostingD_PAYMENT_List.remove(selectedItem);
+								setModel_T34CostingD_PAYMENT_List();
+							}
+						}) == MultiLineMessageBox.YES) {
+				}
+
+			}
+		}
+	}	
 
 	public void onClick$btnUploadBSO() throws InterruptedException {
 		try {
@@ -2485,6 +3039,43 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
     	setModel_T33CostingD_OTHER_List();    
     }
     
+    // Sorting Detail 5 - T34CostingD_PAYMENT
+    public void onSort$listheader_T34CostingD_PAYMENT_NoInvoice(Event event) {
+    	sorting_T34CostingD_PAYMENT(listheader_T34CostingD_PAYMENT_NoInvoice, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NOINVOICE);
+    }
+
+    public void onSort$listheader_T34CostingD_PAYMENT_TglInvoice(Event event) {
+    	sorting_T34CostingD_PAYMENT(listheader_T34CostingD_PAYMENT_TglInvoice, T34CostingD_PAYMENT_Comparator.COMPARE_BY_TGLINVOICE);
+    }
+    
+    public void onSort$listheader_T34CostingD_PAYMENT_NilaiInvoice(Event event) {
+    	sorting_T34CostingD_PAYMENT(listheader_T34CostingD_PAYMENT_NilaiInvoice, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NILAIINVOICE);
+    }
+    
+    public void onSort$listheader_T34CostingD_PAYMENT_NoLunas(Event event) {
+    	sorting_T34CostingD_PAYMENT(listheader_T34CostingD_PAYMENT_NoLunas, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NOLUNAS);
+    }
+    
+    public void onSort$listheader_T34CostingD_PAYMENT_TglLunas(Event event) {
+    	sorting_T34CostingD_PAYMENT(listheader_T34CostingD_PAYMENT_TglLunas, T34CostingD_PAYMENT_Comparator.COMPARE_BY_TGLLUNAS);
+    }
+    
+    public void onSort$listheader_T34CostingD_PAYMENT_NilaiLunas(Event event) {
+    	sorting_T34CostingD_PAYMENT(listheader_T34CostingD_PAYMENT_NilaiLunas, T34CostingD_PAYMENT_Comparator.COMPARE_BY_NILAILUNAS);
+    }
+
+    private void sorting_T34CostingD_PAYMENT(Listheader listHeader, int sortBy){
+    	if(CommonUtils.isNotEmpty(listHeader.getSortDirection())){
+    		if(listHeader.getSortDirection().equals("ascending")){
+    			Collections.sort(list_T34CostingD_PAYMENT_List, new T34CostingD_PAYMENT_Comparator(false, sortBy));
+    		} else {
+    			Collections.sort(list_T34CostingD_PAYMENT_List, new T34CostingD_PAYMENT_Comparator(true, sortBy));
+    		}
+    	}
+    	
+    	setModel_T34CostingD_PAYMENT_List();    
+    }
+    
 	// +++++++++++++++++++++++++++++++++++++++++++++++++ //
 	// ++++++++++++++++ Setter/Getter ++++++++++++++++++ //
 	// +++++++++++++++++++++++++++++++++++++++++++++++++ //
@@ -2549,6 +3140,15 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	public void setList_Deleted_T33CostingD_OTHER_List(
 			List<T33CostingDOther> list_Deleted_T33CostingD_OTHER_List) {
 		this.list_Deleted_T33CostingD_OTHER_List = list_Deleted_T33CostingD_OTHER_List;
+	}
+
+	public List<T34CostingDPayment> getList_Deleted_T34CostingD_PAYMENT_List() {
+		return list_Deleted_T34CostingD_PAYMENT_List;
+	}
+
+	public void setList_Deleted_T34CostingD_PAYMENT_List(
+			List<T34CostingDPayment> list_Deleted_T34CostingD_PAYMENT_List) {
+		this.list_Deleted_T34CostingD_PAYMENT_List = list_Deleted_T34CostingD_PAYMENT_List;
 	}
 	
 	

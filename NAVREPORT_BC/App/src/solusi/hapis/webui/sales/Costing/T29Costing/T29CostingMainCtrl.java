@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,6 +33,7 @@ import solusi.hapis.backend.util.CustomErrorDB;
 import solusi.hapis.common.CommonUtils;
 import solusi.hapis.common.PathReport;
 import solusi.hapis.webui.general.DisplayNoDocumentWindow;
+import solusi.hapis.webui.reports.util.JReportGeneratorWindow;
 import solusi.hapis.webui.util.ButtonStatusCtrl;
 import solusi.hapis.webui.util.GFCBaseCtrl;
 import solusi.hapis.webui.util.MultiLineMessageBox;
@@ -70,7 +70,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     protected Button btnSearch;
     protected Button btnClear;
     
-    
+    protected Button btnDownloadCosting;
     protected Button btnSubmitToSAO;
     protected Button btnSubmitToLogistic;
     protected Button btnBackToSales1;
@@ -135,7 +135,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         btnCtrlT29Costing = new ButtonStatusCtrl(getUserWorkspace(), btnCtroller_ClassPrefix, btnNew, btnEdit, btnDelete, null, btnOK, btnSave, btnCancel, btnSearch, btnClear);
         btnCtrlT29Costing.setInitInquiryButton();
 
-        renderButtonActionbyRole(true);
+        renderButtonActionbyRole(true);        
+        btnDownloadCosting.setVisible(true);
         
         tabT29CostingList.setSelected(true);
 
@@ -159,6 +160,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         	btnCtrlT29Costing.setInitInquiryButton();
         	
         	renderButtonActionbyRole(true);
+        	btnDownloadCosting.setVisible(true);
         	
         	getT29CostingListCtrl().doFillListbox();
             
@@ -180,10 +182,11 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     		getT29CostingDetailCtrl().doRenderCombo();
         	
         	// Render Inisialisasi posisi awal
-            getT29CostingDetailCtrl().doRenderMode("View");   
+            getT29CostingDetailCtrl().doRenderMode("View", "NA");   
             
             btnCtrlT29Costing.setInitInquiryButton();
             renderButtonActionbyRole(true);
+            btnDownloadCosting.setVisible(true);
             
             
             if (getT29CostingDetailCtrl().getBinder() != null) {
@@ -194,7 +197,9 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
             		getT29CostingListCtrl().getList_T30CostingDHw3psList(), 
             		getT29CostingListCtrl().getList_T31CostingDAcspsList(), 
             		getT29CostingListCtrl().getList_T32CostingDOwnswList(), 
-            		getT29CostingListCtrl().getList_T33CostingDOtherList());
+            		getT29CostingListCtrl().getList_T33CostingDOtherList(),
+            		getT29CostingListCtrl().getList_T34CostingDPaymentList()
+            		);
             
 			
 			return;
@@ -232,6 +237,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         anT29CostingH.setNoCosting(String.valueOf(System.currentTimeMillis()));
         
         anT29CostingH.setFlagStatus("SALES");
+        anT29CostingH.setFlagInvoice("N");
+        anT29CostingH.setFlagLunas("N");
         
 		anT29CostingH.setSalesHw3ps(new BigDecimal(0));
 		anT29CostingH.setSalesAcsps(new BigDecimal(0));
@@ -287,6 +294,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         // set button
         btnCtrlT29Costing.setInitFormButton();
         renderButtonActionbyRole(false);
+        btnDownloadCosting.setVisible(false);
         
         // select tab Detail
         tabT29CostingDetail.setSelected(true);
@@ -299,9 +307,9 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         }
         
         // set render layar
-        getT29CostingDetailCtrl().doRenderMode("New");
+        getT29CostingDetailCtrl().doRenderMode("New", "NA");
         
-        getT29CostingDetailCtrl().displayDetail(null, null, null, null);
+        getT29CostingDetailCtrl().displayDetail(null, null, null, null, null);
         getT29CostingDetailCtrl().doRenderCombo();
     }
     
@@ -358,6 +366,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 	        // set button
 	        btnCtrlT29Costing.setInitFormButton();
 	        renderButtonActionbyRole(false);
+	        btnDownloadCosting.setVisible(true);
 	
 	        // select tab Detail
 	        tabT29CostingDetail.setSelected(true);
@@ -367,9 +376,14 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 	        
 	        // set render layar
 	        getT29CostingDetailCtrl().doRenderCombo();
-	        getT29CostingDetailCtrl().doRenderMode("Edit");
+	        getT29CostingDetailCtrl().doRenderMode("Edit", getSelectedT29Costing().getFlagStatus());
 	        
-	        getT29CostingDetailCtrl().displayDetail(getT29CostingListCtrl().getList_T30CostingDHw3psList(), getT29CostingListCtrl().getList_T31CostingDAcspsList(), getT29CostingListCtrl().getList_T32CostingDOwnswList(), getT29CostingListCtrl().getList_T33CostingDOtherList());
+	        getT29CostingDetailCtrl().displayDetail(
+	        		getT29CostingListCtrl().getList_T30CostingDHw3psList(), 
+	        		getT29CostingListCtrl().getList_T31CostingDAcspsList(), 
+	        		getT29CostingListCtrl().getList_T32CostingDOwnswList(), 
+	        		getT29CostingListCtrl().getList_T33CostingDOtherList(),
+	        		getT29CostingListCtrl().getList_T34CostingDPaymentList());
         
   
 		}
@@ -449,6 +463,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 	        
 	        btnCtrlT29Costing.setInitInquiryButton();
 	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
 	        
 	        setSelectedT29Costing(null);
 	        
@@ -543,10 +558,12 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         										,getT29CostingDetailCtrl().getList_Deleted_T31CostingD_ACSPS_List()
         										,getT29CostingDetailCtrl().getList_Deleted_T32CostingD_OWNSW_List()
         										,getT29CostingDetailCtrl().getList_Deleted_T33CostingD_OTHER_List()
+        										,getT29CostingDetailCtrl().getList_Deleted_T34CostingD_PAYMENT_List()
         										);
 	            // refresh the list
 	            btnCtrlT29Costing.setInitInquiryButton();
 	            renderButtonActionbyRole(true);
+	            btnDownloadCosting.setVisible(true);
 	            
 	            
 	            getT29CostingListCtrl().doFillListbox();
@@ -565,6 +582,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     public void onClick$btnCancel(Event event) throws InterruptedException {
        	btnCtrlT29Costing.setInitInquiryButton();
        	renderButtonActionbyRole(true);
+       	btnDownloadCosting.setVisible(true);
        	
         
        	//RESTOREVALUE
@@ -603,7 +621,589 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         	tabT29CostingList.setSelected(true);
         }
     }
+    
+    public void onClick$btnSubmitToSAO(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("SALES") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"SALES\" untuk bisa di \"Submit to SAO\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Submit to SAO\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("SAO");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}
+    }
 
+    public void onClick$btnSubmitToLogistic(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("SAO") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"SAO\" untuk bisa di \"Submit to Logistic\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Submit to Logistic\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("LOGISTIC");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}
+    }
+    
+    public void onClick$btnBackToSales1(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("SAO") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"SAO\" untuk bisa di \"Back to Sales\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Back to Sales\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("SALES");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}
+    }
+    
+    public void onClick$btnSubmitToFinance(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("LOGISTIC") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"LOGISTIC\" untuk bisa di \"Submit to Finance\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Submit to Finance\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("FINANCE 1");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}
+    }
+    
+    public void onClick$btnBackToSales2(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("LOGISTIC") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"LOGISTIC\" untuk bisa di \"Back to Sales\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Back to Sales\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("SALES");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}   	
+    }
+    
+    
+    public void onClick$btnSubmitToSM(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("FINANCE 1") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"FINANCE 1\" untuk bisa di \"Submit to SM\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Submit to SM\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("SM");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}
+    }    
+
+    public void onClick$btnBackToLogistic(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("FINANCE 1") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"FINANCE 1\" untuk bisa di \"Back to Logistic\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Back to Logistic\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("LOGISTIC");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}   	
+    }
+    
+    public void onClick$btnSubmitToFinance2(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+	        final T29CostingH anT29CostingH = getSelectedT29Costing();
+	        if (anT29CostingH != null) {
+	
+	        	String vFlagStatus = anT29CostingH.getFlagStatus();
+	        	
+	        	if(vFlagStatus.equals("SM") == false ){
+	        		ZksampleMessageUtils.showErrorMessage("Posisi Costing harus \"SM\" untuk bisa di \"Final to Finance\"" );
+	        		return;
+	        	} else {
+	        	
+	        	
+	        	
+		            // Show a confirm box
+		        	String deleteRecord = anT29CostingH.getNoCosting() ;
+		            final String msg = "Apakah anda yakin untuk \"Final to Finance\" ?" + "\n\n --> " + deleteRecord;
+		            final String title = "Submit";
+		
+		            MultiLineMessageBox.doSetTemplate();
+		            if (MultiLineMessageBox.show(msg, title, Messagebox.YES | Messagebox.NO, Messagebox.QUESTION, true, new EventListener() {
+		                @Override
+		                public void onEvent(Event evt) {
+		                    switch (((Integer) evt.getData()).intValue()) {
+		                        case MultiLineMessageBox.YES:
+		                            try {
+		                                updateStatusBean();
+		                            } catch (InterruptedException e) {
+		                                e.printStackTrace();
+		                            }
+		                            break;
+		                        case MultiLineMessageBox.NO:
+		                            break;
+		                    }
+		                }
+		
+		                private void updateStatusBean() throws InterruptedException {
+		                	try {
+		                		
+		                		anT29CostingH.setFlagStatus("FINANCE 2");
+		                		
+		                        getT29CostingHService().updateSatus(anT29CostingH);
+		                        setSelectedT29Costing(null);
+		                        
+		                        // refresh the list
+		                        getT29CostingListCtrl().doFillListbox();
+		                    } catch (DataAccessException e) {
+		                    	ZksampleMessageUtils.showErrorMessage(CustomErrorDB.getErrorMsg(e.getRootCause().toString()));
+		                    }
+		                }
+		            }
+		
+		            ) == MultiLineMessageBox.YES) {
+		            }
+	        	}
+	
+	        }
+	        
+	        btnCtrlT29Costing.setInitInquiryButton();
+	        renderButtonActionbyRole(true);
+	        btnDownloadCosting.setVisible(true);
+	        
+	        setSelectedT29Costing(null);
+	        
+	        // refresh the list
+	        getT29CostingListCtrl().doFillListbox();
+	        tabT29CostingList.setSelected(true);
+    	}
+    } 
+    
+    
+    @SuppressWarnings("unchecked")
+	public void onClick$btnDownloadCosting(Event event) throws InterruptedException {
+    	
+    	if (getSelectedT29Costing() != null) {
+    		String jasperRpt = "/solusi/hapis/webui/reports/sales/Costing/040201_FileCosting.jasper";
+    		    		
+    		param.put("T29Id",  getSelectedT29Costing().getT29Id());
+    		
+    		new JReportGeneratorWindow(param, jasperRpt, "XLS"); 
+    	}
+    }
+    
 	public void saveFile(Media media, String namaFile, String tipeDok) {
 		BufferedInputStream in = null;
 		BufferedOutputStream out = null;
@@ -668,95 +1268,9 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 	
 	
 	private void renderButtonActionbyRole (boolean modeRender){
-		if (modeRender ==  true){
-			String vRoleUser = selectQueryService.QueryRoleUserCosting(SecurityContextHolder.getContext().getAuthentication().getName());
-			if(CommonUtils.isNotEmpty(vRoleUser)){
-				if (vRoleUser.equals("SALES")){
-					this.btnNew.setVisible(modeRender);
-					this.btnEdit.setVisible(modeRender);
-					this.btnDelete.setVisible(modeRender);
-					
-					this.btnSubmitToSAO.setVisible(modeRender);
-				    this.btnSubmitToLogistic.setVisible(!modeRender);
-				    this.btnBackToSales1.setVisible(!modeRender);
-				    this.btnSubmitToFinance.setVisible(!modeRender);
-				    this.btnBackToSales2.setVisible(!modeRender);
-				    this.btnSubmitToSM.setVisible(!modeRender);
-				    this.btnBackToLogistic.setVisible(!modeRender);
-				    this.btnSubmitToFinance2.setVisible(!modeRender);
-				} else {
-					if (vRoleUser.equals("SAO")){
-						this.btnNew.setVisible(!modeRender);
-						this.btnEdit.setVisible(modeRender);
-						this.btnDelete.setVisible(!modeRender);
-						this.btnSubmitToSAO.setVisible(!modeRender);
-					    this.btnSubmitToLogistic.setVisible(modeRender);
-					    this.btnBackToSales1.setVisible(modeRender);
-					    this.btnSubmitToFinance.setVisible(!modeRender);
-					    this.btnBackToSales2.setVisible(!modeRender);
-					    this.btnSubmitToSM.setVisible(!modeRender);
-					    this.btnBackToLogistic.setVisible(!modeRender);
-					    this.btnSubmitToFinance2.setVisible(!modeRender);
-					} else {
-						if (vRoleUser.equals("LOGISTIC")){
-							this.btnNew.setVisible(!modeRender);
-							this.btnEdit.setVisible(modeRender);
-							this.btnDelete.setVisible(!modeRender);
-							this.btnSubmitToSAO.setVisible(!modeRender);
-						    this.btnSubmitToLogistic.setVisible(!modeRender);
-						    this.btnBackToSales1.setVisible(!modeRender);
-						    this.btnSubmitToFinance.setVisible(modeRender);
-						    this.btnBackToSales2.setVisible(modeRender);
-						    this.btnSubmitToSM.setVisible(!modeRender);
-						    this.btnBackToLogistic.setVisible(!modeRender);
-						    this.btnSubmitToFinance2.setVisible(!modeRender);
-						} else {
-							if (vRoleUser.equals("FINANCE")){
-								this.btnNew.setVisible(!modeRender);
-								this.btnEdit.setVisible(modeRender);
-								this.btnDelete.setVisible(!modeRender);
-								this.btnSubmitToSAO.setVisible(!modeRender);
-							    this.btnSubmitToLogistic.setVisible(!modeRender);
-							    this.btnBackToSales1.setVisible(!modeRender);
-							    this.btnSubmitToFinance.setVisible(!modeRender);
-							    this.btnBackToSales2.setVisible(!modeRender);
-							    this.btnSubmitToSM.setVisible(modeRender);
-							    this.btnBackToLogistic.setVisible(modeRender);
-							    this.btnSubmitToFinance2.setVisible(!modeRender);
-							} else {
-								if (vRoleUser.equals("SM")){
-									this.btnNew.setVisible(!modeRender);
-									this.btnEdit.setVisible(modeRender);
-									this.btnDelete.setVisible(!modeRender);
-									this.btnSubmitToSAO.setVisible(!modeRender);
-								    this.btnSubmitToLogistic.setVisible(!modeRender);
-								    this.btnBackToSales1.setVisible(!modeRender);
-								    this.btnSubmitToFinance.setVisible(!modeRender);
-								    this.btnBackToSales2.setVisible(!modeRender);
-								    this.btnSubmitToSM.setVisible(!modeRender);
-								    this.btnBackToLogistic.setVisible(!modeRender);
-								    this.btnSubmitToFinance2.setVisible(modeRender);
-								} else {
-									this.btnNew.setVisible(!modeRender);
-									this.btnEdit.setVisible(modeRender);
-									this.btnDelete.setVisible(!modeRender);
-									this.btnSubmitToSAO.setVisible(!modeRender);
-								    this.btnSubmitToLogistic.setVisible(!modeRender);
-								    this.btnBackToSales1.setVisible(!modeRender);
-								    this.btnSubmitToFinance.setVisible(!modeRender);
-								    this.btnBackToSales2.setVisible(!modeRender);
-								    this.btnSubmitToSM.setVisible(!modeRender);
-								    this.btnBackToLogistic.setVisible(!modeRender);
-								    this.btnSubmitToFinance2.setVisible(!modeRender);
-								}
-							}
-						}
-					}
-						
-				}
-			}		
-			
-		} else {
+		
+		String vUser = SecurityContextHolder.getContext().getAuthentication().getName();
+		if (vUser.equals("admin") == true){
 			this.btnNew.setVisible(modeRender);
 			this.btnEdit.setVisible(modeRender);
 			this.btnDelete.setVisible(modeRender);
@@ -768,9 +1282,110 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 		    this.btnSubmitToSM.setVisible(modeRender);
 		    this.btnBackToLogistic.setVisible(modeRender);
 		    this.btnSubmitToFinance2.setVisible(modeRender);
+		} else 
+		{
+			if (modeRender ==  true){
+				String vRoleUser = selectQueryService.QueryRoleUserCosting(vUser);
+				if(CommonUtils.isNotEmpty(vRoleUser)){
+					if (vRoleUser.equals("SALES")){
+						this.btnNew.setVisible(modeRender);
+						this.btnEdit.setVisible(modeRender);
+						this.btnDelete.setVisible(modeRender);
+						
+						this.btnSubmitToSAO.setVisible(modeRender);
+					    this.btnSubmitToLogistic.setVisible(!modeRender);
+					    this.btnBackToSales1.setVisible(!modeRender);
+					    this.btnSubmitToFinance.setVisible(!modeRender);
+					    this.btnBackToSales2.setVisible(!modeRender);
+					    this.btnSubmitToSM.setVisible(!modeRender);
+					    this.btnBackToLogistic.setVisible(!modeRender);
+					    this.btnSubmitToFinance2.setVisible(!modeRender);
+					} else {
+						if (vRoleUser.equals("SAO")){
+							this.btnNew.setVisible(!modeRender);
+							this.btnEdit.setVisible(modeRender);
+							this.btnDelete.setVisible(!modeRender);
+							this.btnSubmitToSAO.setVisible(!modeRender);
+						    this.btnSubmitToLogistic.setVisible(modeRender);
+						    this.btnBackToSales1.setVisible(modeRender);
+						    this.btnSubmitToFinance.setVisible(!modeRender);
+						    this.btnBackToSales2.setVisible(!modeRender);
+						    this.btnSubmitToSM.setVisible(!modeRender);
+						    this.btnBackToLogistic.setVisible(!modeRender);
+						    this.btnSubmitToFinance2.setVisible(!modeRender);
+						} else {
+							if (vRoleUser.equals("LOGISTIC")){
+								this.btnNew.setVisible(!modeRender);
+								this.btnEdit.setVisible(modeRender);
+								this.btnDelete.setVisible(!modeRender);
+								this.btnSubmitToSAO.setVisible(!modeRender);
+							    this.btnSubmitToLogistic.setVisible(!modeRender);
+							    this.btnBackToSales1.setVisible(!modeRender);
+							    this.btnSubmitToFinance.setVisible(modeRender);
+							    this.btnBackToSales2.setVisible(modeRender);
+							    this.btnSubmitToSM.setVisible(!modeRender);
+							    this.btnBackToLogistic.setVisible(!modeRender);
+							    this.btnSubmitToFinance2.setVisible(!modeRender);
+							} else {
+								if (vRoleUser.equals("FINANCE")){
+									this.btnNew.setVisible(!modeRender);
+									this.btnEdit.setVisible(modeRender);
+									this.btnDelete.setVisible(!modeRender);
+									this.btnSubmitToSAO.setVisible(!modeRender);
+								    this.btnSubmitToLogistic.setVisible(!modeRender);
+								    this.btnBackToSales1.setVisible(!modeRender);
+								    this.btnSubmitToFinance.setVisible(!modeRender);
+								    this.btnBackToSales2.setVisible(!modeRender);
+								    this.btnSubmitToSM.setVisible(modeRender);
+								    this.btnBackToLogistic.setVisible(modeRender);
+								    this.btnSubmitToFinance2.setVisible(!modeRender);
+								} else {
+									if (vRoleUser.equals("SM")){
+										this.btnNew.setVisible(!modeRender);
+										this.btnEdit.setVisible(modeRender);
+										this.btnDelete.setVisible(!modeRender);
+										this.btnSubmitToSAO.setVisible(!modeRender);
+									    this.btnSubmitToLogistic.setVisible(!modeRender);
+									    this.btnBackToSales1.setVisible(!modeRender);
+									    this.btnSubmitToFinance.setVisible(!modeRender);
+									    this.btnBackToSales2.setVisible(!modeRender);
+									    this.btnSubmitToSM.setVisible(!modeRender);
+									    this.btnBackToLogistic.setVisible(!modeRender);
+									    this.btnSubmitToFinance2.setVisible(modeRender);
+									} else {
+										this.btnNew.setVisible(!modeRender);
+										this.btnEdit.setVisible(modeRender);
+										this.btnDelete.setVisible(!modeRender);
+										this.btnSubmitToSAO.setVisible(!modeRender);
+									    this.btnSubmitToLogistic.setVisible(!modeRender);
+									    this.btnBackToSales1.setVisible(!modeRender);
+									    this.btnSubmitToFinance.setVisible(!modeRender);
+									    this.btnBackToSales2.setVisible(!modeRender);
+									    this.btnSubmitToSM.setVisible(!modeRender);
+									    this.btnBackToLogistic.setVisible(!modeRender);
+									    this.btnSubmitToFinance2.setVisible(!modeRender);
+									}
+								}
+							}
+						}
+							
+					}
+				}		
+				
+			} else {
+				this.btnNew.setVisible(modeRender);
+				this.btnEdit.setVisible(modeRender);
+				this.btnDelete.setVisible(modeRender);
+				this.btnSubmitToSAO.setVisible(modeRender);
+			    this.btnSubmitToLogistic.setVisible(modeRender);
+			    this.btnBackToSales1.setVisible(modeRender);
+			    this.btnSubmitToFinance.setVisible(modeRender);
+			    this.btnBackToSales2.setVisible(modeRender);
+			    this.btnSubmitToSM.setVisible(modeRender);
+			    this.btnBackToLogistic.setVisible(modeRender);
+			    this.btnSubmitToFinance2.setVisible(modeRender);
+			}		
 		}
-		
-		
 	}
     // +++++++++++++++++++++++++++++++++++++++++++++++++ //
     // ++++++++++++++++++++ Helpers ++++++++++++++++++++ //

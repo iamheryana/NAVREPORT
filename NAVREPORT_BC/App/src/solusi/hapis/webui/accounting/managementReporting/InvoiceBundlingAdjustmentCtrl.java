@@ -140,7 +140,7 @@ public class InvoiceBundlingAdjustmentCtrl extends GFCBaseCtrl implements Serial
 		}
 				
 		@SuppressWarnings("unused")
-		String vSync = callStoreProcOrFuncService.callSyncAReport("0101004");
+		String vSync = callStoreProcOrFuncService.callSyncAReport("0101005");
 		
 
 		
