@@ -9,44 +9,48 @@
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
 	<queryString>
-		<![CDATA[SELECT	X.COMPANY AS company
+		<![CDATA[SELECT	XX.company
+		,XX.nip
+		,XX.SALES_NAME
+		,XX.kddppt
+		,XX.nilai
+FROM	(
+SELECT	X.COMPANY AS company
 		, CASE WHEN X.COMPANY = 'AJ' THEN '1'+X.NIP ELSE '2'+X.NIP END AS nip
 		, X.SALES_NAME
-		,X.FLGDPPT AS flgdppt
 		,X.KDDPPT AS kddppt
-		,X.PERIODEMULAI AS periodemulai
-		,X.PERIODEAKHIR AS periodeakhir
-		,X.NILAI AS nilai
-		,X.PERSEN AS persen
-		,X.BAYARDIMUKA AS bayardimuka
-		,X.FLAG AS flag
-		,X.STATUSVALIDASI AS statusvalidasi
+		, SUM(X.NILAI) AS nilai
 FROM	(
 			SELECT 	SUBSTRING(M02.NIK,1,2) AS COMPANY
 					, SUBSTRING(M02.NIK,3,LEN(M02.NIK)-2) AS NIP
 					, M02.SALES_NAME
-					, 'D' AS FLGDPPT
 					, 'KOMS' AS KDDPPT
+					, SUM(T16.AMOUNT_KOMISI) AS NILAI
 					, CAST( (T16.TAHUN_KOMISI+'-'+T16.MASA_KOMISI+'-01') AS DATETIME) AS PERIODEMULAI
 					, DATEADD(MONTH, 1,  CAST( (T16.TAHUN_KOMISI+'-'+T16.MASA_KOMISI+'-01') AS DATETIME)) - 1 AS PERIODEAKHIR
-					, SUM(T16.AMOUNT_KOMISI) AS NILAI
-					, '' AS PERSEN
-					, '' AS BAYARDIMUKA
-					, '' AS FLAG
-					, '' AS STATUSVALIDASI
 					, MAX(M02.PERIODE_RESIGN) AS PERIODE_RESIGN
 			FROM [dbo].[T16_REKAP_COSTING] T16
 			LEFT JOIN [dbo].[M02_SALESPERSON] M02 ON M02.SALES = T16.SALES
 			WHERE T16.FLAG_KOMISI = 'Y' AND T16.TAHUN_KOMISI = $P{tahun} AND T16.MASA_KOMISI = $P{masa}
 			GROUP BY M02.NIK, M02.SALES_NAME, T16.TAHUN_KOMISI, T16.MASA_KOMISI
 			UNION ALL
+			SELECT 	SUBSTRING(M02.NIK,1,2) AS COMPANY
+					, SUBSTRING(M02.NIK,3,LEN(M02.NIK)-2) AS NIP
+					, M02.SALES_NAME
+					, 'BNSA' AS KDDPPT
+					, SUM(T35.AMOUNT_TQS) AS NILAI
+					, CAST( (T35.TAHUN_TQS+'-'+T35.MASA_TQS+'-01') AS DATETIME) AS PERIODEMULAI
+					, DATEADD(MONTH, 1,  CAST( (T35.TAHUN_TQS+'-'+T35.MASA_TQS+'-01') AS DATETIME)) - 1 AS PERIODEAKHIR
+					, MAX(M02.PERIODE_RESIGN) AS PERIODE_RESIGN
+			FROM [dbo].[T35_REKAP_TQS_SATINDO] T35
+			LEFT JOIN [dbo].[M02_SALESPERSON] M02 ON M02.SALES = T35.SALES
+			WHERE T35.TAHUN_TQS = $P{tahun} AND T35.MASA_TQS = $P{masa}
+			GROUP BY M02.NIK, M02.SALES_NAME, T35.TAHUN_TQS, T35.MASA_TQS
+			UNION ALL
 			SELECT 	SUBSTRING(XX.NIK,1,2) AS COMPANY
 					, SUBSTRING(XX.NIK,3,LEN(XX.NIK)-2) AS NIP
 					, XX.SALES_NAME
-					,'D' AS FLGDPPT
 					,'BNSA' AS KDDPPT
-					, CAST( (XX.TAHUN_TQS+'-'+XX.MASA_TQS+'-01') AS DATETIME) AS PERIODEMULAI
-					, DATEADD(MONTH, 1,  CAST( (XX.TAHUN_TQS+'-'+XX.MASA_TQS+'-01') AS DATETIME)) - 1 AS PERIODEAKHIR
 					, MAX (
 							CASE WHEN $P{masa} < '01' THEN
 								0
@@ -56,10 +60,8 @@ FROM	(
 								ROUND(((CASE WHEN XX.TOTAL_SALES_JAN - XX.[TARGET] <= 0 THEN 0 ELSE XX.TOTAL_SALES_JAN - XX.[TARGET] END) * XX.TOTAL_PCN_TQS_JAN),0)
 							END
 						  ) AS NILAI
-					, '' AS PERSEN
-					, '' AS BAYARDIMUKA
-					, '' AS FLAG
-					, '' AS STATUSVALIDASI
+					, CAST( (XX.TAHUN_TQS+'-'+XX.MASA_TQS+'-01') AS DATETIME) AS PERIODEMULAI
+					, DATEADD(MONTH, 1,  CAST( (XX.TAHUN_TQS+'-'+XX.MASA_TQS+'-01') AS DATETIME)) - 1 AS PERIODEAKHIR
 					, MAX(XX.PERIODE_RESIGN) AS PERIODE_RESIGN
 			FROM	(
 						SELECT	M02.NIK
@@ -97,22 +99,18 @@ FROM	(
 			WHERE XX.TAHUN_TQS = $P{tahun} AND XX.MASA_TQS = $P{masa}
 			GROUP BY XX.NIK, XX.SALES_NAME, XX.TAHUN_TQS, XX.MASA_TQS
 		) X
-WHERE	X.NILAI <> 0 AND
+WHERE
 		X.KDDPPT = $P{kodepdpt} AND
-		((X.PERIODEMULAI <= X.PERIODE_RESIGN AND X.PERIODE_RESIGN IS NOT NULL) or (X.PERIODE_RESIGN IS NULL))]]>
+		((X.PERIODEMULAI <= X.PERIODE_RESIGN AND X.PERIODE_RESIGN IS NOT NULL) or (X.PERIODE_RESIGN IS NULL))
+GROUP BY X.COMPANY, X.NIP, X.SALES_NAME, X.KDDPPT
+		) XX
+WHERE XX.nilai <> 0 ]]>
 	</queryString>
 	<field name="company" class="java.lang.String"/>
 	<field name="nip" class="java.lang.String"/>
 	<field name="SALES_NAME" class="java.lang.String"/>
-	<field name="flgdppt" class="java.lang.String"/>
 	<field name="kddppt" class="java.lang.String"/>
-	<field name="periodemulai" class="java.sql.Timestamp"/>
-	<field name="periodeakhir" class="java.sql.Timestamp"/>
 	<field name="nilai" class="java.math.BigDecimal"/>
-	<field name="persen" class="java.lang.String"/>
-	<field name="bayardimuka" class="java.lang.String"/>
-	<field name="flag" class="java.lang.String"/>
-	<field name="statusvalidasi" class="java.lang.String"/>
 	<sortField name="nip"/>
 	<title>
 		<band height="14">

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="0406001_Sales_POVSREV_SubRpt" language="groovy" pageWidth="125" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="125" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.9487171000000225"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Tahun" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Bulan" class="java.lang.Integer"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	XX.COMPANY
+		, XX.PO_DATE
+		, XX.AMOUNT_IDR
+FROM	(
+			SELECT	X.COMPANY
+					, X.PO_DATE
+					, SUM(X.AMOUNT_IDR) AS AMOUNT_IDR
+			FROM	(
+												SELECT  CASE	WHEN TSR.COMPANY IN ('AUTOJAYA', 'AJ-ADJ') THEN 'Autojaya Idetech'
+										WHEN TSR.COMPANY IN ('SOLUSI', 'SP-ADJ') THEN 'Solusi Periferal'
+										ELSE 'N/A' END AS COMPANY
+								, DATEPART(YEAR, TSR.POSTING_DATE) AS TAHUN
+								, DATEPART(MONTH, TSR.POSTING_DATE) AS BULAN
+								,	CASE WHEN SLH.[Order Date] IS NULL THEN 'Adjustment'
+									ELSE
+										SUBSTRING (CONVERT(VARCHAR,SLH.[Order Date] , 105), 7, 4) +'-'+
+										SUBSTRING (CONVERT(VARCHAR,SLH.[Order Date] , 105), 4, 2)
+									END AS PO_DATE
+								, AMOUNT_IDR
+						FROM [dbo].[T_SALES_REV] TSR
+						LEFT JOIN	(
+										SELECT	'AUTOJAYA' AS COMPANY
+												, SIH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+										UNION ALL
+										SELECT	'AUTOJAYA' AS COMPANY
+												, SCH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] SCH
+										LEFT JOIN  [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = SCH.[Applies-to Doc_ No_]
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, SIH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, SCH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_SOLUSI$Sales Cr_Memo Header] SCH
+										LEFT JOIN  [dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = SCH.[Applies-to Doc_ No_]
+									) SLH ON SLH.COMPANY = TSR.COMPANY AND SLH.[No_] = TSR.DOCUMENT_NO
+						UNION ALL
+						SELECT  'Total - ACS' AS COMPANY
+								, DATEPART(YEAR, TSR.POSTING_DATE) AS TAHUN
+								, DATEPART(MONTH, TSR.POSTING_DATE) AS BULAN
+								,	CASE WHEN SLH.[Order Date] IS NULL THEN 'Adjustment'
+									ELSE
+										SUBSTRING (CONVERT(VARCHAR,SLH.[Order Date] , 105), 7, 4) +'-'+
+										SUBSTRING (CONVERT(VARCHAR,SLH.[Order Date] , 105), 4, 2)
+									END AS PO_DATE
+								, AMOUNT_IDR
+						FROM [dbo].[T_SALES_REV] TSR
+						LEFT JOIN	(
+										SELECT	'AUTOJAYA' AS COMPANY
+												, SIH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+										UNION ALL
+										SELECT	'AUTOJAYA' AS COMPANY
+												, SCH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] SCH
+										LEFT JOIN  [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = SCH.[Applies-to Doc_ No_]
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, SIH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, SCH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_SOLUSI$Sales Cr_Memo Header] SCH
+										LEFT JOIN  [dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = SCH.[Applies-to Doc_ No_]
+									) SLH ON SLH.COMPANY = TSR.COMPANY AND SLH.[No_] = TSR.DOCUMENT_NO
+					) X
+			WHERE	X.TAHUN = $P{Tahun} AND
+					X.BULAN = $P{Bulan} AND
+					X.COMPANY = $P{Company}
+			GROUP BY X.TAHUN, X.COMPANY, X.PO_DATE
+		) XX
+WHERE XX.AMOUNT_IDR <> 0]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="PO_DATE" class="java.lang.String"/>
+	<field name="AMOUNT_IDR" class="java.math.BigDecimal"/>
+	<sortField name="PO_DATE"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="e03c744c-eafa-499b-858d-03c334ea5f0e"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PO_DATE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="50" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="271055e2-b9e2-4467-81db-2fb2cdfea5da"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

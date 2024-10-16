@@ -9,9 +9,12 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zul.Datebox;
+import org.zkoss.zul.Radio;
+import org.zkoss.zul.Radiogroup;
 
 import solusi.hapis.backend.navbi.service.CallStoreProcOrFuncService;
 import solusi.hapis.webui.reports.util.JReportGeneratorWindow;
@@ -27,6 +30,10 @@ public class FileBonusNonSalesCtrl extends GFCBaseCtrl implements Serializable {
 	
 	protected Datebox dbTglFrom;
 	protected Datebox dbTglUpto;
+	
+	protected Radiogroup rdgJenis;	 
+	protected Radio rdSUM;
+	protected Radio rdDTL;
  
 	private CallStoreProcOrFuncService callStoreProcOrFuncService;
 //	private PathReport pathRpt;
@@ -50,13 +57,14 @@ public class FileBonusNonSalesCtrl extends GFCBaseCtrl implements Serializable {
 		dbTglFrom.setValue(vTglFrom);
 		dbTglUpto.setValue(new Date());
    
+		rdSUM.setSelected(true);
     	
 	}
 	
 		
 	@SuppressWarnings("unchecked")
 	public void onClick$btnOK(Event event) throws InterruptedException, ParseException, IOException {
-		String timeStamp = String.valueOf(System.currentTimeMillis());
+//		String timeStamp = String.valueOf(System.currentTimeMillis());
 //    	pathRpt = new PathReport(timeStamp);
 //    	  
     	Calendar cTglFrom = Calendar.getInstance();		
@@ -78,6 +86,11 @@ public class FileBonusNonSalesCtrl extends GFCBaseCtrl implements Serializable {
 		if(dbTglUpto.getValue() != null){
 			vTglUpto = dbTglUpto.getValue();			
 		}
+		
+		String vJenisLap = "SUM";
+		if (StringUtils.isNotEmpty(rdgJenis.getSelectedItem().getValue())) {
+			vJenisLap = rdgJenis.getSelectedItem().getValue();	
+		} 
 		
 //		
 //		//Ambil data Invoice Lunas dari NAV -------------------------------------------------------------------------------
@@ -167,11 +180,11 @@ public class FileBonusNonSalesCtrl extends GFCBaseCtrl implements Serializable {
 		@SuppressWarnings("unused")
 		String vSync = callStoreProcOrFuncService.callSyncAReport("0205002");
         
-        String jasperRptFinal = "/solusi/hapis/webui/reports/finance/02043_FileBonusNonSalesSatindo.jasper";
+        String jasperRptFinal = "/solusi/hapis/webui/reports/finance/02043_FileBonusNonSalesSatindo_New.jasper";
 		
         param.put("TglFrom",  vTglFrom);
 		param.put("TglUpto",  vTglUpto);
-		param.put("ProsesId",  timeStamp);  
+		param.put("JenisLap",  vJenisLap);  
 	
 		
 		

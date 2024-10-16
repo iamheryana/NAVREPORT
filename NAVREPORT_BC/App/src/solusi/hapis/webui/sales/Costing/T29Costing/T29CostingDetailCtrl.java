@@ -1,7 +1,9 @@
 package solusi.hapis.webui.sales.Costing.T29Costing;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -12,6 +14,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.read.biff.BiffException;
+//import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
+
+import org.zkoss.util.media.AMedia;
 import org.zkoss.util.media.Media;
 import org.zkoss.util.resource.Labels;
 import org.zkoss.zk.ui.Component;
@@ -162,12 +173,16 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Button btnView;
 	protected Button btnEdit;
 	protected Button btnDelete;
+	protected Button btnExport;
+	protected Button btnImport;
 	
 	// Button tabel Detail 2 - T31CostingD_ACSPS
 	protected Button btnNew_B;
 	protected Button btnView_B;
 	protected Button btnEdit_B;
 	protected Button btnDelete_B;
+	protected Button btnExport_B;
+	protected Button btnImport_B;
 	
 	
 	// Button tabel Detail 3 - T32CostingD_OWNSW
@@ -175,12 +190,16 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Button btnView_C;
 	protected Button btnEdit_C;
 	protected Button btnDelete_C;
+	protected Button btnExport_C;
+	protected Button btnImport_C;
 	
 	// Button tabel Detail 4 - T33CostingD_OTHER
 	protected Button btnNew_D;
 	protected Button btnView_D;
 	protected Button btnEdit_D;
 	protected Button btnDelete_D;
+	protected Button btnExport_D;
+	protected Button btnImport_D;
 	
 	
 	// Button tabel Detail 5 - T34CostingD_PAYMENT
@@ -1074,21 +1093,29 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				btnView.setVisible(true);
 				btnEdit.setVisible(false);
 				btnDelete.setVisible(false);
+				btnExport.setVisible(false);
+				btnImport.setVisible(false);
 				
 				btnNew_B.setVisible(false);
 				btnView_B.setVisible(true);
 				btnEdit_B.setVisible(false);
 				btnDelete_B.setVisible(false);
+				btnExport_B.setVisible(false);
+				btnImport_B.setVisible(false);
 				
 				btnNew_C.setVisible(false);
 				btnView_C.setVisible(true);
 				btnEdit_C.setVisible(false);
 				btnDelete_C.setVisible(false);
+				btnExport_C.setVisible(false);
+				btnImport_C.setVisible(false);
 				
 				btnNew_D.setVisible(false);
 				btnView_D.setVisible(true);
 				btnEdit_D.setVisible(false);
 				btnDelete_D.setVisible(false);
+				btnExport_D.setVisible(false);
+				btnImport_D.setVisible(false);
 				
 				btnNew_E.setVisible(false);
 				btnView_E.setVisible(true);
@@ -1138,21 +1165,29 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				btnView.setVisible(false);
 				btnEdit.setVisible(true);
 				btnDelete.setVisible(true);
+				btnExport.setVisible(true);
+				btnImport.setVisible(true);
 				
 				btnNew_B.setVisible(true);
 				btnView_B.setVisible(false);
 				btnEdit_B.setVisible(true);
 				btnDelete_B.setVisible(true);
+				btnExport_B.setVisible(true);
+				btnImport_B.setVisible(true);
 				
 				btnNew_C.setVisible(true);
 				btnView_C.setVisible(false);
 				btnEdit_C.setVisible(true);
 				btnDelete_C.setVisible(true);
+				btnExport_C.setVisible(true);
+				btnImport_C.setVisible(true);
 				
 				btnNew_D.setVisible(true);
 				btnView_D.setVisible(false);
 				btnEdit_D.setVisible(true);
 				btnDelete_D.setVisible(true);
+				btnExport_D.setVisible(true);
+				btnImport_D.setVisible(true);
 				
 				btnNew_E.setVisible(false);
 				btnView_E.setVisible(false);
@@ -1208,21 +1243,29 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 					btnView.setVisible(false);
 					btnEdit.setVisible(true);
 					btnDelete.setVisible(true);
+					btnExport.setVisible(true);
+					btnImport.setVisible(true);
 					
 					btnNew_B.setVisible(true);
 					btnView_B.setVisible(false);
 					btnEdit_B.setVisible(true);
 					btnDelete_B.setVisible(true);
+					btnExport_B.setVisible(true);
+					btnImport_B.setVisible(true);
 					
 					btnNew_C.setVisible(true);
 					btnView_C.setVisible(false);
 					btnEdit_C.setVisible(true);
 					btnDelete_C.setVisible(true);
+					btnExport_C.setVisible(true);
+					btnImport_C.setVisible(true);
 					
 					btnNew_D.setVisible(true);
 					btnView_D.setVisible(false);
 					btnEdit_D.setVisible(true);
 					btnDelete_D.setVisible(true);
+					btnExport_D.setVisible(true);
+					btnImport_D.setVisible(true);
 					
 					btnNew_E.setVisible(false);
 					btnView_E.setVisible(false);
@@ -1272,21 +1315,29 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						btnView.setVisible(true);
 						btnEdit.setVisible(false);
 						btnDelete.setVisible(false);
+						btnExport.setVisible(false);
+						btnImport.setVisible(false);
 						
 						btnNew_B.setVisible(false);
 						btnView_B.setVisible(true);
 						btnEdit_B.setVisible(false);
 						btnDelete_B.setVisible(false);
+						btnExport_B.setVisible(false);
+						btnImport_B.setVisible(false);
 						
 						btnNew_C.setVisible(false);
 						btnView_C.setVisible(true);
 						btnEdit_C.setVisible(false);
 						btnDelete_C.setVisible(false);
+						btnExport_C.setVisible(false);
+						btnImport_C.setVisible(false);
 						
 						btnNew_D.setVisible(false);
 						btnView_D.setVisible(true);
 						btnEdit_D.setVisible(false);
 						btnDelete_D.setVisible(false);
+						btnExport_D.setVisible(false);
+						btnImport_D.setVisible(false);
 						
 						btnNew_E.setVisible(false);
 						btnView_E.setVisible(false);
@@ -1337,21 +1388,29 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 							btnView.setVisible(true);
 							btnEdit.setVisible(true);
 							btnDelete.setVisible(false);
+							btnExport.setVisible(false);
+							btnImport.setVisible(false);
 							
 							btnNew_B.setVisible(false);
 							btnView_B.setVisible(true);
 							btnEdit_B.setVisible(false);
 							btnDelete_B.setVisible(false);
+							btnExport_B.setVisible(false);
+							btnImport_B.setVisible(false);
 							
 							btnNew_C.setVisible(false);
 							btnView_C.setVisible(true);
 							btnEdit_C.setVisible(false);
 							btnDelete_C.setVisible(false);
+							btnExport_C.setVisible(false);
+							btnImport_C.setVisible(false);
 							
 							btnNew_D.setVisible(false);
 							btnView_D.setVisible(true);
 							btnEdit_D.setVisible(true);
 							btnDelete_D.setVisible(false);
+							btnExport_D.setVisible(false);
+							btnImport_D.setVisible(false);
 							
 							btnNew_E.setVisible(false);
 							btnView_E.setVisible(false);
@@ -1402,21 +1461,29 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 								btnView.setVisible(true);
 								btnEdit.setVisible(false);
 								btnDelete.setVisible(false);
+								btnExport.setVisible(false);
+								btnImport.setVisible(false);
 								
 								btnNew_B.setVisible(false);
 								btnView_B.setVisible(true);
 								btnEdit_B.setVisible(false);
 								btnDelete_B.setVisible(false);
+								btnExport_B.setVisible(false);
+								btnImport_B.setVisible(false);
 								
 								btnNew_C.setVisible(false);
 								btnView_C.setVisible(true);
 								btnEdit_C.setVisible(false);
 								btnDelete_C.setVisible(false);
+								btnExport_C.setVisible(false);
+								btnImport_C.setVisible(false);
 								
 								btnNew_D.setVisible(false);
 								btnView_D.setVisible(true);
 								btnEdit_D.setVisible(false);
 								btnDelete_D.setVisible(false);
+								btnExport_D.setVisible(false);
+								btnImport_D.setVisible(false);
 								
 								btnNew_E.setVisible(true);
 								btnView_E.setVisible(true);
@@ -1462,25 +1529,33 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 									txtCustomer.setReadonly(false);
 									txtNoPenawaran.setReadonly(false);
 									
-									btnNew.setVisible(true);
-									btnView.setVisible(false);
-									btnEdit.setVisible(true);
-									btnDelete.setVisible(true);
+									btnNew.setVisible(false);
+									btnView.setVisible(true);
+									btnEdit.setVisible(false);
+									btnDelete.setVisible(false);
+									btnExport.setVisible(false);
+									btnImport.setVisible(false);
 									
-									btnNew_B.setVisible(true);
-									btnView_B.setVisible(false);
-									btnEdit_B.setVisible(true);
-									btnDelete_B.setVisible(true);
+									btnNew_B.setVisible(false);
+									btnView_B.setVisible(true);
+									btnEdit_B.setVisible(false);
+									btnDelete_B.setVisible(false);
+									btnExport_B.setVisible(false);
+									btnImport_B.setVisible(false);
 									
-									btnNew_C.setVisible(true);
-									btnView_C.setVisible(false);
-									btnEdit_C.setVisible(true);
-									btnDelete_C.setVisible(true);
+									btnNew_C.setVisible(false);
+									btnView_C.setVisible(true);
+									btnEdit_C.setVisible(false);
+									btnDelete_C.setVisible(false);
+									btnExport_C.setVisible(false);
+									btnImport_C.setVisible(false);
 									
-									btnNew_D.setVisible(true);
-									btnView_D.setVisible(false);
-									btnEdit_D.setVisible(true);
-									btnDelete_D.setVisible(true);
+									btnNew_D.setVisible(false);
+									btnView_D.setVisible(true);
+									btnEdit_D.setVisible(false);
+									btnDelete_D.setVisible(false);
+									btnExport_D.setVisible(false);
+									btnImport_D.setVisible(false);
 									
 									btnNew_E.setVisible(false);
 									btnView_E.setVisible(false);
@@ -1670,6 +1745,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		
 		vTotalMargin = vTotalSales.subtract(vTotalCOGS);
 		
+		
 		if (vTotalSales.compareTo(new BigDecimal(0)) > 0){
 			vTotalMarginPcn = (vTotalMargin.multiply(new BigDecimal(100.00))).divide(vTotalSales, 5, RoundingMode.HALF_UP);	
 		} else {
@@ -1683,7 +1759,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		
 		
 		
-		// Parameter perhitungan Incentive
+		// Parameter perhitungan Incentive untuk Hardware dan 3 Party Service
 		
 		BigDecimal vPengali = new BigDecimal(0.1);
 		BigDecimal vBatasI = new BigDecimal(20.00);
@@ -1701,11 +1777,14 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		
 		
 		
-		if (vTotalMarginPcn.compareTo(vBatasI) >= 0){
-			vPcnIncentiveFormula = (vTotalMarginPcn.subtract(vPengurangBatasI)).multiply(vPengali);
+		if (vTotalMarginNonAcsPsPcn.compareTo(vBatasI) >= 0){
+			
+			vPcnIncentiveFormula = (vTotalMarginNonAcsPsPcn.subtract(vPengurangBatasI)).multiply(vPengali);
+	
 		} else {
-			if (vTotalMarginPcn.compareTo(vBatasII) >= 0){
-				vPcnIncentiveFormula = (vTotalMarginPcn.subtract(vPengurangBatasII)).multiply(vPengali);
+			if (vTotalMarginNonAcsPsPcn.compareTo(vBatasII) >= 0){
+				vPcnIncentiveFormula = (vTotalMarginNonAcsPsPcn.subtract(vPengurangBatasII)).multiply(vPengali);
+
 			} else {
 				vPcnIncentiveFormula = new BigDecimal(0);
 			}
@@ -2325,6 +2404,208 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		}
 	}
 	
+	public void onClick$btnExport(Event event) throws InterruptedException{
+		try {
+			String vTimeStamp = String.valueOf(System.currentTimeMillis());
+			PathReport pathReport = new PathReport(vTimeStamp);
+			
+			File outputFile = new File(pathReport.getFormatDetailCosting1());
+			
+			
+			WritableWorkbook outputFileWorkbook = Workbook.createWorkbook(outputFile);
+			
+			WritableSheet sheet1= outputFileWorkbook.createSheet("Sheet1", 0);
+			
+			sheet1.addCell(new jxl.write.Label(0, 0, "Product Desc."));
+			sheet1.addCell(new jxl.write.Label(1, 0, "Product No."));
+			sheet1.addCell(new jxl.write.Label(2, 0, "Item Category"));
+			sheet1.addCell(new jxl.write.Label(3, 0, "Item Product Grp."));
+			sheet1.addCell(new jxl.write.Label(4, 0, "Qty"));
+			sheet1.addCell(new jxl.write.Label(5, 0, "Unit Price"));
+			sheet1.addCell(new jxl.write.Label(6, 0, "Unit COGS"));
+			sheet1.addCell(new jxl.write.Label(7, 0, "Catatan"));
+			
+			
+			if(getT29CostingH() != null){
+				if(CommonUtils.isNotEmpty(getT29CostingH().getT30CostingDHw3pss())){
+					int vRow = 1;
+					for (T30CostingDHw3ps t30 : getT29CostingH().getT30CostingDHw3pss()) {
+						
+						sheet1.addCell(new jxl.write.Label(0, vRow, t30.getItemDesc()));
+						sheet1.addCell(new jxl.write.Label(1, vRow, t30.getItemNo()));
+						sheet1.addCell(new jxl.write.Label(2, vRow, t30.getItemCategory()));
+						sheet1.addCell(new jxl.write.Label(3, vRow, t30.getProduct()));
+						sheet1.addCell(new jxl.write.Number(4, vRow, t30.getQty().doubleValue()));
+						sheet1.addCell(new jxl.write.Number(5, vRow, t30.getSalesSatuan().doubleValue()));
+						sheet1.addCell(new jxl.write.Number(6, vRow, t30.getCogsSatuan().doubleValue()));
+						sheet1.addCell(new jxl.write.Label(7, vRow, t30.getCatatan()));
+						vRow = vRow +1;
+					}
+				}	else {
+					sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+					sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+					sheet1.addCell(new jxl.write.Label(2, 1, "HW01/PS01/PS03/PS04/PS05"));
+					sheet1.addCell(new jxl.write.Label(3, 1, "H001/../S503"));
+					sheet1.addCell(new jxl.write.Number(4, 1, 9999));
+					sheet1.addCell(new jxl.write.Number(5, 1, 999999999));
+					sheet1.addCell(new jxl.write.Number(6, 1, 999999999));
+					sheet1.addCell(new jxl.write.Label(7, 1, "Catatan Jika Ada"));
+				}
+				
+			} else {
+				sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+				sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+				sheet1.addCell(new jxl.write.Label(2, 1, "HW01/PS01/PS03/PS04/PS05"));
+				sheet1.addCell(new jxl.write.Label(3, 1, "H001/../S503"));
+				sheet1.addCell(new jxl.write.Number(4, 1, 9999));
+				sheet1.addCell(new jxl.write.Number(5, 1, 999999999));
+				sheet1.addCell(new jxl.write.Number(6, 1, 999999999));
+				sheet1.addCell(new jxl.write.Label(7, 1, "Catatan Jika Ada"));
+			}
+			
+			
+			outputFileWorkbook.write();
+			
+			InputStream mediais = new FileInputStream(outputFile);
+			AMedia amedia = new AMedia("HardwareAndThirdPartyService.xls", "xls", "application/vnd.ms-excel", mediais);
+				
+			Filedownload.save(amedia);
+			
+			outputFileWorkbook.close();
+			
+			outputFile.delete();
+			
+		} catch (WriteException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		} catch (IOException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		}		
+	}
+	
+	public void onClick$btnImport(Event event) throws InterruptedException{
+		
+		
+		Media media = Fileupload.get("Please select a File", "Upload");
+		
+		if (CommonUtils.isNotEmpty(media)) {
+
+			try {
+				
+				if(getT29CostingH() != null){
+					if(CommonUtils.isNotEmpty(getT29CostingH().getT30CostingDHw3pss())){
+					
+						for (T30CostingDHw3ps t30 : getT29CostingH().getT30CostingDHw3pss()) {
+							if (t30.getT30Id() > 0) {
+								list_Deleted_T30CostingD_HW3PS_List
+										.add(t30);
+							}
+							list_T30CostingD_HW3PS_List.remove(t30);
+							
+							//setModel_T30CostingD_HW3PS_List();
+						}
+					}
+				}
+				
+				// Membaca Excel dari file yang di Upload
+				Workbook workbook = Workbook.getWorkbook(media.getStreamData());
+				Sheet sheet = workbook.getSheet(0);
+
+				int vJmlData = sheet.getRows();				
+				
+				for (int i = 1; i < vJmlData; i++){
+					
+					String vProductDesc = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(0,i).getContents())){
+						vProductDesc = sheet.getCell(0,i).getContents();
+					}
+					
+					String vPartNo = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(1,i).getContents())){
+						vPartNo = sheet.getCell(1,i).getContents();
+					}
+					
+					String vItemCat = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(2,i).getContents())){
+						vItemCat = sheet.getCell(2,i).getContents();
+					}
+					
+					String vProductGrp = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(3,i).getContents())){
+						vProductGrp = sheet.getCell(3,i).getContents();
+					}
+					
+					BigDecimal vQty = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(4,i).getContents())){
+						vQty = new BigDecimal(sheet.getCell(4,i).getContents());
+					}
+					
+					BigDecimal vUnitPrice = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(5,i).getContents())){
+						vUnitPrice = new BigDecimal(sheet.getCell(5,i).getContents());
+					}
+					
+					BigDecimal vSalesTotal = vQty.multiply(vUnitPrice);
+					
+					
+					BigDecimal vUnitCOGS = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(6,i).getContents())){
+						vUnitCOGS = new BigDecimal(sheet.getCell(6,i).getContents());
+					}
+					
+					
+					BigDecimal vCOGSTotal = vQty.multiply(vUnitCOGS);
+					
+					String vCatatan = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(7,i).getContents())){
+						vCatatan = sheet.getCell(7,i).getContents();
+					}
+					
+					
+					T30CostingDHw3ps newDetail = new T30CostingDHw3ps();
+					newDetail.setT29CostingH(getT29CostingH());
+					
+					newDetail.setItemDesc(vProductDesc);
+					newDetail.setItemNo(vPartNo);
+					newDetail.setItemCategory(vItemCat);
+					newDetail.setProduct(vProductGrp);
+					newDetail.setQty(vQty);
+					newDetail.setSalesSatuan(vUnitPrice);
+					newDetail.setSalesTotal(vSalesTotal);
+					newDetail.setCogsSatuan(vUnitCOGS);
+					newDetail.setCogsTotal(vCOGSTotal);
+					newDetail.setCatatan(vCatatan);
+					
+					
+					list_T30CostingD_HW3PS_List.add(newDetail);
+
+				
+				}
+
+				workbook.close();
+
+				//lbl1.setValue(media.getName()+ " Sudah berhasil terupload.");
+
+				setModel_T30CostingD_HW3PS_List();
+				
+				HitDetailT30CostingDHw3ps ();
+				
+			} catch (BiffException e) {
+				Messagebox.show("Not an Excel File : " + media.getName(),
+						"Error", Messagebox.OK, Messagebox.ERROR);
+			} catch (IOException e) {
+				Messagebox.show("Error : " + e.getMessage(), "Error",
+						Messagebox.OK, Messagebox.ERROR);
+
+			}
+
+		}
+
+		
+	}
+	
+	
 	// Action Button Detail 2 - T31CostingD_ACSPS -------------------------------------------------------------------------------------
 	public void onClick$btnNew_B(Event event) {
 		T31CostingDAcsps newDetail = new T31CostingDAcsps();
@@ -2435,6 +2716,175 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 
 			}
 		}
+	}
+	
+	public void onClick$btnExport_B(Event event) throws InterruptedException{
+		try {
+			String vTimeStamp = String.valueOf(System.currentTimeMillis());
+			PathReport pathReport = new PathReport(vTimeStamp);
+			
+			File outputFile = new File(pathReport.getFormatDetailCosting1());
+			
+			
+			WritableWorkbook outputFileWorkbook = Workbook.createWorkbook(outputFile);
+			
+			WritableSheet sheet1= outputFileWorkbook.createSheet("Sheet1", 0);
+			
+			sheet1.addCell(new jxl.write.Label(0, 0, "Product Desc."));
+			sheet1.addCell(new jxl.write.Label(1, 0, "Product No."));
+			sheet1.addCell(new jxl.write.Label(2, 0, "Qty"));
+			sheet1.addCell(new jxl.write.Label(3, 0, "Unit Price"));
+			sheet1.addCell(new jxl.write.Label(4, 0, "Catatan"));
+			
+			
+			if(getT29CostingH() != null){
+				if(CommonUtils.isNotEmpty(getT29CostingH().getT31CostingDAcspss())){
+					int vRow = 1;
+					for (T31CostingDAcsps t31 : getT29CostingH().getT31CostingDAcspss()) {
+						
+						sheet1.addCell(new jxl.write.Label(0, vRow, t31.getItemDesc()));
+						sheet1.addCell(new jxl.write.Label(1, vRow, t31.getItemNo()));
+						sheet1.addCell(new jxl.write.Number(2, vRow, t31.getQty().doubleValue()));
+						sheet1.addCell(new jxl.write.Number(3, vRow, t31.getSalesSatuan().doubleValue()));
+						sheet1.addCell(new jxl.write.Label(4, vRow, t31.getCatatan()));
+						vRow = vRow +1;
+					}
+				}	else {
+					sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+					sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+					sheet1.addCell(new jxl.write.Number(2, 1, 9999));
+					sheet1.addCell(new jxl.write.Number(3, 1, 999999999));
+					sheet1.addCell(new jxl.write.Label(4, 1, "Catatan Jika Ada"));
+				}
+				
+			} else {
+				sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+				sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+				sheet1.addCell(new jxl.write.Number(2, 1, 9999));
+				sheet1.addCell(new jxl.write.Number(3, 1, 999999999));
+				sheet1.addCell(new jxl.write.Label(4, 1, "Catatan Jika Ada"));
+			}
+			
+			
+			outputFileWorkbook.write();
+			
+			InputStream mediais = new FileInputStream(outputFile);
+			AMedia amedia = new AMedia("ACSPs.xls", "xls", "application/vnd.ms-excel", mediais);
+				
+			Filedownload.save(amedia);
+			
+			outputFileWorkbook.close();
+			
+			outputFile.delete();
+			
+		} catch (WriteException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		} catch (IOException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		}		
+	}
+	
+	public void onClick$btnImport_B(Event event) throws InterruptedException{
+		
+		
+		Media media = Fileupload.get("Please select a File", "Upload");
+		
+		if (CommonUtils.isNotEmpty(media)) {
+
+			try {
+				
+				if(getT29CostingH() != null){
+					if(CommonUtils.isNotEmpty(getT29CostingH().getT31CostingDAcspss())){
+					
+						for (T31CostingDAcsps t31 : getT29CostingH().getT31CostingDAcspss()) {
+							if (t31.getT31Id() > 0) {
+								list_Deleted_T31CostingD_ACSPS_List
+										.add(t31);
+							}
+							list_T31CostingD_ACSPS_List.remove(t31);
+							
+							//setModel_T31CostingD_ACSPS_List();
+						}
+					}
+				}
+				
+				// Membaca Excel dari file yang di Upload
+				Workbook workbook = Workbook.getWorkbook(media.getStreamData());
+				Sheet sheet = workbook.getSheet(0);
+
+				int vJmlData = sheet.getRows();				
+				
+				for (int i = 1; i < vJmlData; i++){
+					
+					String vProductDesc = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(0,i).getContents())){
+						vProductDesc = sheet.getCell(0,i).getContents();
+					}
+					
+					String vPartNo = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(1,i).getContents())){
+						vPartNo = sheet.getCell(1,i).getContents();
+					}
+					
+					BigDecimal vQty = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(2,i).getContents())){
+						vQty = new BigDecimal(sheet.getCell(2,i).getContents());
+					}
+					
+					BigDecimal vUnitPrice = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(3,i).getContents())){
+						vUnitPrice = new BigDecimal(sheet.getCell(3,i).getContents());
+					}
+					
+					BigDecimal vSalesTotal = vQty.multiply(vUnitPrice);
+					
+					
+					String vCatatan = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(4,i).getContents())){
+						vCatatan = sheet.getCell(4,i).getContents();
+					}
+					
+					
+					T31CostingDAcsps newDetail = new T31CostingDAcsps();
+					newDetail.setT29CostingH(getT29CostingH());
+					
+					newDetail.setItemDesc(vProductDesc);
+					newDetail.setItemNo(vPartNo);
+					newDetail.setItemCategory("PS04");
+					newDetail.setProduct("S404");
+					newDetail.setQty(vQty);
+					newDetail.setSalesSatuan(vUnitPrice);
+					newDetail.setSalesTotal(vSalesTotal);
+					newDetail.setCatatan(vCatatan);
+					
+					
+					list_T31CostingD_ACSPS_List.add(newDetail);
+
+				
+				}
+
+				workbook.close();
+
+				//lbl1.setValue(media.getName()+ " Sudah berhasil terupload.");
+
+				setModel_T31CostingD_ACSPS_List();
+				
+				HitDetailT31CostingDAcsps();
+				
+			} catch (BiffException e) {
+				Messagebox.show("Not an Excel File : " + media.getName(),
+						"Error", Messagebox.OK, Messagebox.ERROR);
+			} catch (IOException e) {
+				Messagebox.show("Error : " + e.getMessage(), "Error",
+						Messagebox.OK, Messagebox.ERROR);
+
+			}
+
+		}
+
+		
 	}
 	
 	
@@ -2550,6 +3000,183 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		}
 	}
 
+	public void onClick$btnExport_C(Event event) throws InterruptedException{
+		try {
+			String vTimeStamp = String.valueOf(System.currentTimeMillis());
+			PathReport pathReport = new PathReport(vTimeStamp);
+			
+			File outputFile = new File(pathReport.getFormatDetailCosting1());
+			
+			
+			WritableWorkbook outputFileWorkbook = Workbook.createWorkbook(outputFile);
+			
+			WritableSheet sheet1= outputFileWorkbook.createSheet("Sheet1", 0);
+			
+			sheet1.addCell(new jxl.write.Label(0, 0, "Product Desc."));
+			sheet1.addCell(new jxl.write.Label(1, 0, "Product No."));
+			sheet1.addCell(new jxl.write.Label(2, 0, "Item Product Grp."));
+			sheet1.addCell(new jxl.write.Label(3, 0, "Qty"));
+			sheet1.addCell(new jxl.write.Label(4, 0, "Unit Price"));
+			sheet1.addCell(new jxl.write.Label(5, 0, "Catatan"));
+			
+			
+			if(getT29CostingH() != null){
+				if(CommonUtils.isNotEmpty(getT29CostingH().getT32CostingDOwnsws())){
+					int vRow = 1;
+					for (T32CostingDOwnsw t32 : getT29CostingH().getT32CostingDOwnsws()) {
+						
+						sheet1.addCell(new jxl.write.Label(0, vRow, t32.getItemDesc()));
+						sheet1.addCell(new jxl.write.Label(1, vRow, t32.getItemNo()));
+						sheet1.addCell(new jxl.write.Label(2, vRow, t32.getProduct()));
+						sheet1.addCell(new jxl.write.Number(3, vRow, t32.getQty().doubleValue()));
+						sheet1.addCell(new jxl.write.Number(4, vRow, t32.getSalesSatuan().doubleValue()));
+						sheet1.addCell(new jxl.write.Label(5, vRow, t32.getCatatan()));
+						vRow = vRow +1;
+					}
+				}	else {
+					sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+					sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+					sheet1.addCell(new jxl.write.Label(2, 1, "S201/S202"));
+					sheet1.addCell(new jxl.write.Number(3, 1, 9999));
+					sheet1.addCell(new jxl.write.Number(4, 1, 999999999));
+					sheet1.addCell(new jxl.write.Label(5, 1, "Catatan Jika Ada"));
+				}
+				
+			} else {
+				sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+				sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+				sheet1.addCell(new jxl.write.Label(2, 1, "S201/S202"));
+				sheet1.addCell(new jxl.write.Number(3, 1, 9999));
+				sheet1.addCell(new jxl.write.Number(4, 1, 999999999));
+				sheet1.addCell(new jxl.write.Label(5, 1, "Catatan Jika Ada"));
+			}
+			
+			
+			outputFileWorkbook.write();
+			
+			InputStream mediais = new FileInputStream(outputFile);
+			AMedia amedia = new AMedia("ACSOwnSoftware.xls", "xls", "application/vnd.ms-excel", mediais);
+				
+			Filedownload.save(amedia);
+			
+			outputFileWorkbook.close();
+			
+			outputFile.delete();
+			
+		} catch (WriteException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		} catch (IOException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		}		
+	}
+	
+	public void onClick$btnImport_C(Event event) throws InterruptedException{
+		
+		
+		Media media = Fileupload.get("Please select a File", "Upload");
+		
+		if (CommonUtils.isNotEmpty(media)) {
+
+			try {
+				
+				if(getT29CostingH() != null){
+					if(CommonUtils.isNotEmpty(getT29CostingH().getT32CostingDOwnsws())){
+					
+						for (T32CostingDOwnsw t32 : getT29CostingH().getT32CostingDOwnsws()) {
+							if (t32.getT32Id() > 0) {
+								list_Deleted_T32CostingD_OWNSW_List
+										.add(t32);
+							}
+							list_T32CostingD_OWNSW_List.remove(t32);
+							
+							//setModel_T32CostingD_OWNSW_List();
+						}
+					}
+				}
+				
+				// Membaca Excel dari file yang di Upload
+				Workbook workbook = Workbook.getWorkbook(media.getStreamData());
+				Sheet sheet = workbook.getSheet(0);
+
+				int vJmlData = sheet.getRows();				
+				
+				for (int i = 1; i < vJmlData; i++){
+					
+					String vProductDesc = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(0,i).getContents())){
+						vProductDesc = sheet.getCell(0,i).getContents();
+					}
+					
+					String vPartNo = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(1,i).getContents())){
+						vPartNo = sheet.getCell(1,i).getContents();
+					}
+					
+					String vProductGrp = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(2,i).getContents())){
+						vProductGrp = sheet.getCell(2,i).getContents();
+					}
+					
+					BigDecimal vQty = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(3,i).getContents())){
+						vQty = new BigDecimal(sheet.getCell(3,i).getContents());
+					}
+					
+					BigDecimal vUnitPrice = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(4,i).getContents())){
+						vUnitPrice = new BigDecimal(sheet.getCell(4,i).getContents());
+					}
+					
+					BigDecimal vSalesTotal = vQty.multiply(vUnitPrice);
+					
+					
+					String vCatatan = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(5,i).getContents())){
+						vCatatan = sheet.getCell(5,i).getContents();
+					}
+					
+					
+					T32CostingDOwnsw newDetail = new T32CostingDOwnsw();
+					newDetail.setT29CostingH(getT29CostingH());
+					
+					newDetail.setItemDesc(vProductDesc);
+					newDetail.setItemNo(vPartNo);
+					newDetail.setItemCategory("PS02");
+					newDetail.setProduct(vProductGrp);
+					newDetail.setQty(vQty);
+					newDetail.setSalesSatuan(vUnitPrice);
+					newDetail.setSalesTotal(vSalesTotal);
+					newDetail.setCatatan(vCatatan);
+					
+					
+					list_T32CostingD_OWNSW_List.add(newDetail);
+
+				
+				}
+
+				workbook.close();
+
+				//lbl1.setValue(media.getName()+ " Sudah berhasil terupload.");
+
+				setModel_T32CostingD_OWNSW_List();
+				
+				HitDetailT32CostingDOwnsw();
+				
+			} catch (BiffException e) {
+				Messagebox.show("Not an Excel File : " + media.getName(),
+						"Error", Messagebox.OK, Messagebox.ERROR);
+			} catch (IOException e) {
+				Messagebox.show("Error : " + e.getMessage(), "Error",
+						Messagebox.OK, Messagebox.ERROR);
+
+			}
+
+		}
+
+		
+	}
 	// Action Button Detail 4 - T33CostingD_OTHER -------------------------------------------------------------------------------------
 	public void onClick$btnNew_D(Event event) {
 		T33CostingDOther newDetail = new T33CostingDOther();
@@ -2664,6 +3291,171 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		}
 	}
 	
+	public void onClick$btnExport_D(Event event) throws InterruptedException{
+		try {
+			String vTimeStamp = String.valueOf(System.currentTimeMillis());
+			PathReport pathReport = new PathReport(vTimeStamp);
+			
+			File outputFile = new File(pathReport.getFormatDetailCosting1());
+			
+			
+			WritableWorkbook outputFileWorkbook = Workbook.createWorkbook(outputFile);
+			
+			WritableSheet sheet1= outputFileWorkbook.createSheet("Sheet1", 0);
+			
+			sheet1.addCell(new jxl.write.Label(0, 0, "Product Desc."));
+			sheet1.addCell(new jxl.write.Label(1, 0, "Product No."));
+			sheet1.addCell(new jxl.write.Label(2, 0, "Qty"));
+			sheet1.addCell(new jxl.write.Label(3, 0, "Unit COGS"));
+			sheet1.addCell(new jxl.write.Label(4, 0, "Catatan"));
+			
+			
+			if(getT29CostingH() != null){
+				if(CommonUtils.isNotEmpty(getT29CostingH().getT33CostingDOthers())){
+					int vRow = 1;
+					for (T33CostingDOther t33 : getT29CostingH().getT33CostingDOthers()) {
+						
+						sheet1.addCell(new jxl.write.Label(0, vRow, t33.getItemDesc()));
+						sheet1.addCell(new jxl.write.Label(1, vRow, t33.getItemNo()));
+						sheet1.addCell(new jxl.write.Number(2, vRow, t33.getQty().doubleValue()));
+						sheet1.addCell(new jxl.write.Number(3, vRow, t33.getCogsSatuan().doubleValue()));
+						sheet1.addCell(new jxl.write.Label(4, vRow, t33.getCatatan()));
+						vRow = vRow +1;
+					}
+				}	else {
+					sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+					sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+					sheet1.addCell(new jxl.write.Number(2, 1, 9999));
+					sheet1.addCell(new jxl.write.Number(3, 1, 999999999));
+					sheet1.addCell(new jxl.write.Label(4, 1, "Catatan Jika Ada"));
+				}
+				
+			} else {
+				sheet1.addCell(new jxl.write.Label(0, 1, "Nama Product"));
+				sheet1.addCell(new jxl.write.Label(1, 1, "Part No"));
+				sheet1.addCell(new jxl.write.Number(2, 1, 9999));
+				sheet1.addCell(new jxl.write.Number(3, 1, 999999999));
+				sheet1.addCell(new jxl.write.Label(4, 1, "Catatan Jika Ada"));
+			}
+			
+			
+			outputFileWorkbook.write();
+			
+			InputStream mediais = new FileInputStream(outputFile);
+			AMedia amedia = new AMedia("OtherProjectExpenses.xls", "xls", "application/vnd.ms-excel", mediais);
+				
+			Filedownload.save(amedia);
+			
+			outputFileWorkbook.close();
+			
+			outputFile.delete();
+			
+		} catch (WriteException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		} catch (IOException e) {
+			Messagebox.show("Error : " + e.getMessage(), "Error",
+					Messagebox.OK, Messagebox.ERROR);
+		}		
+	}
+	
+	public void onClick$btnImport_D(Event event) throws InterruptedException{
+		
+		
+		Media media = Fileupload.get("Please select a File", "Upload");
+		
+		if (CommonUtils.isNotEmpty(media)) {
+
+			try {
+				
+				if(getT29CostingH() != null){
+					if(CommonUtils.isNotEmpty(getT29CostingH().getT33CostingDOthers())){
+					
+						for (T33CostingDOther t33 : getT29CostingH().getT33CostingDOthers()) {
+							if (t33.getT33Id() > 0) {
+								list_Deleted_T33CostingD_OTHER_List
+										.add(t33);
+							}
+							list_T33CostingD_OTHER_List.remove(t33);
+							
+							//setModel_T33CostingD_OTHER_List();
+						}
+					}
+				}
+				
+				// Membaca Excel dari file yang di Upload
+				Workbook workbook = Workbook.getWorkbook(media.getStreamData());
+				Sheet sheet = workbook.getSheet(0);
+
+				int vJmlData = sheet.getRows();				
+				
+				for (int i = 1; i < vJmlData; i++){
+					
+					String vProductDesc = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(0,i).getContents())){
+						vProductDesc = sheet.getCell(0,i).getContents();
+					}
+					
+					String vPartNo = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(1,i).getContents())){
+						vPartNo = sheet.getCell(1,i).getContents();
+					}					
+					
+					BigDecimal vQty = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(2,i).getContents())){
+						vQty = new BigDecimal(sheet.getCell(2,i).getContents());
+					}
+					
+					BigDecimal vUnitCOGS = new BigDecimal(0);
+					if (CommonUtils.isNotEmpty(sheet.getCell(3,i).getContents())){
+						vUnitCOGS = new BigDecimal(sheet.getCell(3,i).getContents());
+					}
+					
+					BigDecimal vCOGSTotal = vQty.multiply(vUnitCOGS);
+					
+					String vCatatan = "";
+					if (CommonUtils.isNotEmpty(sheet.getCell(4,i).getContents())){
+						vCatatan = sheet.getCell(4,i).getContents();
+					}
+					
+					
+					T33CostingDOther newDetail = new T33CostingDOther();
+					newDetail.setT29CostingH(getT29CostingH());
+					
+					newDetail.setItemDesc(vProductDesc);
+					newDetail.setItemNo(vPartNo);
+					newDetail.setQty(vQty);
+					newDetail.setCogsSatuan(vUnitCOGS);
+					newDetail.setCogsTotal(vCOGSTotal);
+					newDetail.setCatatan(vCatatan);
+					
+					
+					list_T33CostingD_OTHER_List.add(newDetail);
+
+				
+				}
+
+				workbook.close();
+
+				//lbl1.setValue(media.getName()+ " Sudah berhasil terupload.");
+
+				setModel_T33CostingD_OTHER_List();
+				
+				HitDetailT33CostingDOther();
+				
+			} catch (BiffException e) {
+				Messagebox.show("Not an Excel File : " + media.getName(),
+						"Error", Messagebox.OK, Messagebox.ERROR);
+			} catch (IOException e) {
+				Messagebox.show("Error : " + e.getMessage(), "Error",
+						Messagebox.OK, Messagebox.ERROR);
+
+			}
+
+		}
+
+		
+	}
 	// Action Button Detail 5 - T34CostingD_PAYMENT -------------------------------------------------------------------------------------
 	public void onClick$btnNew_E(Event event) {
 		T34CostingDPayment newDetail = new T34CostingDPayment();

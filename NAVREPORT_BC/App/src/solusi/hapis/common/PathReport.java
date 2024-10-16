@@ -22,6 +22,7 @@ public class PathReport {
 	private String subRptFinance;
 	private String subRptSales;
 	private String SubRptSalesHistorical;
+	private String subRptSalesPOBySales;
 	private String subRptMarkom;
 	private String principalInfoRebateHoneywell;
 	private String hasilCompareInvoiceRebate;
@@ -37,6 +38,7 @@ public class PathReport {
 	private String preprintInvSATINDO;
 	private String hasilMergeInvSATINDO;
 	private String pathFileCosting;
+	private String formatDetailCosting1;
 	
 	public PathReport(String timestamp){
 		if(runningON.equals("LIVE")){
@@ -62,6 +64,8 @@ public class PathReport {
 			setPreprintInvSATINDO("/home/hapis/PrePrintSATINDO"+timestamp+".pdf");
 			
 			setHasilMergeInvSATINDO("/home/hapis/InvoiceFP"+timestamp+".pdf");
+			
+			setFormatDetailCosting1("/home/hapis/FormatDetailCosting"+timestamp+".xls");
 		} else {
 			if(runningON.equals("LIVE-41")){
 				setSalesVSCOGS("C:\\Tomcat\\Reports\\SalesVSCOGS"+timestamp+".xls");
@@ -85,6 +89,8 @@ public class PathReport {
 				setPreprintInvSATINDO("C:\\Tomcat\\Reports\\PrePrintSATINDO"+timestamp+".pdf");
 		
 				setHasilMergeInvSATINDO("C:\\Tomcat\\Reports\\InvoiceFP"+timestamp+".pdf");
+				
+				setFormatDetailCosting1("C:\\Tomcat\\Reports\\FormatDetailCosting"+timestamp+".xls");
 				
 				
 			}else{
@@ -112,6 +118,8 @@ public class PathReport {
 				setPreprintInvSATINDO("F:\\PrePrintSATINDO"+timestamp+".pdf");
 				
 				setHasilMergeInvSATINDO("F:\\InvoiceFP"+timestamp+".pdf");
+				
+				setFormatDetailCosting1("F:\\FormatDetailCosting"+timestamp+".xls");
 			}
 		}
 	}
@@ -137,6 +145,7 @@ public class PathReport {
 			setSubRptLogitic("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/logistic/");
 			setSubRptSales("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/sales/");
 			setSubRptSalesHistorical("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/sales/Historical/");
+			setSubRptSalesPOBySales("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/sales/POBySales/");
 			setSubRptMarkom("/var/lib/tomcat7/webapps/NAVREPORT/WEB-INF/classes/solusi/hapis/webui/reports/markom/");
 			
 			setPathFileCosting("/home/hapis/");
@@ -160,6 +169,7 @@ public class PathReport {
 				setSubRptLogitic("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\logistic\\");
 				setSubRptSales("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\sales\\");
 				setSubRptSalesHistorical("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
+				setSubRptSalesPOBySales("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\sales\\POBySales\\");
 				setSubRptMarkom("C:\\Tomcat\\apache-tomcat-7.0.70-windows-x64\\apache-tomcat-7.0.70\\webapps\\NAVREPORT\\WEB-INF\\classes\\solusi\\hapis\\webui\\reports\\markom\\");
 				
 				setPathFileCosting("C:\\Tomcat\\Costing\\");
@@ -183,6 +193,7 @@ public class PathReport {
 				setSubRptLogitic("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\logistic\\");
 				setSubRptSales("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\");
 				setSubRptSalesHistorical("F:\\ERP\\Kosong\\NAVREPORT_BC\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
+				setSubRptSalesPOBySales("F:\\ERP\\Kosong\\NAVREPORT_BC\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\POBySales\\");
 				setSubRptMarkom("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\markom\\");
 				
 				
@@ -421,6 +432,22 @@ public class PathReport {
 
 	public void setPathFileCosting(String pathFileCosting) {
 		this.pathFileCosting = pathFileCosting;
+	}
+
+	public String getFormatDetailCosting1() {
+		return formatDetailCosting1;
+	}
+
+	public void setFormatDetailCosting1(String formatDetailCosting1) {
+		this.formatDetailCosting1 = formatDetailCosting1;
+	}
+
+	public String getSubRptSalesPOBySales() {
+		return subRptSalesPOBySales;
+	}
+
+	public void setSubRptSalesPOBySales(String subRptSalesPOBySales) {
+		this.subRptSalesPOBySales = subRptSalesPOBySales;
 	}
 	
 	

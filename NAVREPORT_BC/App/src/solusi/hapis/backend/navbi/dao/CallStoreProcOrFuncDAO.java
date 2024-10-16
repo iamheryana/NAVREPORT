@@ -17,6 +17,7 @@ public interface CallStoreProcOrFuncDAO {
 	public String callGrossSalesMargin(String processId, String tglAwalTahun, String tglFrom, String tglUpto,  String action);	
 	public String callDownloadInvoiceLunas(String processId, String tglFrom, String tglUpto,  String jenisCosting, String UserId);	
 	public String callProsesKomisiSatindo(String processId, String masa, String tahun,  String status);	
+	public String callProsesTQSSatindo(String processId, String masa, String tahun,  String status);	
 	public String callArusKasPiutang(String processId, String tglFrom, String tglUpto, String company, String action);	
 	public String callReportPNLManagement(String processId, String tglFrom, String tglUpto, String cabang, BigDecimal pembagi,  String action);	
 	public String callReportNERACAManagement(String processId, String tglFrom, String tglUpto, String cabang, BigDecimal pembagi, String userID, String action);	

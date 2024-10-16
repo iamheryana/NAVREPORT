@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="0406002_Sales_POVSREV_Detail" language="groovy" pageWidth="1300" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1260" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.9487171000000225"/>
+	<property name="ireport.x" value="1863"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="Tahun" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT	CASE	WHEN POSX.COMPANY = 'AUTOJAYA' THEN 'Autojaya Idetech'
+				WHEN POSX.COMPANY = 'SOLUSI' THEN 'Solusi Periferal'
+				ELSE 'N/A' END AS COMPANY
+		, 'By PO' AS AMT_BY
+		, POSX.DOCUMENT_DATE
+		, POSX.DOCUMENT_NO
+		, POSX.PO_DATE
+		, POSX.DOCUMENT_NO
+		, POSX.BILLTO_CUSTOMER_NO
+		, POSX.BILLTO_CUSTOMER_NAME
+		, POSX.NO_PO_CUST
+		, SUM(POSX.AMOUNT_IDR) AS AMOUNT_IDR
+FROM	(
+			SELECT POSS.COMPANY
+					, POSS.TIPE
+					, POSS.CABANG_NAME
+					, POSS.SALES_CODE
+					, POSS.TAHUN
+					, POSS.BULAN
+					, POSS.NO_SO AS DOCUMENT_NO
+					, POSS.ORDER_DATE AS DOCUMENT_DATE
+					,	(
+							SUBSTRING (CONVERT(VARCHAR,POSS.ORDER_DATE , 105), 7, 4) +'-'+
+							SUBSTRING (CONVERT(VARCHAR,POSS.ORDER_DATE , 105), 4, 2)
+						) AS PO_DATE
+					, POSS.NO_PO_CUST
+					, POSS.BILLTO_CUSTOMER_NO
+					, POSS.BILLTO_CUSTOMER_NAME
+					, POSS.AMOUNT_IDR
+			FROM	(
+						SELECT
+								'AUTOJAYA' AS COMPANY
+								, CASE WHEN SUBSTRING( POS.NO_SO, 1, 4) = 'SOAS' THEN 'SC' ELSE
+									CASE WHEN SUBSTRING( POS.NO_SO, 1, 2) IN ('8S','9S') THEN 'AI' ELSE
+										CASE WHEN SUBSTRING( POS.NO_SO, 1, 2) IN ('7S') THEN 'LZ' ELSE 'TD' END
+									END
+									END AS TIPE
+								, CAB.[Name] AS CABANG_NAME
+								, POS.SALES_CODE
+								, POS.BILLTO_CUSTOMER_NO
+								, POS.BILLTO_CUSTOMER_NAME
+								, POS.ORDER_DATE
+								, DATEPART(YEAR, POS.ORDER_DATE) AS TAHUN
+								, DATEPART(MONTH, POS.ORDER_DATE) AS BULAN
+								, POS.NO_SO
+								, POS.NO_PO_CUST
+								, POS.AMOUNT_IDR
+						FROM	(
+									SELECT
+											SH.[Salesperson Code] AS SALES_CODE
+											, SH.[Order Date] AS ORDER_DATE
+											, SH.[No_] AS NO_SO
+											, SH.[External Document No_] AS NO_PO_CUST
+											, SH.[Bill-to Customer No_] AS BILLTO_CUSTOMER_NO
+											, SH.[Bill-to Name] AS BILLTO_CUSTOMER_NAME
+											, CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END AS AMOUNT_IDR
+									FROM [dbo].[BC_AUTOJAYA$Sales Header] SH
+									INNER JOIN  (
+													SELECT [Document No_] AS NO_SO
+															,SUM([Amount]) AS AMOUNT
+													FROM [dbo].[BC_AUTOJAYA$Sales Line]
+													WHERE [Document Type] = 1 AND
+															[Type] = 2
+													GROUP BY [Document No_]
+												)SL ON SL.NO_SO = SH.[No_]
+									WHERE SH.[Document Type] = 1 AND SH.[Status] IN (1, 3)
+									UNION ALL
+									SELECT  X.SALES_CODE
+											, X.ORDER_DATE
+											, X.NO_SO
+											, X.NO_PO_CUST
+											, X.BILLTO_CUSTOMER_NO
+											, X.BILLTO_CUSTOMER_NAME
+											, X.AMOUNT_IDR
+									FROM	(
+												SELECT	 SIH.[Salesperson Code] AS SALES_CODE
+														, SIH.[Bill-to Customer No_] AS BILLTO_CUSTOMER_NO
+														, SIH.[Bill-to Name] AS BILLTO_CUSTOMER_NAME
+														, SIH.[Order Date] AS ORDER_DATE
+														, CASE WHEN SUBSTRING(SIH.[No_], 1, 2) = 'UM' THEN  SIH.[Prepayment Order No_] ELSE SIH.[Order No_] END AS NO_SO
+														, SIH.[External Document No_] AS NO_PO_CUST
+														, CASE WHEN SIH.[Currency Code] <> '' THEN ROUND(SIL.AMOUNT / SIH.[Currency Factor],0) ELSE SIL.AMOUNT END AS AMOUNT_IDR
+												FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+												INNER JOIN  (
+																SELECT [Document No_]
+																		,SUM([Amount]) AS AMOUNT
+																FROM [dbo].[BC_AUTOJAYA$Sales Invoice Line]
+																WHERE [Type] = 2 AND [Quantity] <> 0
+																GROUP BY [Document No_]
+															) SIL ON SIL.[Document No_] = SIH.[No_]
+												LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+												WHERE CRM.[No_] IS NULL
+											) X
+									LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Header] SOO ON SOO.[No_] = X.NO_SO
+									WHERE SOO.[No_] IS NULL
+								) POS
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = POS.SALES_CODE
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
+						UNION ALL
+						SELECT
+								'SOLUSI' AS COMPANY
+								, CASE WHEN SUBSTRING( POS.NO_SO, 1, 4) = 'SOSS' THEN 'SC' ELSE
+									CASE WHEN SUBSTRING( POS.NO_SO, 1, 2) IN ('8S','9S') THEN 'AI' ELSE
+										CASE WHEN SUBSTRING( POS.NO_SO, 1, 2) IN ('7S') THEN 'LZ' ELSE 'TD' END
+									END
+									END AS TIPE
+								, CAB.[Name] AS CABANG_NAME
+								, POS.SALES_CODE
+								, POS.BILLTO_CUSTOMER_NO
+								, POS.BILLTO_CUSTOMER_NAME
+								, POS.ORDER_DATE
+								, DATEPART(YEAR, POS.ORDER_DATE) AS TAHUN
+								, DATEPART(MONTH, POS.ORDER_DATE) AS BULAN
+								, POS.NO_SO
+								, POS.NO_PO_CUST
+								, POS.AMOUNT_IDR
+						FROM	(
+									SELECT
+											SH.[Salesperson Code] AS SALES_CODE
+											, SH.[Order Date] AS ORDER_DATE
+											, SH.[No_] AS NO_SO
+											, SH.[External Document No_] AS NO_PO_CUST
+											, SH.[Bill-to Customer No_] AS BILLTO_CUSTOMER_NO
+											, SH.[Bill-to Name] AS BILLTO_CUSTOMER_NAME
+											, CASE WHEN SH.[Currency Code] <> '' THEN ROUND(SL.AMOUNT / SH.[Currency Factor],0) ELSE SL.AMOUNT END AS AMOUNT_IDR
+									FROM [dbo].[BC_SOLUSI$Sales Header] SH
+									INNER JOIN  (
+													SELECT [Document No_] AS NO_SO
+															,SUM([Amount]) AS AMOUNT
+													FROM [dbo].[BC_SOLUSI$Sales Line]
+													WHERE [Document Type] = 1 AND
+															[Type] = 2
+													GROUP BY [Document No_]
+												)SL ON SL.NO_SO = SH.[No_]
+									WHERE SH.[Document Type] = 1 AND SH.[Status] IN (1, 3)
+									UNION ALL
+									SELECT  X.SALES_CODE
+											, X.ORDER_DATE
+											, X.NO_SO
+											, X.NO_PO_CUST
+											, X.BILLTO_CUSTOMER_NO
+											, X.BILLTO_CUSTOMER_NAME
+											, X.AMOUNT_IDR
+									FROM	(
+												SELECT
+															SIH.[Salesperson Code] AS SALES_CODE
+														, SIH.[Bill-to Customer No_] AS BILLTO_CUSTOMER_NO
+														, SIH.[Bill-to Name] AS BILLTO_CUSTOMER_NAME
+														, SIH.[Order Date] AS ORDER_DATE
+														, CASE WHEN SUBSTRING(SIH.[No_], 1, 2) = 'UM' THEN  SIH.[Prepayment Order No_] ELSE SIH.[Order No_] END AS NO_SO
+														, SIH.[External Document No_] AS NO_PO_CUST
+														, CASE WHEN SIH.[Currency Code] <> '' THEN ROUND(SIL.AMOUNT / SIH.[Currency Factor],0) ELSE SIL.AMOUNT END AS AMOUNT_IDR
+												FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+												INNER JOIN  (
+																SELECT [Document No_]
+																		,SUM([Amount]) AS AMOUNT
+																FROM [dbo].[BC_SOLUSI$Sales Invoice Line]
+																WHERE [Type] = 2 AND [Quantity] <> 0
+																GROUP BY [Document No_]
+															) SIL ON SIL.[Document No_] = SIH.[No_]
+												LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
+												WHERE CRM.[No_] IS NULL AND SIH.[No_] NOT IN ('SIST180500','SIST171393','SIST171295','SIST171294','SIST171292','SIST170994','SIST160478')
+											) X
+									LEFT JOIN [dbo].[BC_SOLUSI$Sales Header] SOO ON SOO.[No_] = X.NO_SO
+									WHERE SOO.[No_] IS NULL
+								) POS
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = POS.SALES_CODE
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
+					) POSS
+			WHERE	(POSS.NO_PO_CUST NOT LIKE '%OTP%') AND
+					(POSS.NO_PO_CUST NOT LIKE 'BOOKING%') AND
+					(POSS.TAHUN = $P{Tahun}) AND
+					POSS.AMOUNT_IDR <> 0 AND
+					POSS.BILLTO_CUSTOMER_NO NOT IN ('AUJA001' , 'AUJA002', 'SOPE001')
+		) POSX
+GROUP BY POSX.COMPANY
+		, POSX.DOCUMENT_DATE
+		, POSX.DOCUMENT_NO
+		, POSX.PO_DATE
+		, POSX.DOCUMENT_NO
+		, POSX.BILLTO_CUSTOMER_NO
+		, POSX.BILLTO_CUSTOMER_NAME
+		, POSX.NO_PO_CUST
+UNION ALL
+SELECT	XX.COMPANY
+		, 'By Revenue' AS AMT_BY
+		, XX.DOCUMENT_DATE
+		, XX.DOCUMENT_NO
+		, XX.PO_DATE
+		, XX.DOCUMENT_NO
+		, XX.BILLTO_CUSTOMER_NO
+		, XX.BILLTO_CUSTOMER_NAME
+		, XX.NO_PO_CUST
+		, XX.AMOUNT_IDR
+FROM	(
+			SELECT	X.COMPANY
+					, X.DOCUMENT_DATE
+					, X.DOCUMENT_NO
+					, X.PO_DATE
+					, X.BILLTO_CUSTOMER_NO
+					, X.BILLTO_CUSTOMER_NAME
+					, X.NO_PO_CUST
+					, SUM(X.AMOUNT_IDR) AS AMOUNT_IDR
+			FROM	(
+						SELECT  CASE	WHEN TSR.COMPANY IN ('AUTOJAYA', 'AJ-ADJ') THEN 'Autojaya Idetech'
+										WHEN TSR.COMPANY IN ('SOLUSI', 'SP-ADJ') THEN 'Solusi Periferal'
+										ELSE 'N/A' END AS COMPANY
+								, DATEPART(YEAR, TSR.POSTING_DATE) AS TAHUN
+								, DATEPART(MONTH, TSR.POSTING_DATE) AS BULAN
+								,	CASE WHEN SLH.[Order Date] IS NULL THEN 'Adjustment'
+									ELSE
+										SUBSTRING (CONVERT(VARCHAR,SLH.[Order Date] , 105), 7, 4) +'-'+
+										SUBSTRING (CONVERT(VARCHAR,SLH.[Order Date] , 105), 4, 2)
+									END AS PO_DATE
+								, TSR.POSTING_DATE AS DOCUMENT_DATE
+								, TSR.DOCUMENT_NO
+								, TSR.BILLTO_CUSTOMER_NO
+								, TSR.BILLTO_CUSTOMER_NAME
+								, TSR.NO_PO_CUST
+								, AMOUNT_IDR
+						FROM [dbo].[T_SALES_REV] TSR
+						LEFT JOIN	(
+										SELECT	'AUTOJAYA' AS COMPANY
+												, SIH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+										UNION ALL
+										SELECT	'AUTOJAYA' AS COMPANY
+												, SCH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] SCH
+										LEFT JOIN  [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = SCH.[Applies-to Doc_ No_]
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, SIH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+										UNION ALL
+										SELECT	'SOLUSI' AS COMPANY
+												, SCH.[No_]
+												, SIH.[Order Date]
+										FROM [dbo].[BC_SOLUSI$Sales Cr_Memo Header] SCH
+										LEFT JOIN  [dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = SCH.[Applies-to Doc_ No_]
+									) SLH ON SLH.COMPANY = TSR.COMPANY AND SLH.[No_] = TSR.DOCUMENT_NO
+					) X
+			WHERE	X.TAHUN = $P{Tahun}
+			GROUP BY X.COMPANY
+					, X.DOCUMENT_DATE
+					, X.DOCUMENT_NO
+					, X.PO_DATE
+					, X.BILLTO_CUSTOMER_NO
+					, X.BILLTO_CUSTOMER_NAME
+					, X.NO_PO_CUST
+		) XX
+WHERE XX.AMOUNT_IDR <> 0]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="AMT_BY" class="java.lang.String"/>
+	<field name="DOCUMENT_DATE" class="java.sql.Timestamp"/>
+	<field name="DOCUMENT_NO" class="java.lang.String"/>
+	<field name="PO_DATE" class="java.lang.String"/>
+	<field name="BILLTO_CUSTOMER_NO" class="java.lang.String"/>
+	<field name="BILLTO_CUSTOMER_NAME" class="java.lang.String"/>
+	<field name="NO_PO_CUST" class="java.lang.String"/>
+	<field name="AMOUNT_IDR" class="java.math.BigDecimal"/>
+	<sortField name="COMPANY"/>
+	<sortField name="AMT_BY"/>
+	<sortField name="PO_DATE"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="70" splitType="Stretch">
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="100" y="28" width="150" height="14" uuid="625063cd-217b-47d4-8204-a71466c56a88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="228a8d8f-5503-49b4-b00b-8a6335bf5abe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="56" width="75" height="14" uuid="9587e7bd-543c-4606-b90f-82f46e032cbc"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doc. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="cc156466-f353-4426-acce-115124bad7f2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="250" height="14" uuid="48b2f618-0416-4a0d-8b93-75583ab960a6"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(0406002) Sales Amount by PO Vs Revenue - Detail]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="100" height="14" uuid="0a723d99-1f1c-49d2-bc2c-0c7eeb8c22af"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="250" y="56" width="75" height="14" uuid="f65c0167-aa20-4bcc-a158-4403c1aae93a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Doc. Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="325" y="56" width="50" height="14" uuid="5584218e-679c-4f2c-888b-18966c0f1a45"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PO Period]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="56" width="75" height="14" uuid="78b7817c-8250-427c-b924-e2bd18fab294"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cust. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="450" y="56" width="400" height="14" uuid="33c08fdd-5eaf-4514-bc58-fab13ac53a2a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cust. Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="850" y="56" width="300" height="14" uuid="525c0c90-a662-4930-8e3e-dc7038b39646"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. PO Cust.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1150" y="56" width="100" height="14" uuid="77279e4a-307c-47f1-a01c-1f9c8fe90d96"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="1770b452-381c-4d01-8089-d6e4bf418579"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="14" width="150" height="14" uuid="ae04b7dd-6959-4edf-b7d7-a680bfc0d985"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="100" y="56" width="75" height="14" uuid="c0c31429-20c7-4401-b96a-5cf2e629c232"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sales By]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="46458126-1f43-466d-ad06-1f8c9b5920c0"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="100" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="20cfa7b6-4ae2-4df5-9421-63a81a1251ff"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMT_BY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="250" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="e3ca36c1-a705-42b3-9314-3d82bdfa735b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DOCUMENT_DATE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="175" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="0f4ad8c4-dad5-45af-b482-0a079228ec43"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DOCUMENT_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="325" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="ceb22c6d-e0ea-4360-882c-c34f10c3c090"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PO_DATE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="375" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="a1f3128b-2945-4797-95a7-54affa7f89fe"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILLTO_CUSTOMER_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="450" y="0" width="400" height="14" isPrintWhenDetailOverflows="true" uuid="6b514609-37d8-4525-bb87-d8ccf9c931e5"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILLTO_CUSTOMER_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="850" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="f9281bfa-5fa7-4fae-b695-0d6c582a3daf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO_CUST}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1150" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="9d8a6dec-9a3c-47f6-8b76-8a2a3df33512"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_IDR}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="70">
+			<staticText>
+				<reportElement x="0" y="56" width="250" height="14" uuid="4f55edac-1fb7-4898-9a12-09749c83085a"/>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[***** DATA TIDAK DITEMUKAN *****]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="100" height="14" uuid="15f3576b-2a0a-4ef4-9317-170d90cd4844"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tahun :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="100" y="14" width="150" height="14" uuid="a5d52a96-81de-4aa1-abd1-5035a106bcd0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Tahun}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="100" height="14" uuid="e0865814-fdf4-4bd2-9cac-6e79e2ec682a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dicetak pada :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="250" height="14" uuid="52b942b3-c9af-4035-987d-a873e50a5e9b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(0406002) Sales Amount by PO Vs Revenue - Detail]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="100" height="14" uuid="ae89f265-4ba5-416d-8b48-f7c0f310e46f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="100" y="28" width="150" height="14" uuid="99742d72-00d0-4623-a775-b28d9805721c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</noData>
+</jasperReport>

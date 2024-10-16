@@ -342,6 +342,32 @@ public class CallStoreProcOrFuncDAOImpl extends HibernateDaoSupport implements C
 	}
 
 	@Override
+	public String callProsesTQSSatindo(final String processId, final String masa,
+			final String tahun, final String status) {
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+
+
+	            
+				SQLQuery query = session.createSQLQuery("EXEC P_BC_PROSES_TQS_SATINDO :p1, :p2, :p3, :p4");
+				query.setString("p1", processId);
+				query.setString("p2", masa);
+				query.setString("p3", tahun);
+				query.setString("p4", status);	
+				query.executeUpdate();
+				
+				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST (RESULT_STRING AS character varying(100))FROM TEMP00_UPLOAD_RESULT WHERE PROSES_ID = :p5");
+				queryHasil.setString("p5", processId);
+
+				
+				return ((String)queryHasil.uniqueResult());
+				
+				
+			}
+		});
+	}
+	@Override
 	public String callArusKasPiutang(final String processId, final String tglFrom,
 			final String tglUpto, final String company, final String action) {
 	return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {

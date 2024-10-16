@@ -104,6 +104,11 @@ public class CallStoreProcOrFuncServiceImpl implements  CallStoreProcOrFuncServi
 		return callStoreProcOrFuncDAO.callProsesKomisiSatindo(processId, masa, tahun, status);
 	}
 
+	@Override
+	public String callProsesTQSSatindo(String processId, String masa,
+			String tahun, String status) {
+		return callStoreProcOrFuncDAO.callProsesTQSSatindo(processId, masa, tahun, status);
+	}
 
 	@Override
 	public String callArusKasPiutang(String processId, String tglFrom,
@@ -205,6 +210,7 @@ public class CallStoreProcOrFuncServiceImpl implements  CallStoreProcOrFuncServi
 	public String callSyncAReportManual(String kodeReport) {
 		return callStoreProcOrFuncDAO.callSyncAReportManual(kodeReport);
 	}
+
 
 
 }
