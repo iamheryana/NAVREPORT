@@ -12,6 +12,7 @@ import org.zkoss.zul.Radio;
 import org.zkoss.zul.Radiogroup;
 
 import solusi.hapis.common.CommonUtils;
+import solusi.hapis.common.PathReport;
 import solusi.hapis.webui.reports.util.JReportGeneratorWindow;
 import solusi.hapis.webui.util.GFCBaseCtrl;
 
@@ -65,9 +66,15 @@ public class SalesPOVSREVCtrl extends GFCBaseCtrl implements Serializable {
 		
 		if (vJnsLap.equals("SUM") == true){
 			jasperRpt = "/solusi/hapis/webui/reports/sales/POBySales/0406001_Sales_POVSREV.jasper";
+			
+			PathReport pathReport = new PathReport();
+			param.put("SUBREPORT_DIR",  pathReport.getSubRptSalesPOBySales());
+			
 		} else {
 			jasperRpt = "/solusi/hapis/webui/reports/sales/POBySales/0406002_Sales_POVSREV_Detail.jasper";
 		}
+		
+		
 		
 		param.put("Tahun",  vTahun);
 		

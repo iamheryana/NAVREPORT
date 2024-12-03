@@ -758,4 +758,40 @@ public class CallStoreProcOrFuncDAOImpl extends HibernateDaoSupport implements C
 		});
 	}
 
+	@Override
+	public String callCashFlowACS(final String processId, final String tglMulai,
+			final String modelLap, final BigDecimal saldoAwalAJ, final BigDecimal saldoAwalSP,
+			final BigDecimal pibAJ, final BigDecimal pibSP, final BigDecimal kursUSD,
+			final BigDecimal kursSGD, final BigDecimal kursEUR, final BigDecimal kursCNY,
+			final String action) {
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+
+				SQLQuery query = session.createSQLQuery("EXEC P_BC_CASH_FLOW_ACS :p1, :p2, :p3, :p4, :p5, :p6, :p7, :p8, :p9, :p10, :p11, :p12 ");	            
+				query.setString("p1", processId);
+				query.setString("p2", tglMulai);
+				query.setString("p3", modelLap);
+				query.setBigDecimal("p4", saldoAwalAJ);
+				query.setBigDecimal("p5", saldoAwalSP);
+				query.setBigDecimal("p6", pibAJ);
+				query.setBigDecimal("p7", pibSP);
+				query.setBigDecimal("p8", kursUSD);
+				query.setBigDecimal("p9", kursSGD);
+				query.setBigDecimal("p10", kursEUR);
+				query.setBigDecimal("p11", kursCNY);
+				query.setString("p12", action);
+				query.executeUpdate();
+				
+				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST (RESULT_STRING AS character varying(100))FROM TEMP00_UPLOAD_RESULT WHERE PROSES_ID = :p13");
+				queryHasil.setString("p13", processId);
+
+				
+				return ((String)queryHasil.uniqueResult());
+				
+				
+			}
+		});
+	}
+
 }

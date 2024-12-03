@@ -32,6 +32,8 @@ public interface CallStoreProcOrFuncDAO {
 	public String callProsesGenerateSROSO(String modeReport);
 	public String callGrossMarginSalesman(String processId, String tglFrom, String tglUpto,  String action);	
 	public String callSyncAReportManual(String kodeReport);	
-	
+	public String callCashFlowACS(String processId, String tglMulai, String modelLap, BigDecimal saldoAwalAJ, BigDecimal saldoAwalSP,BigDecimal pibAJ,BigDecimal pibSP,
+			BigDecimal kursUSD,BigDecimal kursSGD,BigDecimal kursEUR,BigDecimal kursCNY,String action);	
+
 	
 }

@@ -31,7 +31,7 @@
 		, SUM(XYX.AMT_DPS_PIPELINE) AS AMT_DPS_PIPELINE
 		, SUM(XYX.AMT_DPS) + SUM(XYX.AMT_DPS_PIPELINE) AS AMT_DPS_TTL
 FROM	(
-			SELECT 'CYBSEC' AS DIM_APP
+			SELECT [PMP_CODE] AS DIM_APP
 					, 0 AS AMT_NAS
 					, 0 AS AMT_NAS_PIPELINE
 					, 0 AS AMT_JKT
@@ -44,34 +44,7 @@ FROM	(
 					, 0 AS AMT_SBY_PIPELINE
 					, 0 AS AMT_DPS
 					, 0 AS AMT_DPS_PIPELINE
-			UNION ALL
-			SELECT 'MSRV' AS DIM_APP
-					, 0 AS AMT_NAS
-					, 0 AS AMT_NAS_PIPELINE
-					, 0 AS AMT_JKT
-					, 0 AS AMT_JKT_PIPELINE
-					, 0 AS AMT_CKR
-					, 0 AS AMT_CKR_PIPELINE
-					, 0 AS AMT_SMG
-					, 0 AS AMT_SMG_PIPELINE
-					, 0 AS AMT_SBY
-					, 0 AS AMT_SBY_PIPELINE
-					, 0 AS AMT_DPS
-					, 0 AS AMT_DPS_PIPELINE
-			UNION ALL
-			SELECT 'RFID' AS DIM_APP
-					, 0 AS AMT_NAS
-					, 0 AS AMT_NAS_PIPELINE
-					, 0 AS AMT_JKT
-					, 0 AS AMT_JKT_PIPELINE
-					, 0 AS AMT_CKR
-					, 0 AS AMT_CKR_PIPELINE
-					, 0 AS AMT_SMG
-					, 0 AS AMT_SMG_PIPELINE
-					, 0 AS AMT_SBY
-					, 0 AS AMT_SBY_PIPELINE
-					, 0 AS AMT_DPS
-					, 0 AS AMT_DPS_PIPELINE
+			FROM [dbo].[M_PMP_APPLICATION]
 			UNION ALL
 			SELECT	XXX.DIM_APP
 					, SUM(XXX.AMOUNT_IDR) AS AMT_NAS
@@ -147,7 +120,7 @@ FROM	(
 																FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
 															) DIM ON DIM.DIM_ID = SH.[Dimension Set ID]
 												WHERE	SH.[Document Type] = 1 AND SH.[Status] IN (1, 3) AND
-														DIM.DIM_APP  IN ('RFID', 'CYBSEC', 'MSRV')
+														DIM.DIM_APP  IN (SELECT [PMP_CODE] FROM [dbo].[M_PMP_APPLICATION])
 												UNION ALL
 												SELECT  X.SALES_CODE
 														, X.CUST_CODE
@@ -183,7 +156,7 @@ FROM	(
 																					,CASE WHEN [Dimension Code] = 'APPLICATION' THEN [Dimension Value Code] ELSE NULL END AS DIM_APP
 																			FROM [dbo].[BC_AUTOJAYA$Dimension Set Entry]
 																		) DIM ON DIM.DIM_ID = SIH.[Dimension Set ID]
-															WHERE CRM.[No_] IS NULL AND DIM.DIM_APP  IN ('RFID', 'CYBSEC', 'MSRV')
+															WHERE CRM.[No_] IS NULL AND DIM.DIM_APP  IN (SELECT [PMP_CODE] FROM [dbo].[M_PMP_APPLICATION])
 														) X
 												LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Header] SOO ON SOO.[No_] = X.NO_SO
 												WHERE SOO.[No_] IS NULL
@@ -236,7 +209,7 @@ FROM	(
 																FROM [dbo].[BC_SOLUSI$Dimension Set Entry]
 															) DIM ON DIM.DIM_ID = SH.[Dimension Set ID]
 												WHERE	SH.[Document Type] = 1 AND SH.[Status] IN (1, 3) AND
-														DIM.DIM_APP  IN ('RFID', 'CYBSEC', 'MSRV')
+														DIM.DIM_APP  IN (SELECT [PMP_CODE] FROM [dbo].[M_PMP_APPLICATION])
 												UNION ALL
 												SELECT  X.SALES_CODE
 														, X.CUST_CODE
@@ -273,7 +246,7 @@ FROM	(
 																		) DIM ON DIM.DIM_ID = SIH.[Dimension Set ID]
 															LEFT JOIN [dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
 															WHERE	CRM.[No_] IS NULL AND SIH.[No_] NOT IN ('SIST180500','SIST171393','SIST171295','SIST171294','SIST171292','SIST170994','SIST160478') AND
-																	DIM.DIM_APP  IN ('RFID', 'CYBSEC', 'MSRV')
+																	DIM.DIM_APP  IN (SELECT [PMP_CODE] FROM [dbo].[M_PMP_APPLICATION])
 														) X
 												LEFT JOIN [dbo].[BC_SOLUSI$Sales Header] SOO ON SOO.[No_] = X.NO_SO
 												WHERE SOO.[No_] IS NULL
@@ -346,7 +319,7 @@ FROM	(
 										GROUP BY [Dimension Set ID]
 									) DIMD ON DIMD.[Dimension Set ID] = SOL.[Dimension Set ID]
 						WHERE	SOH.[No_ Series] IN ('SBOM', 'SBOMS') AND
-								DIMH.DIM_APP IN ('RFID', 'CYBSEC', 'MSRV')
+								DIMH.DIM_APP IN (SELECT [PMP_CODE] FROM [dbo].[M_PMP_APPLICATION])
 						) YYY
 			WHERE (YYY.EXP_PO >= $P{TglFrom} AND YYY.EXP_PO <=$P{TglUpto})
 			GROUP BY YYY.DIM_APP

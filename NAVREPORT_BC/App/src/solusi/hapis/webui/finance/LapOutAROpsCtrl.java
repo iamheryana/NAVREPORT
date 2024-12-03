@@ -2,6 +2,7 @@ package solusi.hapis.webui.finance;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -61,6 +63,11 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radiogroup rdgTipeRpt;	 
 	protected Radio rdSUM;
 	protected Radio rdDTL;
+	
+	protected Radiogroup rdgModelRpt;	 
+	protected Radio rdCF;
+	protected Radio rdSH;
+
 
 
 	protected Combobox  cmbCurrency;
@@ -107,7 +114,7 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
     
       	
     	rdSUM.setSelected(true); 
-    	
+    	rdCF.setSelected(true); 
     	cmbCurrency.setSelectedIndex(0);
     	
     	rdSeribu.setSelected(true); 
@@ -175,6 +182,11 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
 		String vTipeRpt = "SUM";
 		if (StringUtils.isNotEmpty(rdgTipeRpt.getSelectedItem().getValue())) {
 			vTipeRpt = rdgTipeRpt.getSelectedItem().getValue();	
+		} 
+		
+		String vModelRpt = "CF";
+		if (StringUtils.isNotEmpty(rdgModelRpt.getSelectedItem().getValue())) {
+			vModelRpt = rdgModelRpt.getSelectedItem().getValue();	
 		} 
 		
 		Date vR1From = new Date();
@@ -898,42 +910,60 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
 		
 		
 		String jasperRpt = "/solusi/hapis/webui/reports/finance/02013_AJOutAR_New.jasper";
-
-		param.put("R1From",  vR1From); 
-		param.put("R1Upto",  vR1Upto); 
 		
-		param.put("R2From",  vR2From); 
-		param.put("R2Upto",  vR2Upto); 
-		
-		param.put("R3From",  vR3From); 
-		param.put("R3Upto",  vR3Upto); 
-		
-		param.put("R4From",  vR4From); 
-		param.put("R4Upto",  vR4Upto); 
-		
-		param.put("R5From",  vR5From); 
-		param.put("R5Upto",  vR5Upto); 
-		
-		param.put("R6From",  vR6From); 
-		param.put("R6Upto",  vR6Upto); 
-		
-		param.put("R7From",  vR7From); 
-		param.put("R7Upto",  vR7Upto); 
+		if (vModelRpt.equals("CF") == true){
+			jasperRpt = "/solusi/hapis/webui/reports/finance/02013_AJOutAR_New.jasper";
+			 
+			param.put("R1From",  vR1From); 
+			param.put("R1Upto",  vR1Upto); 
+			
+			param.put("R2From",  vR2From); 
+			param.put("R2Upto",  vR2Upto); 
+			
+			param.put("R3From",  vR3From); 
+			param.put("R3Upto",  vR3Upto); 
+			
+			param.put("R4From",  vR4From); 
+			param.put("R4Upto",  vR4Upto); 
+			
+			param.put("R5From",  vR5From); 
+			param.put("R5Upto",  vR5Upto); 
+			
+			param.put("R6From",  vR6From); 
+			param.put("R6Upto",  vR6Upto); 
+			
+			param.put("R7From",  vR7From); 
+			param.put("R7Upto",  vR7Upto); 
+					
+			param.put("R8From",  vR8From); 
+			param.put("R8Upto",  vR8Upto); 
+			
+			param.put("R9From",  vR9From); 
+			param.put("R9Upto",  vR9Upto); 
+			
+			param.put("R10From",  vR10From); 
+			param.put("R10Upto",  vR10Upto);
+			
+			param.put("R11From",  vR11From); 
+			param.put("R11Upto",  vR11Upto);
+			
+			param.put("R12From",  vR12From); 
+			param.put("R12Upto",  vR12Upto);
+			
+			
+			param.put("JnsRpt",  vJnsRpt);
 				
-		param.put("R8From",  vR8From); 
-		param.put("R8Upto",  vR8Upto); 
-		
-		param.put("R9From",  vR9From); 
-		param.put("R9Upto",  vR9Upto); 
-		
-		param.put("R10From",  vR10From); 
-		param.put("R10Upto",  vR10Upto);
-		
-		param.put("R11From",  vR11From); 
-		param.put("R11Upto",  vR11Upto);
-		
-		param.put("R12From",  vR12From); 
-		param.put("R12Upto",  vR12Upto);
+				
+		} else {
+			jasperRpt = "/solusi/hapis/webui/reports/finance/02013_02_AJOutAR_SaldoHarian.jasper";
+			
+			Date vTglMulai = new Date();   
+			if(CommonUtils.isNotEmpty(dbTglFrom.getValue()) == true){  
+				vTglMulai = dbTglFrom.getValue();
+			} 
+			System.out.println("vTglMulai : "+vTglMulai);
+			param.put("R1From",  vTglMulai); 	
+		}
 		
 		
 		param.put("AmountPembagi",  vAmountPembagi); 
@@ -944,12 +974,13 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
 		param.put("VendorFrom",  vKodeVendorFrom); 
 		param.put("VendorUpto",  vKodeVendorTo); 
 		
-		param.put("JnsRpt",  vJnsRpt);
 		param.put("TipeRpt",  vTipeRpt);
-		
-	
-
 		param.put("Cabang",  vCabang); 
+		
+		
+		
+
+		
 		
 
 		
@@ -957,6 +988,15 @@ public class LapOutAROpsCtrl extends GFCBaseCtrl implements Serializable {
 
 		 
 		
+	}
+	
+	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0201004");
+		
+		Messagebox.show("Sync Sudah Selesai");
 	}
  
 }

@@ -71,8 +71,14 @@ FROM	(
 						FROM	(
 									SELECT 	PIH.[No_] AS NO_INVOICE
 											,PIH.[Vendor Invoice No_] AS NO_INVIOCE_VENDOR
-											,PIH.[Posting Date] AS TGL_INVOICE
-											,SUBSTRING(CONVERT(varchar, PIH.[Posting Date], 105), 7,4) AS TAHUN_INV
+											,	CASE WHEN  PIH.[Vendor Tax Invoice Date] IS NULL OR PIH.[Vendor Tax Invoice Date] =  CAST('1753-01-01' as datetime) THEN
+													PIH.[Posting Date] ELSE PIH.[Vendor Tax Invoice Date]
+												END AS TGL_INVOICE
+											,	CASE WHEN  PIH.[Vendor Tax Invoice Date] IS NULL OR PIH.[Vendor Tax Invoice Date] =  CAST('1753-01-01' as datetime) THEN
+													SUBSTRING(CONVERT(varchar, PIH.[Posting Date], 105), 7,4)
+												ELSE
+													SUBSTRING(CONVERT(varchar, PIH.[Vendor Tax Invoice Date], 105), 7,4)
+												END AS TAHUN_INV
 											,CASE WHEN PIH.[Pay-to Vendor No_]  = 'SUPP050' THEN 'SUPP072' ELSE PIH.[Pay-to Vendor No_]  END AS VENDOR_NO
 											,PIL.DIM_PRINCIPAL
 											,POO.NO_PO
@@ -203,8 +209,14 @@ FROM	(
 						FROM	(
 									SELECT 	PIH.[No_] AS NO_INVOICE
 											,PIH.[Vendor Invoice No_] AS NO_INVIOCE_VENDOR
-											,PIH.[Posting Date] AS TGL_INVOICE
-											,SUBSTRING(CONVERT(varchar, PIH.[Posting Date], 105), 7,4) AS TAHUN_INV
+											,	CASE WHEN  PIH.[Vendor Tax Invoice Date] IS NULL OR PIH.[Vendor Tax Invoice Date] =  CAST('1753-01-01' as datetime) THEN
+													PIH.[Posting Date] ELSE PIH.[Vendor Tax Invoice Date]
+												END AS TGL_INVOICE
+											,	CASE WHEN  PIH.[Vendor Tax Invoice Date] IS NULL OR PIH.[Vendor Tax Invoice Date] =  CAST('1753-01-01' as datetime) THEN
+													SUBSTRING(CONVERT(varchar, PIH.[Posting Date], 105), 7,4)
+												ELSE
+													SUBSTRING(CONVERT(varchar, PIH.[Vendor Tax Invoice Date], 105), 7,4)
+												END AS TAHUN_INV
 											,CASE WHEN PIH.[Pay-to Vendor No_]  = 'SUPP050' THEN 'SUPP072' ELSE PIH.[Pay-to Vendor No_]  END AS VENDOR_NO
 											,PIL.DIM_PRINCIPAL
 											,POO.NO_PO
@@ -328,9 +340,9 @@ LEFT JOIN	(
 						) PRI
 				GROUP BY PRI.[Code]
 			) PRIN ON PRIN.[Code] = PIN.DIM_PRINCIPAL
-WHERE (PIN.DIM_PRINCIPAL = $P{Principal} OR $P{Principal} = 'ALL') AND
-(PIN.VENDOR_NO = $P{Vendor} OR $P{Vendor}='ALL') AND
-	(PIN.TGL_INVOICE >= $P{TglFrom} AND PIN.TGL_INVOICE <= $P{TglUpto})]]>
+WHERE	(PIN.DIM_PRINCIPAL = $P{Principal} OR $P{Principal} = 'ALL') AND
+		(PIN.VENDOR_NO = $P{Vendor} OR $P{Vendor}='ALL') AND
+		(PIN.TGL_INVOICE >= $P{TglFrom} AND PIN.TGL_INVOICE <= $P{TglUpto})]]>
 	</queryString>
 	<field name="NO_INVOICE" class="java.lang.String"/>
 	<field name="NO_INVIOCE_VENDOR" class="java.lang.String"/>

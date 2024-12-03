@@ -584,11 +584,15 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
        	renderButtonActionbyRole(true);
        	btnDownloadCosting.setVisible(true);
        	
+       	
         
        	//RESTOREVALUE
        	//doResetToInitValues();
        	
         tabT29CostingList.setSelected(true);
+        
+        onClick$btnSearch(event);
+        
         
         renderTabAndTitle("Back");
         

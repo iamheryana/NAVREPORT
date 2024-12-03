@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.zkoss.util.media.AMedia;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -71,6 +73,7 @@ public class LapOutPOCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radiogroup rdgShowAmtIn;	 
 	protected Radio rdIDR;
 	protected Radio rdVAL;
+	protected Radio rdVALO;
 
 	
 	protected Radiogroup rdgJnsRpt;	 
@@ -1445,10 +1448,18 @@ private EventListener selectProject() {
 			param.put("KursCNY",  vKursCNY); 
 			
 		} else {
-			if(vOut.equals("BPO")){
-				jasperRpt = "/solusi/hapis/webui/reports/finance/02001_OutBPO.jasper";
+			if(vShowAmtIn.equals("VAL")){
+				if(vOut.equals("BPO")){
+					jasperRpt = "/solusi/hapis/webui/reports/finance/02001_OutBPO.jasper";
+				} else {
+					jasperRpt = "/solusi/hapis/webui/reports/finance/02006_OutPO.jasper";
+				}
 			} else {
-				jasperRpt = "/solusi/hapis/webui/reports/finance/02006_OutPO.jasper";
+				if(vOut.equals("BPO")){
+					jasperRpt = "/solusi/hapis/webui/reports/finance/02001_OutBPO_VAL.jasper";
+				} else {
+					jasperRpt = "/solusi/hapis/webui/reports/finance/02006_OutPO_VAL.jasper";
+				}
 			}
 		}
 		
@@ -1581,6 +1592,14 @@ private EventListener selectProject() {
 
 		 
 		
+	}
+	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0201002");
+		
+		Messagebox.show("Sync Sudah Selesai");
 	}
  
 }

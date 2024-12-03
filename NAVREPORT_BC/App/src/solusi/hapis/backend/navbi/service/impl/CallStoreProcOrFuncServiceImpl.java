@@ -212,5 +212,15 @@ public class CallStoreProcOrFuncServiceImpl implements  CallStoreProcOrFuncServi
 	}
 
 
+	@Override
+	public String callCashFlowACS(String processId, String tglMulai,
+			String modelLap, BigDecimal saldoAwalAJ, BigDecimal saldoAwalSP,
+			BigDecimal pibAJ, BigDecimal pibSP, BigDecimal kursUSD,
+			BigDecimal kursSGD, BigDecimal kursEUR, BigDecimal kursCNY,
+			String action) {
+		return  callStoreProcOrFuncDAO.callCashFlowACS(processId, tglMulai, modelLap, saldoAwalAJ, saldoAwalSP, pibAJ, pibSP, kursUSD, kursSGD, kursEUR, kursCNY, action);
+	}
+
+
 
 }

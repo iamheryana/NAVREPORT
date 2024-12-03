@@ -1,0 +1,1004 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="02013_02_AJOutAR_SaldoHarian" language="groovy" pageWidth="3536" pageHeight="595" whenNoDataType="NoDataSection" columnWidth="3496" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isSummaryWithPageHeaderAndFooter="true" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.33100000000001"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="R1From" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Currency" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="VendorUpto" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="AmountPembagi" class="java.math.BigDecimal"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Cabang" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TipeRpt" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	1 AS GRP
+		, XX.COMPANY
+		, XX.TGL_INV
+		, XX.TGL_DUE_DATE
+		, XX.NO_INV
+		, XX.BILL_TO
+		, XX.BILL_TO_NAME
+		, XX.CURR_CODE
+		, XX.AMOUNT_INV
+		, XX.AMOUNT_INV_IDR
+		, CASE WHEN XX.TGL_DUE_DATE <= $P{R1From} THEN $P{R1From} ELSE XX.TGL_DUE_DATE END AS TGL_DUE_DATE_GRP
+		, XX.TIPE
+		, XX.NO_INV_VENDOR
+		, CASE	WHEN XX.CUST_GRP = 'ALFA' AND (XX.BILL_TO = 'ALFA227' OR XX.SELL_TO LIKE '%MIDI%')THEN 'MIDI UTAMA INDONESIA'
+				WHEN XX.CUST_GRP = 'ALFA' AND (XX.BILL_TO = 'AL01622' OR XX.SELL_TO LIKE '%LAWSON%')THEN 'LANCAR WIGUNA SEJAHTERA'
+				WHEN XX.CUST_GRP = 'ALFA' AND (XX.SELL_TO LIKE 'DC LOMBOK%')THEN 'DC LOMBOK-SAT'
+				WHEN XX.CUST_GRP = 'ALFA' AND (XX.SELL_TO LIKE 'DC CILEUNGSI%')THEN 'DC CILEUNGSI - SAT'
+				WHEN XX.CUST_GRP = 'INDOMARCO' AND XX.BILL_TO = 'IDMR180' THEN 'IDMR-HO'
+				ELSE XX.SELL_TO END AS SELL_TO
+		, CASE	WHEN XX.CUST_GRP = 'ALFA' AND (XX.BILL_TO = 'ALFA227' OR XX.SELL_TO LIKE '%MIDI%') THEN 'MIDI UTAMA INDONESIA'
+				WHEN XX.CUST_GRP = 'ALFA' AND (XX.BILL_TO = 'AL01622' OR XX.SELL_TO LIKE '%LAWSON%')THEN 'LANCAR WIGUNA SEJAHTERA'
+				WHEN XX.CUST_GRP = 'ALFA' AND (XX.SELL_TO LIKE 'DC LOMBOK%')THEN 'DC LOMBOK-SAT'
+				WHEN XX.CUST_GRP = 'ALFA' AND (XX.SELL_TO LIKE 'DC CILEUNGSI%')THEN 'DC CILEUNGSI - SAT'
+				WHEN XX.CUST_GRP = 'INDOMARCO' AND XX.BILL_TO = 'IDMR180' THEN 'INDOMARCO PRISMATAMA'
+				ELSE XX.SELL_TO_NAME END AS SELL_TO_NAME
+		, XX.SELL_TO AS SELL_TO_REAL
+		, XX.CUST_GRP
+		, XX.INV_DESC
+		, XX.NO_FP
+		, XX.ENTRY_NO
+		, XX.AMOUNT_ORI
+		, XX.REMAIN_AMOUNT
+		, CAB.[Name] CABANG
+FROM	(
+			SELECT	'AUTOJAYA' AS COMPANY
+					, X.TGL_INV
+					, X.TGL_DUE_DATE
+					, X.NO_INV
+					, X.BILL_TO
+					, X.BILL_TO_NAME
+					, X.CURR_CODE
+					, X.AMOUNT_INV
+					, (X.AMOUNT_INV_IDR / $P{AmountPembagi}) AS AMOUNT_INV_IDR
+					, X.AMOUNT_INV_IN_IDR
+					, X.INV_DESC
+					, X.NO_FP
+					, X.ENTRY_NO
+					, X.AMOUNT_ORI
+					, X.AMOUNT_INV_IDR AS REMAIN_AMOUNT
+					, X.TIPE
+					, X.NO_INV_VENDOR
+					, X.CABANG
+					, X.SELL_TO
+					, X.SELL_TO_NAME
+					, X.CUST_GRP
+			FROM	(
+						SELECT CLE.[Posting Date] AS TGL_INV
+								--,	CASE WHEN CUS.[Customer Posting Group] ='INDOMARCO' THEN
+								--		CASE WHEN DATEDIFF(DAY, CLE.[Posting Date], CLE.[Due Date]) < 60 THEN
+								--			DATEADD(DAY,60,CLE.[Posting Date]) ELSE CLE.[Due Date]
+								--		END
+								--	ELSE
+								--		CASE WHEN CUS.[Customer Posting Group] ='ALFA' THEN
+								--			CASE WHEN DATEDIFF(DAY, CLE.[Posting Date], CLE.[Due Date]) < 35 THEN
+								--				DATEADD(DAY,35,CLE.[Posting Date]) ELSE CLE.[Due Date]
+								--			END
+								--		ELSE
+								--			CLE.[Due Date]
+								--		END
+								--	END AS TGL_DUE_DATE
+								,CLE.[Due Date] AS TGL_DUE_DATE
+								,CLE.[Customer No_] AS BILL_TO
+								,CUS.[Name] AS BILL_TO_NAME
+								,CLE.[Document No_] AS NO_INV
+								,CASE WHEN CLE.[Currency Code] <> '' THEN CLE.[Currency Code] ELSE 'IDR' END AS CURR_CODE
+								,CASE WHEN CLE.[Document Type] = 2 THEN 'INVOICE'
+									WHEN CLE.[Document Type] = 3 THEN 'CREDIT MEMO'
+									ELSE 'PAYMENT'
+								END AS TIPE
+								,CLE.[External Document No_] AS NO_INV_VENDOR
+								,	CASE WHEN CLE.[Currency Code] <> '' THEN
+										ROUND(
+												CASE WHEN CUS.[Tax Area Code] IN ('070.', '020.') THEN
+													CASE WHEN CLD.RMN_AMOUNT > CLD.ORI_AMOUNT_DPP THEN CLD.ORI_AMOUNT_DPP ELSE CLD.RMN_AMOUNT END
+												ELSE
+													CLD.RMN_AMOUNT
+												END
+											,2)
+									ELSE 0
+									END AS AMOUNT_INV
+								,	CASE WHEN CLE.[Currency Code] <> '' THEN 0
+									ELSE
+										ROUND(
+												CASE WHEN CUS.[Tax Area Code] IN ('070.', '020.') THEN
+													CASE WHEN CLD.RMN_AMOUNT_IDR > CLD.ORI_AMOUNT_DPP_IDR THEN CLD.ORI_AMOUNT_DPP_IDR ELSE CLD.RMN_AMOUNT_IDR END
+												ELSE
+													CLD.RMN_AMOUNT_IDR
+												END
+											,0)
+									END AS AMOUNT_INV_IDR
+								,	ROUND(
+									CASE WHEN CUS.[Tax Area Code] IN ('070.', '020.') THEN
+										CASE WHEN CLD.RMN_AMOUNT_IDR > CLD.ORI_AMOUNT_DPP_IDR THEN CLD.ORI_AMOUNT_DPP_IDR ELSE CLD.RMN_AMOUNT_IDR END
+									ELSE
+										CLD.RMN_AMOUNT_IDR
+									END ,0) AS  AMOUNT_INV_IN_IDR
+								, CASE WHEN CLE.[Global Dimension 1 Code] = '' THEN 10 ELSE CLE.[Global Dimension 1 Code] END AS CABANG
+								, SIH.[Sell-to Customer No_] AS SELL_TO
+								, SIH.[Sell-to Customer Name] AS SELL_TO_NAME
+								, SIH.[Posting Description] AS INV_DESC
+								, SIH.[Faktur Pajak No_] AS NO_FP
+								, CLE.[Entry No_] AS ENTRY_NO
+								, CLD.AMOUNT_ORI AS AMOUNT_ORI
+								, CUS.[Customer Posting Group] AS CUST_GRP
+						FROM [dbo].[BC_AUTOJAYA$Cust_ Ledger Entry] CLE
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[No_] = CLE.[Document No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = CLE.[Customer No_]
+						LEFT JOIN	(
+										SELECT	CLED.[Cust_ Ledger Entry No_]
+												,SUM(CASE WHEN CLED.[Entry Type] = 1 THEN CLED.[Amount] ELSE 0 END) AS AMOUNT_ORI
+												,SUM (
+														CASE WHEN CLED.[Entry Type] = 1 THEN
+															CASE WHEN CLED.[Posting Date] < CAST('04/01/2022' AS DATETIME) THEN
+																CLED.[Amount] / 1.1
+															ELSE
+																CLED.[Amount] / 1.11
+															END
+														ELSE 0 END
+													 ) AS ORI_AMOUNT_DPP
+												,SUM (
+														CASE WHEN CLED.[Entry Type] = 1 THEN
+															CASE WHEN CLED.[Posting Date] < CAST('04/01/2022' AS DATETIME) THEN
+																CLED.[Amount (LCY)] / 1.1
+															ELSE
+																CLED.[Amount (LCY)] / 1.11
+															END
+														ELSE 0 END
+												     ) AS ORI_AMOUNT_DPP_IDR
+												,SUM(CLED.[Amount]) AS RMN_AMOUNT
+												,SUM(CLED.[Amount (LCY)]) AS RMN_AMOUNT_IDR
+										FROM [dbo].[BC_AUTOJAYA$Detailed Cust_ Ledg_ Entry] CLED
+										GROUP BY CLED.[Cust_ Ledger Entry No_]
+									) CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+						WHERE CLD.RMN_AMOUNT <> 0
+					) X
+			WHERE X.AMOUNT_INV_IN_IDR < -10000 OR AMOUNT_INV_IN_IDR > 10000
+			UNION ALL
+			SELECT	'SOLUSI' AS COMPANY
+					, X.TGL_INV
+					, X.TGL_DUE_DATE
+					, X.NO_INV
+					, X.BILL_TO
+					, X.BILL_TO_NAME
+					, X.CURR_CODE
+					, X.AMOUNT_INV
+					, (X.AMOUNT_INV_IDR / $P{AmountPembagi}) AS AMOUNT_INV_IDR
+					, X.AMOUNT_INV_IN_IDR
+					, X.INV_DESC
+					, X.NO_FP
+					, X.ENTRY_NO
+					, X.AMOUNT_ORI
+					, X.AMOUNT_INV_IDR AS REMAIN_AMOUNT
+					, X.TIPE
+					, X.NO_INV_VENDOR
+					, X.CABANG
+					, X.SELL_TO
+					, X.SELL_TO_NAME
+					, X.CUST_GRP
+			FROM	(
+						SELECT	CLE.[Posting Date] AS TGL_INV
+								--,	CASE WHEN CUS.[Customer Posting Group] ='INDOMARCO' THEN
+								--		CASE WHEN DATEDIFF(DAY, CLE.[Posting Date], CLE.[Due Date]) < 60 THEN
+								--			DATEADD(DAY,60,CLE.[Posting Date]) ELSE CLE.[Due Date]
+								--		END
+								--	ELSE
+								--		CASE WHEN CUS.[Customer Posting Group] ='ALFA' THEN
+								--			CASE WHEN DATEDIFF(DAY, CLE.[Posting Date], CLE.[Due Date]) < 35 THEN
+								--				DATEADD(DAY,35,CLE.[Posting Date]) ELSE CLE.[Due Date]
+								--			END
+								--		ELSE
+								--			CLE.[Due Date]
+								--		END
+								--	END AS TGL_DUE_DATE
+								,CLE.[Due Date] AS TGL_DUE_DATE
+								,CLE.[Customer No_] AS BILL_TO
+								,CUS.[Name] AS BILL_TO_NAME
+								,CLE.[Document No_] AS NO_INV
+								,CASE WHEN CLE.[Currency Code] <> '' THEN CLE.[Currency Code] ELSE 'IDR' END AS CURR_CODE
+								,CASE WHEN CLE.[Document Type] = 2 THEN 'INVOICE'
+									WHEN CLE.[Document Type] = 3 THEN 'CREDIT MEMO'
+									ELSE 'PAYMENT'
+								END AS TIPE
+								,CLE.[External Document No_] AS NO_INV_VENDOR
+								,	CASE WHEN CLE.[Currency Code] <> '' THEN
+										ROUND(
+												CASE WHEN CUS.[Tax Area Code] IN ('070.', '020.') THEN
+													CASE WHEN CLD.RMN_AMOUNT > CLD.ORI_AMOUNT_DPP THEN CLD.ORI_AMOUNT_DPP ELSE CLD.RMN_AMOUNT END
+												ELSE
+													CLD.RMN_AMOUNT
+												END
+											,2)
+									ELSE 0
+									END AS AMOUNT_INV
+								,	CASE WHEN CLE.[Currency Code] <> '' THEN 0
+									ELSE
+										ROUND(
+												CASE WHEN CUS.[Tax Area Code] IN ('070.', '020.') THEN
+													CASE WHEN CLD.RMN_AMOUNT_IDR > CLD.ORI_AMOUNT_DPP_IDR THEN CLD.ORI_AMOUNT_DPP_IDR ELSE CLD.RMN_AMOUNT_IDR END
+												ELSE
+													CLD.RMN_AMOUNT_IDR
+												END
+											,0)
+									END AS AMOUNT_INV_IDR
+								,	ROUND(
+									CASE WHEN CUS.[Tax Area Code] IN ('070.', '020.') THEN
+										CASE WHEN CLD.RMN_AMOUNT_IDR > CLD.ORI_AMOUNT_DPP_IDR THEN CLD.ORI_AMOUNT_DPP_IDR ELSE CLD.RMN_AMOUNT_IDR END
+									ELSE
+										CLD.RMN_AMOUNT_IDR
+									END ,0) AS  AMOUNT_INV_IN_IDR
+								, CASE WHEN CLE.[Global Dimension 1 Code] = '' THEN 10 ELSE CLE.[Global Dimension 1 Code] END AS CABANG
+								, SIH.[Sell-to Customer No_] AS SELL_TO
+								, SIH.[Sell-to Customer Name] AS SELL_TO_NAME
+								, SIH.[Posting Description] AS INV_DESC
+								, SIH.[Faktur Pajak No_] AS NO_FP
+								, CLE.[Entry No_] AS ENTRY_NO
+								, CLD.AMOUNT_ORI AS AMOUNT_ORI
+								, CUS.[Customer Posting Group] AS CUST_GRP
+						FROM [dbo].[BC_SOLUSI$Cust_ Ledger Entry] CLE
+						LEFT JOIN [dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[No_] = CLE.[Document No_]
+						LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = CLE.[Customer No_]
+						LEFT JOIN	(
+										SELECT	CLED.[Cust_ Ledger Entry No_]
+												,SUM(CASE WHEN CLED.[Entry Type] = 1 THEN CLED.[Amount] ELSE 0 END) AS AMOUNT_ORI
+												,SUM (
+														CASE WHEN CLED.[Entry Type] = 1 THEN
+															CASE WHEN CLED.[Posting Date] < CAST('04/01/2022' AS DATETIME) THEN
+																CLED.[Amount] / 1.1
+															ELSE
+																CLED.[Amount] / 1.11
+															END
+														ELSE 0 END
+													 ) AS ORI_AMOUNT_DPP
+												,SUM (
+														CASE WHEN CLED.[Entry Type] = 1 THEN
+															CASE WHEN CLED.[Posting Date] < CAST('04/01/2022' AS DATETIME) THEN
+																CLED.[Amount (LCY)] / 1.1
+															ELSE
+																CLED.[Amount (LCY)] / 1.11
+															END
+														ELSE 0 END
+												     ) AS ORI_AMOUNT_DPP_IDR
+												,SUM(CLED.[Amount]) AS RMN_AMOUNT
+												,SUM(CLED.[Amount (LCY)]) AS RMN_AMOUNT_IDR
+										FROM [dbo].[BC_SOLUSI$Detailed Cust_ Ledg_ Entry] CLED
+										GROUP BY CLED.[Cust_ Ledger Entry No_]
+									) CLD ON CLD.[Cust_ Ledger Entry No_] = CLE.[Entry No_]
+						WHERE CLD.RMN_AMOUNT <> 0
+					) X
+			WHERE X.AMOUNT_INV_IN_IDR < -10000 OR AMOUNT_INV_IN_IDR > 10000
+		) XX
+LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = XX.CABANG
+WHERE	(XX.COMPANY = $P{Company} OR  $P{Company} = 'ALL') AND
+		(XX.BILL_TO BETWEEN $P{VendorFrom} AND $P{VendorUpto}) AND
+		($P{Currency} = 'ALL' OR XX.CURR_CODE = $P{Currency}) AND
+		($P{Cabang} = 'ALL' OR CAB.[Name] = $P{Cabang}) AND
+		XX.TGL_DUE_DATE <= DATEADD(DAY, 27, $P{R1From})]]>
+	</queryString>
+	<field name="GRP" class="java.lang.Integer"/>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="TGL_DUE_DATE" class="java.sql.Timestamp"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="BILL_TO" class="java.lang.String"/>
+	<field name="BILL_TO_NAME" class="java.lang.String"/>
+	<field name="CURR_CODE" class="java.lang.String"/>
+	<field name="AMOUNT_INV" class="java.math.BigDecimal"/>
+	<field name="AMOUNT_INV_IDR" class="java.math.BigDecimal"/>
+	<field name="TGL_DUE_DATE_GRP" class="java.sql.Timestamp"/>
+	<field name="TIPE" class="java.lang.String"/>
+	<field name="NO_INV_VENDOR" class="java.lang.String"/>
+	<field name="SELL_TO" class="java.lang.String"/>
+	<field name="SELL_TO_NAME" class="java.lang.String"/>
+	<field name="SELL_TO_REAL" class="java.lang.String"/>
+	<field name="CUST_GRP" class="java.lang.String"/>
+	<field name="INV_DESC" class="java.lang.String"/>
+	<field name="NO_FP" class="java.lang.String"/>
+	<field name="ENTRY_NO" class="java.lang.Integer"/>
+	<field name="AMOUNT_ORI" class="java.math.BigDecimal"/>
+	<field name="REMAIN_AMOUNT" class="java.math.BigDecimal"/>
+	<field name="CABANG" class="java.lang.String"/>
+	<sortField name="TGL_DUE_DATE_GRP"/>
+	<sortField name="CUST_GRP"/>
+	<sortField name="SELL_TO"/>
+	<sortField name="SELL_TO_REAL"/>
+	<sortField name="BILL_TO"/>
+	<sortField name="COMPANY"/>
+	<sortField name="CURR_CODE"/>
+	<sortField name="TGL_INV"/>
+	<variable name="vCompany" class="java.lang.String">
+		<variableExpression><![CDATA[(   $P{Company}.equals("AUTOJAYA") == true ? "PT. AUTOJAYA IDETECH" :
+    ($P{Company}.equals("SOLUSI") == true ? "PT. SOLUSI PERIFERAL" : "ALL(ACS)")
+)]]></variableExpression>
+		<initialValueExpression><![CDATA[(   $P{Company}.equals("AUTOJAYA") == true ? "PT. AUTOJAYA IDETECH" :
+    ($P{Company}.equals("SOLUSI") == true ? "PT. SOLUSI PERIFERAL" : "ALL(ACS)")
+)]]></initialValueExpression>
+	</variable>
+	<variable name="vPembagi" class="java.lang.String">
+		<variableExpression><![CDATA[($P{AmountPembagi} == 1 ? "Normal" : ($P{AmountPembagi} == 1000 ? "(1000) Seribu":"NA"))]]></variableExpression>
+		<initialValueExpression><![CDATA[($P{AmountPembagi} == 1 ? "Normal" : ($P{AmountPembagi} == 1000 ? "(1000) Seribu":"NA"))]]></initialValueExpression>
+	</variable>
+	<variable name="AMOUNT_INV_IDR_1" class="java.math.BigDecimal" resetType="Group" resetGroup="Vendor" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_INV_IDR}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_INV_IDR_2" class="java.math.BigDecimal" resetType="Group" resetGroup="Vendor" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_INV_IDR}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_INV_IDR_3" class="java.math.BigDecimal" resetType="Group" resetGroup="GrpDueDate" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_INV_IDR}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_INV_IDR_4" class="java.math.BigDecimal" resetType="Group" resetGroup="GrpDueDate" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_INV_IDR}]]></variableExpression>
+	</variable>
+	<variable name="AMOUNT_INV_IDR_5" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{AMOUNT_INV_IDR}]]></variableExpression>
+	</variable>
+	<group name="GrpDueDate">
+		<groupExpression><![CDATA[$F{TGL_DUE_DATE_GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="f0dbbb6c-16d6-423c-a0fb-3e186c39ad4b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_DUE_DATE_GRP}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="42">
+				<printWhenExpression><![CDATA[$P{TipeRpt}.equals( "DTL" )  == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="be536455-219e-42f3-857b-3640da96ad33"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="75" height="14" uuid="61e77d68-c5f3-4ed2-8a4a-8718f70b9946"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="75" height="14" uuid="5a858fc2-50de-413e-b402-a7eef7f82537"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="0" width="350" height="14" uuid="c0a04e59-1a93-4e6d-a0f5-81ac42f0cc21"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="2125" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="ee921387-cec8-4ebd-9636-30d561f0b782"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_INV_IDR_3}]]></textFieldExpression>
+				</textField>
+			</band>
+			<band height="42">
+				<printWhenExpression><![CDATA[$P{TipeRpt}.equals( "SUM" )  == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="5523e041-a028-4fe2-b482-7ea07aaf3631"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="75" height="14" uuid="2e4a11fe-fb9a-4335-9b66-b8fbaed5cf73"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="75" height="14" uuid="e3e4e043-bf48-423a-a682-87056a473074"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="0" width="350" height="14" uuid="b489a24e-3490-4965-876f-e294788e5a79"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="575" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="53a5a351-9ba1-42ed-9822-5c89082b91be"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_INV_IDR_4}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Grp">
+		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{TipeRpt}.equals( "DTL" )  == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="2100" y="0" width="25" height="14" uuid="83c7b9f9-1d4b-4ba6-961e-44b20fe44a7a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Curr]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1675" y="0" width="100" height="14" uuid="172024c0-308c-4c80-b67b-7e6b4918e4d2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[No. Invoice]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1950" y="0" width="75" height="14" uuid="8111a18a-e138-46a0-8e47-a0aa71c6b7cd"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tgl. Invoice]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1525" y="0" width="75" height="14" uuid="6719a29e-9456-40fe-85f3-14c1d2e869a4"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tipe]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1775" y="0" width="175" height="14" uuid="da723266-9ec7-43a9-b967-f197f525c458"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[No. PO Customer]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="575" y="0" width="75" height="14" uuid="cdc443b2-cb7c-42d5-b8f7-e79eb06bc453"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Bill-to Code]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="2025" y="0" width="75" height="14" uuid="15852c12-d565-4bd2-948f-c4ea4f96510b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Due Date]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="650" y="0" width="350" height="14" uuid="8889a33c-1f63-4f1a-9ba6-be4df8e429ad"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Bill-to Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="75" y="0" width="150" height="14" uuid="dc51c81d-30f9-4498-b6e9-beaf38358dd3"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Sell-to Code]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="0" width="350" height="14" uuid="95a5060e-089b-438f-845f-e8457d72c267"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Sell-to Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1000" y="0" width="350" height="14" uuid="ce1eb91f-8c93-487f-a8ba-421e94ff66b9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Description]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1425" y="0" width="100" height="14" uuid="2eb65d48-9fa6-46fd-8860-7bf776ce89bb"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[No Faktur Pajak]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1600" y="0" width="75" height="14" uuid="12008b5e-dfe4-4302-96fa-fcce7db56722"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Entry No]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="2125" y="0" width="75" height="14" uuid="fc145897-2f5a-48be-ad13-dfb6eea6df15"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Amount AR]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1350" y="0" width="75" height="14" uuid="a21cc716-d629-49a2-8dce-8fdacace575e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Cabang]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{TipeRpt}.equals( "SUM" )  == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="225" y="0" width="350" height="14" uuid="c265a8e3-0cb1-4bee-8249-9078cd732632"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Sell-to Name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="75" y="0" width="150" height="14" uuid="d4ecccec-d7b2-4b2f-9ccd-62e5416df0ba"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Sell-to Code]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="b597aa37-77a7-4325-ad22-693289636dfa"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="575" y="0" width="75" height="14" uuid="0a6d16f6-9287-4d8c-a17f-47d860a72113"/>
+					<textElement textAlignment="Right">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Amount AR]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="Vendor">
+		<groupExpression><![CDATA[$F{SELL_TO}]]></groupExpression>
+		<groupFooter>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{TipeRpt}.equals( "SUM" )  == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="225" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" uuid="83156f9d-61f0-45ea-92f5-53fde5d0c628"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SELL_TO_NAME}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="75" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="30e9a049-767d-4f0e-be44-7b13a7be5767"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SELL_TO}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="75" height="14" uuid="8b89d9c3-98e4-418f-8f85-fde30339ce54"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="575" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="cbf73995-9878-4c63-bb5d-bcf27baa5c65"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{AMOUNT_INV_IDR_2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="84" splitType="Stretch">
+			<staticText>
+				<reportElement x="225" y="0" width="350" height="14" uuid="e3affb08-2fe4-475c-9687-1227b37c6b71"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LAP. OUTSTANDING AR - OPERATIONAL (SALDO HARIAN)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="0" width="150" height="14" uuid="b228d3a6-d02a-47a5-b6f8-5111063bd14c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02013)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="14" width="150" height="14" uuid="b228d3a6-d02a-47a5-b6f8-5111063bd14c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="70" width="150" height="14" uuid="4223dcd2-af49-4384-a3dd-109c976047b9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cetak :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="225" y="70" width="350" height="14" uuid="fecceb7d-8dec-4317-bdb9-dfba793f1d23"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="75" y="28" width="150" height="14" uuid="aad23727-6a09-4513-8d66-8bcff6d73551"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount IDR :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="28" width="350" height="14" uuid="05d439b7-9769-487f-893d-58d8667a09a7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vPembagi}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="225" y="14" width="350" height="14" uuid="ab0048e4-cc29-4a72-841b-57b0bffcebe0"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vCompany}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="75" y="42" width="150" height="14" uuid="0cd3575f-762a-4579-87a2-08c525291082"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Currency :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="42" width="350" height="14" uuid="8cd4a498-a1ef-4201-bb29-7188cfab31fe"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Currency}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="75" y="56" width="150" height="14" uuid="c8ffae64-1d45-42fc-bc4e-bacef3d52d88"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="56" width="350" height="14" uuid="b6b2736c-ffb8-4067-a0ff-0c420a348b9b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="75" height="14" uuid="bb3419d1-6de5-479f-a5b2-7a0068c51018"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="75" height="14" uuid="40ee62cd-ebe4-4d78-8920-f266e415a77b"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="b5ccac81-26be-4c2b-b387-efccad23c7fb"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="d38764d8-0977-4836-b8f4-a38ac445c7a7"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="75" height="14" uuid="1a3b0ce7-e433-424b-8cbc-edb68d60c927"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="70" width="75" height="14" uuid="2e0671ce-ea40-407c-80db-4ee02159de9f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[$P{TipeRpt}.equals( "DTL" )  == true]]></printWhenExpression>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="1675" y="0" width="100" height="14" uuid="51f2fab0-6255-45f3-bfb2-1f9454df823e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="575" y="0" width="75" height="14" uuid="2316a3b9-bec5-4e46-b54e-828b71341bfd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILL_TO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="2100" y="0" width="25" height="14" uuid="18fd980b-6c21-498c-a961-9aee7e3140ba"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CURR_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy">
+				<reportElement x="1950" y="0" width="75" height="14" uuid="83089a28-da09-4751-b745-3748d15f1559"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy">
+				<reportElement x="2025" y="0" width="75" height="14" uuid="b9c2ed74-8876-4c4d-8cdb-43e275ac0908"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_DUE_DATE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1775" y="0" width="175" height="14" uuid="89c71904-c049-41ed-ad9d-20d6f1d410a1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV_VENDOR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1525" y="0" width="75" height="14" uuid="016d5ff5-82c0-447a-9185-3f66fda1b236"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="650" y="0" width="350" height="14" uuid="516449ec-366a-49bb-8e28-51a140c58e44"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BILL_TO_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="75" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="88384965-d20c-4bbd-ab46-56ef93f4e97b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_REAL}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" uuid="aa5c9c3c-3200-4e9e-a809-3b5394af2197"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SELL_TO_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1425" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="748fcefb-34ba-4222-bc52-1d3daaa01115"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_FP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1000" y="0" width="350" height="14" isPrintWhenDetailOverflows="true" uuid="e9be70a1-a020-48dd-917a-3fa4b780faa1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INV_DESC}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1600" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="6bf49faf-87ad-4c76-9dce-0eaada703f19"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ENTRY_NO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="1350" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="214dd8f6-100b-4fc3-ab14-e6e7e365e853"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CABANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="2125" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="38de3292-c8e2-4b72-b3db-2cb3c0e3944c"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT_INV_IDR}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="98">
+			<staticText>
+				<reportElement x="225" y="84" width="410" height="14" uuid="36a2a097-2f28-4d82-834b-d83d83e88c8f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tidak Ada Data]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="70" width="150" height="14" uuid="d05562bd-4aa4-48a0-90fd-58e06867e32c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Cetak :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="75" height="14" uuid="79a3b1aa-1aa0-406f-9275-8aa53cefef6f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="56" width="150" height="14" uuid="0645553d-34a2-4adc-a725-afe39f6d5959"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cabang :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="225" y="70" width="350" height="14" uuid="c1222d3b-6db3-4850-a523-618472562639"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="68d7ec1d-064a-4ac1-bc5c-f0b6ccb9b6c2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="0" width="150" height="14" uuid="9caa5bb1-d246-4e85-980f-63b993444b8c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(02013)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="75" height="14" uuid="d7531d1b-dd13-4521-8744-1c90e4bd2a44"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="42" width="350" height="14" uuid="f9e3e5f4-3c85-4eff-afdf-b27b9da71652"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Currency}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="75" height="14" uuid="e711d5f0-5543-4019-88f9-53b972e3b6b4"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="75" height="14" uuid="f2209085-6550-431a-a152-3bfb56a8117c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="14" width="350" height="14" uuid="fc29c28c-70b9-4af6-a029-6a9294f1753f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vCompany}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="75" y="14" width="150" height="14" uuid="48b8002e-c240-4524-a400-86d61f2469cf"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="28" width="150" height="14" uuid="69971a7e-46ae-41e7-b8fa-18804dc4041e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount IDR :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="f6621f45-1665-4de3-90c7-561efffe936a"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="225" y="0" width="350" height="14" uuid="3e48583d-2eb7-4f3b-a742-b930dd54e797"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LAP. OUTSTANDING AR - OPERATIONAL (SALDO HARIAN)]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="28" width="350" height="14" uuid="aea674a8-300c-4195-8903-ba3defae4303"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vPembagi}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="75" y="42" width="150" height="14" uuid="e22260ee-acfd-49d7-a5e4-0cfbb31141e9"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Currency :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="225" y="56" width="350" height="14" uuid="0e83f66e-a067-48fe-8822-e76d21354b99"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Cabang}]]></textFieldExpression>
+			</textField>
+		</band>
+	</noData>
+</jasperReport>

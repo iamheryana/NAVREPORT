@@ -163,6 +163,12 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Decimalbox dcbAmountLunas;
 	
 	
+
+	protected Decimalbox dcbCalculateTotalMarginPcn;
+	protected Decimalbox dcbCalculateHw3PSMarginPcn;
+	protected Decimalbox dcbCalculateTotalMarginOnlyPcn;
+	protected Decimalbox dcbCalculateHwMarginOnlyPcn;
+	protected Decimalbox dcbCalculate3rdPSMarginOnlyPcn;
  
 	protected Datebox dbTglCosting;
 	
@@ -218,6 +224,12 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	protected Button btnUploadInfoPrice;
 	protected Button btnUploadFilePOCustomer;
 	
+	
+	protected Button btnRecalculate;
+	protected Button btnRecalculate1;
+	protected Button btnRecalculate2;
+	protected Button btnRecalculate3;
+	
 	// Paging and list Detail 1 - T30CostingD_HW3PS
 	protected Listheader listheader_T30CostingD_HW3PS_ItemDesc;
 	protected Listheader listheader_T30CostingD_HW3PS_ItemNo;	
@@ -264,7 +276,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	
 	protected Paging paging_T30CostingD_HW3PS_List;
 	private int start_T30CostingD_HW3PS_List;
-	private List<T30CostingDHw3ps> list_T30CostingD_HW3PS_List = new ArrayList<T30CostingDHw3ps>();
+	private List<T30CostingDHw3ps> list_T30CostingD_HW3PS_List = new ArrayList<T30CostingDHw3ps>();	
 	private ListModelList modelList_T30CostingD_HW3PS_List = new ListModelList();
 	protected Listbox listBox_T30CostingD_HW3PS;
 	private List<T30CostingDHw3ps> list_Deleted_T30CostingD_HW3PS_List = new ArrayList<T30CostingDHw3ps>();
@@ -298,7 +310,9 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	private List<T34CostingDPayment> list_Deleted_T34CostingD_PAYMENT_List = new ArrayList<T34CostingDPayment>();
 	
 	
-	
+	private List<T30CostingDHw3ps> list_T30CostingD_HW3PS_List_Temp = new ArrayList<T30CostingDHw3ps>();
+	private List<T31CostingDAcsps> list_T31CostingD_ACSPS_List_Temp = new ArrayList<T31CostingDAcsps>();
+	private List<T32CostingDOwnsw> list_T32CostingD_OWNSW_List_Temp = new ArrayList<T32CostingDOwnsw>();
 	
 	protected Listbox list_Company;
 	protected Listbox list_Sales;
@@ -322,6 +336,8 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 	@Override
 	public void doAfterCompose(Component window) throws Exception {
 		super.doAfterCompose(window);
+		
+
 
 		this.self.setAttribute("controller", this, false);
 		
@@ -865,6 +881,7 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				true);
 
 		
+		
 		doFillListbox();
 		doRenderCombo(); 
 		doFitSize(event);
@@ -873,6 +890,16 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 
 	
 	public void doRenderCombo() {
+		
+
+		dcbCalculateTotalMarginPcn.setValue(new BigDecimal(0));
+		dcbCalculateHw3PSMarginPcn.setValue(new BigDecimal(0));
+		dcbCalculateTotalMarginOnlyPcn.setValue(new BigDecimal(0));
+		dcbCalculateHwMarginOnlyPcn.setValue(new BigDecimal(0));
+		dcbCalculate3rdPSMarginOnlyPcn.setValue(new BigDecimal(0));
+		
+		
+		
 		
 		T29CostingH anT29 = getT29CostingH();
 		
@@ -1089,6 +1116,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				txtCustomer.setReadonly(true);
 				txtNoPenawaran.setReadonly(true);
 				
+				btnRecalculate.setVisible(false);
+				btnRecalculate1.setVisible(false);
+				btnRecalculate2.setVisible(false);
+				btnRecalculate3.setVisible(false);
+				
 				btnNew.setVisible(false);
 				btnView.setVisible(true);
 				btnEdit.setVisible(false);
@@ -1141,6 +1173,15 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				dcbIncentiveKomisiOwnsw.setReadonly(true);
 				//dcbIncentiveSbonusOwnsw.setReadonly(true);
 				
+				
+				
+				dcbCalculateTotalMarginPcn.setReadonly(true);
+				dcbCalculateHw3PSMarginPcn.setReadonly(true);
+				dcbCalculateTotalMarginOnlyPcn.setReadonly(true);
+				dcbCalculateHwMarginOnlyPcn.setReadonly(true);
+				dcbCalculate3rdPSMarginOnlyPcn.setReadonly(true);
+				
+				
 				btnSearchCustomerLOV.setDisabled(true);	
 
 			}
@@ -1160,6 +1201,10 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				txtCustomer.setReadonly(false);
 				txtNoPenawaran.setReadonly(false);
 				
+				btnRecalculate.setVisible(true);
+				btnRecalculate1.setVisible(true);
+				btnRecalculate2.setVisible(true);
+				btnRecalculate3.setVisible(true);
 				
 				btnNew.setVisible(true);
 				btnView.setVisible(false);
@@ -1213,6 +1258,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 				dcbIncentiveKomisiOwnsw.setReadonly(false);
 				//dcbIncentiveSbonusOwnsw.setReadonly(false);
 				
+				dcbCalculateTotalMarginPcn.setReadonly(false);
+				dcbCalculateHw3PSMarginPcn.setReadonly(false);
+				dcbCalculateTotalMarginOnlyPcn.setReadonly(false);
+				dcbCalculateHwMarginOnlyPcn.setReadonly(false);
+				dcbCalculate3rdPSMarginOnlyPcn.setReadonly(false);
 				
 				btnSearchCustomerLOV.setDisabled(false);	
 				
@@ -1238,6 +1288,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 					txtNoPoCustomer.setReadonly(false);
 					txtCustomer.setReadonly(false);
 					txtNoPenawaran.setReadonly(false);
+					
+					btnRecalculate.setVisible(true);
+					btnRecalculate1.setVisible(true);
+					btnRecalculate2.setVisible(true);
+					btnRecalculate3.setVisible(true);
 					
 					btnNew.setVisible(true);
 					btnView.setVisible(false);
@@ -1291,6 +1346,13 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 					dcbIncentiveKomisiOwnsw.setReadonly(false);
 					//dcbIncentiveSbonusOwnsw.setReadonly(false);
 					
+					dcbCalculateTotalMarginPcn.setReadonly(false);
+					dcbCalculateHw3PSMarginPcn.setReadonly(false);
+					dcbCalculateTotalMarginOnlyPcn.setReadonly(false);
+					dcbCalculateHwMarginOnlyPcn.setReadonly(false);
+					dcbCalculate3rdPSMarginOnlyPcn.setReadonly(false);
+					
+
 					btnSearchCustomerLOV.setDisabled(false);	
 					
 					// set focus 
@@ -1310,6 +1372,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						txtNoPoCustomer.setReadonly(true);
 						txtCustomer.setReadonly(true);
 						txtNoPenawaran.setReadonly(true);
+						
+						btnRecalculate.setVisible(false);
+						btnRecalculate1.setVisible(false);
+						btnRecalculate2.setVisible(false);
+						btnRecalculate3.setVisible(false);
 						
 						btnNew.setVisible(false);
 						btnView.setVisible(true);
@@ -1363,6 +1430,12 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 						dcbIncentiveKomisiOwnsw.setReadonly(true);
 						//dcbIncentiveSbonusOwnsw.setReadonly(false);
 						
+						dcbCalculateTotalMarginPcn.setReadonly(true);
+						dcbCalculateHw3PSMarginPcn.setReadonly(true);
+						dcbCalculateTotalMarginOnlyPcn.setReadonly(true);
+						dcbCalculateHwMarginOnlyPcn.setReadonly(true);
+						dcbCalculate3rdPSMarginOnlyPcn.setReadonly(true);
+						
 						btnSearchCustomerLOV.setDisabled(true);	
 						
 						// set focus 
@@ -1383,6 +1456,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 							txtNoPoCustomer.setReadonly(true);
 							txtCustomer.setReadonly(true);
 							txtNoPenawaran.setReadonly(true);
+							
+							btnRecalculate.setVisible(false);
+							btnRecalculate1.setVisible(false);
+							btnRecalculate2.setVisible(false);
+							btnRecalculate3.setVisible(false);
 							
 							btnNew.setVisible(false);
 							btnView.setVisible(true);
@@ -1436,6 +1514,12 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 							dcbIncentiveKomisiOwnsw.setReadonly(true);
 							//dcbIncentiveSbonusOwnsw.setReadonly(false);
 							
+							dcbCalculateTotalMarginPcn.setReadonly(true);
+							dcbCalculateHw3PSMarginPcn.setReadonly(true);
+							dcbCalculateTotalMarginOnlyPcn.setReadonly(true);
+							dcbCalculateHwMarginOnlyPcn.setReadonly(true);
+							dcbCalculate3rdPSMarginOnlyPcn.setReadonly(true);
+							
 							btnSearchCustomerLOV.setDisabled(true);	
 							
 							// set focus 
@@ -1456,6 +1540,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 								txtNoPoCustomer.setReadonly(true);
 								txtCustomer.setReadonly(true);
 								txtNoPenawaran.setReadonly(true);
+								
+								btnRecalculate.setVisible(false);
+								btnRecalculate1.setVisible(false);
+								btnRecalculate2.setVisible(false);
+								btnRecalculate3.setVisible(false);
 								
 								btnNew.setVisible(false);
 								btnView.setVisible(true);
@@ -1509,6 +1598,12 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 								dcbIncentiveKomisiOwnsw.setReadonly(true);
 								//dcbIncentiveSbonusOwnsw.setReadonly(false);
 								
+								dcbCalculateTotalMarginPcn.setReadonly(true);
+								dcbCalculateHw3PSMarginPcn.setReadonly(true);
+								dcbCalculateTotalMarginOnlyPcn.setReadonly(true);
+								dcbCalculateHwMarginOnlyPcn.setReadonly(true);
+								dcbCalculate3rdPSMarginOnlyPcn.setReadonly(true);
+								
 								btnSearchCustomerLOV.setDisabled(true);	
 								
 								// set focus 
@@ -1528,6 +1623,11 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 									txtNoPoCustomer.setReadonly(false);
 									txtCustomer.setReadonly(false);
 									txtNoPenawaran.setReadonly(false);
+									
+									btnRecalculate.setVisible(false);
+									btnRecalculate1.setVisible(false);
+									btnRecalculate2.setVisible(false);
+									btnRecalculate3.setVisible(false);
 									
 									btnNew.setVisible(false);
 									btnView.setVisible(true);
@@ -1580,6 +1680,12 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 									dcbIncentiveNonsalesOwnsw.setReadonly(false);
 									dcbIncentiveKomisiOwnsw.setReadonly(false);
 									//dcbIncentiveSbonusOwnsw.setReadonly(false);
+									
+									dcbCalculateTotalMarginPcn.setReadonly(true);
+									dcbCalculateHw3PSMarginPcn.setReadonly(true);
+									dcbCalculateTotalMarginOnlyPcn.setReadonly(true);
+									dcbCalculateHwMarginOnlyPcn.setReadonly(true);
+									dcbCalculate3rdPSMarginOnlyPcn.setReadonly(true);
 									
 									btnSearchCustomerLOV.setDisabled(false);	
 									
@@ -3665,7 +3771,693 @@ public class T29CostingDetailCtrl extends GFCBaseCtrl implements Serializable {
 		}
 	}
 
+/*	
+	public void onClick$btnRecalculate() throws InterruptedException{
+		
+		BigDecimal vCalculateTotalMarginPcn = new BigDecimal(0);
+		BigDecimal vCalculateHwMarginPcn = new BigDecimal(0);
+		BigDecimal vCalculate3rdPSMarginPcn = new BigDecimal(0);
+		
+		if (CommonUtils.isNotEmpty(dcbCalculateMarginPcn.getValue())){
+			vCalculateTotalMarginPcn = dcbCalculateMarginPcn.getValue();
+		}
+		
+		if (CommonUtils.isNotEmpty(dcbCalculateHwMarginPcn.getValue())){
+			vCalculateHwMarginPcn = dcbCalculateHwMarginPcn.getValue();
+		}
+		
+		if (CommonUtils.isNotEmpty(dcbCalculate3rdPSMarginPcn.getValue())){
+			vCalculate3rdPSMarginPcn = dcbCalculate3rdPSMarginPcn.getValue();
+		}
+
+		BigDecimal vCalTotalSales = new BigDecimal(0);
+		
+		BigDecimal vTotalSales = new BigDecimal(0);
+		BigDecimal vTotalCOGS = new BigDecimal(0);
+		
+		if (CommonUtils.isNotEmpty(dcbTotalSales.getValue())){
+			vTotalSales = dcbTotalSales.getValue();
+		}
+		
+		if (CommonUtils.isNotEmpty(dcbTotalCOGS_2.getValue())){
+			vTotalCOGS = dcbTotalCOGS_2.getValue();
+		}
+		
+		
+		BigDecimal vSatu = new BigDecimal(1);
+		
+		BigDecimal vCalculateTotalMargin = vCalculateTotalMarginPcn.divide((new BigDecimal(100)), 5, RoundingMode.HALF_UP);
+		//System.out.println(" vCalculateTotalMargin : "+vCalculateTotalMargin);
+		//System.out.println(" vCalculateTotalMargin.compareTo(new BigDecimal(1)) : "+vCalculateTotalMargin.compareTo(new BigDecimal(1)));
+		
+		if (vTotalCOGS.compareTo(new BigDecimal(0)) == 0) {
+			ZksampleMessageUtils.showErrorMessage("Tidak ada Cost sama sekali, tidak perlu Calculate Margin");
+    		return;
+			
+		} else {
+			if (vCalculateTotalMargin.compareTo(new BigDecimal(1))>= 0) {
+				vCalTotalSales = vTotalCOGS;
+				ZksampleMessageUtils.showErrorMessage("Margin tidak bisa "+vCalculateTotalMarginPcn+" % karena ada Cost");
+	    		return;
+			} else {
+				vCalTotalSales = vTotalCOGS.divide((vSatu.subtract(vCalculateTotalMargin)), 5, RoundingMode.HALF_UP);
+			}
+		}
+		
+		System.out.println("vCalTotalSales --> "+vCalTotalSales);
+		
+		
+		
+		BigDecimal vTotalSalesHw3ps = new BigDecimal(0);
+		BigDecimal vTotalCOGSHw3ps = new BigDecimal(0);
+		
+//		int vJmlDtlHw3ps = list_T30CostingD_HW3PS_List.size();
+//		
+//		if (vJmlDtlHw3ps > 0){
+//			BigDecimal[] vCOGSLine = new BigDecimal[vJmlDtlHw3ps];
+//			BigDecimal[] vSalesLine = new BigDecimal[vJmlDtlHw3ps];
+//			// deklarasi array untuk menampung COGS dari Detail
+//			// Hitung harga Sales sesuai dengan margin yang diinput, simpan dalam array jg
+//			//  buat 1 variable untuk menampung sisa sales yang terpakai
+//			// jika varieable tersebut minus maka keluarkan error tidak bisa dihitung
+//			
+//			
+//		}
+		
+		BigDecimal vCalculateHwMargin = vCalculateHwMarginPcn.divide((new BigDecimal(100)), 5, RoundingMode.HALF_UP);
+		BigDecimal vCalculate3rdPSMargin = vCalculate3rdPSMarginPcn.divide((new BigDecimal(100)), 5, RoundingMode.HALF_UP);
+		
+		BigDecimal vCalTotalSalesRemaning = vCalTotalSales;
+		
+		list_T30CostingD_HW3PS_List_Temp.clear();
+		
+		
+		for (T30CostingDHw3ps aData : list_T30CostingD_HW3PS_List) {
+			if (CommonUtils.isNotEmpty(aData)){
+				
+				BigDecimal vCOGSLine = aData.getCogsTotal();
+				BigDecimal vCalSalesLine = new BigDecimal(0);
+				
+				
+				if (vCOGSLine.compareTo(new BigDecimal(0)) == 0) {
+					vCalSalesLine =  new BigDecimal(0);						
+				} else {
+					if (aData.getItemCategory().equals("HW01") == true) {
+						
+						if (vCalculateHwMargin.compareTo(new BigDecimal(1))>= 0) {
+							vCalSalesLine = vTotalCOGS;
+							ZksampleMessageUtils.showErrorMessage("Hardware Margin tidak bisa "+vCalculateHwMarginPcn+" % karena ada Cost");
+				    		return;
+						} else {
+							vCalSalesLine = vCOGSLine.divide((vSatu.subtract(vCalculateHwMargin)), 5, RoundingMode.HALF_UP);
+						}
+					} else {
+						if (vCalculate3rdPSMargin.compareTo(new BigDecimal(1))>= 0) {
+							vCalSalesLine = vTotalCOGS;
+							ZksampleMessageUtils.showErrorMessage("3rd Party Services Margin tidak bisa "+vCalculate3rdPSMarginPcn+" % karena ada Cost");
+				    		return;
+						} else {
+							vCalSalesLine = vCOGSLine.divide((vSatu.subtract(vCalculate3rdPSMargin)), 5, RoundingMode.HALF_UP);
+						}
+					}
+				}
+				
+				vCalTotalSalesRemaning = vCalTotalSalesRemaning.subtract(vCalSalesLine);
+				
+				aData.setSalesTotal(vCalSalesLine);
+				BigDecimal vQty = new BigDecimal(0);		
+				if (CommonUtils.isNotEmpty(aData.getQty())){
+					vQty = aData.getQty();
+				}
+				
+				if (vQty.compareTo(new BigDecimal(0)) != 0) {
+					vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+				}
+				
+				if (vQty.compareTo(new BigDecimal(0)) == 0) {
+					aData.setSalesSatuan(vCalSalesLine);
+				} else {					
+					aData.setSalesSatuan(vCalSalesLine);
+				}
+				
+				if (vCalTotalSalesRemaning.compareTo(new BigDecimal(0)) > 0) {
+					list_T30CostingD_HW3PS_List_Temp.add(aData);
+				}  else {
+					ZksampleMessageUtils.showErrorMessage("Recalculate Margin tidak bisa dengan Margin Total "+vCalculateTotalMarginPcn+" ,"
+									+ "	Margin Hardware "+vCalculateHwMarginPcn+" ,"
+									+ " dan 3rd Party Services Margin "+vCalculate3rdPSMarginPcn+" tidak memungkinkan untuk dilakukan");
+		    		return;
+				}
+			}
+		}
+		
+		
+		System.out.println("vCalTotalSalesRemaning --> "+vCalTotalSalesRemaning);
+		
+		
+		
+		int vJmlACSCare = list_T31CostingD_ACSPS_List.size();
+		int vJmlOwnSoftware = list_T32CostingD_OWNSW_List.size();
+		
+		list_T31CostingD_ACSPS_List_Temp.clear();
+		list_T32CostingD_OWNSW_List_Temp.clear();
+		
+		if (vJmlACSCare > 0 && vJmlOwnSoftware > 0){
+			System.out.println("Masuk Sini --> detail 2 ");
+			BigDecimal vTotalSalesFullMargin = new BigDecimal (0);
+			
+			
+			if (CommonUtils.isNotEmpty(dcbsalesACSPS.getValue())){
+				vTotalSalesFullMargin = dcbsalesACSPS.getValue();
+			}
+			
+			if (CommonUtils.isNotEmpty(dcbsalesOWNSW.getValue())){
+				vTotalSalesFullMargin = vTotalSalesFullMargin.add(dcbsalesOWNSW.getValue());
+			}
+			
+			
+			for (T31CostingDAcsps aData : list_T31CostingD_ACSPS_List) {
+				if (CommonUtils.isNotEmpty(aData)){
+					BigDecimal vCalSalesLine = new BigDecimal(0);	
+					
+					BigDecimal vSalesLine = new BigDecimal(0);		
+					if (CommonUtils.isNotEmpty(aData.getQty())){
+						vSalesLine = aData.getSalesTotal();
+					}
+					vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+					
+					aData.setSalesTotal(vCalSalesLine);
+					
+					BigDecimal vQty = new BigDecimal(0);		
+					if (CommonUtils.isNotEmpty(aData.getQty())){
+						vQty = aData.getQty();
+					}
+					
+					if (vQty.compareTo(new BigDecimal(0)) != 0) {
+						vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+					}					
+					if (vQty.compareTo(new BigDecimal(0)) == 0) {
+						aData.setSalesSatuan(vCalSalesLine);
+					} else {					
+						aData.setSalesSatuan(vCalSalesLine);
+					}
+					
+					list_T31CostingD_ACSPS_List_Temp.add(aData);
+				}
+			}
+			
+			for (T32CostingDOwnsw aData : list_T32CostingD_OWNSW_List) {
+				if (CommonUtils.isNotEmpty(aData)){
+					BigDecimal vCalSalesLine = new BigDecimal(0);	
+					
+					BigDecimal vSalesLine = new BigDecimal(0);		
+					if (CommonUtils.isNotEmpty(aData.getQty())){
+						vSalesLine = aData.getSalesTotal();
+					}
+					vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+					
+					aData.setSalesTotal(vCalSalesLine);
+					
+					BigDecimal vQty = new BigDecimal(0);		
+					if (CommonUtils.isNotEmpty(aData.getQty())){
+						vQty = aData.getQty();
+					}
+					
+					if (vQty.compareTo(new BigDecimal(0)) != 0) {
+						vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+					}					
+					if (vQty.compareTo(new BigDecimal(0)) == 0) {
+						aData.setSalesSatuan(vCalSalesLine);
+					} else {					
+						aData.setSalesSatuan(vCalSalesLine);
+					}
+					
+					list_T32CostingD_OWNSW_List_Temp.add(aData);
+				}
+			}
+			
+			vCalTotalSalesRemaning = new BigDecimal(0);
+		} else {
+			// Jika hanya ada ACS Care yang ada detail
+			if (vJmlACSCare > 0 ){
+				
+				System.out.println("Masuk Sini --> detail 1.A");
+				
+				BigDecimal vTotalSalesFullMargin = new BigDecimal (0);				
+				
+				if (CommonUtils.isNotEmpty(dcbsalesACSPS.getValue())){
+					vTotalSalesFullMargin = dcbsalesACSPS.getValue();
+				}				
+				
+				for (T31CostingDAcsps aData : list_T31CostingD_ACSPS_List) {
+					if (CommonUtils.isNotEmpty(aData)){
+						BigDecimal vCalSalesLine = new BigDecimal(0);	
+						
+						BigDecimal vSalesLine = new BigDecimal(0);		
+						if (CommonUtils.isNotEmpty(aData.getQty())){
+							vSalesLine = aData.getSalesTotal();
+						}
+						vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+						
+						aData.setSalesTotal(vCalSalesLine);
+						
+						BigDecimal vQty = new BigDecimal(0);		
+						if (CommonUtils.isNotEmpty(aData.getQty())){
+							vQty = aData.getQty();
+						}
+						
+						if (vQty.compareTo(new BigDecimal(0)) != 0) {
+							vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+						}					
+						if (vQty.compareTo(new BigDecimal(0)) == 0) {
+							aData.setSalesSatuan(vCalSalesLine);
+						} else {					
+							aData.setSalesSatuan(vCalSalesLine);
+						}
+						
+						list_T31CostingD_ACSPS_List_Temp.add(aData);
+					}
+				}
+				
+				vCalTotalSalesRemaning = new BigDecimal(0);
+			}
+			
+			// Jika hanya Own Software yang ada detail
+			if (vJmlOwnSoftware > 0 ){
+				System.out.println("Masuk Sini --> detail 1.B");
+				
+				BigDecimal vTotalSalesFullMargin = new BigDecimal (0);				
+				
+				if (CommonUtils.isNotEmpty(dcbsalesOWNSW.getValue())){
+					vTotalSalesFullMargin = dcbsalesOWNSW.getValue();
+				}				
+				
+				for (T32CostingDOwnsw aData : list_T32CostingD_OWNSW_List) {
+					if (CommonUtils.isNotEmpty(aData)){
+						BigDecimal vCalSalesLine = new BigDecimal(0);	
+						
+						BigDecimal vSalesLine = new BigDecimal(0);		
+						if (CommonUtils.isNotEmpty(aData.getQty())){
+							vSalesLine = aData.getSalesTotal();
+						}
+						vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+						
+						aData.setSalesTotal(vCalSalesLine);
+						
+						BigDecimal vQty = new BigDecimal(0);		
+						if (CommonUtils.isNotEmpty(aData.getQty())){
+							vQty = aData.getQty();
+						}
+						
+						if (vQty.compareTo(new BigDecimal(0)) != 0) {
+							vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+						}					
+						if (vQty.compareTo(new BigDecimal(0)) == 0) {
+							aData.setSalesSatuan(vCalSalesLine);
+						} else {					
+							aData.setSalesSatuan(vCalSalesLine);
+						}
+						
+						list_T32CostingD_OWNSW_List_Temp.add(aData);
+					}
+				}
+				
+				vCalTotalSalesRemaning = new BigDecimal(0);
+			}
+			
+			
+		}
+			
+			
+		if (vCalTotalSalesRemaning.compareTo(new BigDecimal(0)) != 0) {
+			ZksampleMessageUtils.showErrorMessage("Recalculate Margin tidak bisa dengan Margin Total "+vCalculateTotalMarginPcn+" ,"
+					+ "	Margin Hardware "+vCalculateHwMarginPcn+" ,"
+					+ " dan 3rd Party Services Margin "+vCalculate3rdPSMarginPcn+" tidak memungkinkan untuk dilakukan");
+			return;
+		} else {
+			if (CommonUtils.isNotEmpty(list_T30CostingD_HW3PS_List_Temp)){
+				list_T30CostingD_HW3PS_List.clear();
+				for (T30CostingDHw3ps aData : list_T30CostingD_HW3PS_List_Temp) {
+					list_T30CostingD_HW3PS_List.add(aData);
+				}
+				setModel_T30CostingD_HW3PS_List();
+				HitDetailT30CostingDHw3ps();
+			}
+			
+			if (CommonUtils.isNotEmpty(list_T31CostingD_ACSPS_List_Temp)){
+				list_T31CostingD_ACSPS_List.clear();
+				for (T31CostingDAcsps aData : list_T31CostingD_ACSPS_List_Temp) {
+					list_T31CostingD_ACSPS_List.add(aData);
+				}
+				setModel_T31CostingD_ACSPS_List();
+				HitDetailT31CostingDAcsps();
+			}
+			
+			if (CommonUtils.isNotEmpty(list_T32CostingD_OWNSW_List_Temp)){
+				list_T32CostingD_OWNSW_List.clear();
+				for (T32CostingDOwnsw aData : list_T32CostingD_OWNSW_List_Temp) {
+					list_T32CostingD_OWNSW_List.add(aData);
+				}
+				setModel_T32CostingD_OWNSW_List();
+				HitDetailT32CostingDOwnsw();
+			}
+			
+			
+			
+		}
+		
+		
+		
+	}
+*/
 	
+	public void onClick$btnRecalculate() throws InterruptedException{
+		
+		BigDecimal vCalculateTotalMarginPcn = new BigDecimal(0);
+		BigDecimal vCalculateHw3psMarginPcn = new BigDecimal(0);
+		
+		if (CommonUtils.isNotEmpty(dcbCalculateTotalMarginPcn.getValue())){
+			vCalculateTotalMarginPcn = dcbCalculateTotalMarginPcn.getValue();
+		}
+		BigDecimal vCalculateTotalMargin = vCalculateTotalMarginPcn.divide((new BigDecimal(100)), 5, RoundingMode.HALF_UP);
+
+		
+		if (CommonUtils.isNotEmpty(dcbCalculateHw3PSMarginPcn.getValue())){
+			vCalculateHw3psMarginPcn = dcbCalculateHw3PSMarginPcn.getValue();
+		}
+		BigDecimal vCalculateHw3psMargin = vCalculateHw3psMarginPcn.divide((new BigDecimal(100)), 5, RoundingMode.HALF_UP);
+
+		
+		BigDecimal vSatu = new BigDecimal(1);
+		
+		BigDecimal vCalTotalSales = new BigDecimal(0);
+		BigDecimal vCalSalesHW3PS = new BigDecimal(0);
+		
+		BigDecimal vTotalCOGS = new BigDecimal(0);
+		
+		if (CommonUtils.isNotEmpty(dcbTotalCOGS_2.getValue())){
+			vTotalCOGS = dcbTotalCOGS_2.getValue();
+		}
+		
+		if (vTotalCOGS.compareTo(new BigDecimal(0)) == 0) {
+			ZksampleMessageUtils.showErrorMessage("Tidak ada Cost sama sekali, tidak perlu Calculate Margin");
+    		return;
+			
+		} else {
+			if (vCalculateTotalMargin.compareTo(new BigDecimal(1))>= 0) {
+				vCalTotalSales = vTotalCOGS;
+				ZksampleMessageUtils.showErrorMessage("Total Margin tidak bisa "+vCalculateTotalMarginPcn+" % karena ada Cost");
+	    		return;
+			} else {
+				vCalTotalSales = vTotalCOGS.divide((vSatu.subtract(vCalculateTotalMargin)), 5, RoundingMode.HALF_UP);
+			}
+		}
+		
+		
+		BigDecimal vCOGSHW3PS = new BigDecimal(0);
+		
+		if (CommonUtils.isNotEmpty(dcbCOGSHW3PS.getValue())){
+			vCOGSHW3PS = dcbCOGSHW3PS.getValue();
+		}		
+		
+		BigDecimal vCalHw3psWithoutOtherExpMargin = new BigDecimal(0);
+		if (vCOGSHW3PS.compareTo(new BigDecimal(0)) == 0) {
+			ZksampleMessageUtils.showErrorMessage("Tidak ada Cost pada Hardware and 3rd Party Service, tidak bisa dilakukan Calculate Margin");
+    		return;
+			
+		} else {			
+			if (vCalculateHw3psMargin.compareTo(new BigDecimal(1))>= 0) {
+				vCalSalesHW3PS = vTotalCOGS;
+				ZksampleMessageUtils.showErrorMessage("Hardware and 3rd Party Service Margin tidak bisa "+vCalculateHw3psMarginPcn+" % karena ada Cost");
+	    		return;
+			} else {
+				vCalSalesHW3PS = vTotalCOGS.divide((vSatu.subtract(vCalculateHw3psMargin)), 5, RoundingMode.HALF_UP);
+				vCalHw3psWithoutOtherExpMargin = vCalSalesHW3PS.subtract(vCOGSHW3PS);				
+				vCalHw3psWithoutOtherExpMargin = vCalHw3psWithoutOtherExpMargin.divide(vCalSalesHW3PS, 5, RoundingMode.HALF_UP);				
+			}
+		}
+		
+		//System.out.println("vCalTotalSales --> "+vCalTotalSales);
+		//System.out.println("vCalSalesHW3PS --> "+vCalSalesHW3PS);
+		//System.out.println("vCalHw3psMarginWithoutOtherExp --> "+vCalHw3psWithoutOtherExpMargin);
+		
+		BigDecimal vCalTotalSalesRemaning = vCalTotalSales;
+		
+		//System.out.println("vCalTotalSalesRemaning 1--> "+vCalTotalSalesRemaning);
+		
+		list_T30CostingD_HW3PS_List_Temp.clear();
+		
+		for (T30CostingDHw3ps aData : list_T30CostingD_HW3PS_List) {
+			if (CommonUtils.isNotEmpty(aData)){
+				
+				BigDecimal vCOGSLine = aData.getCogsTotal();
+				BigDecimal vCalSalesLine = new BigDecimal(0);
+				
+				
+				if (vCOGSLine.compareTo(new BigDecimal(0)) == 0) {
+					vCalSalesLine =  new BigDecimal(0);						
+				} else {						
+					vCalSalesLine = vCOGSLine.divide((vSatu.subtract(vCalHw3psWithoutOtherExpMargin)), 5, RoundingMode.HALF_UP);
+		
+				}
+				
+				vCalTotalSalesRemaning = vCalTotalSalesRemaning.subtract(vCalSalesLine);
+				
+				aData.setSalesTotal(vCalSalesLine);
+				BigDecimal vQty = new BigDecimal(0);		
+				if (CommonUtils.isNotEmpty(aData.getQty())){
+					vQty = aData.getQty();
+				}
+				
+				if (vQty.compareTo(new BigDecimal(0)) != 0) {
+					vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+				}
+				
+				if (vQty.compareTo(new BigDecimal(0)) == 0) {
+					aData.setSalesSatuan(vCalSalesLine);
+				} else {					
+					aData.setSalesSatuan(vCalSalesLine);
+				}
+				
+				if (vCalTotalSalesRemaning.compareTo(new BigDecimal(0)) >= 0) {
+					list_T30CostingD_HW3PS_List_Temp.add(aData);
+				}  else {
+					ZksampleMessageUtils.showErrorMessage("Recalculate Margin tidak bisa dengan Margin Total "+vCalculateTotalMarginPcn+" ,"
+									+ "	Margin Hardware dan 3rd Party Services "+vCalculateHw3psMarginPcn+" tidak memungkinkan untuk dilakukan");
+		    		return;
+				}
+			}
+		}
+		
+		//System.out.println("vCalTotalSalesRemaning 2--> "+vCalTotalSalesRemaning);
+		
+		int vJmlACSCare = list_T31CostingD_ACSPS_List.size();
+		int vJmlOwnSoftware = list_T32CostingD_OWNSW_List.size();
+		
+		if (vJmlACSCare > 0 || vJmlOwnSoftware > 0){	
+			if (vCalTotalSalesRemaning.compareTo(new BigDecimal(0)) == 0) {
+				ZksampleMessageUtils.showErrorMessage("Recalculate Margin tidak bisa dengan Margin Total "+vCalculateTotalMarginPcn+" ,"
+								+ "	Margin Hardware dan 3rd Party Services "+vCalculateHw3psMarginPcn+" tidak memungkinkan untuk dilakukan");
+	    		return;
+			} else {
+				list_T31CostingD_ACSPS_List_Temp.clear();
+				list_T32CostingD_OWNSW_List_Temp.clear();
+				
+				if (vJmlACSCare > 0 && vJmlOwnSoftware > 0){
+					
+					
+					BigDecimal vTotalSalesFullMargin = new BigDecimal (0);					
+					
+					if (CommonUtils.isNotEmpty(dcbsalesACSPS.getValue())){
+						vTotalSalesFullMargin = dcbsalesACSPS.getValue();
+					}
+					
+					if (CommonUtils.isNotEmpty(dcbsalesOWNSW.getValue())){
+						vTotalSalesFullMargin = vTotalSalesFullMargin.add(dcbsalesOWNSW.getValue());
+					}
+					
+					
+					for (T31CostingDAcsps aData : list_T31CostingD_ACSPS_List) {
+						if (CommonUtils.isNotEmpty(aData)){
+							BigDecimal vCalSalesLine = new BigDecimal(0);	
+							
+							BigDecimal vSalesLine = new BigDecimal(0);		
+							if (CommonUtils.isNotEmpty(aData.getQty())){
+								vSalesLine = aData.getSalesTotal();
+							}
+							vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+							
+							aData.setSalesTotal(vCalSalesLine);
+							
+							BigDecimal vQty = new BigDecimal(0);		
+							if (CommonUtils.isNotEmpty(aData.getQty())){
+								vQty = aData.getQty();
+							}
+							
+							if (vQty.compareTo(new BigDecimal(0)) != 0) {
+								vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+							}					
+							if (vQty.compareTo(new BigDecimal(0)) == 0) {
+								aData.setSalesSatuan(vCalSalesLine);
+							} else {					
+								aData.setSalesSatuan(vCalSalesLine);
+							}
+							
+							list_T31CostingD_ACSPS_List_Temp.add(aData);
+						}
+					}
+					
+					for (T32CostingDOwnsw aData : list_T32CostingD_OWNSW_List) {
+						if (CommonUtils.isNotEmpty(aData)){
+							BigDecimal vCalSalesLine = new BigDecimal(0);	
+							
+							BigDecimal vSalesLine = new BigDecimal(0);		
+							if (CommonUtils.isNotEmpty(aData.getQty())){
+								vSalesLine = aData.getSalesTotal();
+							}
+							vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+							
+							aData.setSalesTotal(vCalSalesLine);
+							
+							BigDecimal vQty = new BigDecimal(0);		
+							if (CommonUtils.isNotEmpty(aData.getQty())){
+								vQty = aData.getQty();
+							}
+							
+							if (vQty.compareTo(new BigDecimal(0)) != 0) {
+								vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+							}					
+							if (vQty.compareTo(new BigDecimal(0)) == 0) {
+								aData.setSalesSatuan(vCalSalesLine);
+							} else {					
+								aData.setSalesSatuan(vCalSalesLine);
+							}
+							
+							list_T32CostingD_OWNSW_List_Temp.add(aData);
+						}
+					}
+					
+					vCalTotalSalesRemaning = new BigDecimal(0);
+				} else {
+					// Jika hanya ada ACS Care yang ada detail
+					if (vJmlACSCare > 0 ){
+						BigDecimal vTotalSalesFullMargin = new BigDecimal (0);				
+						
+						if (CommonUtils.isNotEmpty(dcbsalesACSPS.getValue())){
+							vTotalSalesFullMargin = dcbsalesACSPS.getValue();
+						}				
+						
+						for (T31CostingDAcsps aData : list_T31CostingD_ACSPS_List) {
+							if (CommonUtils.isNotEmpty(aData)){
+								BigDecimal vCalSalesLine = new BigDecimal(0);	
+								
+								BigDecimal vSalesLine = new BigDecimal(0);		
+								if (CommonUtils.isNotEmpty(aData.getQty())){
+									vSalesLine = aData.getSalesTotal();
+								}
+								vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+								
+								aData.setSalesTotal(vCalSalesLine);
+								
+								BigDecimal vQty = new BigDecimal(0);		
+								if (CommonUtils.isNotEmpty(aData.getQty())){
+									vQty = aData.getQty();
+								}
+								
+								if (vQty.compareTo(new BigDecimal(0)) != 0) {
+									vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+								}					
+								if (vQty.compareTo(new BigDecimal(0)) == 0) {
+									aData.setSalesSatuan(vCalSalesLine);
+								} else {					
+									aData.setSalesSatuan(vCalSalesLine);
+								}
+								
+								list_T31CostingD_ACSPS_List_Temp.add(aData);
+							}
+						}
+						
+						vCalTotalSalesRemaning = new BigDecimal(0);
+					}
+					
+					// Jika hanya Own Software yang ada detail
+					if (vJmlOwnSoftware > 0 ){						
+						BigDecimal vTotalSalesFullMargin = new BigDecimal (0);				
+						
+						if (CommonUtils.isNotEmpty(dcbsalesOWNSW.getValue())){
+							vTotalSalesFullMargin = dcbsalesOWNSW.getValue();
+						}				
+						
+						for (T32CostingDOwnsw aData : list_T32CostingD_OWNSW_List) {
+							if (CommonUtils.isNotEmpty(aData)){
+								BigDecimal vCalSalesLine = new BigDecimal(0);	
+								
+								BigDecimal vSalesLine = new BigDecimal(0);		
+								if (CommonUtils.isNotEmpty(aData.getQty())){
+									vSalesLine = aData.getSalesTotal();
+								}
+								vCalSalesLine = (vSalesLine.divide(vTotalSalesFullMargin, 5, RoundingMode.HALF_UP)).multiply(vCalTotalSalesRemaning);
+								
+								aData.setSalesTotal(vCalSalesLine);
+								
+								BigDecimal vQty = new BigDecimal(0);		
+								if (CommonUtils.isNotEmpty(aData.getQty())){
+									vQty = aData.getQty();
+								}
+								
+								if (vQty.compareTo(new BigDecimal(0)) != 0) {
+									vCalSalesLine = vCalSalesLine.divide(vQty, 5, RoundingMode.HALF_UP);
+								}					
+								if (vQty.compareTo(new BigDecimal(0)) == 0) {
+									aData.setSalesSatuan(vCalSalesLine);
+								} else {					
+									aData.setSalesSatuan(vCalSalesLine);
+								}
+								
+								list_T32CostingD_OWNSW_List_Temp.add(aData);
+							}
+						}
+						
+						vCalTotalSalesRemaning = new BigDecimal(0);
+					}
+				}
+			}
+		}
+		
+		if (vCalTotalSalesRemaning.compareTo(new BigDecimal(0)) != 0) {
+			ZksampleMessageUtils.showErrorMessage("Recalculate Margin tidak bisa dengan Margin Total "+vCalculateTotalMarginPcn+" ,"
+					+ "	Margin Hardware dan 3rd Party Services "+vCalculateHw3psMarginPcn+" tidak memungkinkan untuk dilakukan");
+			return;
+		} else {
+			if (CommonUtils.isNotEmpty(list_T30CostingD_HW3PS_List_Temp)){
+				list_T30CostingD_HW3PS_List.clear();
+				for (T30CostingDHw3ps aData : list_T30CostingD_HW3PS_List_Temp) {
+					list_T30CostingD_HW3PS_List.add(aData);
+				}
+				setModel_T30CostingD_HW3PS_List();
+				HitDetailT30CostingDHw3ps();
+			}
+			
+			if (CommonUtils.isNotEmpty(list_T31CostingD_ACSPS_List_Temp)){
+				list_T31CostingD_ACSPS_List.clear();
+				for (T31CostingDAcsps aData : list_T31CostingD_ACSPS_List_Temp) {
+					list_T31CostingD_ACSPS_List.add(aData);
+				}
+				setModel_T31CostingD_ACSPS_List();
+				HitDetailT31CostingDAcsps();
+			}
+			
+			if (CommonUtils.isNotEmpty(list_T32CostingD_OWNSW_List_Temp)){
+				list_T32CostingD_OWNSW_List.clear();
+				for (T32CostingDOwnsw aData : list_T32CostingD_OWNSW_List_Temp) {
+					list_T32CostingD_OWNSW_List.add(aData);
+				}
+				setModel_T32CostingD_OWNSW_List();
+				HitDetailT32CostingDOwnsw();
+			}
+		}
+		
+	}
 	
 	// Sorting Detail 1 - T30CostingD_HW3PS
 	

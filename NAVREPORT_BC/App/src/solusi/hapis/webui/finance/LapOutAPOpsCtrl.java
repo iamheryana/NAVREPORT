@@ -2,6 +2,7 @@ package solusi.hapis.webui.finance;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
@@ -65,6 +67,8 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdIDR1;
 	protected Radio rdIDR2;
 	protected Radio rdVAL;
+	protected Radio rdVALO;
+	protected Radio rdIDRO;
 	
 	protected Decimalbox dcmKursUSD;
 	protected Decimalbox dcmKursEUR;
@@ -931,13 +935,26 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 			jasperRpt = "/solusi/hapis/webui/reports/finance/02009_AJOutAP.jasper";
 
 		} else {
-			jasperRpt = "/solusi/hapis/webui/reports/finance/02009_AJOutAP_IDR.jasper";
-			param.put("JnsRptSD",  vShowAmtIn); 	
-			param.put("Kurs",  vKursUSD); 
-			param.put("KursEUR",  vKursEUR);
-			param.put("KursSGD",  vKursSGD);
-			param.put("KursCNY",  vKursCNY);
+			if(vShowAmtIn.equals("VALO")) {
+		
+				jasperRpt = "/solusi/hapis/webui/reports/finance/02009_AJOutAP_VAL.jasper";
+
+			}	else {
+				if(vShowAmtIn.equals("IDRO")) {		
+		
+					jasperRpt = "/solusi/hapis/webui/reports/finance/02009_AJOutAP_IDR_2.jasper";
+
+				}	else 	{
+						jasperRpt = "/solusi/hapis/webui/reports/finance/02009_AJOutAP_IDR.jasper";
+						param.put("JnsRptSD",  vShowAmtIn); 	
+						param.put("Kurs",  vKursUSD); 
+						param.put("KursEUR",  vKursEUR);
+						param.put("KursSGD",  vKursSGD);
+						param.put("KursCNY",  vKursCNY);
+				}
+			}
 		}
+		
 		
 		param.put("R1From",  vR1From); 
 		param.put("R1Upto",  vR1Upto); 
@@ -992,6 +1009,14 @@ public class LapOutAPOpsCtrl extends GFCBaseCtrl implements Serializable {
 
 		 
 		
+	}
+	
+	public void onClick$btnSync(Event event) throws InterruptedException, SQLException, ParseException  {
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReportManual("0201003");
+		
+		Messagebox.show("Sync Sudah Selesai");
 	}
  
 }

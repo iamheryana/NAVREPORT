@@ -192,8 +192,8 @@ public class PathReport {
 				setSubRptFinance("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\finance\\");
 				setSubRptLogitic("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\logistic\\");
 				setSubRptSales("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\");
-				setSubRptSalesHistorical("F:\\ERP\\Kosong\\NAVREPORT_BC\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
-				setSubRptSalesPOBySales("F:\\ERP\\Kosong\\NAVREPORT_BC\\NAVREPORT\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\POBySales\\");
+				setSubRptSalesHistorical("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\Historical\\");
+				setSubRptSalesPOBySales("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\sales\\POBySales\\");
 				setSubRptMarkom("F:\\ERP\\Kosong\\NAVREPORT\\NAVREPORT\\NAVREPORT_BC\\App\\src\\solusi\\hapis\\webui\\reports\\markom\\");
 				
 				

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="08001_OutPO" language="groovy" pageWidth="2490" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2450" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="08001_OutPO" language="groovy" pageWidth="2540" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2500" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="1.610510000000025"/>
-	<property name="ireport.x" value="538"/>
-	<property name="ireport.y" value="115"/>
+	<property name="ireport.x" value="2753"/>
+	<property name="ireport.y" value="0"/>
 	<parameter name="OwnerPosibility" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -65,6 +65,7 @@ SELECT
 		, OPO.QTY_NOT_RCV
 		, OPO.QTY_RCV_NOT_INV
 		, OPO.QTY_OUT
+		, OPO.QTY_ORDER - OPO.QTY_OUT AS QTY_INV
 		, OPO.UNIT_PRICE
 		, OPO.AMT_OUT
 		, OPO.EXP_RCP_DATE
@@ -280,8 +281,8 @@ LEFT JOIN [dbo].[BC_User Location] USR2 ON USR2.[User ID] = OPO.CREATED_BY
 		) X
 WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = 'ALL')
 		AND (	$P{Status} = 'ALL' OR
-				(X.STATUS_LINE = '(A)' AND $P{Status} = 'NOT RECIEVED') OR
-				(X.STATUS_LINE <> '(A)' AND $P{Status} = 'RECIEVED')
+				(X.QTY_NOT_RCV <> 0 AND $P{Status} = 'NOT RECIEVED') OR
+				(X.QTY_RCV_NOT_INV <> 0 AND $P{Status} = 'RECIEVED')
 			) AND X.AGED_PO >= $P{AgedPO}]]>
 	</queryString>
 	<field name="NO_URUT" class="java.lang.Long"/>
@@ -310,6 +311,7 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 	<field name="QTY_NOT_RCV" class="java.math.BigDecimal"/>
 	<field name="QTY_RCV_NOT_INV" class="java.math.BigDecimal"/>
 	<field name="QTY_OUT" class="java.math.BigDecimal"/>
+	<field name="QTY_INV" class="java.math.BigDecimal"/>
 	<field name="UNIT_PRICE" class="java.math.BigDecimal"/>
 	<field name="AMT_OUT" class="java.math.BigDecimal"/>
 	<field name="EXP_RCP_DATE" class="java.sql.Timestamp"/>
@@ -543,28 +545,28 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 					<text><![CDATA[Outstanding Qty]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2100" y="42" width="100" height="14" uuid="7f4ecd21-6f4c-4f90-9efe-debadec250d2"/>
+					<reportElement x="2150" y="42" width="100" height="14" uuid="7f4ecd21-6f4c-4f90-9efe-debadec250d2"/>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<text><![CDATA[Unit Price]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2200" y="42" width="100" height="14" uuid="c7a2fa40-aca1-4528-a068-880ba6a5a517"/>
+					<reportElement x="2250" y="42" width="100" height="14" uuid="c7a2fa40-aca1-4528-a068-880ba6a5a517"/>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
 					<text><![CDATA[Outstanding Amount]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2300" y="42" width="75" height="14" uuid="0249a761-2822-41a9-b6be-2ea96f0a17d9"/>
+					<reportElement x="2350" y="42" width="75" height="14" uuid="0249a761-2822-41a9-b6be-2ea96f0a17d9"/>
 					<textElement textAlignment="Center">
 						<font size="8"/>
 					</textElement>
 					<text><![CDATA[Exp. Rcv. Date]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2400" y="42" width="50" height="14" uuid="f058a65e-307e-4eab-93b2-d8f8ff2dc7e2"/>
+					<reportElement x="2450" y="42" width="50" height="14" uuid="f058a65e-307e-4eab-93b2-d8f8ff2dc7e2"/>
 					<textElement textAlignment="Center">
 						<font size="8"/>
 					</textElement>
@@ -599,7 +601,7 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 					<text><![CDATA[]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2375" y="42" width="25" height="14" uuid="49514a7d-243d-4b16-baf6-f7024877a236"/>
+					<reportElement x="2425" y="42" width="25" height="14" uuid="49514a7d-243d-4b16-baf6-f7024877a236"/>
 					<textElement textAlignment="Right">
 						<font size="8"/>
 					</textElement>
@@ -618,6 +620,13 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 						<font size="8"/>
 					</textElement>
 					<text><![CDATA[Latest  GR Date]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="2100" y="42" width="50" height="14" uuid="41b48e96-7243-48be-80d6-fd6da8124ab5"/>
+					<textElement textAlignment="Right">
+						<font size="8"/>
+					</textElement>
+					<text><![CDATA[Qty Inv.]]></text>
 				</staticText>
 			</band>
 			<band height="56">
@@ -978,7 +987,7 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="2050" y="28" width="400" height="14" uuid="fad6e0d6-59a1-431c-b2df-70460e7a68e3">
+				<reportElement x="2050" y="28" width="450" height="14" uuid="fad6e0d6-59a1-431c-b2df-70460e7a68e3">
 					<printWhenExpression><![CDATA[$P{jnsRpt}.equals( "DTL" ) == true]]></printWhenExpression>
 				</reportElement>
 				<textElement>
@@ -987,7 +996,7 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 				<text><![CDATA[(A) Barang  BELUM diterima / Warehouse Receipt]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2050" y="42" width="400" height="14" uuid="4177873e-cfa1-43cb-b09b-ca3e36aaa3be">
+				<reportElement x="2050" y="42" width="450" height="14" uuid="4177873e-cfa1-43cb-b09b-ca3e36aaa3be">
 					<printWhenExpression><![CDATA[$P{jnsRpt}.equals( "DTL" ) == true]]></printWhenExpression>
 				</reportElement>
 				<textElement>
@@ -1005,7 +1014,7 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 				<text><![CDATA[Keterangan Status Line :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2050" y="56" width="400" height="14" uuid="10ad789c-1f1f-4461-8e7f-ecc8ed3ec337">
+				<reportElement x="2050" y="56" width="450" height="14" uuid="10ad789c-1f1f-4461-8e7f-ecc8ed3ec337">
 					<printWhenExpression><![CDATA[$P{jnsRpt}.equals( "DTL" ) == true]]></printWhenExpression>
 				</reportElement>
 				<textElement>
@@ -1124,39 +1133,46 @@ WHERE	(X.GROUP_OWNER_POSIBILITY = $P{OwnerPosibility} OR $P{OwnerPosibility} = '
 				<textFieldExpression><![CDATA[$F{QTY_RCV_NOT_INV}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###.##" isBlankWhenNull="true">
-				<reportElement x="2100" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="a7101275-4b41-4226-b8c6-e8d18dabec0f"/>
+				<reportElement x="2150" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="a7101275-4b41-4226-b8c6-e8d18dabec0f"/>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{UNIT_PRICE}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="#,###.##" isBlankWhenNull="true">
-				<reportElement x="2200" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="dc007560-f2a7-493c-99b2-673063cd7b8f"/>
+				<reportElement x="2250" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="dc007560-f2a7-493c-99b2-673063cd7b8f"/>
 				<textElement textAlignment="Right">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{AMT_OUT}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
-				<reportElement x="2300" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="c06b4c07-2d05-469b-bd38-31847b3c07e1"/>
+				<reportElement x="2350" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="c06b4c07-2d05-469b-bd38-31847b3c07e1"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{EXP_RCP_DATE}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2400" y="0" width="50" height="14" uuid="a96fdc1d-f640-42bf-b886-7b956eca2174"/>
+				<reportElement x="2450" y="0" width="50" height="14" uuid="a96fdc1d-f640-42bf-b886-7b956eca2174"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{STATUS_LINE}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2375" y="0" width="25" height="14" uuid="08119a97-9c84-4a86-9f2a-a7eab2c61195"/>
+				<reportElement x="2425" y="0" width="25" height="14" uuid="08119a97-9c84-4a86-9f2a-a7eab2c61195"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{LEWAT}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,###" isBlankWhenNull="true">
+				<reportElement x="2100" y="0" width="50" height="14" isPrintWhenDetailOverflows="true" uuid="da215211-6864-4a27-85f0-bfb55ff6ce35"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{QTY_INV}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>
