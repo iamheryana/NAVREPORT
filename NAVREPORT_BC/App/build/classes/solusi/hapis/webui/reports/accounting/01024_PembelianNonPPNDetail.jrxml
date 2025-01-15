@@ -69,17 +69,18 @@ FROM (
 					, XX.TIPE
 					, XX.REG
 					, CASE WHEN XX.JENIS = 'PIB' AND XX.JENIS_PEMBELIAN = 'PEMBELIAN NON INVENTORY' THEN 'PEMBELIAN' ELSE XX.JENIS_PEMBELIAN END AS JENIS_PEMBELIAN
-					, CASE	WHEN XX.JENIS = 'PPN 11%' THEN 1
-							WHEN XX.JENIS = 'PPN 10%' THEN 2
-							WHEN XX.JENIS = 'PPN 1%' THEN 3
-							WHEN XX.JENIS = 'PPN' THEN 4
-							WHEN XX.JENIS = 'PPN - TS/MC' THEN 5
-							WHEN XX.JENIS = 'PIB' THEN 6
-							WHEN XX.JENIS = 'NON PKP' THEN 7
-							WHEN XX.JENIS = 'NON PPN' THEN 8
-							WHEN XX.JENIS = 'NON PPN - IMPORT' THEN 9
-							WHEN XX.JENIS = 'NON PPN - TS/MC' THEN 10
-							WHEN XX.JENIS = 'NON PPN - IMPORT - TS/MC' THEN 11
+					, CASE	WHEN XX.JENIS = 'PPN 12%' THEN 1
+							WHEN XX.JENIS = 'PPN 11%' THEN 2
+							WHEN XX.JENIS = 'PPN 10%' THEN 3
+							WHEN XX.JENIS = 'PPN 1%' THEN 4
+							WHEN XX.JENIS = 'PPN' THEN 5
+							WHEN XX.JENIS = 'PPN - TS/MC' THEN 6
+							WHEN XX.JENIS = 'PIB' THEN 7
+							WHEN XX.JENIS = 'NON PKP' THEN 8
+							WHEN XX.JENIS = 'NON PPN' THEN 9
+							WHEN XX.JENIS = 'NON PPN - IMPORT' THEN 10
+							WHEN XX.JENIS = 'NON PPN - TS/MC' THEN 11
+							WHEN XX.JENIS = 'NON PPN - IMPORT - TS/MC' THEN 12
 							ELSE 12 END AS JENIS_SORT
 					, XX.JENIS
 					, XX.NO_INV
@@ -117,9 +118,10 @@ FROM (
 											END
 										ELSE
 											CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - TS/MC'
-												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 <> 0 THEN 'PPN 11%'
-												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10 <> 0 AND X.ADA_VAT11 =  0 THEN 'PPN 10%'
-												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1 <> 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 =  0 THEN 'PPN 1%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11  = 0 AND X.ADA_VAT12 <> 0 THEN 'PPN 12%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 <> 0 AND X.ADA_VAT12  = 0 THEN 'PPN 11%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10 <> 0 AND X.ADA_VAT11 =  0 AND X.ADA_VAT12  = 0 THEN 'PPN 10%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1 <> 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 =  0 AND X.ADA_VAT12  = 0 THEN 'PPN 1%'
 												 ELSE 'NON PPN'
 											END
 										END
@@ -129,6 +131,7 @@ FROM (
 												SUP.SUPP_JENIS
 											ELSE
 												CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_12 THEN 'PPN 12%'
 													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_11 THEN 'PPN 11%'
 													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
 													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
@@ -137,6 +140,7 @@ FROM (
 											END
 										ELSE
 											CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_12 THEN 'PPN 12%'
 												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_11 THEN 'PPN 11%'
 												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
 												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
@@ -167,6 +171,7 @@ FROM (
 											, HDR.ADA_VAT1
 											, HDR.ADA_VAT10
 											, HDR.ADA_VAT11
+											, HDR.ADA_VAT12
 											, HDR.VAT_CODE
 											, HDR.NO_INV
 											, HDR.TGL_INV
@@ -184,6 +189,7 @@ FROM (
 											, HDR.AMOUNT_PPN
 											, (HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM + HDR.AMOUNT_PPN) AS TOTAL
 											,ROUND(HDR.AMOUNT_PPN,0) AS AMT_PPN_SUM
+											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.12 ),0) AS  AMT_PPN_CAL_12
 											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.11 ),0) AS  AMT_PPN_CAL_11
 											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.1 ),0) AS  AMT_PPN_CAL_10
 											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.01 ),0) AS  AMT_PPN_CAL_1
@@ -194,6 +200,7 @@ FROM (
 														, PIL.ADA_VAT1
 														, PIL.ADA_VAT10
 														, PIL.ADA_VAT11
+														, PIL.ADA_VAT12
 														, PIH.[VAT Bus_ Posting Group] AS VAT_CODE
 														, GLE.[Document No_] AS NO_INV
 														, PIH.[Posting Date] AS TGL_INV
@@ -235,6 +242,7 @@ FROM (
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT11' THEN 1 ELSE 0 END) AS ADA_VAT11
+																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT12' THEN 1 ELSE 0 END) AS ADA_VAT12
 																FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PLD
 																LEFT JOIN	(
 																				SELECT X.[Dimension Set ID]
@@ -247,7 +255,7 @@ FROM (
 												WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00')
 												GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_],
 														 PIH.[Vendor Tax Invoice No_], PIH.[Posting Date], PIL.ITEM, PIL.TIER_MAINTENANCE,
-														 PIH.[VAT Bus_ Posting Group], PIL.ADA_VAT1, PIL.ADA_VAT10, PIL.ADA_VAT11
+														 PIH.[VAT Bus_ Posting Group], PIL.ADA_VAT1, PIL.ADA_VAT10, PIL.ADA_VAT11, PIL.ADA_VAT12
 												UNION ALL
 												SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
 														, CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' OR CIL.ITEM > 0 THEN 'TRADE' ELSE 'NON TRADE' END AS TIPE
@@ -255,6 +263,7 @@ FROM (
 														, CIL.ADA_VAT1
 														, CIL.ADA_VAT10
 														, CIL.ADA_VAT11
+														, CIL.ADA_VAT12
 														, CIH.[VAT Bus_ Posting Group] AS VAT_CODE
 														, GLE.[Document No_] AS NO_INV
 														, CIH.[Posting Date] AS TGL_INV
@@ -296,6 +305,7 @@ FROM (
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT11' THEN 1 ELSE 0 END) AS ADA_VAT11
+																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT12' THEN 1 ELSE 0 END) AS ADA_VAT12
 																FROM [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Line] PLD
 																LEFT JOIN	(
 																				SELECT X.[Dimension Set ID]
@@ -308,7 +318,7 @@ FROM (
 												WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00')
 												GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_],
 														 CIH.[Applies-to Doc_ No_] , CIH.[Posting Date], CIL.ITEM, CIL.TIER_MAINTENANCE,
-														 CIH.[VAT Bus_ Posting Group], CIL.ADA_VAT1, CIL.ADA_VAT10, CIL.ADA_VAT11
+														 CIH.[VAT Bus_ Posting Group], CIL.ADA_VAT1, CIL.ADA_VAT10, CIL.ADA_VAT11, CIL.ADA_VAT12
 											) HDR
 								) X
 						LEFT JOIN	(
@@ -338,9 +348,10 @@ FROM (
 											END
 										ELSE
 											CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'NON PPN - TS/MC'
-												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 <> 0 THEN 'PPN 11%'
-												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10 <> 0 AND X.ADA_VAT11 =  0 THEN 'PPN 10%'
-												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1 <> 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 =  0 THEN 'PPN 1%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11  = 0 AND X.ADA_VAT12 <> 0 THEN 'PPN 12%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 <> 0 AND X.ADA_VAT12  = 0 THEN 'PPN 11%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1  = 0 AND X.ADA_VAT10 <> 0 AND X.ADA_VAT11 =  0 AND X.ADA_VAT12  = 0 THEN 'PPN 10%'
+												 WHEN X.VAT_CODE = 'VAT' AND X.ADA_VAT1 <> 0 AND X.ADA_VAT10  = 0 AND X.ADA_VAT11 =  0 AND X.ADA_VAT12  = 0 THEN 'PPN 1%'
 												 ELSE 'NON PPN'
 											END
 										END
@@ -350,6 +361,7 @@ FROM (
 												SUP.SUPP_JENIS
 											ELSE
 												CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_12 THEN 'PPN 12%'
 													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_11 THEN 'PPN 11%'
 													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
 													 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
@@ -358,6 +370,7 @@ FROM (
 											END
 										ELSE
 											CASE WHEN X.TIER_MAINTENANCE > 0 THEN 'PPN - TS/MC'
+												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_12 THEN 'PPN 12%'
 												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_11 THEN 'PPN 11%'
 												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_10 THEN 'PPN 10%'
 												 WHEN X.AMT_PPN_SUM = X.AMT_PPN_CAL_1 THEN 'PPN 1%'
@@ -389,6 +402,7 @@ FROM (
 											, HDR.ADA_VAT1
 											, HDR.ADA_VAT10
 											, HDR.ADA_VAT11
+											, HDR.ADA_VAT12
 											, HDR.VAT_CODE
 											, HDR.NO_INV
 											, HDR.TGL_INV
@@ -406,6 +420,7 @@ FROM (
 											, HDR.AMOUNT_PPN
 											, (HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM + HDR.AMOUNT_PPN) AS TOTAL
 											,ROUND(HDR.AMOUNT_PPN,0) AS AMT_PPN_SUM
+											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.12 ),0) AS  AMT_PPN_CAL_12
 											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.11 ),0) AS  AMT_PPN_CAL_11
 											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.1 ),0) AS  AMT_PPN_CAL_10
 											,ROUND(((HDR.AMOUNT_OTHERS + HDR.AMOUNT_FGOODS + HDR.AMOUNT_DCOST + HDR.AMOUNT_PEMBELIAN + HDR.AMOUNT_PEMBELIAN_IC + HDR.AMOUNT_UM ) * 0.01 ),0) AS  AMT_PPN_CAL_1
@@ -417,6 +432,7 @@ FROM (
 														, PIL.ADA_VAT1
 														, PIL.ADA_VAT10
 														, PIL.ADA_VAT11
+														, PIL.ADA_VAT12
 														, PIH.[VAT Bus_ Posting Group] AS VAT_CODE
 														, GLE.[Document No_] AS NO_INV
 														, PIH.[Posting Date] AS TGL_INV
@@ -458,6 +474,7 @@ FROM (
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT11' THEN 1 ELSE 0 END) AS ADA_VAT11
+																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT12' THEN 1 ELSE 0 END) AS ADA_VAT12
 																FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PLD
 																LEFT JOIN	(
 																				SELECT X.[Dimension Set ID]
@@ -470,7 +487,7 @@ FROM (
 												WHERE GLE.[G_L Account No_] NOT IN ('210.110.00', '220.130.00', '210.113.00')
 												GROUP BY GLE.[Document No_], PIH.[Pay-to Vendor No_], PIH.[Pay-to Name] , PIH.[Vendor Invoice No_],
 														 PIH.[Vendor Tax Invoice No_], PIH.[Posting Date], PIL.ITEM, PIL.HW_SP, PIL.TIER_MAINTENANCE,
-														 PIH.[VAT Bus_ Posting Group], PIL.ADA_VAT1, PIL.ADA_VAT10, PIL.ADA_VAT11
+														 PIH.[VAT Bus_ Posting Group], PIL.ADA_VAT1, PIL.ADA_VAT10, PIL.ADA_VAT11, PIL.ADA_VAT12
 												UNION ALL
 												SELECT	CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' THEN 'CREDIT MEMO UM' ELSE 'CREDIT MEMO' END AS REG
 														, CASE WHEN SUBSTRING(GLE.[Document No_],1,2) = 'PP' OR CIL.ITEM > 0 THEN 'TRADE' ELSE 'NON TRADE' END AS TIPE
@@ -479,6 +496,7 @@ FROM (
 														, CIL.ADA_VAT1
 														, CIL.ADA_VAT10
 														, CIL.ADA_VAT11
+														, CIL.ADA_VAT12
 														, CIH.[VAT Bus_ Posting Group] AS VAT_CODE
 														, GLE.[Document No_] AS NO_INV
 														, CIH.[Posting Date] AS TGL_INV
@@ -520,6 +538,7 @@ FROM (
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT1' THEN 1 ELSE 0 END) AS ADA_VAT1
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT10' THEN 1 ELSE 0 END) AS ADA_VAT10
 																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT11' THEN 1 ELSE 0 END) AS ADA_VAT11
+																		,SUM(CASE WHEN PLD.[VAT Prod_ Posting Group] = 'VAT12' THEN 1 ELSE 0 END) AS ADA_VAT12
 																FROM [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Line] PLD
 																LEFT JOIN	(
 																				SELECT X.[Dimension Set ID]
@@ -532,7 +551,7 @@ FROM (
 												WHERE GLE.[G_L Account No_] NOT IN ( '210.110.00', '220.130.00', '210.113.00')
 												GROUP BY GLE.[Document No_],  CIH.[Pay-to Vendor No_], CIH.[Pay-to Name] , CIH.[Vendor Tax Invoice No_],
 														 CIH.[Applies-to Doc_ No_] , CIH.[Posting Date], CIL.ITEM, CIL.HW_SP, CIL.TIER_MAINTENANCE,
-														 CIH.[VAT Bus_ Posting Group], CIL.ADA_VAT1, CIL.ADA_VAT10, CIL.ADA_VAT11
+														 CIH.[VAT Bus_ Posting Group], CIL.ADA_VAT1, CIL.ADA_VAT10, CIL.ADA_VAT11, CIL.ADA_VAT12
 											) HDR
 								) X
 						LEFT JOIN	(

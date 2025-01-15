@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010402_InvoiceBelumAdaFF" language="groovy" pageWidth="1140" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1100" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.7715610000000284"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<queryString>
+		<![CDATA[SELECT	DISTINCT
+		'AUTOJAYA' AS COMPANY
+		, PIH.[No_] AS NO_INV
+		, PIH.[Posting Date] AS TGL_INV
+		, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+		, PIH.[Pay-to Vendor No_] AS SUPP_CODE
+		, PIH.[Pay-to Name] AS SUPP_NAME
+		, PRH.[Order No_] AS NO_PO
+		, BPO.NO_BPO
+		, PILL.AMOUNT
+FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Header] PIH
+INNER JOIN	(
+				SELECT [Document No_] ,  SUM([Amount]) AS AMOUNT
+				FROM [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line]
+				GROUP BY [Document No_]
+			) PILL ON PILL.[Document No_] = PIH.[No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Inv_ Line] PIL ON PIL.[Document No_] =  PIH.[No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = PIL.[Receipt No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Purch_ Cr_ Memo Hdr_] CMH ON CMH.[Applies-to Doc_ No_] = PIH.[No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] PH ON PH.[Document Type] = 1 AND PH.[No_] = PRH.[Order No_]
+LEFT JOIN	(
+				SELECT PH.[No_] AS NO_PO, MAX(PD.[Blanket Order No_]) AS NO_BPO
+				FROM [dbo].[BC_AUTOJAYA$Purchase Header] PH
+				INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+				WHERE PH.[Document Type] = 1
+				GROUP BY PH.[No_]
+			)  BPO ON BPO.NO_PO = PH.[No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Purchase Header] BPH ON BPH.[Document Type] = 4 AND BPH.[No_] = BPO.NO_BPO
+LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Register Header - n] ERG ON ERG.[Document Type] =  7 AND ERG.[No_] = PIH.[No_]
+WHERE	PIL.[Receipt No_] <> '' AND CMH.[No_] IS NULL
+		AND PIH.[Posting Date] >= '2025-01-01'
+		AND (ERG.[Faktur Pajak No_] = '' OR ERG.[Faktur Pajak No_] IS NULL)
+		AND PIH.[Pay-to Vendor No_] NOT IN ('SUPP684','SUPP690')
+UNION ALL
+SELECT	DISTINCT
+		'SOLUSI' AS COMPANY
+		, PIH.[No_] AS NO_INV
+		, PIH.[Posting Date] AS TGL_INV
+		, PIH.[Vendor Invoice No_] AS NO_INV_SUPP
+		, PIH.[Pay-to Vendor No_] AS SUPP_CODE
+		, PIH.[Pay-to Name] AS SUPP_NAME
+		, PRH.[Order No_] AS NO_PO
+		, BPO.NO_BPO
+		, PILL.AMOUNT
+FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Header] PIH
+INNER JOIN	(
+				SELECT [Document No_] ,  SUM([Amount]) AS AMOUNT
+				FROM [dbo].[BC_SOLUSI$Purch_ Inv_ Line]
+				GROUP BY [Document No_]
+			) PILL ON PILL.[Document No_] = PIH.[No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Inv_ Line] PIL ON PIL.[Document No_] =  PIH.[No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Rcpt_ Header] PRH ON PRH.[No_] = PIL.[Receipt No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Purch_ Cr_ Memo Hdr_] CMH ON CMH.[Applies-to Doc_ No_] = PIH.[No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] PH ON PH.[Document Type] = 1 AND PH.[No_] = PRH.[Order No_]
+LEFT JOIN	(
+				SELECT PH.[No_] AS NO_PO, MAX(PD.[Blanket Order No_]) AS NO_BPO
+				FROM [dbo].[BC_SOLUSI$Purchase Header] PH
+				INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] PD ON PD.[Document No_] = PH.[No_]
+				WHERE PH.[Document Type] = 1
+				GROUP BY PH.[No_]
+			)  BPO ON BPO.NO_PO = PH.[No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Purchase Header] BPH ON BPH.[Document Type] = 4 AND BPH.[No_] = BPO.NO_BPO
+LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Register Header - n] ERG ON ERG.[Document Type] =  7 AND ERG.[No_] = PIH.[No_]
+WHERE	PIL.[Receipt No_] <> '' AND CMH.[No_] IS NULL
+		AND PIH.[Posting Date] >= '2025-01-01'
+		AND (ERG.[Faktur Pajak No_] = '' OR ERG.[Faktur Pajak No_] IS NULL)
+		AND PIH.[Pay-to Vendor No_] NOT IN ('SUPP684','SUPP690')]]>
+	</queryString>
+	<field name="COMPANY" class="java.lang.String"/>
+	<field name="NO_INV" class="java.lang.String"/>
+	<field name="TGL_INV" class="java.sql.Timestamp"/>
+	<field name="NO_INV_SUPP" class="java.lang.String"/>
+	<field name="SUPP_CODE" class="java.lang.String"/>
+	<field name="SUPP_NAME" class="java.lang.String"/>
+	<field name="NO_PO" class="java.lang.String"/>
+	<field name="NO_BPO" class="java.lang.String"/>
+	<field name="AMOUNT" class="java.math.BigDecimal"/>
+	<sortField name="COMPANY"/>
+	<sortField name="NO_INV"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="70" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="275" height="14" uuid="19af8fd1-8dc2-4eba-a85a-be94171f3c91"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(010402) Purchase Invoice - Belum ada Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="42" width="100" height="14" uuid="168aa3a7-29fb-4223-b820-fea66cb4a62a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="14" width="100" height="14" uuid="1eb28282-4167-4bea-843d-9c16018c8b14"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="28" width="100" height="14" uuid="573e3976-00c8-48ab-b708-0b0f6a0c90d2"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Cetak :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="b26dc1ff-1595-45c3-b4cb-0a11f585addd"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="4abeb50a-26ad-4bb0-bad4-2c9aa7a300ea"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="14" width="75" height="14" uuid="b9b289f7-2310-485e-8a51-f467945fbaa2"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="175" y="28" width="100" height="14" uuid="33d99bcf-b109-489b-b2e1-477357e18ee8"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="56" width="75" height="14" uuid="3ac88986-5a46-4052-847b-df68e46ff953"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Company]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="56" width="100" height="14" uuid="df860e3c-8019-4664-8b48-067684e90202"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="56" width="100" height="14" uuid="46860fff-b429-4a68-974e-c245a3c44d7e"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tgl. Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="275" y="56" width="150" height="14" uuid="881f2860-d97a-4a65-a7d0-90c00cda998f"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Inv Supplier]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="425" y="56" width="75" height="14" uuid="c2add55f-23e8-40bf-a142-480f11e99dba"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Kode Vendor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="56" width="300" height="14" uuid="d3c245bf-3751-4e6b-ae52-0e01cec6ce05"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Nama Vendor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="800" y="56" width="100" height="14" uuid="d87cd999-7891-47bc-a635-e48fa7aa1d59"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. PO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="14" width="100" height="14" uuid="11b2811d-7f91-458a-99b6-da604191e31c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="42" width="100" height="14" uuid="9c884001-5bc3-44a7-b074-f05dc4bd9caa"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="900" y="56" width="100" height="14" uuid="58b04360-77dd-4a4a-b991-4c53f29101c3"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. BPO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1000" y="56" width="100" height="14" uuid="cd4b8c95-3781-42fd-b4bb-0b0852f21938"/>
+				<textElement textAlignment="Right">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="4a730969-6ac0-4e57-9c3a-fe7a72781b89"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="75" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="d35069fd-0279-4f8c-9dfd-69fac39617a4"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="dd-MM-yyyy" isBlankWhenNull="true">
+				<reportElement x="175" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="501df1ff-4d29-4dff-9836-d1a3bacd451a"/>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TGL_INV}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="275" y="0" width="150" height="14" isPrintWhenDetailOverflows="true" uuid="eb61ee89-f1ee-4970-8855-c750eef6dc32"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_INV_SUPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="425" y="0" width="75" height="14" isPrintWhenDetailOverflows="true" uuid="f857a9a5-ceab-4a2d-86dc-e70c5d8e4957"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SUPP_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="500" y="0" width="300" height="14" isPrintWhenDetailOverflows="true" uuid="c0f61a31-4302-444f-b042-c218a71e36e1"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SUPP_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="800" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="ad3e7d6f-c3eb-4d6c-88e1-a957616c634e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_PO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="900" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="f5d641b3-f08c-4ab2-949e-b0548e1e2915"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NO_BPO}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1000" y="0" width="100" height="14" isPrintWhenDetailOverflows="true" uuid="7512dcf6-eaf5-4173-bfb2-797c4cbe890b"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="70">
+			<staticText>
+				<reportElement x="0" y="14" width="75" height="14" uuid="8479e596-c9a3-4a72-ba28-d078efddf543"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="42" width="100" height="14" uuid="151b9ba9-8b6b-462d-aca4-4fdecda06503"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="14" width="100" height="14" uuid="4c5b707a-f621-4851-b0cc-aca179bb365f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="0" width="275" height="14" uuid="8469bade-9d8f-4164-8150-d13c5c39665e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[(010402) Purchase Invoice - Belum ada Faktur Pajak]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="14" width="100" height="14" uuid="5c79172b-09f3-4f35-9b2a-81e0a6a76cde"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="175" y="42" width="100" height="14" uuid="9510d884-7a53-4490-96c7-86b0d368505d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="28" width="75" height="14" uuid="53b3b5b7-29fa-4a80-bd25-e3355cc9b211"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="75" y="28" width="100" height="14" uuid="94ecd105-ffe5-4034-ac8b-4330c5a3f8de"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tanggal Cetak :]]></text>
+			</staticText>
+			<textField pattern="dd-MM-yyyy HH:mm:ss">
+				<reportElement x="175" y="28" width="100" height="14" uuid="0387e2aa-f9c0-47be-805c-5957928f948d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="42" width="75" height="14" uuid="5f166503-0d2e-4a93-b79c-c758028df77f"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="56" width="275" height="14" uuid="2835b8ef-0ad6-416d-86f0-d9b0582b5a5d"/>
+				<textElement textAlignment="Center">
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[*** TIDAK ADA DATA ***]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

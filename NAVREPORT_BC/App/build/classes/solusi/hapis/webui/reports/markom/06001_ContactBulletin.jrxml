@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06001_ContactBulletin" language="groovy" pageWidth="2725" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2685" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
-	<property name="ireport.zoom" value="1.2100000000000621"/>
-	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="34"/>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06001_ContactBulletin" language="groovy" pageWidth="3003" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2963" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.9487171000001022"/>
+	<property name="ireport.x" value="310"/>
+	<property name="ireport.y" value="113"/>
 	<parameter name="Bulletin" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -40,6 +40,7 @@
 		,SLS.[Name] AS SALES_NAME
 		,CASE WHEN CON.[Company No_] <> 'XXXXX' THEN CONC.[Company Name] ELSE CON.[Search Name] END AS COMPANY_NAME
 		,CON.[Organizational Level Code] AS TIPE_CUST
+		,CASE WHEN CON.[Company No_] <> 'XXXXX' THEN ISNULL(DIM.[Name],'') ELSE ISNULL(SKI.[Description], '') END AS SECTOR
 		,CON.[Job Title] AS POSITION
 		,(RTRIM(RTRIM(RTRIM(CON.[First Name])+' '+RTRIM(CON.[Middle Name]))+' ' +RTRIM(CON.[Surname]))) AS NAME
 		,CASE WHEN (CON.[Address]+' '+CON.[Address 2]) = '' THEN (CONC.[Address]+' '+CONC.[Address 2]) ELSE (CON.[Address]+' '+CON.[Address 2]) END AS ADDRESS_CONTACT
@@ -61,6 +62,19 @@ LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = CON.[Sal
 LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
 LEFT JOIN [dbo].[BC_AUTOJAYA$Contact Business Relation] CBR ON CBR.[Contact No_] = CON.[Company No_]
 LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = CBR.[No_]
+LEFT JOIN	(
+				SELECT CJB.[Contact No_]
+					  , CJB.[Job Responsibility Code]
+					  , JRS.[Description]
+				FROM [dbo].[BC_AUTOJAYA$Contact Job Responsibility] CJB
+				INNER JOIN [dbo].[BC_AUTOJAYA$Job Responsibility] JRS ON JRS.[Code] =  CJB.[Job Responsibility Code]
+			) SKI ON SKI.[Contact No_] =CON.[No_]
+LEFT JOIN	(
+				SELECT	DD.[No_], DD.[Dimension Value Code], DV.[Name]
+				FROM [dbo].[BC_AUTOJAYA$Default Dimension] DD
+				LEFT JOIN [dbo].[BC_AUTOJAYA$Dimension Value] DV ON DV.[Dimension Code] = DD.[Dimension Code] AND DV.[Code] =  DD.[Dimension Value Code]
+				WHERE DD.[Table ID] = '18' AND DD.[Dimension Code] = 'SECTOR'
+			) DIM ON DIM.[No_] = CUS.[No_]
 INNER JOIN	(
 				SELECT	X.[Contact No_]
 						, X.BULLETIN
@@ -144,6 +158,7 @@ WHERE	CON.[Type] = 1
 	<field name="SALES_NAME" class="java.lang.String"/>
 	<field name="COMPANY_NAME" class="java.lang.String"/>
 	<field name="TIPE_CUST" class="java.lang.String"/>
+	<field name="SECTOR" class="java.lang.String"/>
 	<field name="POSITION" class="java.lang.String"/>
 	<field name="NAME" class="java.lang.String"/>
 	<field name="ADDRESS_CONTACT" class="java.lang.String"/>
@@ -240,42 +255,42 @@ WHERE	CON.[Type] = 1
 				<text><![CDATA[Position]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="736" y="215" width="272" height="14" uuid="8c2f9d14-2bac-4b06-bf60-e64ba9d4a5a5"/>
+				<reportElement x="1036" y="215" width="272" height="14" uuid="8c2f9d14-2bac-4b06-bf60-e64ba9d4a5a5"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[PIC Name]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1008" y="215" width="489" height="14" uuid="ae431392-54a2-4144-bcf2-264ec4352c58"/>
+				<reportElement x="1308" y="215" width="489" height="14" uuid="ae431392-54a2-4144-bcf2-264ec4352c58"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Address]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1497" y="215" width="158" height="14" uuid="1dc539c1-0e87-4955-860e-a65053c765d7"/>
+				<reportElement x="1797" y="215" width="158" height="14" uuid="1dc539c1-0e87-4955-860e-a65053c765d7"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Mobile Phone]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1655" y="215" width="158" height="14" uuid="53d366ca-d982-44ac-aa51-c97989363e71"/>
+				<reportElement x="1955" y="215" width="158" height="14" uuid="53d366ca-d982-44ac-aa51-c97989363e71"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Telephone]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1813" y="215" width="158" height="14" uuid="021c2bb8-2e34-46c7-86bf-dd46c53626b9"/>
+				<reportElement x="2113" y="215" width="158" height="14" uuid="021c2bb8-2e34-46c7-86bf-dd46c53626b9"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Fax]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1971" y="215" width="292" height="14" uuid="3b7d2cec-2f02-4ed0-8265-8eddc7bfbbc4"/>
+				<reportElement x="2271" y="215" width="292" height="14" uuid="3b7d2cec-2f02-4ed0-8265-8eddc7bfbbc4"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -471,56 +486,56 @@ WHERE	CON.[Type] = 1
 				<text><![CDATA[]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2363" y="215" width="50" height="14" uuid="b037b38a-c2f9-41f2-92c6-e320ee31c294"/>
+				<reportElement x="2663" y="215" width="50" height="14" uuid="b037b38a-c2f9-41f2-92c6-e320ee31c294"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[E-Blast]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2563" y="215" width="50" height="14" uuid="49e8086e-8028-4a58-bbd1-9a266a791e17"/>
+				<reportElement x="2863" y="215" width="50" height="14" uuid="49e8086e-8028-4a58-bbd1-9a266a791e17"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Imlek]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2513" y="215" width="50" height="14" uuid="9007c6bd-7a2b-48a3-ae5f-14f89a7e67f4"/>
+				<reportElement x="2813" y="215" width="50" height="14" uuid="9007c6bd-7a2b-48a3-ae5f-14f89a7e67f4"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Tahun Baru]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2263" y="215" width="50" height="14" uuid="a74ded03-633a-4eb5-954b-f5dd20f01ea9"/>
+				<reportElement x="2563" y="215" width="50" height="14" uuid="a74ded03-633a-4eb5-954b-f5dd20f01ea9"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Bulletin]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2313" y="215" width="50" height="14" uuid="cf1683f1-8706-4985-bf56-35541a32514b"/>
+				<reportElement x="2613" y="215" width="50" height="14" uuid="cf1683f1-8706-4985-bf56-35541a32514b"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Calender]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2613" y="215" width="50" height="14" uuid="7ffe581e-9404-4afd-b925-1d9b62f2ed96"/>
+				<reportElement x="2913" y="215" width="50" height="14" uuid="7ffe581e-9404-4afd-b925-1d9b62f2ed96"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Hindu]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2463" y="215" width="50" height="14" uuid="f9a1f8c8-4222-41cd-b0f4-fcdbaa4a9987"/>
+				<reportElement x="2763" y="215" width="50" height="14" uuid="f9a1f8c8-4222-41cd-b0f4-fcdbaa4a9987"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Natal]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2413" y="215" width="50" height="14" uuid="bb48a367-7bf7-4c49-9d95-c2fcc200d28c"/>
+				<reportElement x="2713" y="215" width="50" height="14" uuid="bb48a367-7bf7-4c49-9d95-c2fcc200d28c"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -708,6 +723,13 @@ WHERE	CON.[Type] = 1
 				</textElement>
 				<text><![CDATA[]]></text>
 			</staticText>
+			<staticText>
+				<reportElement x="736" y="215" width="300" height="14" uuid="739cfcec-dd1b-4413-ab38-8beaffe6ce2c"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sector Industry]]></text>
+			</staticText>
 		</band>
 	</title>
 	<detail>
@@ -734,98 +756,98 @@ WHERE	CON.[Type] = 1
 				<textFieldExpression><![CDATA[$F{POSITION}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="736" y="0" width="272" height="14" isPrintWhenDetailOverflows="true" uuid="451dbb31-7654-489f-b3af-4615043bf344"/>
+				<reportElement x="1036" y="0" width="272" height="14" isPrintWhenDetailOverflows="true" uuid="451dbb31-7654-489f-b3af-4615043bf344"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NAME}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1008" y="0" width="489" height="14" isPrintWhenDetailOverflows="true" uuid="19c41331-0f84-43c7-b9a7-64cfe270c1de"/>
+				<reportElement x="1308" y="0" width="489" height="14" isPrintWhenDetailOverflows="true" uuid="19c41331-0f84-43c7-b9a7-64cfe270c1de"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{ADDRESS_CONTACT}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1497" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="e35f9cc2-6d39-4dda-9932-4b5165acdaa1"/>
+				<reportElement x="1797" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="e35f9cc2-6d39-4dda-9932-4b5165acdaa1"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{HP}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1655" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="70d7f13e-6765-469f-a728-f453db16d54a"/>
+				<reportElement x="1955" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="70d7f13e-6765-469f-a728-f453db16d54a"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{PHONE}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1813" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="80ec12f5-2789-4c61-bd80-88037c649b52"/>
+				<reportElement x="2113" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="80ec12f5-2789-4c61-bd80-88037c649b52"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{FAX}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1971" y="0" width="292" height="14" isPrintWhenDetailOverflows="true" uuid="2afc77b9-4400-472c-8c79-fd18999e16e8"/>
+				<reportElement x="2271" y="0" width="292" height="14" isPrintWhenDetailOverflows="true" uuid="2afc77b9-4400-472c-8c79-fd18999e16e8"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2263" y="0" width="50" height="14" uuid="3e1e3a13-d8de-4b48-bdb2-5edf0d4016f6"/>
+				<reportElement x="2563" y="0" width="50" height="14" uuid="3e1e3a13-d8de-4b48-bdb2-5edf0d4016f6"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{BULLETIN}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2313" y="0" width="50" height="14" uuid="3fc28976-7416-47d8-aec6-e86ea217e11b"/>
+				<reportElement x="2613" y="0" width="50" height="14" uuid="3fc28976-7416-47d8-aec6-e86ea217e11b"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{CALENDER}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2363" y="0" width="50" height="14" uuid="f840b5a6-615a-4452-bf34-fec09e9bc72f"/>
+				<reportElement x="2663" y="0" width="50" height="14" uuid="f840b5a6-615a-4452-bf34-fec09e9bc72f"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{EBLAST}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2413" y="0" width="50" height="14" uuid="a246c50c-301b-47d9-af88-29c3cf707ff1"/>
+				<reportElement x="2713" y="0" width="50" height="14" uuid="a246c50c-301b-47d9-af88-29c3cf707ff1"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{IDULF}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2463" y="0" width="50" height="14" uuid="eadcc428-7346-4aaa-ba03-c47f06012c09"/>
+				<reportElement x="2763" y="0" width="50" height="14" uuid="eadcc428-7346-4aaa-ba03-c47f06012c09"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NATAL}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2513" y="0" width="50" height="14" uuid="e1d06ba7-db9d-4fa9-88b4-4bf2c777b91c"/>
+				<reportElement x="2813" y="0" width="50" height="14" uuid="e1d06ba7-db9d-4fa9-88b4-4bf2c777b91c"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NYEAR}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2563" y="0" width="50" height="14" uuid="f0c5d457-fd7a-4811-b4f1-1397d8b66555"/>
+				<reportElement x="2863" y="0" width="50" height="14" uuid="f0c5d457-fd7a-4811-b4f1-1397d8b66555"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{IMLEK}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2613" y="0" width="50" height="14" uuid="1b68e9a3-2f3a-4639-b702-bb348c8e7e84"/>
+				<reportElement x="2913" y="0" width="50" height="14" uuid="1b68e9a3-2f3a-4639-b702-bb348c8e7e84"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
@@ -851,6 +873,13 @@ WHERE	CON.[Type] = 1
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{TIPE_CUST}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="736" y="0" width="300" height="14" uuid="2611a2be-f087-44c5-bf81-e95e3801ad3a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SECTOR}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>

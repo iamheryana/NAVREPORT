@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010808_FormatCoreTax" language="groovy" pageWidth="2500" pageHeight="595" whenNoDataType="NoDataSection" columnWidth="2500" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+	<property name="ireport.zoom" value="1.46410000000005"/>
+	<property name="ireport.x" value="1023"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="InvoiceFrom" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="InvoiceUpto" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="JnsRpt" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT	1 AS GRP
+		, CAST( (DENSE_RANK() OVER (PARTITION BY 1 ORDER BY X.REFERENSI)) AS NVARCHAR(4)) AS BARIS
+		, X.*
+FROM	(
+SELECT
+		CI.[VAT Registration No_] AS NPWP_PENJUAL
+		, SIH.[Posting Date] AS TGL_FAKTUR
+		, 'Normal' AS JENIS_FAKTUR
+		,	CASE WHEN  SIH.[Posting Date] <= '2025-03-31' THEN
+				CASE	WHEN SIH.[Tax Area Code] = '010.' THEN '04'
+						WHEN SIH.[Tax Area Code] = '020.' THEN '02'
+						WHEN SIH.[Tax Area Code] = '030.' THEN '03'
+						WHEN SIH.[Tax Area Code] = '040.' THEN '04'
+						WHEN SIH.[Tax Area Code] = '070.' THEN '07'
+						WHEN SIH.[Tax Area Code] = '080.' THEN '08'
+						WHEN SIH.[Tax Area Code] = '090.' THEN '09'
+						ELSE '10' END
+			ELSE
+				CASE	WHEN SIH.[Tax Area Code] = '010.' THEN '01'
+						WHEN SIH.[Tax Area Code] = '020.' THEN '02'
+						WHEN SIH.[Tax Area Code] = '030.' THEN '03'
+						WHEN SIH.[Tax Area Code] = '040.' THEN '04'
+						WHEN SIH.[Tax Area Code] = '070.' THEN '07'
+						WHEN SIH.[Tax Area Code] = '080.' THEN '08'
+						WHEN SIH.[Tax Area Code] = '090.' THEN '09'
+						ELSE '10' END
+			END AS KODE_TRANSAKSI
+		, '' AS KET_TAMBAHAN
+		, '' AS DOK_PENDUKUNG
+		, SIH.[No_] AS REFERENSI
+		, '' AS CAP_FASILITAS
+		, CI.[VAT Registration No_]+'000000' AS ID_TKU_PENJUAL
+		,
+			CASE WHEN LEN(CUS.[VAT Registration No_]) <> 16 THEN
+				RIGHT(('000000'+ REPLACE((REPLACE(CUS.[VAT Registration No_], '.', '')), '-','')), 16)
+			ELSE
+				CUS.[VAT Registration No_]
+			END AS NPWP_PEMBELI
+		, 'TIN' AS JENIS_ID_PEMBELI
+		, 'IDN' AS NEGARA_PEMBELI
+		, '-' AS NO_DOKUMEN_PEMBELI
+		, EFM.[Tax Name] AS NAMA_PEMBELI
+		, EFM.[Tax Address 1] + ' ' + EFM.[Tax Address 2] AS ALAMAT_PEMBELI
+		, '' AS EMAIL_PEMBELI
+		,
+
+			CASE WHEN LEN(CUS.[VAT Registration No_]) <> 16 THEN
+				RIGHT(('000000'+ REPLACE((REPLACE(CUS.[VAT Registration No_], '.', '')), '-','')), 16)
+			ELSE
+				CUS.[VAT Registration No_]
+			END  +
+			CASE WHEN RIGHT(CUS.[VAT Registration No_], 3) = '001' THEN '000001' ELSE '000000' END
+			AS ID_TKU_PEMBELI
+		,	CASE WHEN SIL.[No_] IN ('PS-CYBSEC-000','PS-IIFS-000','PS-MSRV-000','PS-RNTL-000','ACS-DELF-000','PS-ONCR-000','PS-ONCV-000')
+			THEN 'B'
+			ELSE 'A' END AS BARANG_JASA
+		, '000000' AS KODE_BARANG
+		, SIL.[Description] AS NAMA_BARANG
+		, UOM.[Coretax Reference No#] AS NAMA_SAT_UKUR
+		, CAST(ROUND(SIL.[Unit Price],2) AS DECIMAL(38,2)) AS HARGA_SATUAN
+		, CAST(ROUND(SIL.[Quantity], 0) AS DECIMAL(38,0)) AS JML_BARANG_JASA
+		, CAST(ROUND(SIL.[Line Discount Amount],2) AS DECIMAL(38,2)) AS TOTAL_DISKON
+		, CAST(ROUND(((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2)) AS DPP
+		,	CASE WHEN  SIH.[Posting Date] <= '2025-03-31' THEN
+				CAST(ROUND(11.00/12.00*((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2))
+			ELSE
+				CAST(ROUND(((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2))
+			END AS DPP_NILAI_LAIN
+		,	CASE WHEN  SIH.[Posting Date] <= '2025-03-31' THEN
+				12
+			ELSE
+				11
+			END  AS TARIF_PPN
+		, CAST(ROUND(0.11 * ((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2)) AS PPN
+		, 0  AS TARIF_PPNBM
+		, 0.00  AS PPNBM
+FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
+INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$Company Information] CI ON 1 = 1
+LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer No_]
+LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Master Mapping - n] EFM ON EFM.[Type] = 1 AND EFM.[No_] = SIH.[Bill-to Customer No_]
+LEFT JOIN [dbo].[00_UOM_CORETAX] UOM ON UOM.[Code] = SIL.[Unit of Measure]
+WHERE	SIL.[Type] = 2 AND SIL.[Quantity]  <> 0
+UNION ALL
+SELECT	CI.[VAT Registration No_] AS NPWP_PENJUAL
+		, SIH.[Posting Date] AS TGL_FAKTUR
+		, 'Normal' AS JENIS_FAKTUR
+				,	CASE WHEN  SIH.[Posting Date] <= '2025-03-31' THEN
+				CASE	WHEN SIH.[Tax Area Code] = '010.' THEN '04'
+						WHEN SIH.[Tax Area Code] = '020.' THEN '02'
+						WHEN SIH.[Tax Area Code] = '030.' THEN '03'
+						WHEN SIH.[Tax Area Code] = '040.' THEN '04'
+						WHEN SIH.[Tax Area Code] = '070.' THEN '07'
+						WHEN SIH.[Tax Area Code] = '080.' THEN '08'
+						WHEN SIH.[Tax Area Code] = '090.' THEN '09'
+						ELSE '10' END
+			ELSE
+				CASE	WHEN SIH.[Tax Area Code] = '010.' THEN '01'
+						WHEN SIH.[Tax Area Code] = '020.' THEN '02'
+						WHEN SIH.[Tax Area Code] = '030.' THEN '03'
+						WHEN SIH.[Tax Area Code] = '040.' THEN '04'
+						WHEN SIH.[Tax Area Code] = '070.' THEN '07'
+						WHEN SIH.[Tax Area Code] = '080.' THEN '08'
+						WHEN SIH.[Tax Area Code] = '090.' THEN '09'
+						ELSE '10' END
+			END AS KODE_TRANSAKSI
+		, '' AS KET_TAMBAHAN
+		, '' AS DOK_PENDUKUNG
+		, SIH.[No_] AS REFERENSI
+		, '' AS CAP_FASILITAS
+		, CI.[VAT Registration No_]+'000000' AS ID_TKU_PENJUAL
+		,
+			CASE WHEN LEN(CUS.[VAT Registration No_]) <> 16 THEN
+				RIGHT(('000000'+ REPLACE((REPLACE(CUS.[VAT Registration No_], '.', '')), '-','')), 16)
+			ELSE
+				CUS.[VAT Registration No_]
+			END AS NPWP_PEMBELI
+		, 'TIN' AS JENIS_ID_PEMBELI
+		, 'IDN' AS NEGARA_PEMBELI
+		, '-' AS NO_DOKUMEN_PEMBELI
+		, EFM.[Tax Name] AS NAMA_PEMBELI
+		, EFM.[Tax Address 1] + ' ' + EFM.[Tax Address 2] AS ALAMAT_PEMBELI
+		, '' AS EMAIL_PEMBELI
+		,
+
+			CASE WHEN LEN(CUS.[VAT Registration No_]) <> 16 THEN
+				RIGHT(('000000'+ REPLACE((REPLACE(CUS.[VAT Registration No_], '.', '')), '-','')), 16)
+			ELSE
+				CUS.[VAT Registration No_]
+			END  +
+			CASE WHEN RIGHT(CUS.[VAT Registration No_], 3) = '001' THEN '000001' ELSE '000000' END
+			AS ID_TKU_PEMBELI
+		,	CASE WHEN SIL.[No_] IN ('PS-CYBSEC-000','PS-IIFS-000','PS-MSRV-000','PS-RNTL-000','ACS-DELF-000','PS-ONCR-000','PS-ONCV-000')
+			THEN 'B'
+			ELSE 'A' END AS BARANG_JASA
+		, '000000' AS KODE_BARANG
+		, SIL.[Description] AS NAMA_BARANG
+		, UOM.[Coretax Reference No#] AS NAMA_SAT_UKUR
+		, CAST(ROUND(SIL.[Unit Price],2) AS DECIMAL(38,2)) AS HARGA_SATUAN
+		, CAST(ROUND(SIL.[Quantity], 0) AS DECIMAL(38,0)) AS JML_BARANG_JASA
+		, CAST(ROUND(SIL.[Line Discount Amount],2) AS DECIMAL(38,2)) AS TOTAL_DISKON
+		, CAST(ROUND(((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2)) AS DPP
+		,	CASE WHEN  SIH.[Posting Date] <= '2025-03-31' THEN
+				CAST(ROUND(11.00/12.00*((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2))
+			ELSE
+				CAST(ROUND(((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2))
+			END AS DPP_NILAI_LAIN
+		,	CASE WHEN  SIH.[Posting Date] <= '2025-03-31' THEN
+				12
+			ELSE
+				11
+			END  AS TARIF_PPN
+		, CAST(ROUND(0.11 * ((SIL.[Quantity] * SIL.[Unit Price]) - SIL.[Line Discount Amount]), 2) AS DECIMAL(38,2)) AS PPN
+		, 0  AS TARIF_PPNBM
+		, 0.00  AS PPNBM
+FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
+INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
+LEFT JOIN [dbo].[BC_SOLUSI$Company Information] CI ON 1 = 1
+LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer No_]
+LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Master Mapping - n] EFM ON EFM.[Type] = 1 AND EFM.[No_] = SIH.[Bill-to Customer No_]
+LEFT JOIN [dbo].[00_UOM_CORETAX] UOM ON UOM.[Code] = SIL.[Unit of Measure]
+WHERE	SIL.[Type] = 2 AND SIL.[Quantity]  <> 0
+		) X
+WHERE	(X.REFERENSI >= $P{InvoiceFrom} AND X.REFERENSI <= $P{InvoiceUpto})]]>
+	</queryString>
+	<field name="GRP" class="java.lang.Integer"/>
+	<field name="BARIS" class="java.lang.String"/>
+	<field name="NPWP_PENJUAL" class="java.lang.String"/>
+	<field name="TGL_FAKTUR" class="java.sql.Timestamp"/>
+	<field name="JENIS_FAKTUR" class="java.lang.String"/>
+	<field name="KODE_TRANSAKSI" class="java.lang.String"/>
+	<field name="KET_TAMBAHAN" class="java.lang.String"/>
+	<field name="DOK_PENDUKUNG" class="java.lang.String"/>
+	<field name="REFERENSI" class="java.lang.String"/>
+	<field name="CAP_FASILITAS" class="java.lang.String"/>
+	<field name="ID_TKU_PENJUAL" class="java.lang.String"/>
+	<field name="NPWP_PEMBELI" class="java.lang.String"/>
+	<field name="JENIS_ID_PEMBELI" class="java.lang.String"/>
+	<field name="NEGARA_PEMBELI" class="java.lang.String"/>
+	<field name="NO_DOKUMEN_PEMBELI" class="java.lang.String"/>
+	<field name="NAMA_PEMBELI" class="java.lang.String"/>
+	<field name="ALAMAT_PEMBELI" class="java.lang.String"/>
+	<field name="EMAIL_PEMBELI" class="java.lang.String"/>
+	<field name="ID_TKU_PEMBELI" class="java.lang.String"/>
+	<field name="BARANG_JASA" class="java.lang.String"/>
+	<field name="KODE_BARANG" class="java.lang.String"/>
+	<field name="NAMA_BARANG" class="java.lang.String"/>
+	<field name="NAMA_SAT_UKUR" class="java.lang.String"/>
+	<field name="HARGA_SATUAN" class="java.math.BigDecimal"/>
+	<field name="JML_BARANG_JASA" class="java.math.BigDecimal"/>
+	<field name="TOTAL_DISKON" class="java.math.BigDecimal"/>
+	<field name="DPP" class="java.math.BigDecimal"/>
+	<field name="DPP_NILAI_LAIN" class="java.math.BigDecimal"/>
+	<field name="TARIF_PPN" class="java.lang.Integer"/>
+	<field name="PPN" class="java.math.BigDecimal"/>
+	<field name="TARIF_PPNBM" class="java.lang.Integer"/>
+	<field name="PPNBM" class="java.math.BigDecimal"/>
+	<sortField name="BARIS"/>
+	<sortField name="REFERENSI"/>
+	<group name="Grp">
+		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
+		<groupHeader>
+			<band height="42">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "HEADER" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="100" height="14" uuid="8aedeb76-160d-48d8-b85f-f208bc89df56"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[NPWP Penjual]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="28" width="25" height="14" uuid="cbdcca8e-e217-4a2d-a835-9153aa18e6f9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Baris]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="28" width="75" height="14" uuid="579d3a17-07e7-4d51-a7cd-ba747ebd50d3"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tanggal Faktur]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="0" y="14" width="25" height="14" uuid="f723b443-5477-45c3-98e2-8b40a887f537"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="14" width="75" height="14" uuid="90f63285-bbc2-4ad1-a011-aa7387665c27"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[]]></text>
+				</staticText>
+				<textField>
+					<reportElement x="100" y="0" width="100" height="14" uuid="29427d56-3c5e-41a2-9873-5ae007b92ed8"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NPWP_PENJUAL}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="100" y="28" width="100" height="14" uuid="7f613f7e-4229-4b33-88c3-fe2d8cbe066b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Jenis Faktur]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="200" y="28" width="100" height="14" uuid="056b2bd8-8b63-44f0-bc4f-d5957e3669be"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Kode Transaksi]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="300" y="28" width="100" height="14" uuid="ea37f313-84ba-4781-a60c-7243aa2ab75a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Keterangan Tambahan]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="400" y="28" width="100" height="14" uuid="6117d865-26a3-4164-a763-3c23718dcf31"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Dokumen Pendukung]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="500" y="28" width="100" height="14" uuid="9a8342d2-4ffe-433a-addc-0e399ae55c55"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Referensi]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="600" y="28" width="100" height="14" uuid="e8295d5a-ee1e-422a-a716-da53d3c5c0c2"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Cap Fasilitas]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="700" y="28" width="150" height="14" uuid="57165193-63a2-494f-b67d-e57c116877ea"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[ID TKU Penjual]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="850" y="28" width="100" height="14" uuid="4f4d9cd3-4f3c-4f8e-bb0b-85ec0a273d5b"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[NPWP/NIK Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="950" y="28" width="100" height="14" uuid="327dadd3-37a2-4b6a-bc02-33b3c4c37b56"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Jenis ID Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1050" y="28" width="100" height="14" uuid="5acc1b24-abd1-4788-b9ce-2a2c3ff9d412"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Negara Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1150" y="28" width="150" height="14" uuid="fce8ee6f-8ee8-40a2-a650-be3d90c1219d"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Nomor Dokumen Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1300" y="28" width="300" height="14" uuid="6d60c5da-5759-47f1-9cd8-f3851bfaa35e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Nama Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1600" y="28" width="650" height="14" uuid="ed0eb642-80da-449d-a750-0730ad4f3f1f"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Alamat Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="2250" y="28" width="100" height="14" uuid="b0d331d5-0764-48f8-816b-9398ab2c7209"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Email Pembeli]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="2350" y="28" width="150" height="14" uuid="386197f7-7062-43cd-9465-da57f2051eaf"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[ID TKU Pembeli]]></text>
+				</staticText>
+			</band>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "DETAIL" ) == true]]></printWhenExpression>
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="7290f903-96c6-4e07-b355-a563375838aa"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Baris]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="25" y="0" width="100" height="14" uuid="4b86a8eb-79fc-4b67-a8f9-37aa9e34762e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Barang/Jasa]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="125" y="0" width="100" height="14" uuid="6bf06fa9-47d6-45a0-9496-d5327bf1a311"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Kode Barang Jasa]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="225" y="0" width="500" height="14" uuid="e3e1a51b-0923-4298-929a-dfedd174db84"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Nama Barang/Jasa]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="725" y="0" width="100" height="14" uuid="26fa50d1-6585-41fe-837d-911dbee2a7b9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Nama Satuan Ukur]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="825" y="0" width="100" height="14" uuid="2ac54326-9817-48df-874e-6182b705efcb"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Harga Satuan]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="925" y="0" width="100" height="14" uuid="0ed191e4-3b15-4821-accf-995cb519bc8a"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Jumlah Barang Jasa]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1025" y="0" width="100" height="14" uuid="49cf7d4b-08f8-4c8c-9d40-fb07d52fdd88"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total Diskon]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1125" y="0" width="100" height="14" uuid="a13dd3d1-757a-4e74-8f7e-c6dc7a1287fc"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[DPP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1225" y="0" width="100" height="14" uuid="b7b62e44-d2a2-45bf-a7ea-4e10f023463e"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[DPP Nilai Lain]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1325" y="0" width="100" height="14" uuid="26401675-1e88-4223-bc25-1535b876dfa6"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tarif PPN]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1425" y="0" width="100" height="14" uuid="6064ded2-4265-4688-8079-91223d67bfdf"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PPN]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1525" y="0" width="100" height="14" uuid="804e79d5-e251-4aa3-9e0e-0406116d3549"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tarif PPnBM]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="1625" y="0" width="100" height="14" uuid="728e9fcd-1857-48b4-adf1-880525b7e358"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[PPnBM]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="14">
+				<staticText>
+					<reportElement x="0" y="0" width="25" height="14" uuid="dfb92079-07a1-44f2-820c-d4af64d96af9"/>
+					<textElement>
+						<font size="8" isBold="true"/>
+					</textElement>
+					<text><![CDATA[END]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Baris">
+		<groupExpression><![CDATA[$F{BARIS}]]></groupExpression>
+		<groupHeader>
+			<band height="14">
+				<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "HEADER" ) == true]]></printWhenExpression>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="0" y="0" width="25" height="14" uuid="331fb7dc-37b2-4f5a-83da-eec44aa414a4"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BARIS}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+					<reportElement x="25" y="0" width="75" height="14" uuid="28a578eb-0773-4061-9b19-b17923233c3c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TGL_FAKTUR}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="100" y="0" width="100" height="14" uuid="a1e207a8-0fb6-4d36-ac64-69b8edc0757e"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JENIS_FAKTUR}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="200" y="0" width="100" height="14" uuid="96a36de5-bf25-4f21-a40f-5ea0928230b1"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KODE_TRANSAKSI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="300" y="0" width="100" height="14" uuid="d4835066-85ef-4f83-ac79-9af24e0eb334"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{KET_TAMBAHAN}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="400" y="0" width="100" height="14" uuid="b5f8e3ee-fe1c-463d-bf23-abc40a389337"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{DOK_PENDUKUNG}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="500" y="0" width="100" height="14" uuid="c6563173-0073-47da-92eb-abacae676e0c"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{REFERENSI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="600" y="0" width="100" height="14" uuid="c29aae94-db82-4dac-adaf-e551726537ee"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{CAP_FASILITAS}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="700" y="0" width="150" height="14" uuid="5ac0389c-03ed-4f60-9275-215366c214ad"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ID_TKU_PENJUAL}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="850" y="0" width="100" height="14" uuid="4bcc5d87-f98d-48ac-93c7-e868b8fc96a4"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NPWP_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="950" y="0" width="100" height="14" uuid="5783941e-ba36-4432-b9e3-7c84fedb8681"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{JENIS_ID_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="1050" y="0" width="100" height="14" uuid="b4d83dea-e5f2-441d-b795-4b28aca0a229"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NEGARA_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="1300" y="0" width="300" height="14" uuid="b8c1bd7c-ed3f-4e0b-b90e-0f0be54a5070"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NAMA_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="1600" y="0" width="650" height="14" uuid="da91ad2d-24b1-40dd-9af4-68aa1b596fd1"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ALAMAT_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="2250" y="0" width="100" height="14" uuid="3d274d23-a178-4942-bf69-4949a542fe77"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{EMAIL_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="2350" y="0" width="150" height="14" uuid="fa37b0c7-c886-4e62-aaac-8629bec9b680"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ID_TKU_PEMBELI}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+					<reportElement x="1150" y="0" width="150" height="14" uuid="4e253e36-1ce9-417b-a964-43b383fb9fcc"/>
+					<textElement>
+						<font size="8"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{NO_DOKUMEN_PEMBELI}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<detail>
+		<band height="14">
+			<printWhenExpression><![CDATA[$P{JnsRpt}.equals( "DETAIL" ) == true]]></printWhenExpression>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="25" height="14" uuid="331c8574-23ec-4a5e-ae9c-fe2c71ac6e6c"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BARIS}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="25" y="0" width="100" height="14" uuid="4499b486-da17-4b4f-9e29-ae1aac7c7c2d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BARANG_JASA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="125" y="0" width="100" height="14" uuid="c45ce2b2-6e1d-42f9-8c9a-e7df2a7d6237"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KODE_BARANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="500" height="14" uuid="55e0683d-a7b5-4ed6-9edf-fdce2c3f0e36"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_BARANG}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="725" y="0" width="100" height="14" uuid="63afa92c-2557-441e-be93-d4b69af8233b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NAMA_SAT_UKUR}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="825" y="0" width="100" height="14" uuid="30445ef0-d64d-4b10-85be-5927d8270edf"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{HARGA_SATUAN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="925" y="0" width="100" height="14" uuid="1ab720ce-e8b7-4cbe-9bbf-4a0d1c5ec409"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{JML_BARANG_JASA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1025" y="0" width="100" height="14" uuid="644f358e-0a09-4922-b7be-9afa06b3463e"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL_DISKON}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1125" y="0" width="100" height="14" uuid="386f3e62-173f-46d2-8629-014d7d946422"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DPP}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1225" y="0" width="100" height="14" uuid="8bcf0753-3ad7-4bd3-99fb-b1d0f610e8b2"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DPP_NILAI_LAIN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1325" y="0" width="100" height="14" uuid="739963f5-6434-441a-9708-f149b027da2f"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TARIF_PPN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1425" y="0" width="100" height="14" uuid="0d4a1cd9-55f0-4c64-9b84-80201dbf8346"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PPN}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="1525" y="0" width="100" height="14" uuid="4a8c7e2c-1ac8-4317-b8a9-dc415f02bf26"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TARIF_PPNBM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1625" y="0" width="100" height="14" uuid="b4d9e555-1802-43ae-97e1-390869f02eb4"/>
+				<textElement textAlignment="Right">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PPNBM}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

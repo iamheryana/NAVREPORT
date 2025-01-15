@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06005_ContactBulletinPaket" language="groovy" pageWidth="2425" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2385" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
-	<property name="ireport.zoom" value="1.7715610000000903"/>
-	<property name="ireport.x" value="0"/>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="06005_ContactBulletinPaket" language="groovy" pageWidth="2725" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="2685" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b406b291-7ccc-4e85-8d33-6ed4d9da73cd">
+	<property name="ireport.zoom" value="1.1000000000000558"/>
+	<property name="ireport.x" value="829"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="Paket" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -19,6 +19,7 @@
 		,SLS.[Name] AS SALES_NAME
 		,CASE WHEN CON.[Company No_] <> 'XXXXX' THEN CONC.[Company Name] ELSE CON.[Search Name] END AS COMPANY_NAME
 		,CON.[Organizational Level Code] AS TIPE_CUST
+		,CASE WHEN CON.[Company No_] <> 'XXXXX' THEN ISNULL(DIM.[Name],'') ELSE ISNULL(SKI.[Description], '') END AS SECTOR
 		,CON.[Job Title] AS POSITION
 		,(RTRIM(RTRIM(RTRIM(CON.[First Name])+' '+RTRIM(CON.[Middle Name]))+' ' +RTRIM(CON.[Surname]))) AS NAME
 		,CASE WHEN (CON.[Address]+' '+CON.[Address 2]) = '' THEN (CONC.[Address]+' '+CONC.[Address 2]) ELSE (CON.[Address]+' '+CON.[Address 2]) END AS ADDRESS_CONTACT
@@ -40,6 +41,19 @@ LEFT JOIN [dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = CON.[Sal
 LEFT JOIN [dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SLS.[Global Dimension 1 Code]
 LEFT JOIN [dbo].[BC_AUTOJAYA$Contact Business Relation] CBR ON CBR.[Contact No_] = CON.[Company No_]
 LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = CBR.[No_]
+LEFT JOIN	(
+				SELECT CJB.[Contact No_]
+					  , CJB.[Job Responsibility Code]
+					  , JRS.[Description]
+				FROM [dbo].[BC_AUTOJAYA$Contact Job Responsibility] CJB
+				INNER JOIN [dbo].[BC_AUTOJAYA$Job Responsibility] JRS ON JRS.[Code] =  CJB.[Job Responsibility Code]
+			) SKI ON SKI.[Contact No_] =CON.[No_]
+LEFT JOIN	(
+				SELECT	DD.[No_], DD.[Dimension Value Code], DV.[Name]
+				FROM [dbo].[BC_AUTOJAYA$Default Dimension] DD
+				LEFT JOIN [dbo].[BC_AUTOJAYA$Dimension Value] DV ON DV.[Dimension Code] = DD.[Dimension Code] AND DV.[Code] =  DD.[Dimension Value Code]
+				WHERE DD.[Table ID] = '18' AND DD.[Dimension Code] = 'SECTOR'
+			) DIM ON DIM.[No_] = CUS.[No_]
 INNER JOIN	(
 				SELECT	X.[Contact No_]
 						, X.BULLETIN
@@ -119,6 +133,7 @@ WHERE
 	<field name="SALES_NAME" class="java.lang.String"/>
 	<field name="COMPANY_NAME" class="java.lang.String"/>
 	<field name="TIPE_CUST" class="java.lang.String"/>
+	<field name="SECTOR" class="java.lang.String"/>
 	<field name="POSITION" class="java.lang.String"/>
 	<field name="NAME" class="java.lang.String"/>
 	<field name="ADDRESS_CONTACT" class="java.lang.String"/>
@@ -199,42 +214,42 @@ $P{Paket}.equals( "C" ) ? "Calender Only" : "Paket (Bulletin + Calender)")]]></v
 				<text><![CDATA[Position]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="736" y="117" width="272" height="14" uuid="8c2f9d14-2bac-4b06-bf60-e64ba9d4a5a5"/>
+				<reportElement x="1011" y="117" width="272" height="14" uuid="8c2f9d14-2bac-4b06-bf60-e64ba9d4a5a5"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[PIC Name]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1008" y="117" width="489" height="14" uuid="ae431392-54a2-4144-bcf2-264ec4352c58"/>
+				<reportElement x="1283" y="117" width="489" height="14" uuid="ae431392-54a2-4144-bcf2-264ec4352c58"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Address]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1497" y="117" width="158" height="14" uuid="1dc539c1-0e87-4955-860e-a65053c765d7"/>
+				<reportElement x="1772" y="117" width="158" height="14" uuid="1dc539c1-0e87-4955-860e-a65053c765d7"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Mobile Phone]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1655" y="117" width="158" height="14" uuid="53d366ca-d982-44ac-aa51-c97989363e71"/>
+				<reportElement x="1930" y="117" width="158" height="14" uuid="53d366ca-d982-44ac-aa51-c97989363e71"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Telephone]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1813" y="117" width="158" height="14" uuid="021c2bb8-2e34-46c7-86bf-dd46c53626b9"/>
+				<reportElement x="2088" y="117" width="158" height="14" uuid="021c2bb8-2e34-46c7-86bf-dd46c53626b9"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Fax]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="1971" y="117" width="292" height="14" uuid="3b7d2cec-2f02-4ed0-8265-8eddc7bfbbc4"/>
+				<reportElement x="2246" y="117" width="292" height="14" uuid="3b7d2cec-2f02-4ed0-8265-8eddc7bfbbc4"/>
 				<textElement>
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -290,14 +305,14 @@ $P{Paket}.equals( "C" ) ? "Calender Only" : "Paket (Bulletin + Calender)")]]></v
 				<text><![CDATA[]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2263" y="117" width="50" height="14" uuid="a74ded03-633a-4eb5-954b-f5dd20f01ea9"/>
+				<reportElement x="2538" y="117" width="50" height="14" uuid="a74ded03-633a-4eb5-954b-f5dd20f01ea9"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[Bulletin]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="2313" y="117" width="50" height="14" uuid="cf1683f1-8706-4985-bf56-35541a32514b"/>
+				<reportElement x="2588" y="117" width="50" height="14" uuid="cf1683f1-8706-4985-bf56-35541a32514b"/>
 				<textElement textAlignment="Center">
 					<font size="8" isBold="true"/>
 				</textElement>
@@ -464,6 +479,13 @@ $P{Paket}.equals( "C" ) ? "Calender Only" : "Paket (Bulletin + Calender)")]]></v
 				</textElement>
 				<text><![CDATA[:]]></text>
 			</staticText>
+			<staticText>
+				<reportElement x="736" y="117" width="275" height="14" uuid="b5ca6d33-6a2a-48da-87e4-886fc3f90b0d"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sector Industry]]></text>
+			</staticText>
 		</band>
 	</title>
 	<detail>
@@ -490,56 +512,56 @@ $P{Paket}.equals( "C" ) ? "Calender Only" : "Paket (Bulletin + Calender)")]]></v
 				<textFieldExpression><![CDATA[$F{POSITION}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="736" y="0" width="272" height="14" isPrintWhenDetailOverflows="true" uuid="451dbb31-7654-489f-b3af-4615043bf344"/>
+				<reportElement x="1011" y="0" width="272" height="14" isPrintWhenDetailOverflows="true" uuid="451dbb31-7654-489f-b3af-4615043bf344"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{NAME}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1008" y="0" width="489" height="14" isPrintWhenDetailOverflows="true" uuid="19c41331-0f84-43c7-b9a7-64cfe270c1de"/>
+				<reportElement x="1283" y="0" width="489" height="14" isPrintWhenDetailOverflows="true" uuid="19c41331-0f84-43c7-b9a7-64cfe270c1de"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{ADDRESS_CONTACT}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1497" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="e35f9cc2-6d39-4dda-9932-4b5165acdaa1"/>
+				<reportElement x="1772" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="e35f9cc2-6d39-4dda-9932-4b5165acdaa1"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{HP}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1655" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="70d7f13e-6765-469f-a728-f453db16d54a"/>
+				<reportElement x="1930" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="70d7f13e-6765-469f-a728-f453db16d54a"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{PHONE}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1813" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="80ec12f5-2789-4c61-bd80-88037c649b52"/>
+				<reportElement x="2088" y="0" width="158" height="14" isPrintWhenDetailOverflows="true" uuid="80ec12f5-2789-4c61-bd80-88037c649b52"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{FAX}]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true">
-				<reportElement x="1971" y="0" width="292" height="14" isPrintWhenDetailOverflows="true" uuid="2afc77b9-4400-472c-8c79-fd18999e16e8"/>
+				<reportElement x="2246" y="0" width="292" height="14" isPrintWhenDetailOverflows="true" uuid="2afc77b9-4400-472c-8c79-fd18999e16e8"/>
 				<textElement>
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2263" y="0" width="50" height="14" uuid="3e1e3a13-d8de-4b48-bdb2-5edf0d4016f6"/>
+				<reportElement x="2538" y="0" width="50" height="14" uuid="3e1e3a13-d8de-4b48-bdb2-5edf0d4016f6"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{BULLETIN}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="2313" y="0" width="50" height="14" uuid="3fc28976-7416-47d8-aec6-e86ea217e11b"/>
+				<reportElement x="2588" y="0" width="50" height="14" uuid="3fc28976-7416-47d8-aec6-e86ea217e11b"/>
 				<textElement textAlignment="Center">
 					<font size="8"/>
 				</textElement>
@@ -565,6 +587,13 @@ $P{Paket}.equals( "C" ) ? "Calender Only" : "Paket (Bulletin + Calender)")]]></v
 					<font size="8"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{TIPE_CUST}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="736" y="0" width="275" height="14" isPrintWhenDetailOverflows="true" uuid="2b3901da-5320-464a-b0e6-d6c0a9d120d8"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SECTOR}]]></textFieldExpression>
 			</textField>
 		</band>
 	</detail>
