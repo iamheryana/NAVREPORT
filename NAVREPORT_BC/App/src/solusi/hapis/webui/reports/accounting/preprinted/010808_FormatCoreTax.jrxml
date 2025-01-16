@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010808_FormatCoreTax" language="groovy" pageWidth="2500" pageHeight="595" whenNoDataType="NoDataSection" columnWidth="2500" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="010808_FormatCoreTax" language="groovy" pageWidth="2850" pageHeight="595" whenNoDataType="NoDataSection" columnWidth="2850" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="1.46410000000005"/>
-	<property name="ireport.x" value="1023"/>
+	<property name="ireport.x" value="2309"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="InvoiceFrom" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -10,9 +10,19 @@
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
 	<parameter name="JnsRpt" class="java.lang.String"/>
+	<parameter name="Company" class="java.lang.String">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglFrom" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="TglUpto" class="java.util.Date">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[SELECT	1 AS GRP
 		, CAST( (DENSE_RANK() OVER (PARTITION BY 1 ORDER BY X.REFERENSI)) AS NVARCHAR(4)) AS BARIS
+, ( (DENSE_RANK() OVER (PARTITION BY 1 ORDER BY X.REFERENSI))) AS BARIS_SORT
 		, X.*
 FROM	(
 SELECT
@@ -69,7 +79,9 @@ SELECT
 			ELSE 'A' END AS BARANG_JASA
 		, '000000' AS KODE_BARANG
 		, SIL.[Description] AS NAMA_BARANG
-		, UOM.[Coretax Reference No#] AS NAMA_SAT_UKUR
+		,	CASE WHEN SIL.[No_] IN ('PS-CYBSEC-000','PS-IIFS-000','PS-MSRV-000','PS-RNTL-000','ACS-DELF-000','PS-ONCR-000','PS-ONCV-000')
+			THEN 'UM.0033'
+			ELSE UOM.[Coretax Reference No#] END AS NAMA_SAT_UKUR
 		, CAST(ROUND(SIL.[Unit Price],2) AS DECIMAL(38,2)) AS HARGA_SATUAN
 		, CAST(ROUND(SIL.[Quantity], 0) AS DECIMAL(38,0)) AS JML_BARANG_JASA
 		, CAST(ROUND(SIL.[Line Discount Amount],2) AS DECIMAL(38,2)) AS TOTAL_DISKON
@@ -94,6 +106,8 @@ LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer 
 LEFT JOIN [dbo].[BC_AUTOJAYA$E-Faktur Master Mapping - n] EFM ON EFM.[Type] = 1 AND EFM.[No_] = SIH.[Bill-to Customer No_]
 LEFT JOIN [dbo].[00_UOM_CORETAX] UOM ON UOM.[Code] = SIL.[Unit of Measure]
 WHERE	SIL.[Type] = 2 AND SIL.[Quantity]  <> 0
+		AND $P{Company} = 'AUTOJAYA'
+		AND (SIH.[Posting Date] >= $P{TglFrom} AND SIH.[Posting Date] <= $P{TglUpto})
 UNION ALL
 SELECT	CI.[VAT Registration No_] AS NPWP_PENJUAL
 		, SIH.[Posting Date] AS TGL_FAKTUR
@@ -148,7 +162,9 @@ SELECT	CI.[VAT Registration No_] AS NPWP_PENJUAL
 			ELSE 'A' END AS BARANG_JASA
 		, '000000' AS KODE_BARANG
 		, SIL.[Description] AS NAMA_BARANG
-		, UOM.[Coretax Reference No#] AS NAMA_SAT_UKUR
+		,	CASE WHEN SIL.[No_] IN ('PS-CYBSEC-000','PS-IIFS-000','PS-MSRV-000','PS-RNTL-000','ACS-DELF-000','PS-ONCR-000','PS-ONCV-000')
+			THEN 'UM.0033'
+			ELSE UOM.[Coretax Reference No#] END AS NAMA_SAT_UKUR
 		, CAST(ROUND(SIL.[Unit Price],2) AS DECIMAL(38,2)) AS HARGA_SATUAN
 		, CAST(ROUND(SIL.[Quantity], 0) AS DECIMAL(38,0)) AS JML_BARANG_JASA
 		, CAST(ROUND(SIL.[Line Discount Amount],2) AS DECIMAL(38,2)) AS TOTAL_DISKON
@@ -173,11 +189,14 @@ LEFT JOIN [dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SIH.[Bill-to Customer 
 LEFT JOIN [dbo].[BC_SOLUSI$E-Faktur Master Mapping - n] EFM ON EFM.[Type] = 1 AND EFM.[No_] = SIH.[Bill-to Customer No_]
 LEFT JOIN [dbo].[00_UOM_CORETAX] UOM ON UOM.[Code] = SIL.[Unit of Measure]
 WHERE	SIL.[Type] = 2 AND SIL.[Quantity]  <> 0
+		AND $P{Company} = 'SOLUSI'
+		AND (SIH.[Posting Date] >= $P{TglFrom} AND SIH.[Posting Date] <= $P{TglUpto})
 		) X
 WHERE	(X.REFERENSI >= $P{InvoiceFrom} AND X.REFERENSI <= $P{InvoiceUpto})]]>
 	</queryString>
 	<field name="GRP" class="java.lang.Integer"/>
 	<field name="BARIS" class="java.lang.String"/>
+	<field name="BARIS_SORT" class="java.lang.Long"/>
 	<field name="NPWP_PENJUAL" class="java.lang.String"/>
 	<field name="TGL_FAKTUR" class="java.sql.Timestamp"/>
 	<field name="JENIS_FAKTUR" class="java.lang.String"/>
@@ -208,7 +227,7 @@ WHERE	(X.REFERENSI >= $P{InvoiceFrom} AND X.REFERENSI <= $P{InvoiceUpto})]]>
 	<field name="PPN" class="java.math.BigDecimal"/>
 	<field name="TARIF_PPNBM" class="java.lang.Integer"/>
 	<field name="PPNBM" class="java.math.BigDecimal"/>
-	<sortField name="BARIS"/>
+	<sortField name="BARIS_SORT"/>
 	<sortField name="REFERENSI"/>
 	<group name="Grp">
 		<groupExpression><![CDATA[$F{GRP}]]></groupExpression>
@@ -342,21 +361,21 @@ WHERE	(X.REFERENSI >= $P{InvoiceFrom} AND X.REFERENSI <= $P{InvoiceUpto})]]>
 					<text><![CDATA[Nama Pembeli]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="1600" y="28" width="650" height="14" uuid="ed0eb642-80da-449d-a750-0730ad4f3f1f"/>
+					<reportElement x="1600" y="28" width="1000" height="14" uuid="ed0eb642-80da-449d-a750-0730ad4f3f1f"/>
 					<textElement>
 						<font size="8" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Alamat Pembeli]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2250" y="28" width="100" height="14" uuid="b0d331d5-0764-48f8-816b-9398ab2c7209"/>
+					<reportElement x="2600" y="28" width="100" height="14" uuid="b0d331d5-0764-48f8-816b-9398ab2c7209"/>
 					<textElement>
 						<font size="8" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Email Pembeli]]></text>
 				</staticText>
 				<staticText>
-					<reportElement x="2350" y="28" width="150" height="14" uuid="386197f7-7062-43cd-9465-da57f2051eaf"/>
+					<reportElement x="2700" y="28" width="150" height="14" uuid="386197f7-7062-43cd-9465-da57f2051eaf"/>
 					<textElement>
 						<font size="8" isBold="true"/>
 					</textElement>
@@ -574,21 +593,21 @@ WHERE	(X.REFERENSI >= $P{InvoiceFrom} AND X.REFERENSI <= $P{InvoiceUpto})]]>
 					<textFieldExpression><![CDATA[$F{NAMA_PEMBELI}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-					<reportElement x="1600" y="0" width="650" height="14" uuid="da91ad2d-24b1-40dd-9af4-68aa1b596fd1"/>
+					<reportElement x="1600" y="0" width="1000" height="14" uuid="da91ad2d-24b1-40dd-9af4-68aa1b596fd1"/>
 					<textElement>
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{ALAMAT_PEMBELI}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-					<reportElement x="2250" y="0" width="100" height="14" uuid="3d274d23-a178-4942-bf69-4949a542fe77"/>
+					<reportElement x="2600" y="0" width="100" height="14" uuid="3d274d23-a178-4942-bf69-4949a542fe77"/>
 					<textElement>
 						<font size="8"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{EMAIL_PEMBELI}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true" isBlankWhenNull="true">
-					<reportElement x="2350" y="0" width="150" height="14" uuid="fa37b0c7-c886-4e62-aaac-8629bec9b680"/>
+					<reportElement x="2700" y="0" width="150" height="14" uuid="fa37b0c7-c886-4e62-aaac-8629bec9b680"/>
 					<textElement>
 						<font size="8"/>
 					</textElement>

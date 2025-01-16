@@ -559,22 +559,22 @@ public class SalaryJournalCtrl extends GFCBaseCtrl implements Serializable {
 						
 						
 						
-						if(CommonUtils.isNotEmpty(sheet.getCell(0,i).getContents())){
-							Temp07SalaryHapis anData = new Temp07SalaryHapis(
-									strArea,
-									strUnitUsaha,
-									"000000",
-									strD_AMED, strD_BNSA, strD_BNSN, strD_BSAL, strD_CPSG, strD_JHT,
-									strD_JKK, strD_JKM, strD_JPK, strD_JPS, strD_KOMS,
-									strD_LBR, strD_PESA, strD_PJK, strD_RPGP, strD_TD24,
-									strD_TDNS, strD_TotalTHR, strD_TJHP, strD_TJKS, strD_TKHS,
-									strD_TLMB, strD_TMED, "0", "0", strP_ADVP, strP_ASXT, strP_BPJK,
-									strP_JKK, strP_JKM, strP_JPK, strP_PADV, strP_PINJ,
-									strP_PJK, strP_PKK, strP_POTL, strP_SPSI, strP_TBPJ,
-									strP_UPDL,
-									timeStamp);
-							listSalaryHapis.add(anData);
-						}
+//						if(CommonUtils.isNotEmpty(sheet.getCell(0,i).getContents())){
+//							Temp07SalaryHapis anData = new Temp07SalaryHapis(
+//									strArea,
+//									strUnitUsaha,
+//									"000000",
+//									strD_AMED, strD_BNSA, strD_BNSN, strD_BSAL, strD_CPSG, strD_JHT,
+//									strD_JKK, strD_JKM, strD_JPK, strD_JPS, strD_KOMS,
+//									strD_LBR, strD_PESA, strD_PJK, strD_RPGP, strD_TD24,
+//									strD_TDNS, strD_TotalTHR, strD_TJHP, strD_TJKS, strD_TKHS,
+//									strD_TLMB, strD_TMED, "0", "0", strP_ADVP, strP_ASXT, strP_BPJK,
+//									strP_JKK, strP_JKM, strP_JPK, strP_PADV, strP_PINJ,
+//									strP_PJK, strP_PKK, strP_POTL, strP_SPSI, strP_TBPJ,
+//									strP_UPDL,
+//									timeStamp);
+//							listSalaryHapis.add(anData);
+//						}
 
 					}
 

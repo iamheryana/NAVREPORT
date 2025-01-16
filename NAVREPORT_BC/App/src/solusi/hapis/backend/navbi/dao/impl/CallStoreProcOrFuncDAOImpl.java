@@ -794,4 +794,77 @@ public class CallStoreProcOrFuncDAOImpl extends HibernateDaoSupport implements C
 		});
 	}
 
+	@Override
+	public String callProsesCostingFinance2(final String processId, final String masa,
+			final String tahun) {
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+
+
+	            
+				SQLQuery query = session.createSQLQuery("EXEC P_BC_PROSES_COSTING_FINANCE2 :p1, :p2, :p3 ");
+				query.setString("p1", processId);
+				query.setString("p2", masa);
+				query.setString("p3", tahun);
+				query.executeUpdate();
+				
+				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST (RESULT_STRING AS character varying(100))FROM TEMP00_UPLOAD_RESULT WHERE PROSES_ID = :p4");
+				queryHasil.setString("p4", processId);
+
+				
+				return ((String)queryHasil.uniqueResult());
+				
+				
+			}
+		});
+	}
+
+	@Override
+	public String callCompareAR(final String processId, final String company,
+			final String tglMulai, final String action) {
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+
+
+	            
+				SQLQuery query = session.createSQLQuery("EXEC P_BC_COMPARE_AR :p1, :p2, :p3 :p4");
+				query.setString("p1", processId);
+				query.setString("p2", company);
+				query.setString("p3", tglMulai);
+				query.setString("p4", action);
+				query.executeUpdate();
+				
+				SQLQuery queryHasil = session.createSQLQuery("SELECT CAST (RESULT_STRING AS character varying(100))FROM TEMP00_UPLOAD_RESULT WHERE PROSES_ID = :p5");
+				queryHasil.setString("p5", processId);
+
+				
+				return ((String)queryHasil.uniqueResult());
+				
+				
+			}
+		});
+	}
+
+	@Override
+	public String callCekCostingFinance1() {
+		return (String) getHibernateTemplate().execute(new HibernateCallback<String>() {
+			@Override
+			public String doInHibernate(Session session) throws HibernateException, SQLException {
+
+
+	            
+				SQLQuery query = session.createSQLQuery("EXEC P_BC_CEK_COSTING_FINANCE1");
+				query.executeUpdate();
+				
+				
+				
+				return "OK";
+				
+				
+			}
+		});
+	}
+
 }

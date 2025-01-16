@@ -60,6 +60,8 @@ public class T29CostingProsesFinalCtrl extends GFCBaseCtrl implements Serializab
         if (arg.containsKey("ModuleMainController")) {
         	setT29CostingMainCtrl((T29CostingMainCtrl) arg.get("ModuleMainController"));
         	T29CostingMainCtrl.setT29CostingProsesFinalCtrl(this);
+        	
+
         }
         
         

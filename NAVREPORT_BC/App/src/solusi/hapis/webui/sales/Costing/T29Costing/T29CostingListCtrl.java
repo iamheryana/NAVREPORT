@@ -80,7 +80,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
     protected Listheader listheader_T29CostingList_NoSO;
     protected Listheader listheader_T29CostingList_NoPOCustomer;
     protected Listheader listheader_T29CostingList_Customer;
-    protected Listheader listheader_T29CostingList_FlagInvoice;
+    //protected Listheader listheader_T29CostingList_FlagInvoice;
     protected Listheader listheader_T29CostingList_FlagLunas;
     
  
@@ -94,7 +94,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
  	protected Textbox txtCustomer;
 
  	protected Combobox cmbPosisi;
- 	protected Combobox cmbFlagInvoice;
+ 	//protected Combobox cmbFlagInvoice;
  	protected Combobox cmbFlagLunas;
  	
  	private SelectQueryService selectQueryService;
@@ -210,8 +210,8 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
         listheader_T29CostingList_Customer.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_CUSTOMER));
         listheader_T29CostingList_Customer.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_CUSTOMER));        
               
-        listheader_T29CostingList_FlagInvoice.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_FLAGINVOICE));
-        listheader_T29CostingList_FlagInvoice.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_FLAGINVOICE));        
+//        listheader_T29CostingList_FlagInvoice.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_FLAGINVOICE));
+//        listheader_T29CostingList_FlagInvoice.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_FLAGINVOICE));        
         
         listheader_T29CostingList_FlagLunas.setSortAscending(new T29CostingComparator(true, T29CostingComparator.COMPARE_BY_FLAGLUNAS));
         listheader_T29CostingList_FlagLunas.setSortDescending(new T29CostingComparator(false, T29CostingComparator.COMPARE_BY_FLAGLUNAS));        
@@ -228,12 +228,14 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 	public void getSearchData() {
 		Map<Object, Object> parameterInput = new HashMap<Object, Object>();		
 		Collection<String> filterSales = new HashSet<String>();
+		Collection<String> filterStatus = new HashSet<String>();
 		String vUser = SecurityContextHolder.getContext().getAuthentication().getName();
+		String vALL ;
 		
 		if (vUser.equals("admin") == true){
 		} else 
 		{
-			String vALL = "XXX";
+			vALL = "XXX";
 			List<Object[]> vResultFilterUser = selectQueryService.QueryFilterUserCosting(vUser);
 			if(CommonUtils.isNotEmpty(vResultFilterUser)){
 				for(Object[] aRslt : vResultFilterUser){
@@ -251,34 +253,60 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 				parameterInput.put("FilterSales", filterSales);
 			}
 			
-			String vRoleUser = selectQueryService.QueryRoleUserCosting(vUser);
-			if(CommonUtils.isNotEmpty(vRoleUser)){
-				parameterInput.put("flagStatus", vRoleUser);
-				
-				if (vRoleUser.equals("FINANCE") == true){
-					if (cmbPosisi.getSelectedIndex() != 0) {
-						String vPosisi = (String) cmbPosisi.getSelectedItem().getValue();
-						if (vPosisi.equals("FINANCE 1") == true || vPosisi.equals("FINANCE 2") == true ){
-							parameterInput.put("flagStatus", vPosisi);
-						} else {
-							parameterInput.put("flagStatus", "XXX");
-						}
-					}
-				} else {
-					if (cmbPosisi.getSelectedIndex() != 0) {
-						String vPosisi = (String) cmbPosisi.getSelectedItem().getValue();
-						if (vPosisi.equals(vRoleUser) == true){
-							parameterInput.put("flagStatus", vPosisi);
-						} else {
-							parameterInput.put("flagStatus", "XXX");
-						}
-					}
+//			String vRoleUser = selectQueryService.QueryRoleUserCosting(vUser);
+//			if(CommonUtils.isNotEmpty(vRoleUser)){
+//				parameterInput.put("flagStatus", vRoleUser);
+//				
+//				if (vRoleUser.equals("FINANCE") == true){
+//					if (cmbPosisi.getSelectedIndex() != 0) {
+//						String vPosisi = (String) cmbPosisi.getSelectedItem().getValue();
+//						if (vPosisi.equals("FINANCE 1") == true || vPosisi.equals("FINANCE 2") == true ){
+//							parameterInput.put("flagStatus", vPosisi);
+//						} else {
+//							parameterInput.put("flagStatus", "XXX");
+//						}
+//					}
+//				} else {
+//					if (cmbPosisi.getSelectedIndex() != 0) {
+//						String vPosisi = (String) cmbPosisi.getSelectedItem().getValue();
+//						if (vPosisi.equals(vRoleUser) == true){
+//							parameterInput.put("flagStatus", vPosisi);
+//						} else {
+//							parameterInput.put("flagStatus", "XXX");
+//						}
+//					}
+//				}
+//			}
+			
+			
+			String vRoleUser = this.selectQueryService.QueryRoleUserCosting(vUser);
+			if (CommonUtils.isNotEmpty(vRoleUser)) {
+				if (vRoleUser.equals("SALES")) {
+					filterStatus.add("SALES");
+					filterStatus.add("PAID");
+				} else if (vRoleUser.equals("SAO")) {
+					filterStatus.add("SAO");
+				} else if (vRoleUser.equals("LOGISTIC")) {
+					filterStatus.add("LOGISTIC");
+				} else if (vRoleUser.equals("FINANCE")) {
+					filterStatus.add("FINANCE 1");
+					filterStatus.add("FINANCE 2");
+					filterStatus.add("PAID");
+				} else if (vRoleUser.equals("SM")) {
+					filterStatus.add("SM");
+					filterStatus.add("PAID");
 				}
+	
+				parameterInput.put("FilterStatus", filterStatus);
 			}
 		
 		}
 			
-		
+		if (this.cmbPosisi.getSelectedIndex() != 0) {
+	         vALL = (String)this.cmbPosisi.getSelectedItem().getValue();
+	         parameterInput.put("flagStatus", vALL);
+	    }
+		 
 	 	if (CommonUtils.isValidDateFormat(txtTglCosting.getValue())) {
 			Date tglInv1 = CommonUtils.convertStringToDate(txtTglCosting.getValue());
 			Date tglInv2 = CommonUtils.createSecondParameterForSearch(txtTglCosting.getValue());
@@ -312,9 +340,9 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 		}
 		
 		
-		if (cmbFlagInvoice.getSelectedIndex() != 0) {
-			parameterInput.put("flagInvoice", (String) cmbFlagInvoice.getSelectedItem().getValue());
-		}
+//		if (cmbFlagInvoice.getSelectedIndex() != 0) {
+//			parameterInput.put("flagInvoice", (String) cmbFlagInvoice.getSelectedItem().getValue());
+//		}
 		
 		if (cmbFlagLunas.getSelectedIndex() != 0) {
 			parameterInput.put("flagLunas", (String) cmbFlagLunas.getSelectedItem().getValue());
@@ -455,9 +483,9 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
                 lc = new Listcell(rec.getFlagStatus());
                 lc.setParent(item);
                 
-                String vFlagInvoice = rec.getFlagInvoice().equals("Y")?"Sudah":"Belum";
-                lc = new Listcell(vFlagInvoice);
-                lc.setParent(item); 
+//                String vFlagInvoice = rec.getFlagInvoice().equals("Y")?"Sudah":"Belum";
+//                lc = new Listcell(vFlagInvoice);
+//                lc.setParent(item); 
                 
                 String vFlagLunas = rec.getFlagLunas().equals("Y")?"Sudah":"Belum";
                 lc = new Listcell(vFlagLunas);
@@ -552,9 +580,9 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
     	sortingData(listheader_T29CostingList_Customer, T29CostingComparator.COMPARE_BY_CUSTOMER);
     }
     
-    public void onSort$listheader_T29CostingList_FlagInvoice(Event event) { 
-    	sortingData(listheader_T29CostingList_FlagInvoice, T29CostingComparator.COMPARE_BY_FLAGINVOICE);
-    }
+//    public void onSort$listheader_T29CostingList_FlagInvoice(Event event) { 
+//    	sortingData(listheader_T29CostingList_FlagInvoice, T29CostingComparator.COMPARE_BY_FLAGINVOICE);
+//    }
     
     public void onSort$listheader_T29CostingList_FlagLunas(Event event) { 
     	sortingData(listheader_T29CostingList_FlagLunas, T29CostingComparator.COMPARE_BY_FLAGLUNAS);
@@ -588,7 +616,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 
     
     	cmbPosisi.setSelectedIndex(0);
-    	cmbFlagInvoice.setSelectedIndex(0);
+    	//cmbFlagInvoice.setSelectedIndex(0);
     	cmbFlagLunas.setSelectedIndex(0);
     }
 

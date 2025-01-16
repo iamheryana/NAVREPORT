@@ -222,5 +222,25 @@ public class CallStoreProcOrFuncServiceImpl implements  CallStoreProcOrFuncServi
 	}
 
 
+	@Override
+	public String callProsesCostingFinance2(String processId, String masa,
+			String tahun) {		
+		return callStoreProcOrFuncDAO.callProsesCostingFinance2(processId, masa, tahun);
+	}
+
+
+	@Override
+	public String callCompareAR(String processId, String company,
+			String tglMulai, String action) {
+		return callStoreProcOrFuncDAO.callCompareAR(processId, company, tglMulai, action);
+	}
+
+
+	@Override
+	public String callCekCostingFinance1() {
+		return callStoreProcOrFuncDAO.callCekCostingFinance1();
+	}
+
+
 
 }

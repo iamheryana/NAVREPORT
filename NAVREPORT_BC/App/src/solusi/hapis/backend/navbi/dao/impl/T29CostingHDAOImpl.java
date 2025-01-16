@@ -62,6 +62,10 @@ DetachedCriteria criteria = DetachedCriteria.forClass(T29CostingH.class);
 			if (parameterInput.get("FilterSales") != null) {
 				criteria.add(Restrictions.in("salesman", (Collection<String>)parameterInput.get("FilterSales")));
 			}
+			
+			if (parameterInput.get("FilterStatus") != null) {
+	            criteria.add(Restrictions.in("flagStatus", (Collection<String>)parameterInput.get("FilterSales")));
+	        }
 				
 			if (parameterInput.get("flagStatus") != null) {
 				criteria.add(Restrictions.ilike("flagStatus", parameterInput.get("flagStatus").toString(), MatchMode.START));

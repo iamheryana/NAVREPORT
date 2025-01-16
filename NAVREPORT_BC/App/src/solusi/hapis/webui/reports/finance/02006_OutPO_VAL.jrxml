@@ -162,10 +162,18 @@ FROM	(
 																					PIH.[Order Date] + (14+30)
 																				ELSE
 																					CASE WHEN PIL.RULE_GOL = '3A' THEN
-																						CASE WHEN (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])) <= CAST(CAST($P{R1From} AS DATE) AS DATETIME) THEN
-																							7 + DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
+																						CASE WHEN PIH.[Pay-to Vendor No_] IN ('SUPP135', 'SUPP080') THEN
+																							CASE WHEN PIL.EXP_RCV <= CAST(CAST($P{R1From} AS DATE) AS DATETIME) THEN
+																								7 + DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
+																							ELSE
+																								DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), PIL.EXP_RCV)
+																							END
 																						ELSE
-																							DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])))
+																							CASE WHEN (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])) <= CAST(CAST($P{R1From} AS DATE) AS DATETIME) THEN
+																								7 + DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
+																							ELSE
+																								DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])))
+																							END
 																						END
 																					ELSE
 																						DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
@@ -181,7 +189,11 @@ FROM	(
 								,PIL.NO_BPO
 								, CASE WHEN PIH.[Currency Code] <> '' THEN PIL.AMOUNT_PO ELSE 0 END AS AMOUNT_PO
 								, ROUND((CASE WHEN PIH.[Currency Code] <> '' THEN 0 ELSE PIL.AMOUNT_PO END),0) AS AMOUNT_PO_IDR
-								, MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_]) AS EXP_RCV
+								,	CASE WHEN PIH.[Pay-to Vendor No_] IN ('SUPP135', 'SUPP080') THEN
+										PIL.EXP_RCV
+									ELSE
+										MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])
+									END AS EXP_RCV
 						FROM [dbo].[BC_AUTOJAYA$Purchase Header] PIH
 						LEFT JOIN [dbo].[BC_AUTOJAYA$Payment Terms] PYT ON PYT.[Code] = PIH.[Payment Terms Code]
 						LEFT JOIN	(
@@ -343,10 +355,18 @@ FROM	(
 																					PIH.[Order Date] + (14+30)
 																				ELSE
 																					CASE WHEN PIL.RULE_GOL = '3A' THEN
-																						CASE WHEN (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])) <= CAST(CAST($P{R1From} AS DATE) AS DATETIME) THEN
-																							7 + DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
+																						CASE WHEN PIH.[Pay-to Vendor No_] IN ('SUPP135', 'SUPP080') THEN
+																							CASE WHEN PIL.EXP_RCV <= CAST(CAST($P{R1From} AS DATE) AS DATETIME) THEN
+																								7 + DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
+																							ELSE
+																								DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), PIL.EXP_RCV)
+																							END
 																						ELSE
-																							DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])))
+																							CASE WHEN (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])) <= CAST(CAST($P{R1From} AS DATE) AS DATETIME) THEN
+																								7 + DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
+																							ELSE
+																								DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), (MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])))
+																							END
 																						END
 																					ELSE
 																						DATEADD(day, CAST(SUBSTRING(ISNULL(PYT.[Due Date Calculation],'00'),1 ,LEN(ISNULL(PYT.[Due Date Calculation],'00'))-1) AS INT), CAST(CAST($P{R1From} AS DATE) AS DATETIME))
@@ -362,7 +382,11 @@ FROM	(
 								,PIL.NO_BPO
 								, CASE WHEN PIH.[Currency Code] <> '' THEN PIL.AMOUNT_PO ELSE 0 END AS AMOUNT_PO
 								, ROUND((CASE WHEN PIH.[Currency Code] <> '' THEN 0 ELSE PIL.AMOUNT_PO END),0) AS AMOUNT_PO_IDR
-								, MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_]) AS EXP_RCV
+								,	CASE WHEN PIH.[Pay-to Vendor No_] IN ('SUPP135', 'SUPP080') THEN
+										PIL.EXP_RCV
+									ELSE
+										MAX(PIL.EXP_RCV) OVER (PARTITION BY PIH.[No_])
+									END AS EXP_RCV
 						FROM [dbo].[BC_SOLUSI$Purchase Header] PIH
 						LEFT JOIN [dbo].[BC_SOLUSI$Payment Terms] PYT ON PYT.[Code] = PIH.[Payment Terms Code]
 						LEFT JOIN	(

@@ -37,6 +37,7 @@ public class P04ParamKomisiDetailCtrl extends GFCBaseCtrl implements Serializabl
 	protected Textbox txtFinance4;
 	protected Textbox txtFinance5;
 	protected Textbox txtSpvFinance;
+	protected Textbox txtTitleHeadFinance;
 
 	
 	// Databinding
@@ -109,6 +110,7 @@ public class P04ParamKomisiDetailCtrl extends GFCBaseCtrl implements Serializabl
 				txtFinance4.setReadonly(false);
 				txtFinance5.setReadonly(false);
 				txtSpvFinance.setReadonly(false);
+				txtTitleHeadFinance.setReadonly(false);
 
 				// set focus 
 				txtFinance.setFocus(true);				

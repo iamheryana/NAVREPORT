@@ -84,6 +84,14 @@ public class T29CostingH {
 	private String flagLunas;
 	
 	private String flagStatus;	
+	
+	private String masaKomisi;
+	private String tahunKomisi;
+	
+	private String masaTqs;
+	private String tahunTqs;
+	
+	
 	private Integer version;
 	private String createdBy;
 	private Date createdOn;
@@ -671,6 +679,38 @@ public class T29CostingH {
 
 	public void setMarginPcnNonacsps(BigDecimal marginPcnNonacsps) {
 		this.marginPcnNonacsps = marginPcnNonacsps;
+	}
+
+	public String getMasaKomisi() {
+		return masaKomisi;
+	}
+
+	public void setMasaKomisi(String masaKomisi) {
+		this.masaKomisi = masaKomisi;
+	}
+
+	public String getTahunKomisi() {
+		return tahunKomisi;
+	}
+
+	public void setTahunKomisi(String tahunKomisi) {
+		this.tahunKomisi = tahunKomisi;
+	}
+
+	public String getMasaTqs() {
+		return masaTqs;
+	}
+
+	public void setMasaTqs(String masaTqs) {
+		this.masaTqs = masaTqs;
+	}
+
+	public String getTahunTqs() {
+		return tahunTqs;
+	}
+
+	public void setTahunTqs(String tahunTqs) {
+		this.tahunTqs = tahunTqs;
 	}
 
 	

@@ -27,6 +27,7 @@ import org.zkoss.zul.Tabpanel;
 import org.zkoss.zul.Window;
 
 import solusi.hapis.backend.navbi.model.T29CostingH;
+import solusi.hapis.backend.navbi.service.CallStoreProcOrFuncService;
 import solusi.hapis.backend.navbi.service.T29CostingHService;
 import solusi.hapis.backend.parameter.service.SelectQueryService;
 import solusi.hapis.backend.util.CustomErrorDB;
@@ -55,8 +56,11 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     protected Tabbox tabbox_T29CostingMain;
     protected Tab tabT29CostingList;
     protected Tab tabT29CostingDetail;
+    protected Tab tabT29CostingProsesFinal;
+    
     protected Tabpanel tabPanelT29CostingList;
     protected Tabpanel tabPanelT29CostingDetail;
+    protected Tabpanel tabPanelT29CostingProsesFinal;
     
     // Button controller standart
     private final String btnCtroller_ClassPrefix = "button_T29Costing_";
@@ -79,11 +83,14 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     protected Button btnSubmitToSM;
     protected Button btnBackToLogistic;
     protected Button btnSubmitToFinance2;
+    protected Button btnGetInvoicePayment;
+    protected Button btnProsesFinal;
     	
 
     // Tab-Controllers for getting the binders
     private T29CostingListCtrl T29CostingListCtrl;
     private T29CostingDetailCtrl T29CostingDetailCtrl;
+    private T29CostingProsesFinalCtrl T29CostingProsesFinalCtrl;
 
 
     // Databinding
@@ -97,6 +104,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     
     private T29CostingHService T29CostingHService;
     private SelectQueryService selectQueryService;
+    private CallStoreProcOrFuncService callStoreProcOrFuncService;
     
     
     private String PATH_FILE_UPLOAD   = new PathReport().getPathFileCosting();
@@ -104,6 +112,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     // Zul
 	private String zulPageDetail = "/WEB-INF/pages/sales/Costing/T29Costing/T29CostingDetail.zul";
 	private String zulPageList = "/WEB-INF/pages/sales/Costing/T29Costing/T29CostingList.zul";
+	private String zulPageProsesFinal = "/WEB-INF/pages/sales/Costing/T29Costing/T29CostingProsesFinal.zul";
+	
 
     /**
      * Form State <br/>
@@ -183,7 +193,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         	
         	// Render Inisialisasi posisi awal
             getT29CostingDetailCtrl().doRenderMode("View", "NA");   
-            
+            getT29CostingDetailCtrl().TampilkanPaidOn();
             btnCtrlT29Costing.setInitInquiryButton();
             renderButtonActionbyRole(true);
             btnDownloadCosting.setVisible(true);
@@ -211,10 +221,40 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 		}
     }
 
+    public void onSelect$tabT29CostingProsesFinal(Event event) throws IOException {
+    	if (tabPanelT29CostingProsesFinal != null) {
+			ZksampleCommonUtils.createTabPanelContent(tabPanelT29CostingProsesFinal,
+					this, "ModuleMainController", zulPageProsesFinal);
+		}
+    	
+        if (tabPanelT29CostingProsesFinal.getFirstChild() != null) {
+           tabT29CostingProsesFinal.setSelected(true);
+           btnCtrlT29Costing.setInitCustomButton();
+           renderButtonActionbyRole(false);
+           btnDownloadCosting.setVisible(false);
+        }
+     }
     
     // +++++++++++++++++++++++++++++++++++++++++++++++++ //
     // +++++++++++++++++++ Button Events +++++++++++++++ //
     // +++++++++++++++++++++++++++++++++++++++++++++++++ // 
+    
+    public void onClick$btnProsesFinal(Event event) throws InterruptedException, IOException {
+        if (getT29CostingProsesFinalCtrl() == null) {
+           Events.sendEvent(new Event("onSelect", this.tabT29CostingProsesFinal, null));
+        }
+
+        if (tabPanelT29CostingProsesFinal != null) {
+           ZksampleCommonUtils.createTabPanelContent(tabPanelT29CostingProsesFinal, this, "ModuleMainController", zulPageProsesFinal);
+        }
+
+        this.btnCtrlT29Costing.setInitCustomButton();
+        this.renderButtonActionbyRole(false);
+        this.btnDownloadCosting.setVisible(false);
+        this.tabT29CostingProsesFinal.setSelected(true);
+     }
+
+    
     
     // Saat Button New di klik
     public void onClick$btnNew(Event event) throws InterruptedException {
@@ -231,8 +271,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
        
         anT29CostingH.setCompany("AUTOJAYA");
         anT29CostingH.setTglCosting(new Date());
-        //anT29CostingH.setSalesman(SecurityContextHolder.getContext().getAuthentication().getName());
-        anT29CostingH.setSalesman("HRY");
+        anT29CostingH.setSalesman(SecurityContextHolder.getContext().getAuthentication().getName());
+        //anT29CostingH.setSalesman("HRY");
         
         anT29CostingH.setNoCosting(String.valueOf(System.currentTimeMillis()));
         
@@ -308,7 +348,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
         
         // set render layar
         getT29CostingDetailCtrl().doRenderMode("New", "NA");
-        
+        getT29CostingDetailCtrl().TampilkanPaidOn();
         getT29CostingDetailCtrl().displayDetail(null, null, null, null, null);
         getT29CostingDetailCtrl().doRenderCombo();
     }
@@ -366,7 +406,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 	        // set button
 	        btnCtrlT29Costing.setInitFormButton();
 	        renderButtonActionbyRole(false);
-	        btnDownloadCosting.setVisible(true);
+	        btnDownloadCosting.setVisible(false);
 	
 	        // select tab Detail
 	        tabT29CostingDetail.setSelected(true);
@@ -377,7 +417,7 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 	        // set render layar
 	        getT29CostingDetailCtrl().doRenderCombo();
 	        getT29CostingDetailCtrl().doRenderMode("Edit", getSelectedT29Costing().getFlagStatus());
-	        
+	        getT29CostingDetailCtrl().TampilkanPaidOn();
 	        getT29CostingDetailCtrl().displayDetail(
 	        		getT29CostingListCtrl().getList_T30CostingDHw3psList(), 
 	        		getT29CostingListCtrl().getList_T31CostingDAcspsList(), 
@@ -1208,6 +1248,14 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
     	}
     }
     
+    public void onClick$btnGetInvoicePayment(Event event) throws InterruptedException {
+        @SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callCekCostingFinance1();
+        onClick$btnSearch(event);
+        Messagebox.show("Proses Sudah Selesai");
+        
+     }
+    
 	public void saveFile(Media media, String namaFile, String tipeDok) {
 		BufferedInputStream in = null;
 		BufferedOutputStream out = null;
@@ -1286,6 +1334,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 		    this.btnSubmitToSM.setVisible(modeRender);
 		    this.btnBackToLogistic.setVisible(modeRender);
 		    this.btnSubmitToFinance2.setVisible(modeRender);
+		    this.btnGetInvoicePayment.setVisible(modeRender);
+	        this.btnProsesFinal.setVisible(modeRender);
 		} else 
 		{
 			if (modeRender ==  true){
@@ -1304,6 +1354,9 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 					    this.btnSubmitToSM.setVisible(!modeRender);
 					    this.btnBackToLogistic.setVisible(!modeRender);
 					    this.btnSubmitToFinance2.setVisible(!modeRender);
+					    this.btnGetInvoicePayment.setVisible(!modeRender);
+			            this.btnProsesFinal.setVisible(!modeRender);
+
 					} else {
 						if (vRoleUser.equals("SAO")){
 							this.btnNew.setVisible(!modeRender);
@@ -1317,6 +1370,9 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 						    this.btnSubmitToSM.setVisible(!modeRender);
 						    this.btnBackToLogistic.setVisible(!modeRender);
 						    this.btnSubmitToFinance2.setVisible(!modeRender);
+						    this.btnGetInvoicePayment.setVisible(!modeRender);
+				            this.btnProsesFinal.setVisible(!modeRender);
+
 						} else {
 							if (vRoleUser.equals("LOGISTIC")){
 								this.btnNew.setVisible(!modeRender);
@@ -1330,6 +1386,9 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 							    this.btnSubmitToSM.setVisible(!modeRender);
 							    this.btnBackToLogistic.setVisible(!modeRender);
 							    this.btnSubmitToFinance2.setVisible(!modeRender);
+							    this.btnGetInvoicePayment.setVisible(!modeRender);
+					            this.btnProsesFinal.setVisible(!modeRender);
+							
 							} else {
 								if (vRoleUser.equals("FINANCE")){
 									this.btnNew.setVisible(!modeRender);
@@ -1343,6 +1402,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 								    this.btnSubmitToSM.setVisible(modeRender);
 								    this.btnBackToLogistic.setVisible(modeRender);
 								    this.btnSubmitToFinance2.setVisible(!modeRender);
+								    this.btnGetInvoicePayment.setVisible(modeRender);
+						            this.btnProsesFinal.setVisible(modeRender);
 								} else {
 									if (vRoleUser.equals("SM")){
 										this.btnNew.setVisible(!modeRender);
@@ -1356,6 +1417,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 									    this.btnSubmitToSM.setVisible(!modeRender);
 									    this.btnBackToLogistic.setVisible(!modeRender);
 									    this.btnSubmitToFinance2.setVisible(modeRender);
+									    this.btnGetInvoicePayment.setVisible(!modeRender);
+							            this.btnProsesFinal.setVisible(!modeRender);
 									} else {
 										this.btnNew.setVisible(!modeRender);
 										this.btnEdit.setVisible(modeRender);
@@ -1368,6 +1431,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 									    this.btnSubmitToSM.setVisible(!modeRender);
 									    this.btnBackToLogistic.setVisible(!modeRender);
 									    this.btnSubmitToFinance2.setVisible(!modeRender);
+									    this.btnGetInvoicePayment.setVisible(!modeRender);
+							            this.btnProsesFinal.setVisible(!modeRender);
 									}
 								}
 							}
@@ -1388,6 +1453,8 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 			    this.btnSubmitToSM.setVisible(modeRender);
 			    this.btnBackToLogistic.setVisible(modeRender);
 			    this.btnSubmitToFinance2.setVisible(modeRender);
+			    this.btnGetInvoicePayment.setVisible(modeRender);
+			    this.btnProsesFinal.setVisible(modeRender);
 			}		
 		}
 	}
@@ -1455,4 +1522,16 @@ public class T29CostingMainCtrl extends GFCBaseCtrl implements Serializable {
 		return postedT29Costing;
 	}
 
+	public T29CostingProsesFinalCtrl getT29CostingProsesFinalCtrl() {
+		return T29CostingProsesFinalCtrl;
+	}
+
+	public void setT29CostingProsesFinalCtrl(
+			T29CostingProsesFinalCtrl t29CostingProsesFinalCtrl) {
+		T29CostingProsesFinalCtrl = t29CostingProsesFinalCtrl;
+	}
+
+
+
+	
 }

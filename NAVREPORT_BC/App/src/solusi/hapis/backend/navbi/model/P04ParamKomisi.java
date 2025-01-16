@@ -11,6 +11,7 @@ public class P04ParamKomisi {
 	private String finance4;
 	private String finance5;
 	private String spvFinance;
+	private String titleHeadFinance;
 	private Integer version;
 	private String createdBy;
 	private Date createdOn;
@@ -23,7 +24,7 @@ public class P04ParamKomisi {
 	
 	
 
-	public P04ParamKomisi(String kode, String finance, String finance2, String finance3, String finance4, String finance5, String spvFinance) {
+	public P04ParamKomisi(String kode, String finance, String finance2, String finance3, String finance4, String finance5, String spvFinance, String titleHeadFinance) {
 		super();
 		this.kode = kode;
 		this.finance = finance;
@@ -32,6 +33,7 @@ public class P04ParamKomisi {
 		this.finance4 = finance4;
 		this.finance5 = finance5;
 		this.spvFinance = spvFinance;
+		this.titleHeadFinance = titleHeadFinance;
 	}
 
 
@@ -182,6 +184,18 @@ public class P04ParamKomisi {
 
 	public void setFinance5(String finance5) {
 		this.finance5 = finance5;
+	}
+
+
+
+	public String getTitleHeadFinance() {
+		return titleHeadFinance;
+	}
+
+
+
+	public void setTitleHeadFinance(String titleHeadFinance) {
+		this.titleHeadFinance = titleHeadFinance;
 	}
 	
 	

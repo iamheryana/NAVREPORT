@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +24,13 @@ import org.w3c.dom.Element;
 import org.zkoss.zhtml.Messagebox;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
+import org.zkoss.zul.Datebox;
+import org.zkoss.zul.Radio;
+import org.zkoss.zul.Radiogroup;
 import org.zkoss.zul.Textbox;
 
 import solusi.hapis.backend.navbi.service.CallStoreProcOrFuncService;
+import solusi.hapis.common.CommonUtils;
 import solusi.hapis.webui.reports.util.JReportGeneratorWindow;
 import solusi.hapis.webui.util.GFCBaseCtrl;
 
@@ -39,6 +44,13 @@ public class FormatCoreTaxCtrl extends GFCBaseCtrl implements Serializable {
 	protected Textbox txtInvFrom;
 	protected Textbox txtInvUpto;
 
+	protected Datebox dbTglFrom;
+	protected Datebox dbTglUpto;
+	
+	protected Radiogroup rdgCompany;	 
+	protected Radio rdAJ;
+	protected Radio rdSP;
+
 	
 
 	private CallStoreProcOrFuncService callStoreProcOrFuncService;
@@ -48,6 +60,11 @@ public class FormatCoreTaxCtrl extends GFCBaseCtrl implements Serializable {
 	public void doAfterCompose(Component comp) throws Exception {
 		super.doAfterCompose(comp);  
 
+		dbTglFrom.setValue((new Date()));    
+    	dbTglUpto.setValue((new Date()));    
+    	
+    	
+    	rdAJ.setSelected(true); 
     	
 	}
 	
@@ -63,6 +80,10 @@ public class FormatCoreTaxCtrl extends GFCBaseCtrl implements Serializable {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void onClick$btnOK(Event event) throws InterruptedException {
 		
+		String vCompany = "AUTOJAYA";
+		if (StringUtils.isNotEmpty(rdgCompany.getSelectedItem().getValue())) {
+			vCompany = rdgCompany.getSelectedItem().getValue();	
+		} 
 		
 
 		
@@ -76,7 +97,15 @@ public class FormatCoreTaxCtrl extends GFCBaseCtrl implements Serializable {
 			vInvUpto = txtInvUpto.getValue();
 		} 
 		
+		Date vTglFrom = new Date();   
+		if(CommonUtils.isNotEmpty(dbTglFrom.getValue()) == true){  
+			vTglFrom = dbTglFrom.getValue();
+		}   
 		
+		Date vTglUpto = new Date();   
+		if(CommonUtils.isNotEmpty(dbTglUpto.getValue()) == true){  
+			vTglUpto = dbTglUpto.getValue();
+		}
 	
 		
 		@SuppressWarnings("unused")
@@ -90,8 +119,11 @@ public class FormatCoreTaxCtrl extends GFCBaseCtrl implements Serializable {
 		jasperRpts.add("/solusi/hapis/webui/reports/accounting/preprinted/010808_FormatCoreTax.jasper");
 		 
 	    Map param_HEADER = new HashMap();	
+	    param_HEADER.put("Company",  vCompany); 
+	    param_HEADER.put("TglFrom",  vTglFrom);   
+	    param_HEADER.put("TglUpto",  vTglUpto);   	
 	    param_HEADER.put("InvoiceFrom",  vInvFrom); 
-	    param_HEADER.put("InvoiceUpto",  vInvUpto);   		
+	    param_HEADER.put("InvoiceUpto",  vInvUpto);   	
 	    param_HEADER.put("JnsRpt",  "HEADER"); 
 	    params.add(param_HEADER);
 	    vSheetName[0] = "Faktur";
@@ -100,6 +132,9 @@ public class FormatCoreTaxCtrl extends GFCBaseCtrl implements Serializable {
 	    jasperRpts.add("/solusi/hapis/webui/reports/accounting/preprinted/010808_FormatCoreTax.jasper");
 		 
 	    Map param_DETAIL = new HashMap();	
+	    param_DETAIL.put("Company",  vCompany); 
+	    param_DETAIL.put("TglFrom",  vTglFrom);   
+	    param_DETAIL.put("TglUpto",  vTglUpto);   	
 	    param_DETAIL.put("InvoiceFrom",  vInvFrom); 
 	    param_DETAIL.put("InvoiceUpto",  vInvUpto);   		
 	    param_DETAIL.put("JnsRpt",  "DETAIL"); 

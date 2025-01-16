@@ -35,5 +35,8 @@ public interface CallStoreProcOrFuncDAO {
 	public String callCashFlowACS(String processId, String tglMulai, String modelLap, BigDecimal saldoAwalAJ, BigDecimal saldoAwalSP,BigDecimal pibAJ,BigDecimal pibSP,
 			BigDecimal kursUSD,BigDecimal kursSGD,BigDecimal kursEUR,BigDecimal kursCNY,String action);	
 
+	public String callProsesCostingFinance2(String processId, String masa, String tahun);	
+	public String callCompareAR(String processId, String company, String tglMulai,  String action);		
 	
+	public String callCekCostingFinance1();
 }
