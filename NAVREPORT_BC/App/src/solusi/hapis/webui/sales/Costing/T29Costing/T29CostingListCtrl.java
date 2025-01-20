@@ -303,8 +303,7 @@ public class T29CostingListCtrl extends GFCBaseListCtrl<T29CostingH> implements 
 		}
 			
 		if (this.cmbPosisi.getSelectedIndex() != 0) {
-	         vALL = (String)this.cmbPosisi.getSelectedItem().getValue();
-	         parameterInput.put("flagStatus", vALL);
+	         parameterInput.put("flagStatus", (String)this.cmbPosisi.getSelectedItem().getValue());
 	    }
 		 
 	 	if (CommonUtils.isValidDateFormat(txtTglCosting.getValue())) {
