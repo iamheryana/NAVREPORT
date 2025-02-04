@@ -15,9 +15,7 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.Bandbox;
 import org.zkoss.zul.Bandpopup;
-import org.zkoss.zul.Combobox;
 import org.zkoss.zul.Datebox;
-import org.zkoss.zul.Decimalbox;
 import org.zkoss.zul.Intbox;
 import org.zkoss.zul.Listbox;
 import org.zkoss.zul.Radio;
@@ -43,17 +41,17 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 	
 	
 	protected Row rowTglUpto;
-	protected Row rowBatasSem;
+//	protected Row rowBatasSem;
 	protected Row rowSemester;
 	protected Row rowSpvBy;
-	protected Row rowAmount;
+//	protected Row rowAmount;
 	protected Row rowCabang;
 	protected Row rowApplication;
 	protected Row rowTipeLap;
 	
-	protected Row rowWeight;
-	protected Row rowWeight2;
-	protected Row rowWeight3;
+//	protected Row rowWeight;
+//	protected Row rowWeight2;
+//	protected Row rowWeight3;
 	
 	protected Row rowSales;
 	
@@ -70,31 +68,31 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radiogroup rdgTipeLap;	 
 	protected Radio rdDTL5_1;
 	protected Radio rdDTL5_2;	
-	//protected Radio rdDTL5_3;
+//	protected Radio rdDTL5_3;
 	protected Radio rdDTL5_4;
 			
 	protected Radiogroup rdgJnsLap;	 
 	protected Radio rdSUM;
 	protected Radio rdDTL1;
 	protected Radio rdDTL2;
-	protected Radio rdDTL3;
+//	protected Radio rdDTL3;
 	protected Radio rdDTL4;
 	protected Radio rdDTL5;
-	protected Radio rdDTL6;
-	protected Radio rdSUM2;
-	protected Radio rdSUM3;
+//	protected Radio rdDTL6;
+//	protected Radio rdSUM2;
+//	protected Radio rdSUM3;
 	
 	protected Radiogroup rdgSave;	 
 	protected Radio rdPDF;
 	protected Radio rdXLS;
 	
-	protected Decimalbox dcmNilai;
+//	protected Decimalbox dcmNilai;
 	
-	protected Decimalbox dcmHigh;
-	protected Decimalbox dcmMed;
-	protected Decimalbox dcmLow;
+//	protected Decimalbox dcmHigh;
+//	protected Decimalbox dcmMed;
+//	protected Decimalbox dcmLow;
 	
-	protected Combobox  cmbAkhirSem1;
+//	protected Combobox  cmbAkhirSem1;
 	
 	
 	protected Bandbox  cmbCab;
@@ -124,14 +122,14 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 		rowTipeLap.setVisible(false);
 		
 		rowTglUpto.setVisible(true);
-		rowBatasSem.setVisible(true);		
+//		rowBatasSem.setVisible(true);		
 		rowSemester.setVisible(false);
 		rowSpvBy.setVisible(true);
-		rowAmount.setVisible(true);
+//		rowAmount.setVisible(true);
 		
-		rowWeight.setVisible(true);
-		rowWeight2.setVisible(true);
-		rowWeight3.setVisible(true);
+//		rowWeight.setVisible(true);
+//		rowWeight2.setVisible(true);
+//		rowWeight3.setVisible(true);
 
 		rdDTL5_1.setSelected(true); 
 		
@@ -155,15 +153,15 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 		dbTglUpto.setValue(vTglUpto);   
 		
 		
-		dcmNilai.setValue(new BigDecimal (500));
+//		dcmNilai.setValue(new BigDecimal (500));
+//		
+//		dcmHigh.setValue(new BigDecimal (90));
+//		dcmMed.setValue(new BigDecimal (60));
+//		dcmLow.setValue(new BigDecimal (30));
 		
-		dcmHigh.setValue(new BigDecimal (90));
-		dcmMed.setValue(new BigDecimal (60));
-		dcmLow.setValue(new BigDecimal (30));
 		
 		
-		
-		cmbAkhirSem1.setSelectedIndex(3);
+//		cmbAkhirSem1.setSelectedIndex(3);
 		
 		
 		Bandpopup popup1 = new Bandpopup();
@@ -281,16 +279,16 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 			rowTipeLap.setVisible(false);
 			
 			rowTglUpto.setVisible(true);
-			rowBatasSem.setVisible(true);		
+//			rowBatasSem.setVisible(true);		
 			rowSemester.setVisible(false);
 			rowSpvBy.setVisible(true);
-			rowAmount.setVisible(true);
+//			rowAmount.setVisible(true);
 			rowCabang.setVisible(false);
 			
 			
-			rowWeight.setVisible(true);
-			rowWeight2.setVisible(true);
-			rowWeight3.setVisible(true);
+//			rowWeight.setVisible(true);
+//			rowWeight2.setVisible(true);
+//			rowWeight3.setVisible(true);
 			
 			rowSales.setVisible(false);
 			rowApplication.setVisible(false);
@@ -300,151 +298,154 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 				rowTipeLap.setVisible(false);
 				
 				rowTglUpto.setVisible(false);
-				rowBatasSem.setVisible(false);		
+//				rowBatasSem.setVisible(false);		
 				rowSemester.setVisible(false);
 				rowSpvBy.setVisible(false);
-				rowAmount.setVisible(false);
+//				rowAmount.setVisible(false);
 				rowCabang.setVisible(false);
 				
-				rowWeight.setVisible(false);
-				rowWeight2.setVisible(false);
-				rowWeight3.setVisible(false);
+//				rowWeight.setVisible(false);
+//				rowWeight2.setVisible(false);
+//				rowWeight3.setVisible(false);
 				
 				rowSales.setVisible(false);
 				rowApplication.setVisible(false);
 			} else {
 				if(rdDTL2.isChecked() == true || rdDTL5.isChecked() == true) {
 					if(rdDTL5.isChecked() == true){ 
+						rowTglUpto.setVisible(false);
+						rowSemester.setVisible(false);
+//						rowWeight.setVisible(true);
+//						rowWeight2.setVisible(true);
+//						rowWeight3.setVisible(true);
+						rowCabang.setVisible(true);
+						rowTipeLap.setVisible(true);	
 						
-						rowWeight.setVisible(true);
-						rowWeight2.setVisible(true);
-						rowWeight3.setVisible(true);
+//						rowAmount.setVisible(true);
+						rowSales.setVisible(false);
+						rowApplication.setVisible(true);
+//						rowBatasSem.setVisible(true);	
 						
-						
-						rowTipeLap.setVisible(true);
-					} else {
-						
-						rowWeight.setVisible(false);
-						rowWeight2.setVisible(false);
-						rowWeight3.setVisible(false);
-						
-						
-						rowTipeLap.setVisible(false);
-					}
-					
-					
-					rowTglUpto.setVisible(false);
-					rowBatasSem.setVisible(true);		
-					rowSemester.setVisible(false);
-					if (rdDTL5_1.isChecked() == true) {
-						rowSpvBy.setVisible(false);
-					} else {
-						if (rdDTL5_2.isChecked() == true) {
-							rowSpvBy.setVisible(false);
+						if (rdDTL5_4.isChecked() == true) {
+							rowSpvBy.setVisible(true);
 						} else {
-							if (rdDTL5_4.isChecked() == true) {
-								rowSpvBy.setVisible(true);
-							}
+							rowSpvBy.setVisible(false);
+						}
+						
+						
+						
+					} else {
+						if(rdDTL2.isChecked() == true){ 
+							rowTglUpto.setVisible(false);
+							rowSemester.setVisible(false);
+						
+//							rowWeight.setVisible(false);
+//							rowWeight2.setVisible(false);
+//							rowWeight3.setVisible(false);
+						
+							rowSpvBy.setVisible(true);
+							rowCabang.setVisible(false);
+							rowTipeLap.setVisible(false);
+//							rowAmount.setVisible(true);
+							rowSales.setVisible(false);
+							rowApplication.setVisible(true);
+//							rowBatasSem.setVisible(true);	
 						}
 					}
-					rowAmount.setVisible(true);
-					rowCabang.setVisible(true);
+					
+					
 
-					rowSales.setVisible(false);
-					rowApplication.setVisible(true);
 				} else {					
 					if(rdDTL4.isChecked() == true) {
 						rowTipeLap.setVisible(false);
 						
 						rowTglUpto.setVisible(false);
-						rowBatasSem.setVisible(true);		
+//						rowBatasSem.setVisible(true);		
 						rowSemester.setVisible(false);
 						rowSpvBy.setVisible(true);
-						rowAmount.setVisible(true);
+//						rowAmount.setVisible(true);
 						rowCabang.setVisible(false);
 						
-						rowWeight.setVisible(true);
-						rowWeight2.setVisible(true);
-						rowWeight3.setVisible(true);
+//						rowWeight.setVisible(true);
+//						rowWeight2.setVisible(true);
+//						rowWeight3.setVisible(true);
 						
 						rowSales.setVisible(true);
 						rowApplication.setVisible(true);
 					} else {
-						if(rdDTL3.isChecked() == true) {
-							rowTipeLap.setVisible(false);
-							
-							rowTglUpto.setVisible(false);
-							rowBatasSem.setVisible(true);		
-							rowSemester.setVisible(true);
-							rowSpvBy.setVisible(false);
-							rowAmount.setVisible(true);
-							rowCabang.setVisible(true);
-							
-							rowWeight.setVisible(false);
-							rowWeight2.setVisible(false);
-							rowWeight3.setVisible(false);
-							
-							rowSales.setVisible(false);
-							rowApplication.setVisible(false);
-							
-						} else {
-							if(rdSUM2.isChecked() == true) {
-								rowTipeLap.setVisible(false);
-								
-								rowTglUpto.setVisible(false);
-								rowBatasSem.setVisible(true);		
-								rowSemester.setVisible(true);
-								rowSpvBy.setVisible(false);
-								rowAmount.setVisible(true);
-								rowCabang.setVisible(false);
-								
-								rowWeight.setVisible(false);
-								rowWeight2.setVisible(false);
-								rowWeight3.setVisible(false);
-								
-								rowSales.setVisible(false);
-								rowApplication.setVisible(false);
-							} else {
-								if(rdSUM3.isChecked() == true){
-									rowTipeLap.setVisible(false);
-									
-									rowTglUpto.setVisible(true);
-									rowBatasSem.setVisible(true);		
-									rowSemester.setVisible(false);
-									rowSpvBy.setVisible(false);
-									rowAmount.setVisible(true);
-									rowCabang.setVisible(false);
-									
-									rowWeight.setVisible(true);
-									rowWeight2.setVisible(true);
-									rowWeight3.setVisible(true);
-									
-									rowSales.setVisible(false);
-									rowApplication.setVisible(false);
-								} else {
-									if(rdDTL6.isChecked() == true){
-										rowTipeLap.setVisible(false);
-										
-										rowTglUpto.setVisible(false);
-										rowBatasSem.setVisible(true);		
-										rowSemester.setVisible(false);
-										rowSpvBy.setVisible(true);
-										rowAmount.setVisible(true);
-										rowCabang.setVisible(false);
-										
-										rowWeight.setVisible(true);
-										rowWeight2.setVisible(true);
-										rowWeight3.setVisible(true);
-										
-										rowSales.setVisible(true);
-										rowApplication.setVisible(true);
-									}
-								}
-								
-							}
-						}
+//						if(rdDTL3.isChecked() == true) {
+//							rowTipeLap.setVisible(false);
+//							
+//							rowTglUpto.setVisible(false);
+//							rowBatasSem.setVisible(true);		
+//							rowSemester.setVisible(true);
+//							rowSpvBy.setVisible(false);
+//							rowAmount.setVisible(true);
+//							rowCabang.setVisible(true);
+//							
+//							rowWeight.setVisible(false);
+//							rowWeight2.setVisible(false);
+//							rowWeight3.setVisible(false);
+//							
+//							rowSales.setVisible(false);
+//							rowApplication.setVisible(false);
+//							
+//						} else {
+//							if(rdSUM2.isChecked() == true) {
+//								rowTipeLap.setVisible(false);
+//								
+//								rowTglUpto.setVisible(false);
+//								rowBatasSem.setVisible(true);		
+//								rowSemester.setVisible(true);
+//								rowSpvBy.setVisible(false);
+//								rowAmount.setVisible(true);
+//								rowCabang.setVisible(false);
+//								
+//								rowWeight.setVisible(false);
+//								rowWeight2.setVisible(false);
+//								rowWeight3.setVisible(false);
+//								
+//								rowSales.setVisible(false);
+//								rowApplication.setVisible(false);
+//							} else {
+//								if(rdSUM3.isChecked() == true){
+//									rowTipeLap.setVisible(false);
+//									
+//									rowTglUpto.setVisible(true);
+//									rowBatasSem.setVisible(true);		
+//									rowSemester.setVisible(false);
+//									rowSpvBy.setVisible(false);
+//									rowAmount.setVisible(true);
+//									rowCabang.setVisible(false);
+//									
+//									rowWeight.setVisible(true);
+//									rowWeight2.setVisible(true);
+//									rowWeight3.setVisible(true);
+//									
+//									rowSales.setVisible(false);
+//									rowApplication.setVisible(false);
+//								} else {
+//									if(rdDTL6.isChecked() == true){
+//										rowTipeLap.setVisible(false);
+//										
+//										rowTglUpto.setVisible(false);
+//										rowBatasSem.setVisible(true);		
+//										rowSemester.setVisible(false);
+//										rowSpvBy.setVisible(true);
+//										rowAmount.setVisible(true);
+//										rowCabang.setVisible(false);
+//										
+//										rowWeight.setVisible(true);
+//										rowWeight2.setVisible(true);
+//										rowWeight3.setVisible(true);
+//										
+//										rowSales.setVisible(true);
+//										rowApplication.setVisible(true);
+//									}
+//								}	
+//							}
+//						}
 					}
-		
 				}
 			}
 		}
@@ -467,7 +468,7 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unused", "unchecked" })
 	public void onClick$btnOK(Event event) throws InterruptedException {
 		
 		Calendar cTgl = Calendar.getInstance();		
@@ -479,40 +480,10 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 			vTahun = intTahun.getValue();
 		}
 		
-				
-		BigDecimal vNilai = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
-			vNilai = dcmNilai.getValue();
-		} 
-		
-		
-		BigDecimal vHigh = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmHigh.getValue())) {
-			vHigh = dcmHigh.getValue();
-		} 
-		
-		BigDecimal vMed = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmMed.getValue())) {
-			vMed = dcmMed.getValue();
-		} 
-		
-		BigDecimal vLow = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmLow.getValue())) {
-			vLow = dcmLow.getValue();
-		} 
-		
-		
-		
 		String vSPVBy = "ALL";
 		if (StringUtils.isNotEmpty(txtSPVBy.getValue())) {
 			vSPVBy = txtSPVBy.getValue();
 		} 
-		
-	
-		int vAkhirSem1 = 6;
-		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
-			vAkhirSem1 = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
-		}
 		
 		String vSem = "ALL";
 		if (StringUtils.isNotEmpty(rdgSem.getSelectedItem().getValue())) {
@@ -540,9 +511,6 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 		
 		String vStrTglFrom = yearTglFrom+"/01/01";
 		
-		
-		
-		
 		String jasperRpt = "/solusi/hapis/webui/reports/sales/04047_01_ForecastSalesACS.jasper";
 		
 		String vJnsLap = "SUM";
@@ -561,35 +529,29 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 		if(vJnsLap.equals("SUM")){
 			vProsesId = String.valueOf(System.currentTimeMillis());
 			
-			
-			@SuppressWarnings("unused")
 			String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-01");
 			
-			@SuppressWarnings("unused")
-			String vResult = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglTo, vStrTglTo, "ALL", "SRF");
+			String vResult = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglFrom, vStrTglTo, "ALL", "SRF");
 
 			
 			param.put("SpvBy",  vSPVBy.toUpperCase());
-			param.put("AmtBig",  vNilai);
-			param.put("Sem1Akhir",  vAkhirSem1);			
 			param.put("TglUpto",  vTglUpTo);
-			
-			param.put("weightH",  vHigh);
-			param.put("weightM",  vMed);
-			param.put("weightL",  vLow);
-			
 			param.put("ProsesId",  vProsesId);
 			
+			param.put("AmtBig",  new BigDecimal(0));
+			param.put("Sem1Akhir",  6);	
+			param.put("weightH",  new BigDecimal(100));
+			param.put("weightM",  new BigDecimal(100));
+			param.put("weightL",  new BigDecimal(100));
+			
+
 			jasperRpt = "/solusi/hapis/webui/reports/sales/04047_01_ForecastSalesACS.jasper";
 		} else {
 			if(vJnsLap.equals("DTL1")){				
 				vProsesId = String.valueOf(System.currentTimeMillis());
 				
-				
-				@SuppressWarnings("unused")
 				String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-02");
 				
-				@SuppressWarnings("unused")
 				String vResult = callStoreProcOrFuncService.callOutstandingSO(vProsesId, vStrOutSOFrom, vStrOutSOUpto, "ALL", "ALL", "CETAK");
 				
 				
@@ -598,137 +560,69 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 				jasperRpt = "/solusi/hapis/webui/reports/sales/04047_02_ForecastSalesACSOutSO.jasper";
 			} else {
 				if(vJnsLap.equals("DTL2")){		
-					@SuppressWarnings("unused")
+
 					String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");	
 					
-					
-					
 					param.put("SpvBy",  vSPVBy.toUpperCase());
-					param.put("AmtBig",  vNilai);
-					param.put("Sem1Akhir",  vAkhirSem1);	
 					param.put("App",  vApplication);	
+					
+					param.put("AmtBig",  new BigDecimal(0));	
+					param.put("Sem1Akhir",  6);	
+					
 					
 					jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_ForecastSalesACSPipeline.jasper";
 				} else {
-					if(vJnsLap.equals("DTL3")){		
-						@SuppressWarnings("unused")
-						String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");	
-						
-						
-						param.put("AmtBig",  vNilai);
-						param.put("Sem",  vSem);
-						param.put("Sem1Akhir",  vAkhirSem1);
-						param.put("Cabang",  vCabang); 
-						
-						jasperRpt = "/solusi/hapis/webui/reports/sales/04047_04_ForecastSalesACS4Pillar.jasper";
-					} else {
-						if(vJnsLap.equals("DTL4") || vJnsLap.equals("DTL6")){		
+					if	(vJnsLap.equals("DTL4") ){		
 							param.put("SpvBy",  vSPVBy.toUpperCase());
-							param.put("AmtBig",  vNilai);
-							param.put("Sem1Akhir",  vAkhirSem1);
-							
 							param.put("Sales",  vSales);
-							
-							param.put("weightH",  vHigh);
-							param.put("weightM",  vMed);
-							param.put("weightL",  vLow);
-							
 							param.put("App",  vApplication);	
 							
-							@SuppressWarnings("unused")
+							param.put("AmtBig",  new BigDecimal(0));
+							param.put("Sem1Akhir",  6);	
+							param.put("weightH",  new BigDecimal(100));
+							param.put("weightM",  new BigDecimal(100));
+							param.put("weightL",  new BigDecimal(100));
+							
 							String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");	
 							
-							
-							if(vJnsLap.equals("DTL4") == true ){
-								jasperRpt = "/solusi/hapis/webui/reports/sales/04047_05_ForecastSalesACSDetailBSO.jasper";
-							} else {								
-								jasperRpt = "/solusi/hapis/webui/reports/sales/04047_08_ForecastSalesACSGlobalBSO.jasper";
-							}
-						} else {
-							if (vJnsLap.equals("DTL5")){		
-								
-								
-								param.put("SpvBy",  vSPVBy.toUpperCase());
-								param.put("AmtBig",  vNilai);
-								param.put("Sem1Akhir",  vAkhirSem1);	
-								param.put("Cabang",  vCabang);	
-								
-								param.put("weightH",  vHigh);
-								param.put("weightM",  vMed);
-								param.put("weightL",  vLow);
-								
-								param.put("App",  vApplication);	
-								
-								@SuppressWarnings("unused")
-								String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-04");	
-								
-								String vTipeLap = "DTL5_1";
-								if (StringUtils.isNotEmpty(rdgTipeLap.getSelectedItem().getValue())) {
-									vTipeLap = rdgTipeLap.getSelectedItem().getValue();	
-								} 
-								
-								if (vTipeLap.equals("DTL5_1")){	
-									param.put("SpvBy",  "ALL");
-									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_03_ForecastSalesACSPipeline_BySales.jasper";
-								} else if (vTipeLap.equals("DTL5_2")){	
-									//jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_02_ForecastSalesACSPipeline_V2.jasper";
-									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_02_ForecastSalesACSPipeline_ByCustomerBySales.jasper";
-								//} else if (vTipeLap.equals("DTL5_3")){	
-								//	jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_04_ForecastSalesACSPipeline_V4.jasper";
-								} else {
-									//jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_05_ForecastSalesACSPipeline_V5.jasper";
-									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_05_ForecastSalesACSPipeline_ByCustomerBySpvDetail.jasper";
-								
-								}
-							} else {
-								if(vJnsLap.equals("SUM2")){		
-									@SuppressWarnings("unused")
-									String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");
-									
-									param.put("Sem",  vSem);
-									param.put("AmtBig",  vNilai);
-									param.put("Sem1Akhir",  vAkhirSem1);
-									
-									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_06_ForecastSalesACSSum.jasper";
-								} else {
-									if(vJnsLap.equals("SUM3")){
-										
-										vProsesId = String.valueOf(System.currentTimeMillis());
-										
-										@SuppressWarnings("unused")
-										String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-01");
-										
-										@SuppressWarnings("unused")
-										String vResult = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglFrom, vStrTglTo, "ALL", "SR2");
+							jasperRpt = "/solusi/hapis/webui/reports/sales/04047_05_ForecastSalesACSDetailBSO.jasper";
+					} else {
+						if (vJnsLap.equals("DTL5")){										
+							param.put("Cabang",  vCabang);	
+							param.put("App",  vApplication);	
 
-										
-										param.put("SpvBy",  vSPVBy.toUpperCase());
-										param.put("AmtBig",  vNilai);
-										param.put("Sem1Akhir",  vAkhirSem1);			
-										param.put("TglUpto",  vTglUpTo);
-										
-										param.put("weightH",  vHigh);
-										param.put("weightM",  vMed);
-										param.put("weightL",  vLow);
-										
-										param.put("ProsesId",  vProsesId);
-										
-										jasperRpt = "/solusi/hapis/webui/reports/sales/04047_07_ForecastSalesACSByBranch.jasper";
-									}
+							param.put("AmtBig",  new BigDecimal(0));
+							param.put("Sem1Akhir",  6);	
+							param.put("weightH",  new BigDecimal(100));
+							param.put("weightM",  new BigDecimal(100));
+							param.put("weightL",  new BigDecimal(100));
+							
+							
+							String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-04");	
+							
+							String vTipeLap = "DTL5_1";
+							if (StringUtils.isNotEmpty(rdgTipeLap.getSelectedItem().getValue())) {
+								vTipeLap = rdgTipeLap.getSelectedItem().getValue();	
+							} 
+							
+							if (vTipeLap.equals("DTL5_1")){	
+								param.put("SpvBy",  "ALL");
+								jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_03_ForecastSalesACSPipeline_BySales.jasper";
+							} else {
+								if (vTipeLap.equals("DTL5_2")){	
+									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_02_ForecastSalesACSPipeline_ByCustomerBySales.jasper";
+								} else {
+									param.put("SpvBy",  vSPVBy.toUpperCase());
+									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_05_ForecastSalesACSPipeline_ByCustomerBySpvDetail.jasper";
 								}
 							}
-							
-						}
+						}						
 					}
 				}
 			}
 		}
 			
 			
-
-		
-		
-		
 		String vSaveAs = "PDF";
 		if (StringUtils.isNotEmpty(rdgSave.getSelectedItem().getValue())) {
 			vSaveAs = rdgSave.getSelectedItem().getValue();	
@@ -743,16 +637,320 @@ public class ForecastSalesACSCtrl extends GFCBaseCtrl implements Serializable {
 		
 		if( vJnsLap.equals("SUM") ||
 			vJnsLap.equals("SUM3")){
-			@SuppressWarnings("unused")
 			String vDelete = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglTo, vStrTglTo, "ALL", "DELETE");
 		}
 		
 		if(vJnsLap.equals("DTL1")){	
-			@SuppressWarnings("unused")
 			String vDelete =  callStoreProcOrFuncService.callOutstandingSO(vProsesId, vStrOutSOFrom, vStrOutSOUpto, "ALL", "ALL", "DELETE");
 		}
 
+	
 	}
+	
+	
+	
+//	@SuppressWarnings("unchecked")
+//	public void onClick$btnOK(Event event) throws InterruptedException {
+//		
+//		Calendar cTgl = Calendar.getInstance();		
+//		cTgl.setTime(new Date());
+//		int yearTglCurr = cTgl.get(Calendar.YEAR);
+//		
+//		int vTahun = yearTglCurr;
+//		if(CommonUtils.isNotEmpty(intTahun.getValue())){
+//			vTahun = intTahun.getValue();
+//		}
+//		
+//				
+////		BigDecimal vNilai = new BigDecimal(0);
+////		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
+////			vNilai = dcmNilai.getValue();
+////		} 
+////		
+////		
+////		BigDecimal vHigh = new BigDecimal(0);
+////		if (CommonUtils.isNotEmpty(dcmHigh.getValue())) {
+////			vHigh = dcmHigh.getValue();
+////		} 
+////		
+////		BigDecimal vMed = new BigDecimal(0);
+////		if (CommonUtils.isNotEmpty(dcmMed.getValue())) {
+////			vMed = dcmMed.getValue();
+////		} 
+////		
+////		BigDecimal vLow = new BigDecimal(0);
+////		if (CommonUtils.isNotEmpty(dcmLow.getValue())) {
+////			vLow = dcmLow.getValue();
+////		} 
+//		
+//		
+//		
+//		String vSPVBy = "ALL";
+//		if (StringUtils.isNotEmpty(txtSPVBy.getValue())) {
+//			vSPVBy = txtSPVBy.getValue();
+//		} 
+//		
+//	
+////		int vAkhirSem1 = 6;
+////		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
+////			vAkhirSem1 = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
+////		}
+//		
+//		String vSem = "ALL";
+//		if (StringUtils.isNotEmpty(rdgSem.getSelectedItem().getValue())) {
+//			vSem = rdgSem.getSelectedItem().getValue();	
+//		} 
+//		
+//		
+//		Calendar cRTglUpto = Calendar.getInstance();
+//		cRTglUpto.setTime(new Date());
+//		cRTglUpto.set(Calendar.DAY_OF_MONTH, cRTglUpto.getActualMaximum(Calendar.DAY_OF_MONTH));
+//		Date vTglUpTo = cRTglUpto.getTime();		
+//
+//		String vStrTglTo =  "1900-01-01";
+//		SimpleDateFormat frmTgl = new SimpleDateFormat("yyyy-MM-dd");
+//		if(CommonUtils.isNotEmpty(dbTglUpto.getValue()) == true){  
+//			vTglUpTo = dbTglUpto.getValue();
+//			
+//			vStrTglTo  = frmTgl.format(vTglUpTo);  
+//		}
+//		
+//		
+//		Calendar cTglFrom = Calendar.getInstance();		
+//		cTglFrom.setTime(vTglUpTo);
+//		int yearTglFrom = cTglFrom.get(Calendar.YEAR);
+//		
+//		String vStrTglFrom = yearTglFrom+"/01/01";
+//		
+//		String jasperRpt = "/solusi/hapis/webui/reports/sales/04047_01_ForecastSalesACS.jasper";
+//		
+//		String vJnsLap = "SUM";
+//		if (StringUtils.isNotEmpty(rdgJnsLap.getSelectedItem().getValue())) {
+//			vJnsLap = rdgJnsLap.getSelectedItem().getValue();	
+//		} 
+//		
+//		String vStrOutSOFrom = String.valueOf(vTahun)+"/01/01";
+//		String vStrOutSOUpto = String.valueOf(vTahun)+"/12/31";
+//		
+//		
+//		
+//		param.put("Tahun",  vTahun);
+//			
+//		
+//		if(vJnsLap.equals("SUM")){
+//			vProsesId = String.valueOf(System.currentTimeMillis());
+//			
+//			
+//			@SuppressWarnings("unused")
+//			String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-01");
+//			
+//			@SuppressWarnings("unused")
+//			String vResult = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglFrom, vStrTglTo, "ALL", "SRF");
+//
+//			
+//			param.put("SpvBy",  vSPVBy.toUpperCase());
+////			param.put("AmtBig",  vNilai);
+//			param.put("AmtBig",  new BigDecimal(0));
+//			
+////			param.put("Sem1Akhir",  vAkhirSem1);	
+//			param.put("Sem1Akhir",  6);	
+//			param.put("TglUpto",  vTglUpTo);
+//			
+////			param.put("weightH",  vHigh);
+////			param.put("weightM",  vMed);
+////			param.put("weightL",  vLow);
+//			param.put("weightH",  new BigDecimal(100));
+//			param.put("weightM",  new BigDecimal(100));
+//			param.put("weightL",  new BigDecimal(100));
+//			
+//			
+//			param.put("ProsesId",  vProsesId);
+//			
+//			jasperRpt = "/solusi/hapis/webui/reports/sales/04047_01_ForecastSalesACS.jasper";
+//		} else {
+//			if(vJnsLap.equals("DTL1")){				
+//				vProsesId = String.valueOf(System.currentTimeMillis());
+//				
+//				
+//				@SuppressWarnings("unused")
+//				String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-02");
+//				
+//				@SuppressWarnings("unused")
+//				String vResult = callStoreProcOrFuncService.callOutstandingSO(vProsesId, vStrOutSOFrom, vStrOutSOUpto, "ALL", "ALL", "CETAK");
+//				
+//				
+//				param.put("ProsesId",  vProsesId);
+//				
+//				jasperRpt = "/solusi/hapis/webui/reports/sales/04047_02_ForecastSalesACSOutSO.jasper";
+//			} else {
+//				if(vJnsLap.equals("DTL2")){		
+//					@SuppressWarnings("unused")
+//					String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");	
+//					
+//					
+//					
+//					param.put("SpvBy",  vSPVBy.toUpperCase());
+////					param.put("AmtBig",  vNilai);
+//					param.put("AmtBig",  new BigDecimal(0));
+////					param.put("Sem1Akhir",  vAkhirSem1);	
+//					param.put("Sem1Akhir",  6);	
+//					param.put("App",  vApplication);	
+//					
+//					jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_ForecastSalesACSPipeline.jasper";
+//				} else {
+////					if(vJnsLap.equals("DTL3")){		
+////						@SuppressWarnings("unused")
+////						String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");	
+////						
+////						
+//////						param.put("AmtBig",  vNilai);
+////						param.put("AmtBig",  new BigDecimal(0));
+////						param.put("Sem",  vSem);
+//////						param.put("Sem1Akhir",  vAkhirSem1);
+////						param.put("Sem1Akhir",  6);	
+////						param.put("Cabang",  vCabang); 
+////						
+////						jasperRpt = "/solusi/hapis/webui/reports/sales/04047_04_ForecastSalesACS4Pillar.jasper";
+////					} else {
+//						if	(		
+//								vJnsLap.equals("DTL4") 
+//								|| vJnsLap.equals("DTL6")
+//							){		
+//							param.put("SpvBy",  vSPVBy.toUpperCase());
+////							param.put("AmtBig",  vNilai);
+//							param.put("AmtBig",  new BigDecimal(0));
+////							param.put("Sem1Akhir",  vAkhirSem1);
+//							param.put("Sem1Akhir",  6);	
+//							param.put("Sales",  vSales);
+//							
+////							param.put("weightH",  vHigh);
+////							param.put("weightM",  vMed);
+////							param.put("weightL",  vLow);
+//							param.put("weightH",  new BigDecimal(100));
+//							param.put("weightM",  new BigDecimal(100));
+//							param.put("weightL",  new BigDecimal(100));
+//							
+//							param.put("App",  vApplication);	
+//							
+//							@SuppressWarnings("unused")
+//							String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");	
+//							
+//							
+//						if(vJnsLap.equals("DTL4") == true ){
+//								jasperRpt = "/solusi/hapis/webui/reports/sales/04047_05_ForecastSalesACSDetailBSO.jasper";
+//						} else {								
+//								jasperRpt = "/solusi/hapis/webui/reports/sales/04047_08_ForecastSalesACSGlobalBSO.jasper";
+//							}
+//						} else {
+//							if (vJnsLap.equals("DTL5")){		
+//								
+//								
+//								param.put("SpvBy",  vSPVBy.toUpperCase());
+////								param.put("AmtBig",  vNilai);
+//								param.put("AmtBig",  new BigDecimal(0));
+////								param.put("Sem1Akhir",  vAkhirSem1);	
+//								param.put("Sem1Akhir",  6);	
+//								param.put("Cabang",  vCabang);	
+////								param.put("weightH",  vHigh);
+////								param.put("weightM",  vMed);
+////								param.put("weightL",  vLow);
+//								param.put("weightH",  new BigDecimal(100));
+//								param.put("weightM",  new BigDecimal(100));
+//								param.put("weightL",  new BigDecimal(100));
+//								
+//								param.put("App",  vApplication);	
+//								
+//								@SuppressWarnings("unused")
+//								String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-04");	
+//								
+//								String vTipeLap = "DTL5_1";
+//								if (StringUtils.isNotEmpty(rdgTipeLap.getSelectedItem().getValue())) {
+//									vTipeLap = rdgTipeLap.getSelectedItem().getValue();	
+//								} 
+//								
+//								if (vTipeLap.equals("DTL5_1")){	
+//									param.put("SpvBy",  "ALL");
+//									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_03_ForecastSalesACSPipeline_BySales.jasper";
+//								} else if (vTipeLap.equals("DTL5_2")){	
+//									//jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_02_ForecastSalesACSPipeline_V2.jasper";
+//									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_02_ForecastSalesACSPipeline_ByCustomerBySales.jasper";
+//								//} else if (vTipeLap.equals("DTL5_3")){	
+//								//	jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_04_ForecastSalesACSPipeline_V4.jasper";
+//								} else {
+//									//jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_05_ForecastSalesACSPipeline_V5.jasper";
+//									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_03_05_ForecastSalesACSPipeline_ByCustomerBySpvDetail.jasper";
+//								
+//								}
+//							} else {
+///*
+//								if(vJnsLap.equals("SUM2")){		
+//									@SuppressWarnings("unused")
+//									String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-03");
+//									
+//									param.put("Sem",  vSem);
+//									param.put("AmtBig",  vNilai);
+//									param.put("Sem1Akhir",  vAkhirSem1);
+//									
+//									jasperRpt = "/solusi/hapis/webui/reports/sales/04047_06_ForecastSalesACSSum.jasper";
+//								} else {
+//									if(vJnsLap.equals("SUM3")){
+//										
+//										vProsesId = String.valueOf(System.currentTimeMillis());
+//										
+//										@SuppressWarnings("unused")
+//										String vSync = callStoreProcOrFuncService.callSyncAReport("0503006-01");
+//										
+//										@SuppressWarnings("unused")
+//										String vResult = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglFrom, vStrTglTo, "ALL", "SR2");
+//
+//										
+//										param.put("SpvBy",  vSPVBy.toUpperCase());
+//										param.put("AmtBig",  vNilai);
+//										param.put("Sem1Akhir",  vAkhirSem1);			
+//										param.put("TglUpto",  vTglUpTo);
+//										
+//										param.put("weightH",  vHigh);
+//										param.put("weightM",  vMed);
+//										param.put("weightL",  vLow);
+//										
+//										param.put("ProsesId",  vProsesId);
+//										
+//										jasperRpt = "/solusi/hapis/webui/reports/sales/04047_07_ForecastSalesACSByBranch.jasper";
+//									}
+//								}
+//*/
+////							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//			
+//			
+//		String vSaveAs = "PDF";
+//		if (StringUtils.isNotEmpty(rdgSave.getSelectedItem().getValue())) {
+//			vSaveAs = rdgSave.getSelectedItem().getValue();	
+//		} 
+//		
+//		if(vSaveAs.equals("PDF")){
+//			new JReportGeneratorWindow(param, jasperRpt, "PDF"); 
+//		} else {
+//			new JReportGeneratorWindow(param, jasperRpt, "XLS"); 
+//			
+//		}
+//		
+//		if( vJnsLap.equals("SUM") ||
+//			vJnsLap.equals("SUM3")){
+//			@SuppressWarnings("unused")
+//			String vDelete = callStoreProcOrFuncService.callSalesRevenue(vProsesId, vStrTglTo, vStrTglTo, "ALL", "DELETE");
+//		}
+//		
+//		if(vJnsLap.equals("DTL1")){	
+//			@SuppressWarnings("unused")
+//			String vDelete =  callStoreProcOrFuncService.callOutstandingSO(vProsesId, vStrOutSOFrom, vStrOutSOUpto, "ALL", "ALL", "DELETE");
+//		}
+//
+//	}
  
 }
 

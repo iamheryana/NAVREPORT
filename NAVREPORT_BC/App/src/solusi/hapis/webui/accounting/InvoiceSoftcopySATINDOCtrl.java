@@ -56,6 +56,11 @@ public class InvoiceSoftcopySATINDOCtrl extends GFCBaseCtrl implements Serializa
 	protected Radiogroup rdgNoPO;	 
 	protected Radio rdYesPO;
 	protected Radio rdNoPO;
+	
+	
+	protected Radiogroup rdgFlagPPN;	 
+	protected Radio rdYesPPN;
+	protected Radio rdNoPPN;
 
 	private Media amedia;
 
@@ -67,6 +72,7 @@ public class InvoiceSoftcopySATINDOCtrl extends GFCBaseCtrl implements Serializa
 		   	
     	rdYes.setSelected(true); 
     	rdYesPO.setSelected(true); 
+    	rdYesPPN.setSelected(true); 
     	
 	}
 	
@@ -192,6 +198,53 @@ public class InvoiceSoftcopySATINDOCtrl extends GFCBaseCtrl implements Serializa
   
 		
 	}
+	
+	@SuppressWarnings("unchecked")
+	public void onClick$btnKwitansi(Event event) throws InterruptedException {
+		
+		
+		String vInvFrom = ".";
+		if (StringUtils.isNotEmpty(txtInvFrom.getValue())) {
+			vInvFrom = txtInvFrom.getValue();
+		} 
+		
+		
+		String vPrintMaterai = "Y";
+		if (StringUtils.isNotEmpty(rdgMaterai.getSelectedItem().getValue())) {
+			vPrintMaterai = rdgMaterai.getSelectedItem().getValue();	
+		} 
+		
+
+				
+		
+		String vFlagPPN = "Y";
+		if (StringUtils.isNotEmpty(rdgFlagPPN.getSelectedItem().getValue())) {
+			vFlagPPN = rdgFlagPPN.getSelectedItem().getValue();	
+		} 
+		
+		
+		
+		@SuppressWarnings("unused")
+		String vSync = callStoreProcOrFuncService.callSyncAReport("0108009");
+		
+		
+		String jasperRpt = "/solusi/hapis/webui/reports/accounting/preprinted/010805_00_KwitansiSoftcopy.jasper";
+		PathReport pathReport = new PathReport();
+		param.put("SUBREPORT_DIR",  pathReport.getSubRptAccountingPreprinted());
+		
+    	param.put("InvoiceFrom",  vInvFrom); 
+		param.put("InvoiceUpto",  vInvFrom);  
+		param.put("PrintMaterai",  vPrintMaterai); 
+		param.put("FlagPPN",  vFlagPPN); 
+		param.put("TTD",  "JKT"); 
+		
+		new JReportGeneratorWindow(param, jasperRpt, "PDF", "K-"+vInvFrom, "XXX"); 
+
+		
+		 
+		
+	}
+	
 	
 	public void onClick$btnOK1(Event event) throws InterruptedException, ParseException, IOException {
 		amedia = Fileupload.get("Please select a File", "Upload");

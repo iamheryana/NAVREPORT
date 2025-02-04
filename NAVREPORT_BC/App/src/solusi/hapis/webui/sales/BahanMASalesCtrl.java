@@ -11,7 +11,6 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.Bandbox;
 import org.zkoss.zul.Bandpopup;
-import org.zkoss.zul.Combobox;
 import org.zkoss.zul.Listbox;
 import org.zkoss.zul.Listitem;
 import org.zkoss.zul.Radio;
@@ -45,7 +44,7 @@ public class BahanMASalesCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdAJ;
 	protected Radio rdALL;
 	
-	protected Combobox  cmbItemCat;
+//	protected Combobox  cmbItemCat;
 //	protected Combobox  cmbProjectCat;
 //	protected Combobox  cmbPotensialReal;
 	
@@ -106,7 +105,7 @@ public class BahanMASalesCtrl extends GFCBaseCtrl implements Serializable {
 		rdQ.setSelected(true);    
     	rdALL.setSelected(true);    
     	
-    	cmbItemCat.setSelectedIndex(0);
+//    	cmbItemCat.setSelectedIndex(0);
 //    	cmbProjectCat.setSelectedIndex(0);
 //    	cmbPotensialReal.setSelectedIndex(0);
     	
@@ -239,7 +238,7 @@ public class BahanMASalesCtrl extends GFCBaseCtrl implements Serializable {
 		listProjectCat.appendItem("High Potential (H)", "H");
 		listProjectCat.appendItem("Medium Potential (M)", "M");
 		listProjectCat.appendItem("Low Potential (L)", "L");
-		listProjectCat.appendItem("Regular Project (R)", "R");
+//		listProjectCat.appendItem("Regular Project (R)", "R");
 		
 		
 		
@@ -375,12 +374,12 @@ public class BahanMASalesCtrl extends GFCBaseCtrl implements Serializable {
 		      	cmbProjectCat.setValue(vStringSelected);
 		      	if (vProjectCatALL.equals("ALL") == true){
 			      	if (vJmlSelected > 0){	
-				      	for (int x = vJmlSelected - 1 ; x < 5; x++){
+				      	for (int x = vJmlSelected - 1 ; x < 4; x++){
 				      		vProjectCat[x] = " ";
 				      	}
 			      	}
 		      	} else {
-		      		for (int x = vJmlSelected ; x < 5; x++){
+		      		for (int x = vJmlSelected ; x < 4; x++){
 			      		vProjectCat[x] = " ";
 			      	}
 		      	}
@@ -562,9 +561,9 @@ public class BahanMASalesCtrl extends GFCBaseCtrl implements Serializable {
 		} 
 			
 		String vItemCat = "ALL";
-		if (cmbItemCat.getSelectedItem().getValue() != null){
-			vItemCat = (String) cmbItemCat.getSelectedItem().getValue();
-		}
+//		if (cmbItemCat.getSelectedItem().getValue() != null){
+//			vItemCat = (String) cmbItemCat.getSelectedItem().getValue();
+//		}
 		
 //		String vProjectCat = "ALL";
 //		if (cmbProjectCat.getSelectedItem().getValue() != null){
@@ -609,7 +608,9 @@ public class BahanMASalesCtrl extends GFCBaseCtrl implements Serializable {
 		param.put("Size2",  vProjectCat[1]); 
 		param.put("Size3",  vProjectCat[2]); 
 		param.put("Size4",  vProjectCat[3]); 
-		param.put("Size5",  vProjectCat[4]); 
+
+		
+		//param.put("Size5",  vProjectCat[4]); 
 		param.put("Company",  vCompany); 
 		param.put("Sales",  vSalesALL); 
 		param.put("Sales1",  vSales[0]); 

@@ -11,9 +11,7 @@ import java.util.Date;
 import org.apache.commons.lang.StringUtils;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zul.Combobox;
 import org.zkoss.zul.Datebox;
-import org.zkoss.zul.Decimalbox;
 import org.zkoss.zul.Intbox;
 import org.zkoss.zul.Radio;
 import org.zkoss.zul.Radiogroup;
@@ -37,9 +35,9 @@ public class SalesPerformanceCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdPDF;
 	protected Radio rdXLS;
 	
-	protected Decimalbox dcmNilai;
-	
-	protected Combobox  cmbAkhirSem1;
+//	protected Decimalbox dcmNilai;
+//	
+//	protected Combobox  cmbAkhirSem1;
 	
 
 	protected Datebox dbTglInvUpto;
@@ -58,8 +56,8 @@ public class SalesPerformanceCtrl extends GFCBaseCtrl implements Serializable {
 		rdXLS.setSelected(true); 
 		
 		
-		dcmNilai.setValue(new BigDecimal (500));
-		cmbAkhirSem1.setSelectedIndex(9);
+//		dcmNilai.setValue(new BigDecimal (500));
+//		cmbAkhirSem1.setSelectedIndex(9);
 		
 		
 		Calendar cRTglInvUpto = Calendar.getInstance();
@@ -103,16 +101,16 @@ public class SalesPerformanceCtrl extends GFCBaseCtrl implements Serializable {
 		
 		
 				
-		BigDecimal vNilai = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
-			vNilai = dcmNilai.getValue();
-		} 
-		
-	
-		int vAkhirSem1 = 10;
-		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
-			vAkhirSem1 = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
-		}
+//		BigDecimal vNilai = new BigDecimal(0);
+//		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
+//			vNilai = dcmNilai.getValue();
+//		} 
+//		
+//	
+//		int vAkhirSem1 = 10;
+//		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
+//			vAkhirSem1 = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
+//		}
 		
 		String vStrTglFrom = vTahun+"/01/01";
 		
@@ -137,8 +135,10 @@ public class SalesPerformanceCtrl extends GFCBaseCtrl implements Serializable {
 
 		param.put("ProsesId",  vProsesId);
 		param.put("Tahun",  vTahun);
-		param.put("AmtBig",  vNilai);
-		param.put("SemAkhir",  vAkhirSem1);		
+		param.put("AmtBig",  new BigDecimal(0));
+		param.put("SemAkhir",  12);		
+//		param.put("AmtBig",  vNilai);
+//		param.put("SemAkhir",  vAkhirSem1);		
 		param.put("TglInvFrom",  vTglInvFrom); 
 		param.put("TglInvTo",  vTglInvTo); 
 		

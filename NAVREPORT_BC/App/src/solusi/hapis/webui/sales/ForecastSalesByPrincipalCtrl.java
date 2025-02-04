@@ -32,7 +32,7 @@ public class ForecastSalesByPrincipalCtrl extends GFCBaseCtrl implements Seriali
 	
 	
 	protected Intbox  intMargin;
-	protected Combobox  cmbItemCat;
+//	protected Combobox  cmbItemCat;
 	protected Combobox  cmbProjectCat;
 //	protected Combobox  cmbPotensialReal;
 
@@ -54,7 +54,7 @@ public class ForecastSalesByPrincipalCtrl extends GFCBaseCtrl implements Seriali
 		 
     	    	
 		intMargin.setValue(20);
-    	cmbItemCat.setSelectedIndex(0);
+ //   	cmbItemCat.setSelectedIndex(0);
     	cmbProjectCat.setSelectedIndex(0);
 //    	cmbPotensialReal.setSelectedIndex(0);
     	
@@ -108,10 +108,10 @@ public class ForecastSalesByPrincipalCtrl extends GFCBaseCtrl implements Seriali
 		
 		
 		String vItemCat = "ALL";
-		if (cmbItemCat.getSelectedItem().getValue() != null){
-			vItemCat = (String) cmbItemCat.getSelectedItem().getValue();
-		}
-		
+//		if (cmbItemCat.getSelectedItem().getValue() != null){
+//			vItemCat = (String) cmbItemCat.getSelectedItem().getValue();
+//		}
+//		
 		String vProjectCat = "ALL";
 		if (cmbProjectCat.getSelectedItem().getValue() != null){
 			vProjectCat = (String) cmbProjectCat.getSelectedItem().getValue();

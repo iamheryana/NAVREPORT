@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="01051_05_TTFIndomarcoTGR" language="groovy" pageWidth="809" pageHeight="616" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="769" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3c56047-de54-4477-a40e-d4b81af326aa">
 	<property name="ireport.zoom" value="1.771561000000055"/>
-	<property name="ireport.x" value="244"/>
-	<property name="ireport.y" value="405"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="400"/>
 	<parameter name="Company" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
 	</parameter>
@@ -23,8 +23,8 @@
 			SUBSTRING(X.NO_SP,15,LEN(X.NO_SP)-14) ELSE ''
 		 END AS NO_SP2
 		,X.NO_FAKTUR_PAJAK
-		,SUBSTRING(X.NO_FAKTUR_PAJAK,1,8) AS NO_FAKTUR_PAJAK1
-		,SUBSTRING(X.NO_FAKTUR_PAJAK,9,LEN(X.NO_FAKTUR_PAJAK)-8) AS NO_FAKTUR_PAJAK2
+		,CASE WHEN X.NO_FAKTUR_PAJAK <> '' THEN SUBSTRING(X.NO_FAKTUR_PAJAK,1,8) ELSE '' END AS NO_FAKTUR_PAJAK1
+		,CASE WHEN X.NO_FAKTUR_PAJAK <> '' THEN SUBSTRING(X.NO_FAKTUR_PAJAK,9,LEN(X.NO_FAKTUR_PAJAK)-8) ELSE '' END AS NO_FAKTUR_PAJAK2
 		,X.AMOUNT
 		,X.NAMA_COMPANY
 FROM	(
@@ -39,11 +39,11 @@ FROM	(
 						SELECT SIH.[No_] AS NO_INV
 								,SIH.[Your Reference] AS NO_BPB
 								,SIH.[External Document No_] AS NO_SP
-								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FAKTUR_PAJAK
+								,CASE WHEN SIH.[Posting Date] >= '2025-01-01' THEN SIH.[Faktur Pajak No_] ELSE (SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) END AS NO_FAKTUR_PAJAK
 								,SUM(SIL.[Amount Including VAT]) AS AMOUNT
 						FROM [dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH
 						INNER JOIN [dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
-						GROUP BY  SIH.[No_], SIH.[Tax Area Code], SIH.[Faktur Pajak No_], SIH.[Your Reference], SIH.[External Document No_]
+						GROUP BY  SIH.[No_], SIH.[Tax Area Code], SIH.[Faktur Pajak No_], SIH.[Your Reference], SIH.[External Document No_], SIH.[Posting Date]
 					) AJ
 			LEFT JOIN [dbo].[BC_AUTOJAYA$Company Information] CPI ON 1 = 1
 			UNION ALL
@@ -58,11 +58,11 @@ FROM	(
 						SELECT SIH.[No_] AS NO_INV
 								,SIH.[Your Reference] AS NO_BPB
 								,SIH.[External Document No_] AS NO_SP
-								,(SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) AS NO_FAKTUR_PAJAK
+								,CASE WHEN SIH.[Posting Date] >= '2025-01-01' THEN SIH.[Faktur Pajak No_] ELSE (SIH.[Tax Area Code]+SIH.[Faktur Pajak No_]) END AS NO_FAKTUR_PAJAK
 								,SUM(SIL.[Amount Including VAT]) AS AMOUNT
 						FROM [dbo].[BC_SOLUSI$Sales Invoice Header] SIH
 						INNER JOIN [dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Document No_] = SIH.[No_]
-						GROUP BY  SIH.[No_], SIH.[Tax Area Code], SIH.[Faktur Pajak No_], SIH.[Your Reference], SIH.[External Document No_]
+						GROUP BY  SIH.[No_], SIH.[Tax Area Code], SIH.[Faktur Pajak No_], SIH.[Your Reference], SIH.[External Document No_], SIH.[Posting Date]
 					) SP
 			LEFT JOIN [dbo].[BC_SOLUSI$Company Information] CPI ON 1 = 1
 		) X

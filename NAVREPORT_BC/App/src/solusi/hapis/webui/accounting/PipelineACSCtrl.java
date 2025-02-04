@@ -9,8 +9,6 @@ import java.util.Date;
 import org.apache.commons.lang.StringUtils;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zul.Combobox;
-import org.zkoss.zul.Decimalbox;
 import org.zkoss.zul.Intbox;
 import org.zkoss.zul.Radio;
 import org.zkoss.zul.Radiogroup;
@@ -38,13 +36,13 @@ public class PipelineACSCtrl extends GFCBaseCtrl implements Serializable {
 	protected Radio rdPDF;
 	protected Radio rdXLS;
 	
-	protected Decimalbox dcmNilai;
+//	protected Decimalbox dcmNilai;
+//	
+//	protected Decimalbox dcmHigh;
+//	protected Decimalbox dcmMed;
+//	protected Decimalbox dcmLow;
 	
-	protected Decimalbox dcmHigh;
-	protected Decimalbox dcmMed;
-	protected Decimalbox dcmLow;
-	
-	protected Combobox  cmbAkhirSem1;
+//	protected Combobox  cmbAkhirSem1;
 	
 	private CallStoreProcOrFuncService callStoreProcOrFuncService;
 	
@@ -61,15 +59,15 @@ public class PipelineACSCtrl extends GFCBaseCtrl implements Serializable {
 		rdSUM.setSelected(true); 
 	
 		
-		dcmNilai.setValue(new BigDecimal (500));
-		
-		dcmHigh.setValue(new BigDecimal (90));
-		dcmMed.setValue(new BigDecimal (60));
-		dcmLow.setValue(new BigDecimal (30));
-		
-		
-		
-		cmbAkhirSem1.setSelectedIndex(3);
+//		dcmNilai.setValue(new BigDecimal (500));
+//		
+//		dcmHigh.setValue(new BigDecimal (90));
+//		dcmMed.setValue(new BigDecimal (60));
+//		dcmLow.setValue(new BigDecimal (30));
+//		
+//		
+//		
+//		cmbAkhirSem1.setSelectedIndex(3);
 		
 		
     	
@@ -88,31 +86,31 @@ public class PipelineACSCtrl extends GFCBaseCtrl implements Serializable {
 		}
 		
 				
-		BigDecimal vNilai = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
-			vNilai = dcmNilai.getValue();
-		} 
-		
-		
-		BigDecimal vHigh = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmHigh.getValue())) {
-			vHigh = dcmHigh.getValue();
-		} 
-		
-		BigDecimal vMed = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmMed.getValue())) {
-			vMed = dcmMed.getValue();
-		} 
-		
-		BigDecimal vLow = new BigDecimal(0);
-		if (CommonUtils.isNotEmpty(dcmLow.getValue())) {
-			vLow = dcmLow.getValue();
-		} 
-	
-		int vAkhirSem1 = 4;
-		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
-			vAkhirSem1 = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
-		}
+//		BigDecimal vNilai = new BigDecimal(0);
+//		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
+//			vNilai = dcmNilai.getValue();
+//		} 
+//		
+//		
+//		BigDecimal vHigh = new BigDecimal(0);
+//		if (CommonUtils.isNotEmpty(dcmHigh.getValue())) {
+//			vHigh = dcmHigh.getValue();
+//		} 
+//		
+//		BigDecimal vMed = new BigDecimal(0);
+//		if (CommonUtils.isNotEmpty(dcmMed.getValue())) {
+//			vMed = dcmMed.getValue();
+//		} 
+//		
+//		BigDecimal vLow = new BigDecimal(0);
+//		if (CommonUtils.isNotEmpty(dcmLow.getValue())) {
+//			vLow = dcmLow.getValue();
+//		} 
+//	
+//		int vAkhirSem1 = 4;
+//		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
+//			vAkhirSem1 = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
+//		}
 		
 		@SuppressWarnings("unused")
 		String vSync = callStoreProcOrFuncService.callSyncAReport("0103013");		
@@ -127,11 +125,19 @@ public class PipelineACSCtrl extends GFCBaseCtrl implements Serializable {
 		} 
 		
 		param.put("Tahun",  vTahun);
-		param.put("AmtBig",  vNilai);
-		param.put("Sem1Akhir",  vAkhirSem1);
-		param.put("weightH",  vHigh);
-		param.put("weightM",  vMed);
-		param.put("weightL",  vLow);
+		//param.put("AmtBig",  vNilai);
+		param.put("AmtBig",  new BigDecimal(1));
+		//param.put("Sem1Akhir",  vAkhirSem1);
+		param.put("Sem1Akhir",  6);
+		//param.put("weightH",  vHigh);
+		//param.put("weightM",  vMed);
+		//param.put("weightL",  vLow);
+		
+		param.put("weightH",  new BigDecimal(100));
+		param.put("weightM",  new BigDecimal(100));
+		param.put("weightL",  new BigDecimal(100));
+		
+		
 		param.put("JnsRpt",  vJnsRpt);		
 
 		new JReportGeneratorWindow(param, jasperRpt, "XLS"); 		

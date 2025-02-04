@@ -110,7 +110,7 @@ public class P06ParamDefaultRptDetailCtrl extends GFCBaseCtrl implements Seriali
 			vJnsRpt = "M";
 		}
 		
-		System.out.println("vJnsRpt : "+vJnsRpt);
+		//System.out.println("vJnsRpt : "+vJnsRpt);
 		
 		txtPeridodeKolomCf.setValue(vJnsRpt);
 		getP06ParamDefaultRpt().setPeriodeKolomCf(vJnsRpt);

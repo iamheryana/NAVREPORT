@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04012_StockAvailability_03_SubStockSO" language="groovy" pageWidth="1185" pageHeight="842" columnWidth="1185" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="10ece9de-3cc5-44db-b48d-0b00203fba6e">
 	<property name="ireport.zoom" value="1.771561000000051"/>
-	<property name="ireport.x" value="885"/>
+	<property name="ireport.x" value="242"/>
 	<property name="ireport.y" value="0"/>
 	<parameter name="ItemNo" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -89,10 +89,19 @@ FROM	(
 											, SOH.[Status] AS STS
 									FROM [dbo].[BC_AUTOJAYA$Reservation Entry] PO
 									LEFT JOIN	(
-												SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
-												FROM [dbo].[BC_AUTOJAYA$Purchase Line]
-												GROUP BY [Document No_], [Line No_]
-											) PUR ON PUR.[Document No_] = PO.[Source ID] AND PUR.[Line No_] = PO.[Source Ref_ No_]
+													SELECT	MAX(PPUR.EXP_RCP_DATE) AS EXP_RCP_DATE
+														, PPUR.[Document No_]
+														, PPUR.[Line No_]
+													FROM	(
+																SELECT
+																		(CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END) AS EXP_RCP_DATE
+																		, POD.[Document No_]
+																		, POD.[Line No_]
+																FROM [dbo].[BC_AUTOJAYA$Purchase Header] POH
+																INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+															) PPUR
+													GROUP BY PPUR.[Document No_], PPUR.[Line No_]
+												) PUR ON PUR.[Document No_] = PO.[Source ID] AND PUR.[Line No_] = PO.[Source Ref_ No_]
 									LEFT JOIN [dbo].[BC_AUTOJAYA$Reservation Entry] SO ON PO.[Entry No_] = SO.[Entry No_] AND SO.[Positive] = 0
 									LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Header] SOH ON SOH.[No_] = SO.[Source ID]
 									LEFT JOIN [dbo].[BC_AUTOJAYA$Sales Line] SOD ON SOD.[Document No_] = SO.[Source ID] AND SOD.[Line No_] = SO.[Source Ref_ No_]
@@ -242,10 +251,19 @@ FROM	(
 											, SOH.[Status] AS STS
 									FROM [dbo].[BC_SOLUSI$Reservation Entry] PO
 									LEFT JOIN	(
-												SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
-												FROM [dbo].[BC_SOLUSI$Purchase Line]
-												GROUP BY [Document No_], [Line No_]
-											) PUR ON PUR.[Document No_] = PO.[Source ID] AND PUR.[Line No_] = PO.[Source Ref_ No_]
+													SELECT	MAX(PPUR.EXP_RCP_DATE) AS EXP_RCP_DATE
+														, PPUR.[Document No_]
+														, PPUR.[Line No_]
+													FROM	(
+																SELECT
+																		(CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END) AS EXP_RCP_DATE
+																		, POD.[Document No_]
+																		, POD.[Line No_]
+																FROM [dbo].[BC_SOLUSI$Purchase Header] POH
+																INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+															) PPUR
+													GROUP BY PPUR.[Document No_], PPUR.[Line No_]
+												) PUR ON PUR.[Document No_] = PO.[Source ID] AND PUR.[Line No_] = PO.[Source Ref_ No_]
 									LEFT JOIN [dbo].[BC_SOLUSI$Reservation Entry] SO ON PO.[Entry No_] = SO.[Entry No_] AND SO.[Positive] = 0
 									LEFT JOIN [dbo].[BC_SOLUSI$Sales Header] SOH ON SOH.[No_] = SO.[Source ID]
 									LEFT JOIN [dbo].[BC_SOLUSI$Sales Line] SOD ON SOD.[Document No_] = SO.[Source ID] AND SOD.[Line No_] = SO.[Source Ref_ No_]

@@ -1004,10 +1004,13 @@ private EventListener selectProject() {
 	
 				//vR1Upto
 				Calendar cR1Upto = Calendar.getInstance();
-				cR1Upto.setTime(vR1From);
-				cR1Upto.set(Calendar.DAY_OF_WEEK, cR1Upto.getActualMaximum(Calendar.DAY_OF_WEEK));
-				cR1Upto.add(Calendar.DAY_OF_MONTH, 1); 
+				cR1Upto.setTime(vR1From);			
+				cR1Upto.add(Calendar.DAY_OF_MONTH, 6);  
 				vR1Upto = cR1Upto.getTime();
+				//cR1Upto.setTime(vR1From);
+				//cR1Upto.set(Calendar.DAY_OF_WEEK, cR1Upto.getActualMaximum(Calendar.DAY_OF_WEEK));
+				//cR1Upto.add(Calendar.DAY_OF_MONTH, 1); 
+				//vR1Upto = cR1Upto.getTime();
 							
 				Calendar cR2From = Calendar.getInstance();
 				cR2From.setTime(vR1Upto);			
@@ -1100,10 +1103,13 @@ private EventListener selectProject() {
 		
 					//vR1Upto
 					Calendar cR1Upto = Calendar.getInstance();
-					cR1Upto.setTime(vR1From);
-					cR1Upto.set(Calendar.DAY_OF_WEEK, cR1Upto.getActualMaximum(Calendar.DAY_OF_WEEK));
-					cR1Upto.add(Calendar.DAY_OF_MONTH, 1); 
+					cR1Upto.setTime(vR1From);			
+					cR1Upto.add(Calendar.DAY_OF_MONTH, 6);  
 					vR1Upto = cR1Upto.getTime();
+					//cR1Upto.setTime(vR1From);
+					//cR1Upto.set(Calendar.DAY_OF_WEEK, cR1Upto.getActualMaximum(Calendar.DAY_OF_WEEK));
+					//cR1Upto.add(Calendar.DAY_OF_MONTH, 1); 
+					//vR1Upto = cR1Upto.getTime();
 								
 					Calendar cR2From = Calendar.getInstance();
 					cR2From.setTime(vR1Upto);			

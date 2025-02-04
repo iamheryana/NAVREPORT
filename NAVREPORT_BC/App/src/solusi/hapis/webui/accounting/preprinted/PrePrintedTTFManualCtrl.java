@@ -96,7 +96,7 @@ public class PrePrintedTTFManualCtrl extends GFCBaseCtrl implements Serializable
 	
 		String vR2InvUpto = vR2InvFrom;
 		if (StringUtils.isNotEmpty(txtR2InvUpto.getValue())) {
-			vR1InvUpto = txtR2InvUpto.getValue();
+			vR2InvUpto = txtR2InvUpto.getValue();
 		}
 		
 		String vR3InvFrom = ".";

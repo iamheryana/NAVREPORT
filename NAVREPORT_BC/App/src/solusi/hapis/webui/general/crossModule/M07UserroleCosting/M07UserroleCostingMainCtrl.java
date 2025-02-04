@@ -2,7 +2,6 @@ package solusi.hapis.webui.general.crossModule.M07UserroleCosting;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 import org.springframework.dao.DataAccessException;
 import org.zkoss.util.resource.Labels;
@@ -184,6 +183,7 @@ public class M07UserroleCostingMainCtrl extends GFCBaseCtrl implements Serializa
         // Set Default Value Di sini ------------------------------------- start
        
         //anM07UserroleCostingH.setTarget(new BigDecimal(0));
+        //anM07UserroleCostingH.setRolename("XXX");
         
         setSelectedM07UserroleCostingH(anM07UserroleCostingH);
         // --------------------------------------------------------------- end

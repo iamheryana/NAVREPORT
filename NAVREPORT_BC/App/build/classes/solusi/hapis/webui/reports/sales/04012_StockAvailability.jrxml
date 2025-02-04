@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="04012_StockAvailability" language="groovy" pageWidth="1250" pageHeight="842" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1210" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2b0922b7-0bc8-4065-b3b5-01d4f7c69ab7">
 	<property name="ireport.zoom" value="2.1435888100000673"/>
-	<property name="ireport.x" value="849"/>
+	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="144"/>
 	<parameter name="Item" class="java.lang.String">
 		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
@@ -173,8 +173,8 @@ FROM	(
 					FROM	(
 								SELECT POD.[No_] AS ITEM_NO
 										,POD.[Location Code] AS LOC_CODE
-										, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
-										, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
+										, CASE WHEN ISNULL((CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END), GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
+										, CASE WHEN ISNULL((CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END), GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
 								FROM [dbo].[BC_AUTOJAYA$Purchase Header] POH
 								INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
 								WHERE POH.[Document Type] = 1 AND
@@ -202,9 +202,18 @@ FROM	(
 										, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
 								FROM [dbo].[BC_AUTOJAYA$Reservation Entry] RES
 								LEFT JOIN	(
-												SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
-												FROM [dbo].[BC_AUTOJAYA$Purchase Line]
-												GROUP BY [Document No_], [Line No_]
+												SELECT	MAX(PPUR.EXP_RCP_DATE) AS EXP_RCP_DATE
+														, PPUR.[Document No_]
+														, PPUR.[Line No_]
+												FROM	(
+															SELECT
+																	(CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END) AS EXP_RCP_DATE
+																	, POD.[Document No_]
+																	, POD.[Line No_]
+															FROM [dbo].[BC_AUTOJAYA$Purchase Header] POH
+															INNER JOIN [dbo].[BC_AUTOJAYA$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+														) PPUR
+												GROUP BY PPUR.[Document No_], PPUR.[Line No_]
 											) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
 								WHERE RES.[Reservation Status] = 0 AND
 									  RES.[Positive] = 1 AND
@@ -428,8 +437,8 @@ FROM	(
 					FROM	(
 								SELECT POD.[No_] AS ITEM_NO
 										,POD.[Location Code] AS LOC_CODE
-										, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
-										, CASE WHEN ISNULL(POD.[Expected Receipt Date], GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
+										, CASE WHEN ISNULL((CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END), GETDATE()) > GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS ON_ORDER_OTP
+										, CASE WHEN ISNULL((CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END), GETDATE()) <= GETDATE() THEN POD.[Outstanding Qty_ (Base)] ELSE 0 END AS OTP_READY
 								FROM [dbo].[BC_SOLUSI$Purchase Header] POH
 								INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
 								WHERE POH.[Document Type] = 1 AND
@@ -457,9 +466,18 @@ FROM	(
 										, CASE WHEN SUBSTRING(RES.[Source ID], 5, 1) = 'P' AND ISNULL(PUR.EXP_RCP_DATE,GETDATE()) > GETDATE() THEN  RES.[Quantity (Base)] ELSE 0 END AS RSRV_ON_ORDER_OTP
 								FROM [dbo].[BC_SOLUSI$Reservation Entry] RES
 								LEFT JOIN	(
-												SELECT MAX([Expected Receipt Date]) AS EXP_RCP_DATE,  [Document No_], [Line No_]
-												FROM [dbo].[BC_SOLUSI$Purchase Line]
-												GROUP BY [Document No_], [Line No_]
+												SELECT	MAX(PPUR.EXP_RCP_DATE) AS EXP_RCP_DATE
+														, PPUR.[Document No_]
+														, PPUR.[Line No_]
+												FROM	(
+															SELECT
+																	(CASE WHEN POH.[Currency Code] = '' THEN POD.[Expected Receipt Date] ELSE DATEADD(DAY, 7, POD.[Expected Receipt Date]) END) AS EXP_RCP_DATE
+																	, POD.[Document No_]
+																	, POD.[Line No_]
+															FROM [dbo].[BC_SOLUSI$Purchase Header] POH
+															INNER JOIN [dbo].[BC_SOLUSI$Purchase Line] POD ON POD.[Document No_] = POH.[No_]
+														) PPUR
+												GROUP BY PPUR.[Document No_], PPUR.[Line No_]
 											) PUR ON PUR.[Document No_] = RES.[Source ID] AND PUR.[Line No_] = RES.[Source Ref_ No_]
 								WHERE RES.[Reservation Status] = 0 AND
 									  RES.[Positive] = 1 AND

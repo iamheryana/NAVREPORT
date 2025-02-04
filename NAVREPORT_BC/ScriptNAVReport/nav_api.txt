@@ -1,120 +1,576 @@
-CREATE TABLE [dbo].[CUSTOMER](
-	CUST_CODE [nvarchar](20) NOT NULL,
-	CUST_NAME [nvarchar](50),
-	CUST_CLASS_CODE [nvarchar](20),
-	SECTOR_INDUSTRY_CODE [nvarchar](20),
-	SECTOR_INDUSTRY_NAME [nvarchar](50),
-	BRANCH_CODE [nvarchar](20),
-	BRANCH_NAME [nvarchar](50),
-	SALES_CODE [nvarchar](20),
-	SALES_NAME [nvarchar](50),
-	CUST_ADDRESS [nvarchar](202),
-	ZIP_CODE [nvarchar](20),
-	CITY [nvarchar](30),
-	CONTACT_PERSON_NAME [nvarchar](50),
-	PHONE [nvarchar](30),
-	EMAIL [nvarchar](80),
-	CUST_TOP [nvarchar](10),
-	KODE_PAJAK [nvarchar](20),
-	NO_NPWP [nvarchar](20),
-	LEGAL_NAME [nvarchar](100),
-	LEGAL_ADDRESS [nvarchar](202),
-	LAST_DATE_MODIFIED datetime  NOT NULL,
-	CONSTRAINT [PK_CUSTOMER] PRIMARY KEY (CUST_CODE)
-) ;
+USE [NAV_API]
+GO
 
-CREATE TABLE [dbo].[PRINCIPAL](
-	PRINCIPAL_CODE [nvarchar](20) NOT NULL,
-	PRINCIPAL_NAME [nvarchar](50),
-	CONSTRAINT [PK_PRINCIPAL] PRIMARY KEY (PRINCIPAL_CODE)
-) ;
+/****** Object:  View [dbo].[V_RETUR_SURAT_JALAN]    Script Date: 24/01/2025 1:46:59 PM ******/
+SET ANSI_NULLS ON
+GO
 
-
-
-DROP TABLE [dbo].[RETUR_SURAT_JALAN];
-DROP SEQUENCE [dbo].[ID_RSJ_SEQ] ;
-CREATE SEQUENCE [dbo].[ID_RSJ_SEQ] 
- AS [bigint]
- START WITH 1
- INCREMENT BY 1
- MINVALUE -9223372036854775808
- MAXVALUE 9223372036854775807
- NO CACHE;
-
-
-CREATE TABLE [dbo].[RETUR_SURAT_JALAN] (
-    ID_RSJ bigint PRIMARY KEY NOT NULL DEFAULT (NEXT VALUE FOR ID_RSJ_SEQ),
-	NO_DOK_RETUR [nvarchar](20),
-	TGL_DOK_RETUR datetime,
-	NO_SURAT_JALAN [nvarchar](20),
-	TGL_SURAT_JALAN datetime,
-	CUST_CODE [nvarchar](20),
-	CUST_NAME [nvarchar](50),
-	AREA_CODE [nvarchar](20),
-	AREA_NAME [nvarchar](50),
-	ASO_CODE [nvarchar](20),
-	ASO_NAME [nvarchar](50),		
-	SALES_CODE [nvarchar](20),
-	SALES_NAME [nvarchar](50),
-	CONTACT [nvarchar](50),
-	NO_PO_CUSTOMER [nvarchar](35),
-	BRANCH_CODE [nvarchar](10),
-	BRANCH_NAME [nvarchar](50),
-	ALAMAT_KIRIM [nvarchar](265),
-	ITEM_NO [nvarchar](20),
-	ITEM_DESC [nvarchar](100),
-	ITEM_DESC_2 [nvarchar](100),
-	PRINCIPAL_CODE [nvarchar](20),
-	QTY  DECIMAL(38,18) ,
-	UOM  [nvarchar](10),
-	WARRANTY_CODE [nvarchar](20),
-	SERIAL_NO  [nvarchar](20),		
-	WARRANTY_MONTH int,
-);
-
-DROP TABLE [dbo].[SURAT_JALAN] ;
-DROP SEQUENCE [dbo].[ID_SJ_SEQ] ;
-CREATE SEQUENCE [dbo].[ID_SJ_SEQ] 
- AS [bigint]
- START WITH 1
- INCREMENT BY 1
- MINVALUE -9223372036854775808
- MAXVALUE 9223372036854775807
- NO CACHE;
-
-
-CREATE TABLE [dbo].[SURAT_JALAN] (
-    ID_SJ bigint PRIMARY KEY NOT NULL DEFAULT (NEXT VALUE FOR ID_SJ_SEQ),
-	NO_SURAT_JALAN [nvarchar](20),
-	TGL_SURAT_JALAN datetime,
-	CUST_CODE [nvarchar](20),
-	CUST_NAME [nvarchar](50),
-	AREA_CODE [nvarchar](20),
-	AREA_NAME [nvarchar](50),
-	ASO_CODE [nvarchar](20),
-	ASO_NAME [nvarchar](50),		
-	SALES_CODE [nvarchar](20),
-	SALES_NAME [nvarchar](50),
-	CONTACT [nvarchar](50),
-	NO_PO_CUSTOMER [nvarchar](35),
-	BRANCH_CODE [nvarchar](10),
-	BRANCH_NAME [nvarchar](50),
-	ALAMAT_KIRIM [nvarchar](265),
-	ITEM_NO [nvarchar](20),
-	ITEM_DESC [nvarchar](100),
-	ITEM_DESC_2 [nvarchar](100),
-	PRINCIPAL_CODE [nvarchar](20),
-	QTY  DECIMAL(38,18) ,
-	UOM  [nvarchar](10),
-	WARRANTY_CODE [nvarchar](20),
-	SERIAL_NO  [nvarchar](20),		
-	WARRANTY_MONTH int,
-);
+SET QUOTED_IDENTIFIER ON
+GO
 
 
 
 
-CREATE VIEW [dbo].[V_CUSTOMER] AS
+
+
+
+ALTER VIEW [dbo].[V_RETUR_SURAT_JALAN] AS
+SELECT	
+		'AUTOJAYA' AS COMPANY
+		, CRM.[No_] AS NO_DOK_RETUR
+		, CRM.[Posting Date] AS TGL_DOK_RETUR
+		, SHH.[No_] AS NO_SURAT_JALAN
+		, SHH.[Posting Date] AS TGL_SURAT_JALAN
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer No_]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer No_]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Customer No_]
+				END
+			END AS CUST_CODE
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer Name]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN  'MIDI UTAMA INDONESIA TBK, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer Name]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Name]
+				END
+			END AS CUST_NAME
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
+		, SHH.[Bill-to Customer No_] AS ASO_CODE
+		, SHH.[Bill-to Name] AS ASO_NAME
+		,	CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN
+				CASE WHEN SHH.[Sell-to Customer No_] LIKE 'DC%' THEN 'DC' ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] <> SHH.[Bill-to Customer No_] THEN 'Store' ELSE 'HO' END
+				END
+			ELSE
+				'HO'
+			END AS TIPE
+		, SHH.[Salesperson Code] AS SALES_CODE
+		, SLS.[Name] AS SALES_NAME
+		, SHH.[Ship-to Contact] AS CONTACT
+		, SHH.[External Document No_] AS NO_PO_CUSTOMER
+		, SHH.[Responsibility Center] AS BRANCH_CODE
+		, CAB.[Name] AS BRANCH_NAME
+		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
+		, SHL.[No_] AS ITEM_NO
+		, SHL.[Description] AS ITEM_DESC
+		, SHL.[Description 2] AS ITEM_DESC_2
+		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
+		, DV.[Name] AS PRINCIPAL_NAME
+		,	CASE WHEN DIMD.PRODUCT_CODE IN ('S404', 'S405', 'S409', 'H003', 'H013') THEN DIMD.PRODUCT_CODE 
+			ELSE 
+				CASE WHEN DIMD.PRINCIPAL = 'ZEBR' AND DIMD.PRODUCT_CODE = 'S105' THEN DIMD.PRODUCT_CODE ELSE '' END
+			END AS PRODUCT_GRP_CODE
+		, ILE.[Quantity] * -1 AS QTY
+		, ILE.[Unit of Measure Code] AS UOM
+		, ILE.[Warranty Code] AS WARRANTY_CODE
+		, ILE.[Serial No_] AS SERIAL_NO       
+		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
+				CASE WHEN ILE.[Warranty Code] <> '' THEN 
+					CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
+				ELSE 0 END
+			ELSE
+				0
+			END AS WARRANTY_MONTH
+FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Header] SHH
+INNER JOIN	(
+				SELECT	DISTINCT X.[Document No_]
+				FROM	(
+							SELECT [Document No_]
+									,SUM([Quantity]) AS [Quantity]
+							FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] 
+							GROUP BY [Document No_]
+						) X
+				WHERE X.[Quantity] <> 0
+			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Order No_] = SHL.[Order No_] AND  SIL.[Line Order No_] = SHL.[Order Line No_] AND SIL.[Quantity] <> 0
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIL.[Document No_]
+LEFT JOIN	(
+				SELECT [Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+						,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+				FROM [NavBI].[dbo].[BC_AUTOJAYA$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Dimension Value] DV ON DV.[Dimension Code] = 'PRINCIPAL' AND DV.[Code] = DIMD.PRINCIPAL
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
+WHERE SHL.[Type] = 2 AND
+	  SHL.[Quantity] <> 0 AND 
+	  ILE.[Quantity] IS NOT NULL AND
+	  CRM.[No_] IS NOT NULL AND
+	  SHH.[Posting Date] >= '2023-01-01'
+UNION ALL
+SELECT	
+		'SOLUSI' AS COMPANY
+		, CRM.[No_] AS NO_DOK_RETUR
+		, CRM.[Posting Date] AS TGL_DOK_RETUR
+		, SHH.[No_] AS NO_SURAT_JALAN
+		, SHH.[Posting Date] AS TGL_SURAT_JALAN
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer No_]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer No_]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Customer No_]
+				END
+			END AS CUST_CODE
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer Name]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN  'MIDI UTAMA INDONESIA TBK, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer Name]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Name]
+				END
+			END AS CUST_NAME
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
+		, SHH.[Bill-to Customer No_] AS ASO_CODE
+		, SHH.[Bill-to Name] AS ASO_NAME
+		,	CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN
+				CASE WHEN SHH.[Sell-to Customer No_] LIKE 'DC%' THEN 'DC' ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] <> SHH.[Bill-to Customer No_] THEN 'Store' ELSE 'HO' END
+				END
+			ELSE
+				'HO'
+			END AS TIPE
+		, SHH.[Salesperson Code] AS SALES_CODE
+		, SLS.[Name] AS SALES_NAME
+		, SHH.[Ship-to Contact] AS CONTACT
+		, SHH.[External Document No_] AS NO_PO_CUSTOMER
+		, SHH.[Responsibility Center] AS BRANCH_CODE
+		, CAB.[Name] AS BRANCH_NAME
+		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
+		, SHL.[No_] AS ITEM_NO
+		, SHL.[Description] AS ITEM_DESC
+		, SHL.[Description 2] AS ITEM_DESC_2
+		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
+		, DV.[Name] AS PRINCIPAL_NAME
+		,	CASE WHEN DIMD.PRODUCT_CODE IN ('S404', 'S405', 'S409', 'H003', 'H013') THEN DIMD.PRODUCT_CODE 
+			ELSE 
+				CASE WHEN DIMD.PRINCIPAL = 'ZEBR' AND DIMD.PRODUCT_CODE = 'S105' THEN DIMD.PRODUCT_CODE ELSE '' END
+			END AS PRODUCT_GRP_CODE
+		, ILE.[Quantity] * -1 AS QTY
+		, ILE.[Unit of Measure Code] AS UOM
+		, ILE.[Warranty Code] AS WARRANTY_CODE
+		, ILE.[Serial No_] AS SERIAL_NO       
+		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
+				CASE WHEN ILE.[Warranty Code] <> '' THEN 
+					CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
+				ELSE 0 END
+			ELSE
+				0
+			END AS WARRANTY_MONTH
+FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Header] SHH
+INNER JOIN	(
+				SELECT	DISTINCT X.[Document No_]
+				FROM	(
+							SELECT [Document No_]
+									,SUM([Quantity]) AS [Quantity]
+							FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] 
+							GROUP BY [Document No_]
+						) X
+				WHERE X.[Quantity] <> 0
+			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Order No_] = SHL.[Order No_] AND  SIL.[Line Order No_] = SHL.[Order Line No_] AND SIL.[Quantity] <> 0
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIL.[Document No_]
+LEFT JOIN	(
+				SELECT [Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+						,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+				FROM [NavBI].[dbo].[BC_SOLUSI$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Dimension Value] DV ON DV.[Dimension Code] = 'PRINCIPAL' AND DV.[Code] = DIMD.PRINCIPAL
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
+WHERE SHL.[Type] = 2 AND
+	  SHL.[Quantity] <> 0 AND 
+	  ILE.[Quantity] IS NOT NULL AND
+	  CRM.[No_] IS NOT NULL AND
+	  SHH.[Posting Date] >= '2023-01-01';
+GO
+
+
+USE [NAV_API]
+GO
+
+/****** Object:  View [dbo].[V_SURAT_JALAN]    Script Date: 24/01/2025 1:46:03 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+
+
+
+ALTER VIEW [dbo].[V_SURAT_JALAN] AS
+SELECT	'AUTOJAYA' AS COMPANY
+		, SHH.[No_] AS NO_SURAT_JALAN
+		, SHH.[Posting Date] AS TGL_SURAT_JALAN
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer No_]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer No_]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Customer No_]
+				END
+			END AS CUST_CODE
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer Name]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN  'MIDI UTAMA INDONESIA TBK, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer Name]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Name]
+				END
+			END AS CUST_NAME
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
+		, SHH.[Bill-to Customer No_] AS ASO_CODE
+		, SHH.[Bill-to Name] AS ASO_NAME
+		,	CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN
+				CASE WHEN SHH.[Sell-to Customer No_] LIKE 'DC%' THEN 'DC' ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] <> SHH.[Bill-to Customer No_] THEN 'Store' ELSE 'HO' END
+				END
+			ELSE
+				'HO'
+			END AS TIPE
+		, SHH.[Salesperson Code] AS SALES_CODE
+		, SLS.[Name] AS SALES_NAME
+		, SHH.[Ship-to Contact] AS CONTACT
+		, SHH.[External Document No_] AS NO_PO_CUSTOMER
+		, SHH.[Responsibility Center] AS BRANCH_CODE
+		, CAB.[Name] AS BRANCH_NAME
+		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
+		, SHL.[No_] AS ITEM_NO
+		, SHL.[Description] AS ITEM_DESC
+		, SHL.[Description 2] AS ITEM_DESC_2
+		,	CASE WHEN DIMD.PRODUCT_CODE IN ('S404', 'S405', 'S409', 'H003', 'H013') THEN DIMD.PRODUCT_CODE 
+			ELSE 
+				CASE WHEN DIMD.PRINCIPAL = 'ZEBR' AND DIMD.PRODUCT_CODE = 'S105' THEN DIMD.PRODUCT_CODE ELSE '' END
+			END AS PRODUCT_GRP_CODE
+		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
+		, DV.[Name] AS PRINCIPAL_NAME
+		, ILE.[Quantity] * -1 AS QTY
+		, ILE.[Unit of Measure Code] AS UOM
+		, ILE.[Warranty Code] AS WARRANTY_CODE
+		, ILE.[Serial No_] AS SERIAL_NO       
+		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
+				CASE WHEN ILE.[Warranty Code] <> '' THEN 
+					CASE WHEN SUBSTRING(ILE.[Warranty Code], 1,1) <> 'W' THEN 0 ELSE 
+						CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
+					END
+				ELSE 0 END
+			ELSE
+				0
+			END AS WARRANTY_MONTH
+FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Header] SHH
+INNER JOIN	(
+				SELECT	DISTINCT X.[Document No_]
+				FROM	(
+							SELECT [Document No_]
+									,SUM([Quantity]) AS [Quantity]
+							FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] 
+							GROUP BY [Document No_]
+						) X
+				WHERE X.[Quantity] <> 0
+			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Invoice Line] SIL ON SIL.[Order No_] = SHL.[Order No_] AND  SIL.[Line Order No_] = SHL.[Order Line No_] AND SIL.[Quantity] <> 0
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIL.[Document No_]
+LEFT JOIN	(
+				SELECT [Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+						,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+				FROM [NavBI].[dbo].[BC_AUTOJAYA$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Dimension Value] DV ON DV.[Dimension Code] = 'PRINCIPAL' AND DV.[Code] = DIMD.PRINCIPAL
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
+WHERE SHL.[Type] = 2 AND
+	  SHL.[Quantity] <> 0 AND 
+	  ILE.[Quantity] IS NOT NULL AND
+	  CRM.[No_] IS NULL 
+UNION ALL
+SELECT	'SOLUSI' AS COMPANY
+		, SHH.[No_] AS NO_SURAT_JALAN
+		, SHH.[Posting Date] AS TGL_SURAT_JALAN
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer No_]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer No_]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180' ELSE
+								SHH.[Bill-to Customer No_]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Customer No_]
+				END
+			END AS CUST_CODE
+		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
+				CASE WHEN SHH.[Sell-to Customer No_] IN ('ALFA024', 'ALFA227', 'AL01622') THEN SHH.[Sell-to Customer Name]  ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT' ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN  'MIDI UTAMA INDONESIA TBK, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				END
+			ELSE
+				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
+					CASE WHEN SHH.[Sell-to Customer No_] IN ('IDMR008', 'IDMR180', 'IDM0228') THEN SHH.[Sell-to Customer Name]  ELSE
+						CASE WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT' ELSE
+							CASE WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT' ELSE
+								SHH.[Bill-to Name]
+							END
+						END
+					END
+				ELSE
+					SHH.[Bill-to Name]
+				END
+			END AS CUST_NAME
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
+		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
+		, SHH.[Bill-to Customer No_] AS ASO_CODE
+		, SHH.[Bill-to Name] AS ASO_NAME
+		,	CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN
+				CASE WHEN SHH.[Sell-to Customer No_] LIKE 'DC%' THEN 'DC' ELSE
+					CASE WHEN SHH.[Sell-to Customer No_] <> SHH.[Bill-to Customer No_] THEN 'Store' ELSE 'HO' END
+				END
+			ELSE
+				'HO'
+			END AS TIPE
+		, SHH.[Salesperson Code] AS SALES_CODE
+		, SLS.[Name] AS SALES_NAME
+		, SHH.[Ship-to Contact] AS CONTACT
+		, SHH.[External Document No_] AS NO_PO_CUSTOMER
+		, SHH.[Responsibility Center] AS BRANCH_CODE
+		, CAB.[Name] AS BRANCH_NAME
+		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
+		, SHL.[No_] AS ITEM_NO
+		, SHL.[Description] AS ITEM_DESC
+		, SHL.[Description 2] AS ITEM_DESC_2
+		,	CASE WHEN DIMD.PRODUCT_CODE IN ('S404', 'S405', 'S409', 'H003', 'H013') THEN DIMD.PRODUCT_CODE 
+			ELSE 
+				CASE WHEN DIMD.PRINCIPAL = 'ZEBR' AND DIMD.PRODUCT_CODE = 'S105' THEN DIMD.PRODUCT_CODE ELSE '' END
+			END AS PRODUCT_GRP_CODE
+		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
+		, DV.[Name] AS PRINCIPAL_NAME
+		, ILE.[Quantity] * -1 AS QTY
+		, ILE.[Unit of Measure Code] AS UOM
+		, ILE.[Warranty Code] AS WARRANTY_CODE
+		, ILE.[Serial No_] AS SERIAL_NO       
+		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
+				CASE WHEN ILE.[Warranty Code] <> '' THEN 
+					CASE WHEN SUBSTRING(ILE.[Warranty Code], 1,1) <> 'W' THEN 0 ELSE 
+						CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
+					END
+				ELSE 0 END
+			ELSE
+				0
+			END AS WARRANTY_MONTH
+FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Header] SHH
+INNER JOIN	(
+				SELECT	DISTINCT X.[Document No_]
+				FROM	(
+							SELECT [Document No_]
+									,SUM([Quantity]) AS [Quantity]
+							FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] 
+							GROUP BY [Document No_]
+						) X
+				WHERE X.[Quantity] <> 0
+			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Invoice Line] SIL ON SIL.[Order No_] = SHL.[Order No_] AND  SIL.[Line Order No_] = SHL.[Order Line No_] AND SIL.[Quantity] <> 0
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIL.[Document No_]
+LEFT JOIN	(
+				SELECT [Dimension Set ID] AS DIM_ID
+						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
+						,MAX(CASE WHEN [Dimension Code] = 'PRODUCT' THEN [Dimension Value Code] ELSE NULL END) AS PRODUCT_CODE
+				FROM [NavBI].[dbo].[BC_SOLUSI$Dimension Set Entry]
+				GROUP BY [Dimension Set ID]
+			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
+LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
+LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Dimension Value] DV ON DV.[Dimension Code] = 'PRINCIPAL' AND DV.[Code] = DIMD.PRINCIPAL
+WHERE SHL.[Type] = 2 AND
+	  SHL.[Quantity] <> 0 AND 
+	  ILE.[Quantity] IS NOT NULL AND
+	  CRM.[No_] IS NULL ;
+
+
+
+
+
+
+
+GO
+
+
+USE [NAV_API]
+GO
+
+/****** Object:  View [dbo].[V_PRINCIPAL]    Script Date: 24/01/2025 1:49:06 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER VIEW [dbo].[V_PRINCIPAL] AS
+SELECT	X.[Code] AS PRICIPAL_CODE
+		,MAX(X.[Name]) AS PRICIPAL_NAME
+FROM	(
+			SELECT [Code]
+				  ,[Name]
+			FROM [NavBI].[dbo].[BC_AUTOJAYA$Dimension Value]
+			WHERE [Dimension Code] = 'PRINCIPAL' AND
+				  ([Name] NOT LIKE '%UNUSED%' OR [Blocked] = 0) 
+			UNION ALL
+			SELECT [Code]
+				  ,[Name]
+			FROM [NavBI].[dbo].[BC_SOLUSI$Dimension Value]
+			WHERE [Dimension Code] = 'PRINCIPAL' AND
+				  ([Name] NOT LIKE '%UNUSED%' OR [Blocked] = 0) 
+		) X 
+ GROUP BY X.[Code] ;
+GO
+
+
+USE [NAV_API]
+GO
+
+/****** Object:  View [dbo].[V_CUSTOMER]    Script Date: 24/01/2025 1:49:19 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+ALTER VIEW [dbo].[V_CUSTOMER] AS
 SELECT	CUS.[No_] AS CUST_CODE
 		, CUS.[Name] AS CUST_NAME
 		, CUS.[Customer Posting Group] AS CUST_CLASS_CODE
@@ -136,6 +592,7 @@ SELECT	CUS.[No_] AS CUST_CODE
 		, FMM.[Tax Name] AS LEGAL_NAME
 		, FMM.[Tax Address 1] +' '+FMM.[Tax Address 2] AS LEGAL_ADDRESS
 		, CUS.[Last Modified DateTime] AS LAST_DATE_MODIFIED
+		, CASE WHEN CUS.[Blocked] = 0 THEN 'ACTIVE' ELSE 'BLOCKED' END AS STATUS_CUST
 FROM [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS 
 LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = CUS.[Responsibility Center]
 LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = CUS.[Salesperson Code]
@@ -145,403 +602,7 @@ LEFT JOIN	(
 				FROM [NavBI].[dbo].[BC_AUTOJAYA$Default Dimension] DD
 				LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Dimension Value] DV ON DV.[Dimension Code] = DD.[Dimension Code] AND DV.[Code] =  DD.[Dimension Value Code]
 				WHERE DD.[Table ID] = '18' AND DD.[Dimension Code] = 'SECTOR'
-			) DIM ON DIM.[No_] = CUS.[No_]
-WHERE CUS.[Blocked] = 0;
-
-
-CREATE VIEW [dbo].[V_PRINCIPAL] AS
-SELECT	X.[Code] AS PRICIPAL_CODE
-		,MAX(X.[Name]) AS PRICIPAL_NAME
-FROM	(
-			SELECT [Code]
-				  ,[Name]
-			FROM [NavBI].[dbo].[BC_AUTOJAYA$Dimension Value]
-			WHERE [Dimension Code] = 'PRINCIPAL' AND
-				  ([Name] NOT LIKE '%UNUSED%' OR [Blocked] = 0) 
-			UNION ALL
-			SELECT [Code]
-				  ,[Name]
-			FROM [NavBI].[dbo].[BC_SOLUSI$Dimension Value]
-			WHERE [Dimension Code] = 'PRINCIPAL' AND
-				  ([Name] NOT LIKE '%UNUSED%' OR [Blocked] = 0) 
-		) X 
- GROUP BY X.[Code] ;
-
-
-
-ALTER VIEW [dbo].[V_RETUR_SURAT_JALAN] AS
-SELECT	
-		CRM.[No_] AS NO_DOK_RETUR
-		, CRM.[Posting Date] AS TGL_DOK_RETUR
-		, SHH.[No_] AS NO_SURAT_JALAN
-		, SHH.[Posting Date] AS TGL_SURAT_JALAN
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622'
-						ELSE SHH.[Bill-to Customer No_]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180'
-							ELSE SHH.[Bill-to Customer No_]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_CODE
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'MIDI UTAMA INDONESIA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT'
-						ELSE SHH.[Bill-to Name]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT'
-							ELSE SHH.[Bill-to Name]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_NAME
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
-		, SHH.[Bill-to Customer No_] AS ASO_CODE
-		, SHH.[Bill-to Name] AS ASO_NAME
-		, SHH.[Salesperson Code] AS SALES_CODE
-		, SLS.[Name] AS SALES_NAME
-		, SHH.[Ship-to Contact] AS CONTACT
-		, SHH.[External Document No_] AS NO_PO_CUSTOMER
-		, SHH.[Responsibility Center] AS BRANCH_CODE
-		, CAB.[Name] AS BRANCH_NAME
-		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
-		, SHL.[No_] AS ITEM_NO
-		, SHL.[Description] AS ITEM_DESC
-		, SHL.[Description 2] AS ITEM_DESC_2
-		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
-		, ILE.[Quantity] * -1 AS QTY
-		, ILE.[Unit of Measure Code] AS UOM
-		, ILE.[Warranty Code] AS WARRANTY_CODE
-		, ILE.[Serial No_] AS SERIAL_NO       
-		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
-				CASE WHEN ILE.[Warranty Code] <> '' THEN 
-					CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
-				ELSE 0 END
-			ELSE
-				0
-			END AS WARRANTY_MONTH
-FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Header] SHH
-INNER JOIN	(
-				SELECT	DISTINCT X.[Document No_]
-				FROM	(
-							SELECT [Document No_]
-									,SUM([Quantity]) AS [Quantity]
-							FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] 
-							GROUP BY [Document No_]
-						) X
-				WHERE X.[Quantity] <> 0
-			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[Order No_] = SHH.[Order No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
-LEFT JOIN	(
-				SELECT [Dimension Set ID] AS DIM_ID
-						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
-				FROM [NavBI].[dbo].[BC_AUTOJAYA$Dimension Set Entry]
-				GROUP BY [Dimension Set ID]
-			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
-WHERE SHL.[Type] = 2 AND
-	  SHL.[Quantity] <> 0 AND 
-	  ILE.[Quantity] IS NOT NULL AND
-	  CRM.[No_] IS NOT NULL AND
-	  SHH.[Posting Date] >= '2023-01-01'
-UNION ALL
-SELECT	
-		CRM.[No_] AS NO_DOK_RETUR
-		, CRM.[Posting Date] AS TGL_DOK_RETUR
-		, SHH.[No_] AS NO_SURAT_JALAN
-		, SHH.[Posting Date] AS TGL_SURAT_JALAN
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622'
-						ELSE SHH.[Bill-to Customer No_]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180'
-							ELSE SHH.[Bill-to Customer No_]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_CODE
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'MIDI UTAMA INDONESIA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT'
-						ELSE SHH.[Bill-to Name]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT'
-							ELSE SHH.[Bill-to Name]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_NAME
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
-		, SHH.[Bill-to Customer No_] AS ASO_CODE
-		, SHH.[Bill-to Name] AS ASO_NAME
-		, SHH.[Salesperson Code] AS SALES_CODE
-		, SLS.[Name] AS SALES_NAME
-		, SHH.[Ship-to Contact] AS CONTACT
-		, SHH.[External Document No_] AS NO_PO_CUSTOMER
-		, SHH.[Responsibility Center] AS BRANCH_CODE
-		, CAB.[Name] AS BRANCH_NAME
-		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
-		, SHL.[No_] AS ITEM_NO
-		, SHL.[Description] AS ITEM_DESC
-		, SHL.[Description 2] AS ITEM_DESC_2
-		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
-		, ILE.[Quantity] * -1 AS QTY
-		, ILE.[Unit of Measure Code] AS UOM
-		, ILE.[Warranty Code] AS WARRANTY_CODE
-		, ILE.[Serial No_] AS SERIAL_NO       
-		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
-				CASE WHEN ILE.[Warranty Code] <> '' THEN 
-					CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
-				ELSE 0 END
-			ELSE
-				0
-			END AS WARRANTY_MONTH
-FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Header] SHH
-INNER JOIN	(
-				SELECT	DISTINCT X.[Document No_]
-				FROM	(
-							SELECT [Document No_]
-									,SUM([Quantity]) AS [Quantity]
-							FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] 
-							GROUP BY [Document No_]
-						) X
-				WHERE X.[Quantity] <> 0
-			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[Order No_] = SHH.[Order No_]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
-LEFT JOIN	(
-				SELECT [Dimension Set ID] AS DIM_ID
-						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
-				FROM [NavBI].[dbo].[BC_SOLUSI$Dimension Set Entry]
-				GROUP BY [Dimension Set ID]
-			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
-WHERE SHL.[Type] = 2 AND
-	  SHL.[Quantity] <> 0 AND 
-	  ILE.[Quantity] IS NOT NULL AND
-	  CRM.[No_] IS NOT NULL AND
-	  SHH.[Posting Date] >= '2023-01-01';
-
-
-
-ALTER VIEW [dbo].[V_SURAT_JALAN] AS
-SELECT	SHH.[No_] AS NO_SURAT_JALAN
-		, SHH.[Posting Date] AS TGL_SURAT_JALAN
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622'
-						ELSE SHH.[Bill-to Customer No_]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180'
-							ELSE SHH.[Bill-to Customer No_]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_CODE
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'MIDI UTAMA INDONESIA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT'
-						ELSE SHH.[Bill-to Name]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT'
-							ELSE SHH.[Bill-to Name]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_NAME
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
-		, SHH.[Bill-to Customer No_] AS ASO_CODE
-		, SHH.[Bill-to Name] AS ASO_NAME
-		, SHH.[Salesperson Code] AS SALES_CODE
-		, SLS.[Name] AS SALES_NAME
-		, SHH.[Ship-to Contact] AS CONTACT
-		, SHH.[External Document No_] AS NO_PO_CUSTOMER
-		, SHH.[Responsibility Center] AS BRANCH_CODE
-		, CAB.[Name] AS BRANCH_NAME
-		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
-		, SHL.[No_] AS ITEM_NO
-		, SHL.[Description] AS ITEM_DESC
-		, SHL.[Description 2] AS ITEM_DESC_2
-		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
-		, ILE.[Quantity] * -1 AS QTY
-		, ILE.[Unit of Measure Code] AS UOM
-		, ILE.[Warranty Code] AS WARRANTY_CODE
-		, ILE.[Serial No_] AS SERIAL_NO       
-		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
-				CASE WHEN ILE.[Warranty Code] <> '' THEN 
-					CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
-				ELSE 0 END
-			ELSE
-				0
-			END AS WARRANTY_MONTH
-FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Header] SHH
-INNER JOIN	(
-				SELECT	DISTINCT X.[Document No_]
-				FROM	(
-							SELECT [Document No_]
-									,SUM([Quantity]) AS [Quantity]
-							FROM [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] 
-							GROUP BY [Document No_]
-						) X
-				WHERE X.[Quantity] <> 0
-			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Invoice Header] SIH ON SIH.[Order No_] = SHH.[Order No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
-LEFT JOIN	(
-				SELECT [Dimension Set ID] AS DIM_ID
-						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
-				FROM [NavBI].[dbo].[BC_AUTOJAYA$Dimension Set Entry]
-				GROUP BY [Dimension Set ID]
-			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
-WHERE SHL.[Type] = 2 AND
-	  SHL.[Quantity] <> 0 AND 
-	  ILE.[Quantity] IS NOT NULL AND
-	  CRM.[No_] IS NULL AND
-	  SHH.[Posting Date] >= '2023-01-01'
-UNION ALL
-SELECT	SHH.[No_] AS NO_SURAT_JALAN
-		, SHH.[Posting Date] AS TGL_SURAT_JALAN
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'ALFA024'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'ALFA227'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'AL01622'
-						ELSE SHH.[Bill-to Customer No_]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'IDMR008'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'IDMR180'
-							ELSE SHH.[Bill-to Customer No_]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_CODE
-		,	CASE WHEN CUS.[Customer Posting Group] = 'ALFA' THEN
-				CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%SAT%' THEN 'SUMBER ALFARIA TRIJAYA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%MIDI%' THEN 'MIDI UTAMA INDONESIA TBK, PT'
-						WHEN SHH.[Sell-to Customer No_] LIKE '%LAWSON%' THEN 'LANCAR WIGUNA SEJAHTERA, PT'
-						ELSE SHH.[Bill-to Name]
-				END
-			ELSE
-				CASE WHEN CUS.[Customer Posting Group] = 'INDOMARCO' THEN
-					CASE	WHEN SHH.[Sell-to Customer No_] LIKE '%ICC%' THEN 'INTI CAKRAWALA CITRA, PT'
-							WHEN SHH.[Sell-to Customer No_] LIKE '%IDMR%' THEN 'INDOMARCO PRISMATAMA, PT'
-							ELSE SHH.[Bill-to Name]
-					END
-				ELSE
-					SHH.[Bill-to Customer No_]
-				END
-			END AS CUST_NAME
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer No_] ELSE SHH.[Bill-to Customer No_] END AS AREA_CODE
-		, CASE WHEN CUS.[Customer Posting Group] IN ('ALFA', 'INDOMARCO') THEN SHH.[Sell-to Customer Name] ELSE SHH.[Bill-to Name] END AS AREA_NAME
-		, SHH.[Bill-to Customer No_] AS ASO_CODE
-		, SHH.[Bill-to Name] AS ASO_NAME
-		, SHH.[Salesperson Code] AS SALES_CODE
-		, SLS.[Name] AS SALES_NAME
-		, SHH.[Ship-to Contact] AS CONTACT
-		, SHH.[External Document No_] AS NO_PO_CUSTOMER
-		, SHH.[Responsibility Center] AS BRANCH_CODE
-		, CAB.[Name] AS BRANCH_NAME
-		, SHH.[Ship-to Address] + ' ' + SHH.[Ship-to Address 2] + ' ' + SHH.[Ship-to Address 3] + ' ' + SHH.[Ship-to Address 4] AS ALAMAT_KIRIM
-		, SHL.[No_] AS ITEM_NO
-		, SHL.[Description] AS ITEM_DESC
-		, SHL.[Description 2] AS ITEM_DESC_2
-		, DIMD.PRINCIPAL AS PRINCIPAL_CODE
-		, ILE.[Quantity] * -1 AS QTY
-		, ILE.[Unit of Measure Code] AS UOM
-		, ILE.[Warranty Code] AS WARRANTY_CODE
-		, ILE.[Serial No_] AS SERIAL_NO       
-		,	CASE WHEN ILE.[Warranty Code] IS NOT NULL THEN
-				CASE WHEN ILE.[Warranty Code] <> '' THEN 
-					CAST(SUBSTRING(ILE.[Warranty Code],2, (LEN(ILE.[Warranty Code])-2)) AS INT)
-				ELSE 0 END
-			ELSE
-				0
-			END AS WARRANTY_MONTH
-FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Header] SHH
-INNER JOIN	(
-				SELECT	DISTINCT X.[Document No_]
-				FROM	(
-							SELECT [Document No_]
-									,SUM([Quantity]) AS [Quantity]
-							FROM [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] 
-							GROUP BY [Document No_]
-						) X
-				WHERE X.[Quantity] <> 0
-			) SHL2 ON SHL2.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Shipment Line] SHL ON SHL.[Document No_] = SHH.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Item Ledger Entry] ILE ON ILE.[Document No_] = SHL.[Document No_] AND ILE.[Document Line No_] = SHL.[Line No_] AND ILE.[Item No_] = SHL.[No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Customer] CUS ON CUS.[No_] = SHH.[Bill-to Customer No_]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Salesperson_Purchaser] SLS ON SLS.[Code] = SHH.[Salesperson Code]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Invoice Header] SIH ON SIH.[Order No_] = SHH.[Order No_]
-LEFT JOIN [NavBI].[dbo].[BC_SOLUSI$Sales Cr_Memo Header] CRM ON CRM.[Applies-to Doc_ No_] = SIH.[No_]
-LEFT JOIN	(
-				SELECT [Dimension Set ID] AS DIM_ID
-						,MAX(CASE WHEN [Dimension Code] = 'PRINCIPAL' THEN [Dimension Value Code] ELSE NULL END) AS PRINCIPAL
-				FROM [NavBI].[dbo].[BC_SOLUSI$Dimension Set Entry]
-				GROUP BY [Dimension Set ID]
-			) DIMD ON DIMD.DIM_ID = SHL.[Dimension Set ID]
-LEFT JOIN [NavBI].[dbo].[BC_AUTOJAYA$Responsibility Center] CAB ON CAB.[Code] = SHH.[Responsibility Center]
-WHERE SHL.[Type] = 2 AND
-	  SHL.[Quantity] <> 0 AND 
-	  ILE.[Quantity] IS NOT NULL AND
-	  CRM.[No_] IS NULL AND
-	  SHH.[Posting Date] >= '2023-01-01';
-
-
-
-
-
+			) DIM ON DIM.[No_] = CUS.[No_];
+GO
 
 

@@ -10,9 +10,7 @@ import java.util.Date;
 import org.apache.commons.lang.StringUtils;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zul.Combobox;
 import org.zkoss.zul.Datebox;
-import org.zkoss.zul.Decimalbox;
 import org.zkoss.zul.Intbox;
 import org.zkoss.zul.Radio;
 import org.zkoss.zul.Radiogroup;
@@ -50,14 +48,14 @@ public class SalesTargetAchievementCtrl extends GFCBaseCtrl implements Serializa
 	protected Radio rdPDF;
 	protected Radio rdXLS;
 	
-	protected Decimalbox dcmNilai;
-	
-	protected Decimalbox dcmHigh;
-	protected Decimalbox dcmMed;
-	protected Decimalbox dcmLow;
-	
-	protected Combobox  cmbAkhirSem1;
-	
+//	protected Decimalbox dcmNilai;
+//	
+//	protected Decimalbox dcmHigh;
+//	protected Decimalbox dcmMed;
+//	protected Decimalbox dcmLow;
+//	
+//	protected Combobox  cmbAkhirSem1;
+//	
 //	protected Decimalbox dcmTargetPS;
 
 	
@@ -88,15 +86,15 @@ public class SalesTargetAchievementCtrl extends GFCBaseCtrl implements Serializa
 		dbTglUpto.setValue(vTglUpto);   
 		
 		
-		dcmNilai.setValue(new BigDecimal (500));
-		
-		dcmHigh.setValue(new BigDecimal (90));
-		dcmMed.setValue(new BigDecimal (60));
-		dcmLow.setValue(new BigDecimal (30));
-		
-//		dcmTargetPS.setValue(new BigDecimal (20));
-		
-		cmbAkhirSem1.setSelectedIndex(9);
+//		dcmNilai.setValue(new BigDecimal (500));
+//		
+//		dcmHigh.setValue(new BigDecimal (90));
+//		dcmMed.setValue(new BigDecimal (60));
+//		dcmLow.setValue(new BigDecimal (30));
+//		
+////		dcmTargetPS.setValue(new BigDecimal (20));
+//		
+//		cmbAkhirSem1.setSelectedIndex(9);
 		
 		
 		
@@ -124,34 +122,34 @@ public class SalesTargetAchievementCtrl extends GFCBaseCtrl implements Serializa
 //			vTargetPS = dcmTargetPS.getValue();
 //		}
 		
-		BigDecimal vNilai = new BigDecimal(500);
-		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
-			vNilai = dcmNilai.getValue();
-		} 
-		
-		
-		BigDecimal vHigh = new BigDecimal(90);
-		if (CommonUtils.isNotEmpty(dcmHigh.getValue())) {
-			vHigh = dcmHigh.getValue();
-		} 
-		
-		BigDecimal vMed = new BigDecimal(60);
-		if (CommonUtils.isNotEmpty(dcmMed.getValue())) {
-			vMed = dcmMed.getValue();
-		} 
-		
-		BigDecimal vLow = new BigDecimal(30);
-		if (CommonUtils.isNotEmpty(dcmLow.getValue())) {
-			vLow = dcmLow.getValue();
-		} 
+//		BigDecimal vNilai = new BigDecimal(500);
+//		if (CommonUtils.isNotEmpty(dcmNilai.getValue())) {
+//			vNilai = dcmNilai.getValue();
+//		} 
+//		
+//		
+//		BigDecimal vHigh = new BigDecimal(90);
+//		if (CommonUtils.isNotEmpty(dcmHigh.getValue())) {
+//			vHigh = dcmHigh.getValue();
+//		} 
+//		
+//		BigDecimal vMed = new BigDecimal(60);
+//		if (CommonUtils.isNotEmpty(dcmMed.getValue())) {
+//			vMed = dcmMed.getValue();
+//		} 
+//		
+//		BigDecimal vLow = new BigDecimal(30);
+//		if (CommonUtils.isNotEmpty(dcmLow.getValue())) {
+//			vLow = dcmLow.getValue();
+//		} 
 		
 		
 	
-		int vSemAkhir = 10;
-		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
-			vSemAkhir = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
-		}
-		
+//		int vSemAkhir = 10;
+//		if (cmbAkhirSem1.getSelectedItem().getValue() != null){
+//			vSemAkhir = Integer.valueOf((String) cmbAkhirSem1.getSelectedItem().getValue());
+//		}
+//		
 		
 		
 		Calendar cRTglUpto = Calendar.getInstance();
@@ -207,12 +205,18 @@ public class SalesTargetAchievementCtrl extends GFCBaseCtrl implements Serializa
 		}
 		
 		param.put("Tahun",  vTahun);
-		param.put("AmtBig",  vNilai);
-		param.put("SemAkhir",  vSemAkhir);			
+		param.put("AmtBig",  new BigDecimal(0));
+		param.put("SemAkhir",  12);		
+		param.put("weightH",   new BigDecimal(100));
+		param.put("weightM",   new BigDecimal(100));
+		param.put("weightL",   new BigDecimal(100));
+		
+//		param.put("AmtBig",  vNilai);
+//		param.put("SemAkhir",  vSemAkhir);			
 		param.put("TglUpto",  vTglUpTo);		
-		param.put("weightH",  vHigh);
-		param.put("weightM",  vMed);
-		param.put("weightL",  vLow);
+//		param.put("weightH",  vHigh);
+//		param.put("weightM",  vMed);
+//		param.put("weightL",  vLow);
 		param.put("TargetPS",  0);//vTargetPS);				
 		
 		param.put("ProsesId",  vProsesId);	

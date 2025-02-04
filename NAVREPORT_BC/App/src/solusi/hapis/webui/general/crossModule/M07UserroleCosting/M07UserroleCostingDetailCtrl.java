@@ -220,6 +220,7 @@ public class M07UserroleCostingDetailCtrl extends GFCBaseCtrl implements Seriali
 
 		Listitem vListUserrole = null;
 
+		Listitem vListBLANK = list_Userrole.appendItem("<<Please Select>>", "");
 		Listitem vListSALES = list_Userrole.appendItem("SALES", "SALES");
 		Listitem vListSAO = list_Userrole.appendItem("SAO", "SAO");
 		Listitem vListLOGISTIC = list_Userrole.appendItem("LOGISTIC", "LOGISTIC");
@@ -246,11 +247,15 @@ public class M07UserroleCostingDetailCtrl extends GFCBaseCtrl implements Seriali
 							} else {
 								if (anM07.getRolename().equals("SM")) {
 									vListUserrole = vListSM;
+								} else {
+									vListUserrole = vListBLANK;
 								}
 							}
 						}
 					}
 				}
+			} else {
+				vListUserrole = vListBLANK;
 			}
 		}
 		
@@ -259,6 +264,15 @@ public class M07UserroleCostingDetailCtrl extends GFCBaseCtrl implements Seriali
 		list_Userrole.setSelectedItem(vListUserrole);
 	}
 
+	
+	public void onSelect$list_Userrole(Event event) throws Exception {
+		M07UserroleCostingH data = getM07UserroleCostingH();
+
+		data.setRolename(list_Userrole.getSelectedItem().getValue().toString());
+		setM07UserroleCostingH(data);
+	}
+	
+	
 	public void doFitSize(Event event) {
 		final int height = ((Intbox) Path
 				.getComponent("/outerIndexWindow/currentDesktopHeight"))
@@ -327,8 +341,12 @@ public class M07UserroleCostingDetailCtrl extends GFCBaseCtrl implements Seriali
 		}	
 		
 		
-		if(CommonUtils.isNotEmpty(cmbRolename.getValue()) == false){
+		if(CommonUtils.isNotEmpty(list_Userrole.getSelectedItem().getValue()) == false){
 			return "Role User "+Labels.getLabel("message.error.mandatory");
+		} else {
+			if (list_Userrole.getSelectedItem().getValue().toString().equals("") == true){
+				return "Role User "+Labels.getLabel("message.error.mandatory");
+			}
 		}
 		
 		
